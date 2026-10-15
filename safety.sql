@@ -1,8 +1,16 @@
 create table if not exists public.safety_contacts (user_id uuid primary key default auth.uid() references auth.users on delete cascade, email text, tg_code text, tg_chat_id bigint, tg_name text, updated_at timestamptz not null default now());
+alter table public.safety_contacts add column if not exists self_code text;
+alter table public.safety_contacts add column if not exists self_chat_id bigint;
 alter table public.safety_contacts enable row level security;
 drop policy if exists "own contact" on public.safety_contacts;
 create policy "own contact" on public.safety_contacts for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 create table if not exists public.safety_trips (id text primary key, user_id uuid not null default auth.uid() references auth.users on delete cascade, user_name text, route text, due_at timestamptz not null, last_lat double precision, last_lon double precision, last_at timestamptz, status text not null default 'active', start_sent boolean not null default false, alerted_at timestamptz, done_sent boolean not null default false, created_at timestamptz not null default now());
+alter table public.safety_trips add column if not exists battery int;
+alter table public.safety_trips add column if not exists hb_at timestamptz;
+alter table public.safety_trips add column if not exists silence_min int not null default 0;
+alter table public.safety_trips add column if not exists ping_at timestamptz;
+alter table public.safety_trips add column if not exists silence_sent boolean not null default false;
+alter table public.safety_trips add column if not exists lowbat_sent boolean not null default false;
 alter table public.safety_trips enable row level security;
 drop policy if exists "own trips" on public.safety_trips;
 create policy "own trips" on public.safety_trips for all using (user_id = auth.uid()) with check (user_id = auth.uid());

@@ -161,6 +161,17 @@ function renderSea(){
   if(k.sst!=null) t+=k.sst>=26?' Θερμό νερό: πιο δραστήρια ψάρια το πρωί και το βράδυ.':k.sst<=18?' Κρύο νερό: τα ψάρια είναι πιο αργά, ψάξε βαθύτερα.':'';
   n.textContent=t+' Δεδομένα μοντέλου, χαμηλής ανάλυσης κοντά στην ακτή.';
 }
+function renderStrip(c){
+  const box=$('hdrStrip'); if(!box) return; box.replaceChildren();
+  const k=cond||{}, sm=c.sm, dash='–';
+  const ph=['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘'][Math.floor(sm.f*8+0.5)%8];
+  const chip=(l,v)=>h('span',{class:'sc'},h('i',{text:l}),h('b',{text:v}));
+  box.append(chip(ph+' Σελήνη',Math.round(sm.illum*100)+'%'),
+    chip('Θάλασσα',k.sst!=null?Math.round(k.sst)+'°C':dash),
+    chip('Κύμα',k.wave!=null?k.wave.toFixed(1)+' m':dash),
+    chip('Ρεύμα',k.cur!=null?k.cur.toFixed(1)+' kn':dash),
+    chip('Ανατολή',fmt(sm.rise)),chip('Δύση',fmt(sm.set)));
+}
 function drawSun(sm,date){
   const sv=$('sunArc'); if(!sv) return; sv.replaceChildren();
   const el=(n,p)=>{const e=document.createElementNS(NS,n); for(const k in p) e.setAttribute(k,p[k]); return e;};
@@ -262,6 +273,7 @@ function renderToday(){
   $('illumBar').style.width=Math.round(sm.illum*100)+'%';
   const toNew=((1-sm.f)%1)*SYN, toFull=((0.5-sm.f+1)%1)*SYN, addD=n=>{const [y,m,d]=c.date.split('-').map(Number);const dt=new Date(Date.UTC(y,m-1,d+Math.round(n)));return pad(dt.getUTCDate())+'/'+pad(dt.getUTCMonth()+1);};
   $('moonNext').textContent=(window.LANG==='en'?'Next full moon: '+addD(toFull)+' · new moon: '+addD(toNew):'Επόμενη πανσέληνος: '+addD(toFull)+' · νέα σελήνη: '+addD(toNew));
+  renderStrip(c);
   drawSun(sm,c.date);
   const st=$('sunTimes'); st.replaceChildren();
   for(const [a,b] of [['Ανατολή ηλίου',fmt(sm.rise)],['Δύση ηλίου',fmt(sm.set)],['Ανατολή σελήνης',fmt(sm.mrise)],['Δύση σελήνης',fmt(sm.mset)],['Σελήνη στο ζενίθ',fmt(sm.transit)],['Σελήνη στο ναδίρ',fmt(sm.anti)]]){
@@ -848,11 +860,15 @@ function renderBites(){
     const cd=[b.wind!=null?b.wind+' kn':null,b.wave!=null?b.wave+' m κύμα':null,b.press!=null?b.press+' hPa':null,b.ptrend?PT[b.ptrend]:null,MOON_LBL[biteMoon(b)]].filter(Boolean).join(' · ');
     const where=b.place||(typeof b.lat==='number'?b.lat.toFixed(4)+', '+b.lon.toFixed(4):'');
     const img=h('img',{class:'thumb',alt:''}); img.hidden=true; if(b.photo) loadPhoto(b.id,img);
-    L.append(h('div',{class:'item'},
-      h('div',{},h('b',{text:(b.species||'Άγνωστο')+(b.kg?' · '+b.kg+' kg':'')+(b.len?' · '+b.len+' cm':'')}),
-        h('div',{class:'meta mono',text:(b.date||'')+' '+(b.time||'')}),
-        h('div',{class:'meta',text:[b.bait,b.tech,b.depth!=null?b.depth+' m βάθος':null,where].filter(Boolean).join(' · ')}),
-        h('div',{class:'meta',text:cd}),img),
+    const td=nicosiaToday(), [ty,tm,tdd]=td.split('-').map(Number), yd=new Date(Date.UTC(ty,tm-1,tdd-1)).toISOString().slice(0,10);
+    const dd=b.date===td?'Σήμερα':b.date===yd?'Χθες':(b.date?b.date.slice(8,10)+'/'+b.date.slice(5,7):'');
+    const when=[dd,b.time].filter(Boolean).join(' · ');
+    const sz=[b.kg?b.kg+' kg':null,b.len?b.len+' cm':null].filter(Boolean).join(' · ');
+    L.append(h('div',{class:'item bite'},
+      h('div',{class:'ihead'},h('b',{class:'ititle',text:b.species||'Άγνωστο'}),h('span',{class:'when mono',text:when})),
+      sz?h('div',{class:'isz',text:sz}):null,
+      h('div',{class:'meta',text:[b.bait,b.tech,b.depth!=null?b.depth+' m βάθος':null,where].filter(Boolean).join(' · ')}),
+      h('div',{class:'meta',text:cd}),img,
       h('div',{class:'acts'},acts)));
   }
   renderChips(); drawMap(); renderReco(); if(typeof renderTrips==='function') renderTrips(); if(typeof renderToday==='function') renderToday();
@@ -1274,8 +1290,9 @@ document.querySelectorAll('nav.tabs button[data-tab]').forEach(b=>b.addEventList
 $('wx').addEventListener('click',()=>switchTab('today'));
 const today=nicosiaToday();
 $('dDate').value=today; $('tDate').value=today;
-$('hdrDate').textContent=today.split('-').reverse().join('/');
 ['dDate','dWind','dWave','dPress','dCloud'].forEach(id=>$(id).addEventListener('input',()=>{renderToday();renderReco();}));
+{const tg=$('hdrToggle'), mo=$('hdrMore');
+  tg.addEventListener('click',()=>{const o=mo.hidden; mo.hidden=!o; tg.setAttribute('aria-expanded',String(o)); tg.textContent=o?'Όλα ▴':'Όλα ▾';});}
 initMap();
 renderToday(); renderSpecies(); renderTech(); renderChecks(); renderLaw(); renderForecast(lsGet('psaro-fc',null)); renderSpots(); renderTrips(); renderWx();
 Store.on('spots',()=>{drawMap();renderSpots();});

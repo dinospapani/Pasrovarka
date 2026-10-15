@@ -43,6 +43,26 @@
     <label class="f">Νέος κωδικός<input type="password" id="pPass" autocomplete="new-password"></label>
     <div class="row"><button class="btn ghost sm" id="pPassSave" type="button">Αλλαγή κωδικού</button></div>
     <p class="note" id="pMsg" role="status"></p>
+    <div class="card" id="pContacts">
+      <h3>Επαφή ασφαλείας</h3>
+      <p class="note">Το άτομο που ειδοποιείται αυτόματα αν δεν γυρίσεις στην ώρα σου ή αν χαθεί η επαφή μαζί σου. Δεν χρειάζεται να έχει την εφαρμογή.</p>
+      <label class="f">Όνομα επαφής<input type="text" id="sfName" maxlength="40" autocomplete="off"></label>
+      <label class="f">Τηλέφωνο επαφής (με κωδικό χώρας)<input type="tel" id="sfPhone" placeholder="+357…" inputmode="tel" autocomplete="off"></label>
+      <label class="f">Email επαφής (αυτόματη ειδοποίηση)<input type="email" id="sfEmail" maxlength="80" autocomplete="off" inputmode="email"></label>
+      <div id="sfTgBox" hidden>
+        <div class="label">Telegram επαφής (αυτόματη ειδοποίηση, δωρεάν)</div>
+        <div class="row"><button class="btn ghost sm" id="sfTgLink" type="button">Στείλε σύνδεσμο σύνδεσης</button></div>
+        <p class="note" id="sfTgState"></p>
+      </div>
+      <div id="selfTgBox" hidden>
+        <div class="label">Το δικό μου Telegram (έλεγχος «είσαι καλά;»)</div>
+        <p class="note">Αν χαθεί η επαφή με το κινητό σου στη θάλασσα, το BiteCast σε ρωτάει πρώτα εσένα στο Telegram. Ειδοποιεί την επαφή σου μόνο αν δεν απαντήσεις.</p>
+        <div class="row"><button class="btn ghost sm" id="selfTgLink" type="button">Σύνδεση του Telegram μου</button></div>
+        <p class="note" id="selfTgState"></p>
+      </div>
+      <div class="row" style="margin-top:8px"><button class="btn sm" id="sfSave" type="button">Αποθήκευση επαφής</button></div>
+      <p class="note" id="sfCMsg" role="status"></p>
+    </div>
     <div class="card">
       <h3>Αναγνώριση ψαριού με AI</h3>
       <p class="note">Προαιρετικό. Η φωτογραφία στέλνεται στο Claude (Anthropic) για να προτείνει είδος. Χρειάζεσαι δικό σου κλειδί API από το console.anthropic.com με πιστωτικό υπόλοιπο, και η κάθε αναγνώριση χρεώνεται στον λογαριασμό σου. Φτιάξε ξεχωριστό κλειδί με χαμηλό όριο δαπανών. Το κλειδί μένει μόνο σε αυτή τη συσκευή.</p>
@@ -55,12 +75,70 @@
 </div>
 <div class="wrap">
   <header class="top">
-    <div class="brand"><img src="icon-192.png" alt="" width="26" height="26" style="vertical-align:-6px;border-radius:6px;margin-right:8px">BiteCast</div>
-    <div class="sub"><button type="button" id="profBtn" class="avatar" aria-label="Προφίλ">?</button><br><span id="hdrDate"></span></div>
+    <div class="toprow">
+      <div class="brand"><img src="icon-192.png" alt="" width="26" height="26" style="vertical-align:-6px;border-radius:6px;margin-right:8px">BiteCast</div>
+      <button type="button" id="profBtn" class="avatar" aria-label="Προφίλ">?</button>
+    </div>
+    <div class="stripwrap"><div class="strip" id="hdrStrip"></div><button type="button" class="sc more" id="hdrToggle" aria-expanded="false" aria-label="Περισσότερες λεπτομέρειες">Όλα ▾</button></div>
+    <div id="hdrMore" hidden>
+    <div class="card" id="seaCard">
+      <h3>Θάλασσα και ρεύμα</h3>
+      <div class="tiles" id="seaTiles"></div>
+      <p class="note" id="seaNote" style="margin:8px 0 0"></p>
+    </div>
+    <div class="card skycard">
+      <h3>Ουρανός</h3>
+      <div class="moonrow">
+        <svg id="moonSvg" width="92" height="92" viewBox="-24 -24 48 48" aria-hidden="true" class="moonsvg"></svg>
+        <div>
+          <h3 id="moonName" style="margin:0"></h3>
+          <div class="muted" id="moonSub"></div>
+          <div class="illum"><i id="illumBar"></i></div>
+          <div class="note" id="moonNext" style="margin-top:6px"></div>
+        </div>
+      </div>
+      <svg id="sunArc" viewBox="0 0 320 120" class="sunarc" aria-hidden="true"></svg>
+      <div class="times mono" id="sunTimes" style="margin-top:8px"></div>
+    </div>
+    </div>
   </header>
 
   <!-- ΣΗΜΕΡΑ -->
   <section class="tab" id="tab-today" hidden>
+    <div class="card" id="safeCard">
+      <div class="sfhead"><h3 id="sfTitle">Έξοδος για ψάρεμα</h3><span class="pill" id="sfBadge" hidden></span></div>
+      <div id="safeIdle">
+        <p class="note">Πάτα Έναρξη όταν φεύγεις. Η εφαρμογή παρακολουθεί την έξοδό σου και ειδοποιεί αυτόματα την επαφή ασφαλείας σου αν κάτι δεν πάει καλά.</p>
+        <p class="note sfwarn" id="sfNoC" hidden>Δεν έχεις ορίσει επαφή ασφαλείας. <button type="button" class="btn ghost sm" id="sfGoProf">Πρόσθεσέ την στο προφίλ</button></p>
+        <button class="btn acc big" id="sfOpen" type="button">▶ Έναρξη εξόδου</button>
+        <div id="sfForm" hidden>
+          <label class="f">Πού πας (προαιρετικό)<input type="text" id="sfRoute" maxlength="120" placeholder="π.χ. Λατσί, ύφαλος βόρεια του φάρου"></label>
+          <div class="label" style="margin-top:10px">Επιστροφή σε</div>
+          <div class="chips" id="sfDur"><button type="button" class="chip" data-h="2">2 ώρες</button><button type="button" class="chip" data-h="4">4 ώρες</button><button type="button" class="chip" data-h="6">6 ώρες</button><button type="button" class="chip" data-h="8">8 ώρες</button></div>
+          <label class="f" style="margin-top:8px">ή ώρα επιστροφής<input type="time" id="sfTime"></label>
+          <label class="f" style="margin-top:8px">Έλεγχος αν χαθεί η επαφή με το κινητό
+            <select id="sfSil"><option value="0">Χωρίς</option><option value="30">Μετά από 30 λεπτά</option><option value="60" selected>Μετά από 60 λεπτά</option><option value="90">Μετά από 90 λεπτά</option></select>
+          </label>
+          <p class="note" id="sfSilNote"></p>
+          <div class="row" style="margin-top:8px"><button class="btn" id="sfStart" type="button">Ξεκίνα</button><button class="btn ghost" id="sfCancel" type="button">Άκυρο</button></div>
+        </div>
+      </div>
+      <div id="safeActive" hidden>
+        <p><b id="sfInfo"></b></p>
+        <p class="note" id="sfLast"></p>
+        <p class="note" id="sfMon"></p>
+        <p class="note sfwarn" id="sfWx" hidden></p>
+        <div class="row"><button class="btn acc big" id="sfBack" type="button">■ Τέλος εξόδου</button></div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn ghost" id="sfExt" type="button">+30 λεπτά</button>
+          <button class="btn ghost" id="sfShare" type="button">Στείλε το σχέδιο</button>
+        </div>
+        <div class="row" style="margin-top:8px"><button class="btn danger" id="sfSos" type="button">Στείλε SOS με τη θέση μου</button></div>
+      </div>
+      <p class="note" id="sfSrv"></p>
+      <p class="note" id="sfMsg" role="status"></p>
+    </div>
+
     <div class="card hero2" id="liveBox">
       <div class="h2top">
         <div><div class="label">Καιρός από την τοποθεσία σου</div><div class="note" id="liveSub"></div></div>
@@ -109,36 +187,6 @@
       </details>
     </div>
 
-    <div class="card" id="safeCard">
-      <h3>Ασφάλεια εξόδου</h3>
-      <div id="safeIdle">
-        <p class="note">Πες σε κάποιον πού πας και πότε γυρίζεις. Αν δεν γυρίσεις στην ώρα, η εφαρμογή σου θυμίζει και ετοιμάζει με ένα πάτημα το μήνυμα με την τελευταία θέση σου.</p>
-        <label class="f">Όνομα επαφής<input type="text" id="sfName" maxlength="40" autocomplete="off"></label>
-        <label class="f">Τηλέφωνο επαφής (με κωδικό χώρας)<input type="tel" id="sfPhone" placeholder="+357…" inputmode="tel" autocomplete="off"></label>
-        <label class="f">Email επαφής (αυτόματη ειδοποίηση)<input type="email" id="sfEmail" maxlength="80" autocomplete="off" inputmode="email"></label>
-        <div id="sfTgBox" hidden>
-          <div class="label">Telegram επαφής (αυτόματη ειδοποίηση, δωρεάν)</div>
-          <div class="row"><button class="btn ghost sm" id="sfTgLink" type="button">Στείλε σύνδεσμο σύνδεσης</button></div>
-          <p class="note" id="sfTgState"></p>
-        </div>
-        <label class="f">Πού πας<input type="text" id="sfRoute" maxlength="120" placeholder="π.χ. Λατσί, ύφαλος βόρεια του φάρου"></label>
-        <label class="f">Ώρα επιστροφής<input type="time" id="sfTime"></label>
-        <div class="row"><button class="btn" id="sfStart" type="button">Ξεκινώ</button></div>
-      </div>
-      <div id="safeActive" hidden>
-        <p><b id="sfInfo"></b></p>
-        <p class="note" id="sfLast"></p>
-        <div class="row">
-          <button class="btn" id="sfBack" type="button">Γύρισα ασφαλής</button>
-          <button class="btn ghost" id="sfExt" type="button">+30 λεπτά</button>
-          <button class="btn ghost" id="sfShare" type="button">Στείλε το σχέδιο</button>
-        </div>
-        <div class="row" style="margin-top:8px"><button class="btn danger" id="sfSos" type="button">Στείλε SOS με τη θέση μου</button></div>
-      </div>
-      <p class="note" id="sfSrv"></p>
-      <p class="note" id="sfMsg" role="status"></p>
-    </div>
-
     <div class="card" id="factorsCard">
       <h3>Γιατί αυτός ο βαθμός</h3>
       <div class="factors" id="factors"></div>
@@ -155,12 +203,6 @@
     <div class="card" id="bestCard">
       <h3>Πού να πας τώρα</h3>
       <div id="bestBody"></div>
-    </div>
-
-    <div class="card" id="seaCard">
-      <h3>Θάλασσα και ρεύμα</h3>
-      <div class="tiles" id="seaTiles"></div>
-      <p class="note" id="seaNote" style="margin:8px 0 0"></p>
     </div>
 
     <div class="card" id="fcCard">
@@ -187,20 +229,6 @@
       <div id="recoBody"></div>
     </div>
 
-    <div class="card skycard">
-      <h3>Ουρανός</h3>
-      <div class="moonrow">
-        <svg id="moonSvg" width="92" height="92" viewBox="-24 -24 48 48" aria-hidden="true" class="moonsvg"></svg>
-        <div>
-          <h3 id="moonName" style="margin:0"></h3>
-          <div class="muted" id="moonSub"></div>
-          <div class="illum"><i id="illumBar"></i></div>
-          <div class="note" id="moonNext" style="margin-top:6px"></div>
-        </div>
-      </div>
-      <svg id="sunArc" viewBox="0 0 320 120" class="sunarc" aria-hidden="true"></svg>
-      <div class="times mono" id="sunTimes" style="margin-top:8px"></div>
-    </div>
     <p class="note">Καιρός και κύμα: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo.com</a> (θαλάσσια δεδομένα: DWD). Ενδεικτικές τιμές, όχι επίσημη πρόγνωση.</p>
   </section>
 

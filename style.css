@@ -35,7 +35,8 @@ body{
   padding-block:0 96px;
 }
 .wrap{max-width:720px;margin:0 auto}
-header.top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-block:18px 10px;border-bottom:2px solid var(--ink)}
+header.top{display:flex;flex-direction:column;gap:8px;padding-block:18px 10px;border-bottom:2px solid var(--ink)}
+header.top .toprow{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .brand{font-family:var(--font-display);font-weight:700;font-size:32px;letter-spacing:.06em;text-transform:uppercase;line-height:1}
 .sub{font-family:var(--font-mono);font-size:12px;color:var(--muted);text-align:right}
 h2{font-family:var(--font-display);font-weight:600;font-size:22px;letter-spacing:.05em;text-transform:uppercase;margin:0 0 10px}
@@ -52,7 +53,7 @@ section.tab{display:flex;flex-direction:column;gap:16px;padding-block:16px}
 @media (max-width:420px){.grid2.stack{grid-template-columns:1fr}}
 label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
 input,select,textarea,button{font:inherit;color:inherit}
-input[type=text],input[type=number],input[type=date],select,textarea{
+input[type=text],input[type=number],input[type=date],input[type=tel],input[type=email],input[type=time],input[type=password],select,textarea{
   width:100%;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:8px 10px;color:var(--ink)
 }
 textarea{resize:vertical;min-height:64px}
@@ -88,10 +89,10 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .map .spotlbl{fill:var(--ink);font-weight:500}
 .map .pend{fill:none;stroke:var(--accent);stroke-width:2}
 .list{display:flex;flex-direction:column;gap:8px}
-.item{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:6px}
+.item{display:grid;grid-template-columns:minmax(0,1fr);gap:4px 10px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:6px}
 .item.sel{border-color:var(--accent)}
 .item .meta{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
-.item .acts{display:flex;gap:6px;align-items:flex-start}
+.item .acts{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start;margin-top:6px}
 .empty{border:1px dashed var(--line);border-radius:6px;padding:16px;color:var(--muted);text-align:left}
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .stats b{display:block;font-family:var(--font-display);font-size:30px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums}
@@ -252,3 +253,23 @@ html.gated #profile{display:none}
 .trdet .tr{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-top:1px dashed var(--line)}
 .minibars{display:flex;align-items:flex-end;gap:2px;height:34px;margin:6px 0}
 .minibars i{flex:1;background:var(--sea);border-radius:2px 2px 0 0;min-height:2px;opacity:.85}
+
+/* header strip, session card, bite card */
+.stripwrap{display:flex;gap:8px;align-items:center}
+.strip{display:flex;gap:6px;overflow-x:auto;flex:1;min-width:0;scrollbar-width:none;padding:2px 0}
+.strip::-webkit-scrollbar{display:none}
+.sc{flex:0 0 auto;display:inline-flex;flex-direction:column;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:3px 9px;font-size:12px;line-height:1.25}
+.sc i{font-style:normal;color:var(--muted);font-size:10.5px;letter-spacing:.03em}
+.sc b{font-family:var(--font-mono);font-weight:500;font-size:13px}
+button.sc.more{cursor:pointer;color:var(--accent);font-weight:600;flex:0 0 auto;align-self:stretch;justify-content:center}
+#hdrMore{display:flex;flex-direction:column;gap:12px;max-height:60vh;overflow:auto;padding-top:6px}
+.btn.big{width:100%;padding:14px 16px;font-size:17px}
+.sfhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sfwarn{color:var(--warn)}
+.item .ihead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.item .ititle{font-size:17px}
+.item .when{font-size:12px;color:var(--muted);white-space:nowrap}
+.item .isz{font-weight:600;color:var(--accent);font-size:15px}
+#sessBar{display:flex;align-items:center;gap:10px;background:var(--good);color:#fff;border-radius:8px;padding:7px 10px;margin-top:10px;font-size:13px;font-weight:600}
+#sessBar span{flex:1;cursor:pointer}
+#sessBar .btn{background:#fff;color:#0c2b3a}
