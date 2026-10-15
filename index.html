@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0c2b3a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ψαρόβαρκα">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Ψαρόβαρκα</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">Ψαρόβαρκα</div>
+    <div class="sub">Κύπρος · Μεσόγειος<br><span id="hdrDate"></span></div>
+  </header>
+
+  <!-- ΣΗΜΕΡΑ -->
+  <section class="tab" id="tab-today">
+    <div class="card" id="liveBox">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div class="label">Καιρός από την τοποθεσία σου</div>
+        <button class="btn sm" id="liveRefresh" type="button">Ανανέωση</button>
+      </div>
+      <div id="liveMain" style="font-weight:600;margin:4px 0"></div>
+      <div class="note" id="liveSub"></div>
+    </div>
+    <div class="card">
+      <div class="grid2 stack">
+        <label class="f">Ημέρα εξόδου<input type="date" id="dDate"></label>
+        <label class="f">Πίεση
+          <select id="dPress">
+            <option value="slow">Πέφτει αργά</option>
+            <option value="stable" selected>Σταθερή</option>
+            <option value="rise">Ανεβαίνει</option>
+            <option value="fast">Πέφτει απότομα</option>
+          </select>
+        </label>
+        <label class="f"><span>Άνεμος <b class="mono" id="vWind"></b></span><input type="range" id="dWind" min="0" max="40" step="1" value="8"></label>
+        <label class="f"><span>Κύμα <b class="mono" id="vWave"></b></span><input type="range" id="dWave" min="0" max="3" step="0.1" value="0.4"></label>
+        <label class="f">Ουρανός
+          <select id="dCloud">
+            <option value="clear">Καθαρός</option>
+            <option value="part" selected>Λίγα σύννεφα</option>
+            <option value="over">Συννεφιά</option>
+          </select>
+        </label>
+        <div class="f"><span>Πρόγνωση</span>
+          <span><a href="https://www.windy.com" target="_blank" rel="noopener">Windy</a> · <a href="https://www.windguru.cz" target="_blank" rel="noopener">Windguru</a></span>
+        </div>
+      </div>
+      <p class="note" style="margin:10px 0 0">Ο άνεμος, το κύμα, η πίεση και ο ουρανός έρχονται αυτόματα από την τοποθεσία σου. Μπορείς να τα αλλάξεις με το χέρι για να δεις άλλα σενάρια.</p>
+    </div>
+
+    <div class="card">
+      <div class="hero">
+        <div class="score" id="score">0<small>/100</small></div>
+        <div>
+          <div class="label">Δείκτης δραστηριότητας ψαριών</div>
+          <p id="scoreText" style="margin:2px 0 6px"></p>
+          <span class="pill" id="safePill"></span>
+          <div class="note" id="safeText" style="margin-top:4px"></div>
+        </div>
+      </div>
+      <div class="factors" id="factors"></div>
+    </div>
+
+    <div class="card">
+      <h3>Ώρες της ημέρας</h3>
+      <svg class="chart" id="hourChart" viewBox="0 0 480 150" role="img" aria-label="Δείκτης δραστηριότητας ανά ώρα"></svg>
+      <div class="label" style="margin-top:8px">Καλύτερα παράθυρα</div>
+      <div class="win" id="windows"></div>
+      <p class="note" style="margin:10px 0 0">Ώρες Κύπρου. Βασίζονται σε χαράματα, σούρουπο και θέση της σελήνης. Η σελήνη υπολογίζεται κατά προσέγγιση, με απόκλιση περίπου μίας ώρας.</p>
+    </div>
+
+    <div class="card">
+      <div class="moonrow">
+        <svg id="moonSvg" width="64" height="64" viewBox="-24 -24 48 48" aria-hidden="true"></svg>
+        <div>
+          <h3 id="moonName" style="margin:0"></h3>
+          <div class="muted" id="moonSub"></div>
+        </div>
+      </div>
+      <div class="times mono" id="sunTimes" style="margin-top:12px"></div>
+    </div>
+    <p class="note">Καιρός και κύμα: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo.com</a> (θαλάσσια δεδομένα: DWD). Ενδεικτικές τιμές, όχι επίσημη πρόγνωση.</p>
+  </section>
+
+  <!-- ΧΑΡΤΗΣ -->
+  <section class="tab" id="tab-map" hidden>
+    <div>
+      <h2>Σημεία ψαρέματος</h2>
+      <p class="muted">Πάτα στον χάρτη για να βάλεις νέο σημείο. Τα κενά τετράγωνα είναι λιμάνια και ακρωτήρια για προσανατολισμό.</p>
+    </div>
+    <svg class="map" id="map" viewBox="0 0 820 500" role="img" aria-label="Σχηματικός χάρτης της Κύπρου"></svg>
+    <p class="note" style="margin-top:-8px">Σχηματικός χάρτης για οργάνωση των σημείων σου. Δεν κάνει για ναυσιπλοΐα.</p>
+
+    <form class="card" id="spotForm" hidden>
+      <h3 id="spotFormTitle">Νέο σημείο</h3>
+      <div class="grid2 stack">
+        <label class="f">Όνομα<input type="text" id="sName" required maxlength="60" placeholder="π.χ. Ύφαλος νότια του φάρου"></label>
+        <label class="f">Τύπος
+          <select id="sType">
+            <option>Βράχια / ύφαλος</option><option>Άμμος</option><option>Ναυάγιο</option>
+            <option>Ταμπλά / κατωφλι</option><option>Ρεύμα / ανοιχτά</option><option>Λιμάνι / μώλος</option><option>Άλλο</option>
+          </select>
+        </label>
+        <label class="f">Γεωγραφικό πλάτος<input type="number" id="sLat" step="0.00001" inputmode="decimal" placeholder="34.70000"></label>
+        <label class="f">Γεωγραφικό μήκος<input type="number" id="sLon" step="0.00001" inputmode="decimal" placeholder="33.00000"></label>
+        <label class="f">Βάθος (m)<input type="number" id="sDepth" min="0" max="2000" step="1" inputmode="numeric"></label>
+        <label class="f">Σημειώσεις<textarea id="sNotes" maxlength="400" placeholder="Δόλωμα, ρεύμα, ώρα που δούλεψε"></textarea></label>
+      </div>
+      <div class="err" id="sErr" role="alert"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn acc" type="submit">Αποθήκευση</button>
+        <button class="btn ghost" type="button" id="sCancel">Άκυρο</button>
+      </div>
+    </form>
+    <div><button class="btn" type="button" id="sNew">Νέο σημείο με συντεταγμένες</button></div>
+
+    <div class="list" id="spotList"></div>
+  </section>
+
+  <!-- ΗΜΕΡΟΛΟΓΙΟ -->
+  <section class="tab" id="tab-log" hidden>
+    <div><h2>Ημερολόγιο</h2></div>
+    <div class="seg" id="logSeg" role="group" aria-label="Προβολή ημερολογίου">
+      <button type="button" data-l="trips" aria-pressed="true">Έξοδοι</button>
+      <button type="button" data-l="bites" aria-pressed="false">Τσιμπήματα</button>
+      <button type="button" data-l="stats" aria-pressed="false">Στατιστικά</button>
+    </div>
+    <div class="col" id="l-trips">
+    <div class="card stats" id="stats"></div>
+
+    <form class="card" id="tripForm">
+      <h3>Νέα έξοδος</h3>
+      <div class="grid2 stack">
+        <label class="f">Ημερομηνία<input type="date" id="tDate" required></label>
+        <label class="f">Σημείο<input type="text" id="tSpot" list="spotNames" maxlength="60" placeholder="Επίλεξε ή γράψε"><datalist id="spotNames"></datalist></label>
+        <label class="f">Τεχνική
+          <select id="tTech"><option>Βυθού</option><option>Jigging</option><option>Τρόλινγκ</option><option>Spinning</option><option>Ζωντανό δόλωμα</option><option>Άλλο</option></select>
+        </label>
+        <label class="f">Είδη<input type="text" id="tSpecies" maxlength="80" placeholder="π.χ. σαργός, λιθρίνι"></label>
+        <label class="f">Ψάρια (τεμάχια)<input type="number" id="tCount" min="0" step="1" inputmode="numeric" value="0"></label>
+        <label class="f">Συνολικό βάρος (kg)<input type="number" id="tKg" min="0" step="0.1" inputmode="decimal" value="0"></label>
+      </div>
+      <label class="f" style="margin-top:12px">Σημειώσεις<textarea id="tNotes" maxlength="500" placeholder="Δόλωμα, άνεμος, ώρες, τι δούλεψε"></textarea></label>
+      <div class="row" style="margin-top:10px"><button class="btn acc" type="submit">Αποθήκευση εξόδου</button></div>
+    </form>
+
+    <div class="list" id="tripList"></div>
+    </div>
+
+    <div class="col" id="l-bites" hidden>
+      <form class="card" id="biteForm">
+        <h3>Νέο τσίμπημα</h3>
+        <div class="grid2 stack">
+          <label class="f">Είδος<input type="text" id="bSpecies" list="speciesNames" required maxlength="40" placeholder="π.χ. λαυράκι"><datalist id="speciesNames"></datalist></label>
+          <label class="f">Πότε<input type="datetime-local" id="bWhen" required></label>
+          <label class="f">Δόλωμα ή τεχνητό<input type="text" id="bBait" list="baitNames" maxlength="60" placeholder="π.χ. ζωντανό καλαμάρι, jig 80 g ροζ"><datalist id="baitNames"></datalist></label>
+          <label class="f">Τεχνική
+            <select id="bTech"><option>Βυθού</option><option>Jigging</option><option>Τρόλινγκ</option><option>Spinning</option><option>Ζωντανό δόλωμα</option><option>Άλλο</option></select>
+          </label>
+          <label class="f">Σημείο<select id="bSpot"><option value="">Χωρίς σημείο</option></select></label>
+          <label class="f">Βάθος (m)<input type="number" id="bDepth" min="0" max="2000" step="1" inputmode="numeric"></label>
+          <label class="f">Βάρος (kg)<input type="number" id="bKg" min="0" step="0.1" inputmode="decimal"></label>
+          <label class="f">Πίεση (hPa)<input type="number" id="bPress" min="900" max="1100" step="1" inputmode="numeric"></label>
+        </div>
+        <p class="note" style="margin:10px 0 0">Στην αποθήκευση παίρνονται αυτόματα η τοποθεσία και ο καιρός της στιγμής (άνεμος, κύμα, πίεση, θερμοκρασίες). Η σελήνη υπολογίζεται από την ώρα. Για παλιότερο τσίμπημα ισχύουν οι τιμές της καρτέλας «Σήμερα».</p>
+        <div class="row" style="margin-top:10px"><button class="btn acc" type="submit">Αποθήκευση τσιμπήματος</button></div>
+      </form>
+      <div class="list" id="biteList"></div>
+    </div>
+
+    <div class="col" id="l-stats" hidden>
+      <label class="f">Είδος<select id="stSpecies"><option value="">Όλα τα είδη</option></select></label>
+      <div class="col" id="stBody"></div>
+    </div>
+
+    <div class="card">
+      <h3>Αντίγραφο ασφαλείας</h3>
+      <p class="note">Τα δεδομένα μένουν σε αυτή τη συσκευή. Κάνε εξαγωγή κάθε τόσο και πριν αλλάξεις κινητό.</p>
+      <div class="row">
+        <button class="btn sm" id="expBtn" type="button">Εξαγωγή</button>
+        <label class="btn sm ghost" style="cursor:pointer">Εισαγωγή<input type="file" id="impFile" accept="application/json,.json" hidden></label>
+      </div>
+      <div class="note" id="impMsg" style="margin-top:6px"></div>
+    </div>
+  </section>
+
+  <!-- ΟΔΗΓΟΣ -->
+  <section class="tab" id="tab-guide" hidden>
+    <div><h2>Οδηγός</h2></div>
+    <div class="seg" role="group" aria-label="Ενότητα οδηγού">
+      <button type="button" data-g="species" aria-pressed="true">Είδη</button>
+      <button type="button" data-g="tech" aria-pressed="false">Τεχνικές</button>
+      <button type="button" data-g="safety" aria-pressed="false">Ασφάλεια</button>
+    </div>
+    <div id="g-species" class="list">
+      <input type="text" id="spQ" placeholder="Αναζήτηση είδους" aria-label="Αναζήτηση είδους">
+      <div class="list" id="spList"></div>
+    </div>
+    <div id="g-tech" class="list" hidden></div>
+    <div id="g-safety" hidden>
+      <div class="card">
+        <h3>Λίστα πριν την έξοδο</h3>
+        <div id="checks"></div>
+        <p class="note" style="margin:10px 0 0">Γενική λίστα. Έλεγξε τις υποχρεώσεις που ισχύουν για το σκάφος και την άδεια ψαρέματος σου.</p>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h3>Κανονισμοί</h3>
+        <p>Ελάχιστα μεγέθη, κλειστές περιόδοι, προστατευόμενα είδη και άδειες αλλάζουν. Επιβεβαίωσέ τα πάντα στο Τμήμα Αλιείας και Θαλασσίων Ερευνών πριν κρατήσεις ψάρι.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs" role="tablist" aria-label="Ενότητες">
+  <button role="tab" data-tab="today" aria-selected="true"><svg viewBox="0 0 24 24"><path d="M2 12c3-4 5-4 8 0s5 4 8 0 3-3 4-2"/><path d="M2 18c3-4 5-4 8 0s5 4 8 0 3-3 4-2"/><path d="M12 3v3"/></svg>Σήμερα</button>
+  <button role="tab" data-tab="map" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M12 21s-6-6-6-11a6 6 0 1112 0c0 5-6 11-6 11z"/><circle cx="12" cy="10" r="2"/></svg>Χάρτης</button>
+  <button role="tab" data-tab="log" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3V4z"/><path d="M8 17h11"/></svg>Ημερολόγιο</button>
+  <button role="tab" data-tab="guide" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M3 12c3-5 9-6 13-2l5-3v10l-5-3c-4 4-10 3-13-2z"/><circle cx="8" cy="11" r=".6"/></svg>Οδηγός</button>
+</nav>
+<script src="app.js"></script>
+</body>
+</html>
