@@ -1,7 +1,7 @@
 // Network first for the app's own files so updates arrive at once; cache is the offline fallback.
 // Weather APIs and fonts are cross-origin and always go straight to the network.
-const V = 'psarovarka-v1';
-const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
+const V = 'psarovarka-v3';
+const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'species.js', 'cy100.js', 'leaflet.js', 'leaflet.css', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });

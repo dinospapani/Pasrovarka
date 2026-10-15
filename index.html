@@ -14,17 +14,18 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="leaflet.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="wrap">
   <header class="top">
     <div class="brand">Ψαρόβαρκα</div>
-    <div class="sub">Κύπρος · Μεσόγειος<br><span id="hdrDate"></span></div>
+    <div class="sub">Όλος ο κόσμος<br><span id="hdrDate"></span></div>
   </header>
 
   <!-- ΣΗΜΕΡΑ -->
-  <section class="tab" id="tab-today">
+  <section class="tab" id="tab-today" hidden>
     <div class="card" id="liveBox">
       <div class="row" style="justify-content:space-between;align-items:center">
         <div class="label">Καιρός από την τοποθεσία σου</div>
@@ -78,7 +79,12 @@
       <svg class="chart" id="hourChart" viewBox="0 0 480 150" role="img" aria-label="Δείκτης δραστηριότητας ανά ώρα"></svg>
       <div class="label" style="margin-top:8px">Καλύτερα παράθυρα</div>
       <div class="win" id="windows"></div>
-      <p class="note" style="margin:10px 0 0">Ώρες Κύπρου. Βασίζονται σε χαράματα, σούρουπο και θέση της σελήνης. Η σελήνη υπολογίζεται κατά προσέγγιση, με απόκλιση περίπου μίας ώρας.</p>
+      <p class="note" style="margin:10px 0 0">Ώρες της τοποθεσίας σου. Βασίζονται σε χαράματα, σούρουπο και θέση της σελήνης. Η σελήνη υπολογίζεται κατά προσέγγιση, με απόκλιση περίπου μίας ώρας.</p>
+    </div>
+
+    <div class="card" id="recoCard" hidden>
+      <h3>Τι να βάλεις τώρα</h3>
+      <div id="recoBody"></div>
     </div>
 
     <div class="card">
@@ -95,13 +101,19 @@
   </section>
 
   <!-- ΧΑΡΤΗΣ -->
-  <section class="tab" id="tab-map" hidden>
-    <div>
-      <h2>Σημεία ψαρέματος</h2>
-      <p class="muted">Πάτα στον χάρτη για να βάλεις νέο σημείο. Τα κενά τετράγωνα είναι λιμάνια και ακρωτήρια για προσανατολισμό.</p>
+  <section class="tab" id="tab-map">
+    <div class="mapbox">
+      <div id="lmap" aria-label="Παγκόσμιος χάρτης"></div>
+      <button class="wx" id="wx" type="button" aria-label="Καιρός, άνοιγμα καρτέλας Σήμερα"></button>
+      <div class="mapbtns">
+        <button class="mbtn" id="bLayer" type="button" aria-label="Δορυφόρος ή χάρτης" title="Δορυφόρος / χάρτης"><svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg></button>
+        <button class="mbtn" id="bSea" type="button" aria-pressed="false" aria-label="Ναυτικά σήματα" title="Ναυτικά σήματα (OpenSeaMap)"><svg viewBox="0 0 24 24"><path d="M12 3v14"/><path d="M12 5l6 5-6 3"/><path d="M5 20c3-3 5-3 7 0s4 3 7 0"/></svg></button>
+        <button class="mbtn" id="bLoc" type="button" aria-label="Η θέση μου" title="Η θέση μου"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
+        <button class="mbtn" id="bSpotPick" type="button" aria-label="Νέο σημείο στον χάρτη" title="Νέο σημείο"><svg viewBox="0 0 24 24"><path d="M12 21s-6-6-6-11a6 6 0 1112 0c0 5-6 11-6 11z"/><path d="M12 7v6M9 10h6"/></svg></button>
+      </div>
+      <div class="maphint" id="mapHint" hidden><span id="mapHintTxt"></span><button class="btn sm ghost" type="button" id="mapHintX">Άκυρο</button></div>
     </div>
-    <svg class="map" id="map" viewBox="0 0 820 500" role="img" aria-label="Σχηματικός χάρτης της Κύπρου"></svg>
-    <p class="note" style="margin-top:-8px">Σχηματικός χάρτης για οργάνωση των σημείων σου. Δεν κάνει για ναυσιπλοΐα.</p>
+    <p class="note" style="margin:-6px 0 0">Δορυφορική εικόνα: Esri. Χάρτης: © OpenStreetMap. Ναυτικά σήματα: OpenSeaMap. Δεν κάνει για ναυσιπλοΐα.</p>
 
     <form class="card" id="spotForm" hidden>
       <h3 id="spotFormTitle">Νέο σημείο</h3>
@@ -124,7 +136,8 @@
         <button class="btn ghost" type="button" id="sCancel">Άκυρο</button>
       </div>
     </form>
-    <div><button class="btn" type="button" id="sNew">Νέο σημείο με συντεταγμένες</button></div>
+    <div class="row"><button class="btn" type="button" id="sNew">Νέο σημείο με συντεταγμένες</button></div>
+    <h2 style="margin:6px 0 0">Σημεία σου</h2>
 
     <div class="list" id="spotList"></div>
   </section>
@@ -160,23 +173,7 @@
     </div>
 
     <div class="col" id="l-bites" hidden>
-      <form class="card" id="biteForm">
-        <h3>Νέο τσίμπημα</h3>
-        <div class="grid2 stack">
-          <label class="f">Είδος<input type="text" id="bSpecies" list="speciesNames" required maxlength="40" placeholder="π.χ. λαυράκι"><datalist id="speciesNames"></datalist></label>
-          <label class="f">Πότε<input type="datetime-local" id="bWhen" required></label>
-          <label class="f">Δόλωμα ή τεχνητό<input type="text" id="bBait" list="baitNames" maxlength="60" placeholder="π.χ. ζωντανό καλαμάρι, jig 80 g ροζ"><datalist id="baitNames"></datalist></label>
-          <label class="f">Τεχνική
-            <select id="bTech"><option>Βυθού</option><option>Jigging</option><option>Τρόλινγκ</option><option>Spinning</option><option>Ζωντανό δόλωμα</option><option>Άλλο</option></select>
-          </label>
-          <label class="f">Σημείο<select id="bSpot"><option value="">Χωρίς σημείο</option></select></label>
-          <label class="f">Βάθος (m)<input type="number" id="bDepth" min="0" max="2000" step="1" inputmode="numeric"></label>
-          <label class="f">Βάρος (kg)<input type="number" id="bKg" min="0" step="0.1" inputmode="decimal"></label>
-          <label class="f">Πίεση (hPa)<input type="number" id="bPress" min="900" max="1100" step="1" inputmode="numeric"></label>
-        </div>
-        <p class="note" style="margin:10px 0 0">Στην αποθήκευση παίρνονται αυτόματα η τοποθεσία και ο καιρός της στιγμής (άνεμος, κύμα, πίεση, θερμοκρασίες). Η σελήνη υπολογίζεται από την ώρα. Για παλιότερο τσίμπημα ισχύουν οι τιμές της καρτέλας «Σήμερα».</p>
-        <div class="row" style="margin-top:10px"><button class="btn acc" type="submit">Αποθήκευση τσιμπήματος</button></div>
-      </form>
+      <button class="btn acc" type="button" id="bNew">+ Νέο τσίμπημα</button>
       <div class="list" id="biteList"></div>
     </div>
 
@@ -187,7 +184,7 @@
 
     <div class="card">
       <h3>Αντίγραφο ασφαλείας</h3>
-      <p class="note">Τα δεδομένα μένουν σε αυτή τη συσκευή. Κάνε εξαγωγή κάθε τόσο και πριν αλλάξεις κινητό.</p>
+      <p class="note">Τα δεδομένα και οι φωτογραφίες μένουν σε αυτή τη συσκευή. Κάνε εξαγωγή κάθε τόσο και πριν αλλάξεις κινητό. Το αρχείο περιέχει και τις φωτογραφίες.</p>
       <div class="row">
         <button class="btn sm" id="expBtn" type="button">Εξαγωγή</button>
         <label class="btn sm ghost" style="cursor:pointer">Εισαγωγή<input type="file" id="impFile" accept="application/json,.json" hidden></label>
@@ -205,8 +202,10 @@
       <button type="button" data-g="safety" aria-pressed="false">Ασφάλεια</button>
     </div>
     <div id="g-species" class="list">
-      <input type="text" id="spQ" placeholder="Αναζήτηση είδους" aria-label="Αναζήτηση είδους">
+      <input type="text" id="spQ" placeholder="Αναζήτηση είδους (ελληνικά, αγγλικά, λατινικά)" aria-label="Αναζήτηση είδους">
+      <div class="note" id="spCount"></div>
       <div class="list" id="spList"></div>
+      <button class="btn ghost" type="button" id="spOnline" hidden>Αναζήτηση online (GBIF)</button>
     </div>
     <div id="g-tech" class="list" hidden></div>
     <div id="g-safety" hidden>
@@ -223,12 +222,55 @@
   </section>
 </div>
 
+<div class="sheet" id="sheet" hidden>
+  <form class="sheet-in" id="biteForm" autocomplete="off">
+    <div class="row" style="justify-content:space-between;align-items:center"><h3 style="margin:0;font-size:18px">Νέο τσίμπημα</h3><button class="btn ghost sm" type="button" id="bClose">Κλείσιμο</button></div>
+    <div class="f" style="position:relative;margin-top:10px">
+      <label for="bSpecies" style="color:var(--muted);font-size:13px">Είδος ψαριού</label>
+      <input type="text" id="bSpecies" required maxlength="60" placeholder="Γράψε ένα όνομα, π.χ. λαβράκι, tuna, Seriola" autocapitalize="none">
+      <div class="sug" id="bSug" hidden></div>
+    </div>
+    <div class="chips" id="bChipsSp"></div>
+    <div class="row" style="margin-top:10px;align-items:center">
+      <label class="btn ghost sm" style="cursor:pointer">📷 Φωτογραφία<input type="file" id="bFile" accept="image/*" hidden></label>
+      <img id="bPrev" class="thumb" alt="Προεπισκόπηση" hidden>
+      <button class="btn ghost sm" type="button" id="bPrevX" hidden>Αφαίρεση</button>
+    </div>
+    <div class="grid2 stack" style="margin-top:10px">
+      <label class="f">Δόλωμα ή τεχνητό<input type="text" id="bBait" maxlength="60" placeholder="π.χ. ζωντανό καλαμάρι"></label>
+      <label class="f">Τεχνική
+        <select id="bTech"><option>Βυθού</option><option>Jigging</option><option>Τρόλινγκ</option><option>Spinning</option><option>Ζωντανό δόλωμα</option><option>Άλλο</option></select>
+      </label>
+      <label class="f">Βάρος (kg)<input type="number" id="bKg" min="0" step="0.1" inputmode="decimal"></label>
+      <label class="f">Μήκος (cm)<input type="number" id="bLen" min="0" step="1" inputmode="numeric"></label>
+      <label class="f">Βάθος (m)<input type="number" id="bDepth" min="0" max="11000" step="1" inputmode="numeric"></label>
+      <label class="f">Πότε<input type="datetime-local" id="bWhen" required></label>
+      <label class="f">Πίεση (hPa)<input type="number" id="bPress" min="850" max="1100" step="1" inputmode="numeric"></label>
+      <label class="f">Θέση
+        <select id="bLocMode"><option value="auto">Η θέση μου (GPS)</option><option value="spot">Αποθηκευμένο σημείο</option><option value="pick">Επιλογή στον χάρτη</option><option value="none">Χωρίς θέση</option></select>
+      </label>
+    </div>
+    <div class="chips" id="bChipsBait"></div>
+    <label class="f" id="bSpotWrap" style="margin-top:10px" hidden>Σημείο<select id="bSpot"><option value="">—</option></select></label>
+    <div id="bPickWrap" style="margin-top:10px" hidden><button class="btn sm" type="button" id="bPickBtn">Διάλεξε στον χάρτη</button> <span class="note" id="bPickTxt"></span></div>
+    <label class="f" style="margin-top:10px">Σημειώσεις<textarea id="bNotes" maxlength="300"></textarea></label>
+    <p class="note" style="margin:8px 0 0">Στην αποθήκευση παίρνονται αυτόματα ο καιρός και η θάλασσα της στιγμής (για παλιότερη ώρα μένουν κενά). Η σελήνη υπολογίζεται από την ώρα.</p>
+    <div class="err" id="bErr" role="alert"></div>
+    <div class="row" style="margin-top:10px"><button class="btn acc" type="submit">Αποθήκευση στον χάρτη</button></div>
+  </form>
+</div>
+<div class="toast" id="toast" hidden></div>
+
 <nav class="tabs" role="tablist" aria-label="Ενότητες">
-  <button role="tab" data-tab="today" aria-selected="true"><svg viewBox="0 0 24 24"><path d="M2 12c3-4 5-4 8 0s5 4 8 0 3-3 4-2"/><path d="M2 18c3-4 5-4 8 0s5 4 8 0 3-3 4-2"/><path d="M12 3v3"/></svg>Σήμερα</button>
-  <button role="tab" data-tab="map" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M12 21s-6-6-6-11a6 6 0 1112 0c0 5-6 11-6 11z"/><circle cx="12" cy="10" r="2"/></svg>Χάρτης</button>
+  <button role="tab" data-tab="map" aria-selected="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>Χάρτης</button>
+  <button role="tab" data-tab="today" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M2 12c3-4 5-4 8 0s5 4 8 0 3-3 4-2"/><path d="M2 18c3-4 5-4 8 0s5 4 8 0 3-3 4-2"/><path d="M12 3v3"/></svg>Σήμερα</button>
+  <button class="fab" id="fab" type="button" aria-label="Νέο τσίμπημα"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
   <button role="tab" data-tab="log" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3V4z"/><path d="M8 17h11"/></svg>Ημερολόγιο</button>
   <button role="tab" data-tab="guide" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M3 12c3-5 9-6 13-2l5-3v10l-5-3c-4 4-10 3-13-2z"/><circle cx="8" cy="11" r=".6"/></svg>Οδηγός</button>
 </nav>
+<script src="leaflet.js"></script>
+<script src="species.js"></script>
+<script src="cy100.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
