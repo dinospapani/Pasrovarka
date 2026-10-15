@@ -122,7 +122,7 @@ nav.tabs{
   padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px));
   padding-bottom:env(safe-area-inset-bottom,0px);z-index:10
 }
-nav.tabs button{flex:1;background:none;border:0;padding:9px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);cursor:pointer;font-size:12px;font-weight:600}
+nav.tabs button{flex:1;min-width:0;background:none;border:0;padding:9px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap}
 nav.tabs button[aria-selected=true]{color:var(--accent);box-shadow:inset 0 2px 0 var(--accent)}
 nav.tabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 @media (prefers-reduced-motion:no-preference){.score{transition:color .2s}}
@@ -273,3 +273,50 @@ button.sc.more{cursor:pointer;color:var(--accent);font-weight:600;flex:0 0 auto;
 #sessBar{display:flex;align-items:center;gap:10px;background:var(--good);color:#fff;border-radius:8px;padding:7px 10px;margin-top:10px;font-size:13px;font-weight:600}
 #sessBar span{flex:1;cursor:pointer}
 #sessBar .btn{background:#fff;color:#0c2b3a}
+
+/* forecast tab */
+.plsearch{display:flex;gap:8px;margin-top:10px}
+.plsearch input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:8px 10px;color:var(--ink)}
+.item.plres{text-align:left;cursor:pointer;background:var(--surface);color:var(--ink)}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.fchead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap}
+.btn.ghost[aria-pressed=true]{border-color:var(--accent);color:var(--accent)}
+.wk{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;align-items:end;height:130px;margin-top:10px}
+.wkc{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%;background:none;border:0;padding:0;cursor:pointer;color:var(--ink)}
+.wkv{font-family:var(--font-mono);font-size:11px}
+.wkbar{display:block;width:70%;border-radius:3px 3px 0 0;background:var(--line);min-height:4px}
+.wkbar.good{background:var(--good)} .wkbar.mid{background:var(--warn)} .wkbar.bad{background:var(--bad)} .wkbar.none{background:var(--line)}
+.wkl{font-size:11px;color:var(--muted)}
+details.fday{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 12px}
+details.fday>summary{display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none}
+details.fday>summary::-webkit-details-marker{display:none}
+.fdi{font-size:24px;line-height:1}
+.fdt{flex:1;min-width:0;display:flex;flex-direction:column}
+.fdt .meta{font-size:12px;color:var(--muted)}
+.ftiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.ft{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.ft i{display:block;font-style:normal;font-size:11px;color:var(--muted)}
+.ft b{font-family:var(--font-mono);font-weight:500;font-size:13px}
+
+/* trip sheet, header button */
+.topr{display:flex;align-items:center;gap:10px}
+.tripbtn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:99px;padding:8px 14px;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap}
+.tripbtn.on{background:var(--good);color:#fff}
+.tripbtn.late{background:var(--bad);color:#fff}
+#tripSheet{position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;overflow:auto}
+#tripSheet[hidden]{display:none}
+#tripSheet .pbox{width:100%;max-width:520px;background:var(--bg);border:1px solid var(--line);border-radius:16px 16px 0 0;padding:14px 14px 24px;max-height:92vh;overflow:auto}
+#tripSheet .pbox>.card{border:0;padding:0;background:transparent}
+.sheethead{display:flex;justify-content:space-between;margin-bottom:6px}
+html.gated #tripSheet,html.gated .tripbtn{display:none}
+.sc.rf{cursor:pointer;color:var(--ink)}
+.sc.rf.spin b{opacity:.4}
+
+.brand{white-space:nowrap;font-size:24px!important;display:flex;align-items:center}
+.brand img{margin-right:6px!important}
+.tripbtn{padding:7px 11px;font-size:13px}
+.topr{gap:8px}
+.sc{padding:3px 7px}
+.sc i{font-size:10px}
+.sc b{font-size:12.5px;white-space:nowrap}
+button.sc.more{padding:3px 8px}

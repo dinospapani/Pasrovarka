@@ -7,7 +7,7 @@ const TZ = 'Asia/Nicosia';
 const hm = iso => new Intl.DateTimeFormat('el-GR', { timeZone: TZ, hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
 const mapLink = (la, lo) => (la != null && lo != null) ? `https://maps.google.com/?q=${(+la).toFixed(5)},${(+lo).toFixed(5)}` : '';
 
-export async function run({ env, fetch: F = fetch, sendMail, log = console.log }) {
+export async function run({ env, fetch: F = fetch, sendMail, log = console.log, PF = null, webpush = null }) {
   const URL_ = env.SUPABASE_URL, KEY = env.SUPABASE_SERVICE_KEY, TG = env.TELEGRAM_BOT_TOKEN;
   if (!URL_ || !KEY) { log('Λείπουν τα SUPABASE_URL / SUPABASE_SERVICE_KEY.'); return { ok: false }; }
   const H = { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' };
@@ -20,7 +20,7 @@ export async function run({ env, fetch: F = fetch, sendMail, log = console.log }
     const r = await F(`https://api.telegram.org/bot${TG}/${method}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({})); if (!j.ok) throw new Error('Telegram ' + (j.description || r.status)); return j.result;
   };
-  const stats = { linked: 0, start: 0, alert: 0, clear: 0, ping: 0, silence: 0, lowbat: 0, ok: 0 };
+  const stats = { linked: 0, start: 0, alert: 0, clear: 0, ping: 0, silence: 0, lowbat: 0, ok: 0, fc: 0 };
   const PING_WAIT_MIN = 15, LOWBAT = 10;
   const patch = (id, o) => sb(`safety_trips?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(o) });
   const contactOf = async uid => { const r = await sb(`safety_contacts?user_id=eq.${uid}&select=*`); return r && r[0]; };
@@ -147,6 +147,27 @@ export async function run({ env, fetch: F = fetch, sendMail, log = console.log }
     await sb(`safety_trips?id=eq.${encodeURIComponent(t.id)}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ done_sent: true }) });
     stats.clear++;
   }
+  // 6) Πρόγνωση: ειδοποιήσεις push για καλές μέρες ψαρέματος στις τοποθεσίες κάθε χρήστη (έλεγχος κάθε ~3 ώρες)
+  if (PF && webpush) {
+    const stale = new Date(Date.now() - 3 * 3600e3).toISOString();
+    let rows = [];
+    try { rows = (await sb(`push_subs?or=(checked_at.is.null,checked_at.lt.${encodeURIComponent(stale)})&select=*`)) || []; }
+    catch (e) { log('push_subs: ' + e.message); }
+    for (const r of rows) {
+      const upd = o => sb(`push_subs?id=eq.${encodeURIComponent(r.id)}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(o) });
+      try {
+        const res = await PF.checkPlaces({ places: r.places || [], threshold: r.threshold || 75, pressure: r.pressure !== false, notified: r.state || {} }, F);
+        if (res.items.length) {
+          try { await webpush.sendNotification(r.sub, JSON.stringify({ title: res.title, body: res.body }), { TTL: 6 * 3600 }); stats.fc++; }
+          catch (e) {
+            if (e.statusCode === 404 || e.statusCode === 410) { await sb(`push_subs?id=eq.${encodeURIComponent(r.id)}`, { method: 'DELETE' }); continue; }
+            log('Push: ' + (e.statusCode || '') + ' ' + e.message); await upd({ checked_at: new Date().toISOString() }); continue;
+          }
+        }
+        await upd({ checked_at: new Date().toISOString(), state: res.notified });
+      } catch (e) { log('Forecast job: ' + e.message); }
+    }
+  }
   log('Safety job: ' + JSON.stringify(stats));
   return { ok: true, stats };
 }
@@ -158,6 +179,15 @@ if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
     const tr = nm.createTransport({ service: 'gmail', auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
     sendMail = o => tr.sendMail({ from: `BiteCast <${process.env.SMTP_USER}>`, ...o });
   }
-  const r = await run({ env: process.env, sendMail });
+  let PF = null, webpush = null;
+  try {
+    const fs = await import('node:fs'); const g = {};
+    new Function('self', fs.readFileSync('forecast.js', 'utf8'))(g); PF = g.PF;
+    if (process.env.VAPID_PUBLIC && process.env.VAPID_PRIVATE) {
+      webpush = (await import('web-push')).default;
+      webpush.setVapidDetails('https://dinospapani.github.io/psarovarka/', process.env.VAPID_PUBLIC, process.env.VAPID_PRIVATE);
+    }
+  } catch (e) { console.log('Πρόγνωση (push) ανενεργή: ' + e.message); PF = null; webpush = null; }
+  const r = await run({ env: process.env, sendMail, PF, webpush });
   if (!r.ok) process.exit(1);
 }

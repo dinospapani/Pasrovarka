@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install nodemailer@6 --no-save
+      - run: npm install nodemailer@6 web-push@3.6.7 --no-save
       - run: node safety-job.mjs
         env:
           SUPABASE_URL: https://sgfohmqwdwtkhtrebnix.supabase.co
@@ -24,3 +24,5 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          VAPID_PUBLIC: BIjAK4nbFMRkUEPqIqCcsbFDDx7pkygkJ_XxCy-guhrJ0t2tX3NgkeeRvPcC_MRwAvtdiV3No0KXKqLhCwI9IwM
+          VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}

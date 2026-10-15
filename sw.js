@@ -1,9 +1,9 @@
 // Network first for the app's own files so updates arrive at once; cache is the offline fallback.
 // Weather APIs and fonts are cross-origin and always go straight to the network.
 importScripts('forecast.js');
-const V = 'psarovarka-v19';
+const V = 'psarovarka-v21';
 const CFG = 'psaro-cfg';
-const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'species.js', 'cy100.js','i18n.js','cloud.js','extras.js','fish-photos.js', 'rules.js', 'zones.js', 'forecast.js', 'leaflet.js', 'leaflet.css', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
+const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'species.js', 'cy100.js','i18n.js','cloud.js','extras.js','forecast-tab.js','fish-photos.js', 'rules.js', 'zones.js', 'forecast.js', 'leaflet.js', 'leaflet.css', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 const cfgUrl = () => new URL('__cfg', self.registration.scope).href;
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -28,12 +28,12 @@ async function writeCfg(cfg) {
 }
 async function runCheck() {
   const cfg = await readCfg();
-  if (!cfg || !cfg.on) return;
+  if (!cfg || !cfg.on || cfg.server) return;
   try {
-    const r = await PF.check(cfg);
-    if (r) {
-      await self.registration.showNotification(r.title, { body: r.body, tag: 'psaro-ideal', icon: 'icon-192.png', badge: 'icon-192.png', data: { url: self.registration.scope } });
-      cfg.last = r.key; await writeCfg(cfg);
+    if (cfg.places && cfg.places.length) {
+      const r = await PF.checkPlaces(cfg);
+      cfg.notified = r.notified; await writeCfg(cfg);
+      if (r.items.length) await self.registration.showNotification(r.title, { body: r.body, tag: 'psaro-ideal', icon: 'icon-192.png', badge: 'icon-192.png', data: { url: self.registration.scope } });
     }
   } catch (e) {}
 }

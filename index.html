@@ -73,11 +73,49 @@
     <div class="row"><button class="btn" id="acLogout" type="button">Αποσύνδεση</button></div>
   </div>
 </div>
+<div id="tripSheet" hidden role="dialog" aria-label="Έξοδος για ψάρεμα">
+  <div class="pbox">
+    <div class="card" id="safeCard">
+      <div class="sheethead"><span></span><button type="button" class="btn ghost sm" id="tripClose">Κλείσιμο</button></div>
+      <div class="sfhead"><h3 id="sfTitle">Έξοδος για ψάρεμα</h3><span class="pill" id="sfBadge" hidden></span></div>
+      <div id="safeIdle">
+        <p class="note">Συμπλήρωσε και πάτα Έναρξη όταν φεύγεις. Η εφαρμογή παρακολουθεί την έξοδό σου και ειδοποιεί αυτόματα την επαφή ασφαλείας σου αν κάτι δεν πάει καλά.</p>
+        <p class="note sfwarn" id="sfNoC" hidden>Δεν έχεις ορίσει επαφή ασφαλείας. <button type="button" class="btn ghost sm" id="sfGoProf">Πρόσθεσέ την στο προφίλ</button></p>
+        <button class="btn acc big" id="sfOpen" type="button" hidden>▶ Έναρξη εξόδου</button>
+        <div id="sfForm">
+          <label class="f">Πού πας (προαιρετικό)<input type="text" id="sfRoute" maxlength="120" placeholder="π.χ. Λατσί, ύφαλος βόρεια του φάρου"></label>
+          <div class="label" style="margin-top:10px">Επιστροφή σε</div>
+          <div class="chips" id="sfDur"><button type="button" class="chip" data-h="2">2 ώρες</button><button type="button" class="chip" data-h="4">4 ώρες</button><button type="button" class="chip" data-h="6">6 ώρες</button><button type="button" class="chip" data-h="8">8 ώρες</button></div>
+          <label class="f" style="margin-top:8px">ή ώρα επιστροφής<input type="time" id="sfTime"></label>
+          <label class="f" style="margin-top:8px">Έλεγχος αν χαθεί η επαφή με το κινητό
+            <select id="sfSil"><option value="0">Χωρίς</option><option value="30">Μετά από 30 λεπτά</option><option value="60" selected>Μετά από 60 λεπτά</option><option value="90">Μετά από 90 λεπτά</option></select>
+          </label>
+          <p class="note" id="sfSilNote"></p>
+          <div class="row" style="margin-top:8px"><button class="btn acc big" id="sfStart" type="button">▶ Έναρξη εξόδου</button></div>
+        </div>
+      </div>
+      <div id="safeActive" hidden>
+        <p><b id="sfInfo"></b></p>
+        <p class="note" id="sfLast"></p>
+        <p class="note" id="sfMon"></p>
+        <p class="note sfwarn" id="sfWx" hidden></p>
+        <div class="row"><button class="btn acc big" id="sfBack" type="button">■ Τέλος εξόδου</button></div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn ghost" id="sfExt" type="button">+30 λεπτά</button>
+          <button class="btn ghost" id="sfShare" type="button">Στείλε το σχέδιο</button>
+        </div>
+        <div class="row" style="margin-top:8px"><button class="btn danger" id="sfSos" type="button">Στείλε SOS με τη θέση μου</button></div>
+      </div>
+      <p class="note" id="sfSrv"></p>
+      <p class="note" id="sfMsg" role="status"></p>
+    </div>
+  </div>
+</div>
 <div class="wrap">
   <header class="top">
     <div class="toprow">
       <div class="brand"><img src="icon-192.png" alt="" width="26" height="26" style="vertical-align:-6px;border-radius:6px;margin-right:8px">BiteCast</div>
-      <button type="button" id="profBtn" class="avatar" aria-label="Προφίλ">?</button>
+      <div class="topr"><button type="button" id="tripBtn" class="tripbtn" aria-label="Έξοδος για ψάρεμα">▶ Έξοδος</button><button type="button" id="profBtn" class="avatar" aria-label="Προφίλ">?</button></div>
     </div>
     <div class="stripwrap"><div class="strip" id="hdrStrip"></div><button type="button" class="sc more" id="hdrToggle" aria-expanded="false" aria-label="Περισσότερες λεπτομέρειες">Όλα ▾</button></div>
     <div id="hdrMore" hidden>
@@ -105,40 +143,6 @@
 
   <!-- ΣΗΜΕΡΑ -->
   <section class="tab" id="tab-today" hidden>
-    <div class="card" id="safeCard">
-      <div class="sfhead"><h3 id="sfTitle">Έξοδος για ψάρεμα</h3><span class="pill" id="sfBadge" hidden></span></div>
-      <div id="safeIdle">
-        <p class="note">Πάτα Έναρξη όταν φεύγεις. Η εφαρμογή παρακολουθεί την έξοδό σου και ειδοποιεί αυτόματα την επαφή ασφαλείας σου αν κάτι δεν πάει καλά.</p>
-        <p class="note sfwarn" id="sfNoC" hidden>Δεν έχεις ορίσει επαφή ασφαλείας. <button type="button" class="btn ghost sm" id="sfGoProf">Πρόσθεσέ την στο προφίλ</button></p>
-        <button class="btn acc big" id="sfOpen" type="button">▶ Έναρξη εξόδου</button>
-        <div id="sfForm" hidden>
-          <label class="f">Πού πας (προαιρετικό)<input type="text" id="sfRoute" maxlength="120" placeholder="π.χ. Λατσί, ύφαλος βόρεια του φάρου"></label>
-          <div class="label" style="margin-top:10px">Επιστροφή σε</div>
-          <div class="chips" id="sfDur"><button type="button" class="chip" data-h="2">2 ώρες</button><button type="button" class="chip" data-h="4">4 ώρες</button><button type="button" class="chip" data-h="6">6 ώρες</button><button type="button" class="chip" data-h="8">8 ώρες</button></div>
-          <label class="f" style="margin-top:8px">ή ώρα επιστροφής<input type="time" id="sfTime"></label>
-          <label class="f" style="margin-top:8px">Έλεγχος αν χαθεί η επαφή με το κινητό
-            <select id="sfSil"><option value="0">Χωρίς</option><option value="30">Μετά από 30 λεπτά</option><option value="60" selected>Μετά από 60 λεπτά</option><option value="90">Μετά από 90 λεπτά</option></select>
-          </label>
-          <p class="note" id="sfSilNote"></p>
-          <div class="row" style="margin-top:8px"><button class="btn" id="sfStart" type="button">Ξεκίνα</button><button class="btn ghost" id="sfCancel" type="button">Άκυρο</button></div>
-        </div>
-      </div>
-      <div id="safeActive" hidden>
-        <p><b id="sfInfo"></b></p>
-        <p class="note" id="sfLast"></p>
-        <p class="note" id="sfMon"></p>
-        <p class="note sfwarn" id="sfWx" hidden></p>
-        <div class="row"><button class="btn acc big" id="sfBack" type="button">■ Τέλος εξόδου</button></div>
-        <div class="row" style="margin-top:8px">
-          <button class="btn ghost" id="sfExt" type="button">+30 λεπτά</button>
-          <button class="btn ghost" id="sfShare" type="button">Στείλε το σχέδιο</button>
-        </div>
-        <div class="row" style="margin-top:8px"><button class="btn danger" id="sfSos" type="button">Στείλε SOS με τη θέση μου</button></div>
-      </div>
-      <p class="note" id="sfSrv"></p>
-      <p class="note" id="sfMsg" role="status"></p>
-    </div>
-
     <div class="card hero2" id="liveBox">
       <div class="h2top">
         <div><div class="label">Καιρός από την τοποθεσία σου</div><div class="note" id="liveSub"></div></div>
@@ -205,31 +209,47 @@
       <div id="bestBody"></div>
     </div>
 
-    <div class="card" id="fcCard">
-      <h3>Πρόγνωση: ιδανικές ώρες (3 ημέρες)</h3>
-      <div id="fcBody" class="list"></div>
-      <div class="note" id="fcNote" style="margin-top:6px"></div>
-    </div>
-    <div class="card" id="ntCard">
-      <h3>Ειδοποιήσεις</h3>
-      <label class="chk" style="border:0"><input type="checkbox" id="ntOn"><label for="ntOn">Ειδοποίησέ με όταν έρχεται ιδανική ώρα</label></label>
-      <label class="f" style="margin-top:8px">Ελάχιστος δείκτης<select id="ntThr"><option value="65">65</option><option value="70">70</option><option value="75" selected>75</option><option value="80">80</option><option value="85">85</option></select></label>
-      <div class="row" style="margin-top:8px"><button class="btn sm ghost" type="button" id="ntTest">Δοκιμαστική ειδοποίηση</button></div>
-      <div class="note" id="ntMsg" style="margin-top:6px"></div>
-      <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
-      <h3>Push από server (GitHub)</h3>
-      <p class="note">Για ειδοποιήσεις που φτάνουν και με κλειστή εφαρμογή. Απαιτεί μία φορά ρύθμιση στο GitHub (δες οδηγίες που σου έδωσα).</p>
-      <div class="row"><button class="btn sm" type="button" id="pushBtn">Δημιουργία κωδικού συσκευής</button><button class="btn sm ghost" type="button" id="pushCopy" hidden>Αντιγραφή</button></div>
-      <textarea id="pushOut" readonly hidden style="margin-top:8px;font-family:var(--font-mono);font-size:11px;min-height:90px"></textarea>
-      <div class="note" id="pushMsg" style="margin-top:6px"></div>
-    </div>
-
     <div class="card" id="recoCard" hidden>
       <h3>Τι να βάλεις τώρα</h3>
       <div id="recoBody"></div>
     </div>
 
     <p class="note">Καιρός και κύμα: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo.com</a> (θαλάσσια δεδομένα: DWD). Ενδεικτικές τιμές, όχι επίσημη πρόγνωση.</p>
+  </section>
+
+  <!-- ΠΡΟΓΝΩΣΗ -->
+  <section class="tab" id="tab-fc" hidden>
+    <h2>Πρόγνωση</h2>
+    <div class="card" id="plCard">
+      <div class="label">Τοποθεσία</div>
+      <div class="chips" id="plChips"></div>
+      <div class="plsearch">
+        <input type="search" id="plQ" maxlength="60" placeholder="Αναζήτηση τοποθεσίας (π.χ. Λεμεσός)" autocomplete="off">
+        <button class="btn sm" id="plGo" type="button">Αναζήτηση</button>
+      </div>
+      <div class="list" id="plRes"></div>
+      <div class="row" style="margin-top:8px"><button class="btn ghost sm" id="plSpots" type="button">Από τα σημεία μου</button></div>
+      <div class="chips" id="plSpotList" hidden></div>
+    </div>
+    <div class="card" id="fcHead">
+      <div class="fchead"><div><h3 id="fcName" style="margin:0"></h3><div class="note" id="fcSub"></div></div>
+        <div class="row" style="gap:6px"><button class="btn sm ghost" id="fcWatch" type="button" aria-pressed="false">🔔 Ειδοποιήσεις</button><button class="btn sm ghost" id="fcRefresh" type="button">Ανανέωση</button></div></div>
+      <p class="note" id="fcBest" style="margin:8px 0 0"></p>
+      <div class="wk" id="fcWeek"></div>
+      <div class="row" style="margin-top:6px"><button class="btn ghost sm" id="plDel" type="button" hidden>Αφαίρεση τοποθεσίας</button></div>
+    </div>
+    <div class="list" id="fcDays"></div>
+    <p class="note" id="fcNote"></p>
+    <div class="card" id="ntCard">
+      <h3>Ειδοποιήσεις για καλές μέρες</h3>
+      <p class="note">Σε ειδοποιεί όταν η πρόγνωση των επόμενων 7 ημερών δείχνει καλή μέρα ψαρέματος στις τοποθεσίες που έχουν 🔔. Κάθε τοποθεσία που αναζητάς προστίθεται αυτόματα.</p>
+      <label class="chk" style="border:0"><input type="checkbox" id="ntOn"><label for="ntOn">Ειδοποίησέ με για καλές μέρες</label></label>
+      <label class="chk" style="border:0"><input type="checkbox" id="ntPress" checked><label for="ntPress">Ειδοποίησέ με και για απότομες αλλαγές πίεσης</label></label>
+      <label class="f" style="margin-top:8px">Ελάχιστος δείκτης<select id="ntThr"><option value="65">65</option><option value="70">70</option><option value="75" selected>75</option><option value="80">80</option><option value="85">85</option></select></label>
+      <div class="row" style="margin-top:8px"><button class="btn sm ghost" type="button" id="ntTest">Δοκιμαστική ειδοποίηση</button></div>
+      <div class="note" id="ntMsg" style="margin-top:6px"></div>
+    </div>
+    <p class="note">Καιρός και κύμα: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo.com</a>. Ενδεικτικό μοντέλο, όχι επίσημη πρόγνωση. Η ακρίβεια μειώνεται μετά τις πρώτες 3 ημέρες.</p>
   </section>
 
   <!-- ΧΑΡΤΗΣ -->
@@ -408,6 +428,7 @@
 <nav class="tabs" role="tablist" aria-label="Ενότητες">
   <button role="tab" data-tab="map" aria-selected="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>Χάρτης</button>
   <button role="tab" data-tab="today" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M2 12c3-4 5-4 8 0s5 4 8 0 3-3 4-2"/><path d="M2 18c3-4 5-4 8 0s5 4 8 0 3-3 4-2"/><path d="M12 3v3"/></svg>Σήμερα</button>
+  <button role="tab" data-tab="fc" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M6 17a4 4 0 010-8 5 5 0 019.6-1A4 4 0 1117 17H6z"/><path d="M9 20l-1 2M13 20l-1 2M17 20l-1 2"/></svg>Πρόγνωση</button>
   <button class="fab" id="fab" type="button" aria-label="Νέο τσίμπημα"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
   <button role="tab" data-tab="log" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3V4z"/><path d="M8 17h11"/></svg>Ημερολόγιο</button>
   <button role="tab" data-tab="guide" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M3 12c3-5 9-6 13-2l5-3v10l-5-3c-4 4-10 3-13-2z"/><circle cx="8" cy="11" r=".6"/></svg>Οδηγός</button>
@@ -423,5 +444,6 @@
 <script src="app.js"></script>
 <script src="cloud.js"></script>
 <script src="extras.js"></script>
+<script src="forecast-tab.js"></script>
 </body>
 </html>
