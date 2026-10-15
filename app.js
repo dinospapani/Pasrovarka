@@ -203,6 +203,31 @@ async function loadPhoto(id,img){
     img.src=u; img.hidden=false;
   }catch(e){}
 }
+/* ---------- Restricted fishing areas ---------- */
+const ZONES=window.ZONES||[];
+function inRing(lat,lon,r){
+  let c=false;
+  for(let i=0,j=r.length-1;i<r.length;j=i++){
+    const yi=r[i][0],xi=r[i][1],yj=r[j][0],xj=r[j][1];
+    if(((yi>lat)!==(yj>lat))&&(lon<(xj-xi)*(lat-yi)/(yj-yi)+xi)) c=!c;
+  }
+  return c;
+}
+function zonesAt(lat,lon){
+  if(lat==null||lon==null) return [];
+  return ZONES.filter(z=>{ let n=0; for(const r of z.p) if(inRing(lat,lon,r)) n++; return n%2===1; });
+}
+let zonesG=null;
+function zoneText(z){ return z.n+': '+z.d; }
+function checkZoneHere(){
+  const w=$('zoneWarn'); if(!w) return;
+  const z=cond&&cond.lat!=null?zonesAt(cond.lat,cond.lon):[];
+  if(z.length){ w.textContent='⚠ Είσαι μέσα σε περιοχή απαγόρευσης. '+z.map(zoneText).join(' | '); w.hidden=false; } else w.hidden=true;
+}
+function showZone(z){
+  switchTab('map'); if(!map) return;
+  map.fitBounds(L.polygon(z.p[0]).getBounds(),{maxZoom:15,padding:[30,30]});
+}
 function initMap(){
   if(typeof L==='undefined'){ $('lmap').textContent='Ο χάρτης δεν φόρτωσε.'; return; }
   const last=lsGet('psaro-view',null), c=cond&&cond.lat!=null?[cond.lat,cond.lon]:null;
@@ -223,6 +248,15 @@ function initMap(){
   $('bLoc').addEventListener('click',async()=>{ const c2=await refreshConditions(); if(c2&&c2.lat!=null) map.flyTo([c2.lat,c2.lon],Math.max(map.getZoom(),12)); });
   $('bSpotPick').addEventListener('click',()=>startPick('spot'));
   $('mapHintX').addEventListener('click',()=>{const was=pick; endPick(); if(was==='bite') openSheet();});
+  zonesG=L.layerGroup();
+  for(const z of ZONES){
+    L.polygon(z.p,{color:'#e02020',weight:2,fillColor:'#e02020',fillOpacity:.22}).bindPopup(()=>h('div',{class:'pop'},h('b',{text:z.n}),h('div',{text:z.d}),h('div',{class:'note',text:'Επιβεβαίωσε στο Cy-FIS και στον νόμο.'}))).addTo(zonesG);
+  }
+  const zOn=lsGet('psaro-zones',true); if(zOn) zonesG.addTo(map); $('bZones').setAttribute('aria-pressed',String(!!zOn));
+  $('bZones').addEventListener('click',()=>{
+    const on=!map.hasLayer(zonesG); if(on) zonesG.addTo(map); else map.removeLayer(zonesG);
+    $('bZones').setAttribute('aria-pressed',String(on)); lsSet('psaro-zones',on);
+  });
   spotsG=L.layerGroup().addTo(map); bitesG=L.layerGroup().addTo(map);
   map.on('moveend',()=>{const p=map.getCenter(); lsSet('psaro-view',{lat:+p.lat.toFixed(4),lon:+p.lng.toFixed(4),z:map.getZoom()});});
   map.on('click',e=>{
@@ -236,6 +270,7 @@ function initMap(){
     L.popup().setLatLng(ll).setContent(box).openOn(map);
   });
   if(cond&&cond.lat!=null) setYou(cond.lat,cond.lon);
+  checkZoneHere();
 }
 function setYou(lat,lon){
   if(!map) return;
@@ -469,7 +504,7 @@ function renderChecks(){
 }
 document.querySelectorAll('#tab-guide .seg button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('#tab-guide .seg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
-  for(const g of ['species','tech','safety']) $('g-'+g).hidden=(g!==b.dataset.g);
+  for(const g of ['species','tech','law','safety']) $('g-'+g).hidden=(g!==b.dataset.g);
 }));
 
 /* ---------- Bites and statistics ---------- */
@@ -502,33 +537,33 @@ function openSheet(){
     sheetFresh=false;
     refreshConditions();
   }
-  renderChips(); syncLoc();
+  renderChips(); syncLoc(); updateLaw();
   $('sheet').hidden=false;
 }
 function closeSheet(){ $('sheet').hidden=true; $('bSug').hidden=true; }
 function resetSheet(){
   $('biteForm').reset(); photoBlob=null; curLatin=''; pickedPt=null; sheetFresh=true;
-  $('bPrev').hidden=true; $('bPrevX').hidden=true; $('bErr').textContent='';
+  $('bPrev').hidden=true; $('bPrevX').hidden=true; $('bAI').hidden=true; $('bAIOut').replaceChildren(); $('bAIMsg').textContent=''; $('bLaw').textContent=''; $('bErr').textContent='';
 }
 $('fab').addEventListener('click',openSheet);
 $('bNew').addEventListener('click',openSheet);
 $('bClose').addEventListener('click',closeSheet);
 $('sheet').addEventListener('click',e=>{ if(e.target===$('sheet')) closeSheet(); });
-$('bLocMode').addEventListener('change',()=>{syncLoc();});
+$('bLocMode').addEventListener('change',()=>{syncLoc();updateLaw();});
 $('bPickBtn').addEventListener('click',()=>{ closeSheet(); startPick('bite'); });
 $('bFile').addEventListener('change',async e=>{
   const f=e.target.files[0]; if(!f) return;
   try{
     photoBlob=await resizeImage(f);
-    $('bPrev').src=URL.createObjectURL(photoBlob); $('bPrev').hidden=false; $('bPrevX').hidden=false;
+    $('bPrev').src=URL.createObjectURL(photoBlob); $('bPrev').hidden=false; $('bPrevX').hidden=false; $('bAI').hidden=false; $('bAIOut').replaceChildren(); $('bAIMsg').textContent='';
   }catch(err){ toast('Η φωτογραφία δεν διαβάστηκε.'); }
   e.target.value='';
 });
-$('bPrevX').addEventListener('click',()=>{photoBlob=null;$('bPrev').hidden=true;$('bPrevX').hidden=true;});
+$('bPrevX').addEventListener('click',()=>{photoBlob=null;$('bPrev').hidden=true;$('bPrevX').hidden=true;$('bAI').hidden=true;$('bAIOut').replaceChildren();$('bAIMsg').textContent='';});
 function renderChips(){
   const bites=Store.get('bites').slice().sort((a,b)=>biteMs(b)-biteMs(a));
   const uniq=(arr,n)=>[...new Set(arr.map(x=>(x||'').trim()).filter(Boolean))].slice(0,n);
-  const fill=(el,items,input)=>{el.replaceChildren(); items.forEach(x=>el.append(h('button',{type:'button',class:'chip',text:x,onclick:()=>{input.value=x; if(input===$('bSpecies')){const m=DB.find(d=>dispName(d)===x); curLatin=m?m.la:(bites.find(b=>b.species===x)||{}).latin||'';}}})));};
+  const fill=(el,items,input)=>{el.replaceChildren(); items.forEach(x=>el.append(h('button',{type:'button',class:'chip',text:x,onclick:()=>{input.value=x; if(input===$('bSpecies')){const m=DB.find(d=>dispName(d)===x); curLatin=m?m.la:(bites.find(b=>b.species===x)||{}).latin||''; updateLaw();}}})));};
   fill($('bChipsSp'),uniq(bites.map(b=>b.species),6),$('bSpecies'));
   fill($('bChipsBait'),uniq(bites.map(b=>b.bait),6),$('bBait'));
 }
@@ -536,7 +571,7 @@ function renderChips(){
 let sugT=null, sugSeq=0;
 function showSug(items){
   const box=$('bSug'); box.replaceChildren();
-  items.forEach(sp=>box.append(h('button',{type:'button',class:'sugi',onclick:()=>{ $('bSpecies').value=dispName(sp); curLatin=sp.la; box.hidden=true; }},h('b',{text:dispName(sp)}),h('span',{class:'lat',text:(sp.el&&sp.en?sp.en+' · ':'')+sp.la}))));
+  items.forEach(sp=>box.append(h('button',{type:'button',class:'sugi',onclick:()=>{ $('bSpecies').value=dispName(sp); curLatin=sp.la; box.hidden=true; updateLaw(); }},h('b',{text:dispName(sp)}),h('span',{class:'lat',text:(sp.el&&sp.en?sp.en+' · ':'')+sp.la}))));
   box.hidden=!items.length;
 }
 $('bSpecies').addEventListener('input',()=>{
@@ -721,7 +756,7 @@ function applyConditions(c){
     c.temp!=null?c.temp.toFixed(0)+'°C αέρας':null,c.sst!=null?c.sst.toFixed(0)+'°C θάλασσα':null,c.press!=null?c.press+' hPa'+(c.ptrend?' · '+PT[c.ptrend].toLowerCase():''):null].filter(Boolean);
   $('liveMain').textContent=parts.join(' · ');
   setLive('Ενημερώθηκε '+(c.date?c.date.split('-').reverse().join('/')+' ':'')+(c.at||'')+' · θέση '+c.lat.toFixed(2)+', '+c.lon.toFixed(2)+(near?' · κοντά σε '+near:''));
-  setYou(c.lat,c.lon); renderWx();
+  setYou(c.lat,c.lon); renderWx(); checkZoneHere(); if(typeof refreshForecast==='function') setTimeout(refreshForecast,0);
   renderToday();
 }
 function renderWx(){
@@ -750,6 +785,207 @@ function refreshConditions(){
   return refreshing;
 }
 $('liveRefresh').addEventListener('click',()=>{refreshConditions();});
+
+/* ---------- Law (Cyprus) ---------- */
+const MIN=window.MIN_SIZES||{};
+function lnk(href,text){return h('a',{href:href,target:'_blank',rel:'noopener',text:text});}
+function lawCard(title,items,src){
+  return h('div',{class:'card'},h('h3',{text:title}),h('ul',{class:'law'},items.map(x=>h('li',{},x))),src?h('div',{class:'note',style:'margin-top:8px'},'Πηγή: ',src):null);
+}
+function renderLaw(){
+  const L=$('g-law'); L.replaceChildren();
+  L.append(h('div',{class:'card'},h('p',{text:'Περίληψη για ερασιτεχνικό ψάρεμα από σκάφος στη Δημοκρατία της Κύπρου, ελεγμένη στις 15/10/2026. Δεν αποτελεί νομική συμβουλή. Οι κανονισμοί αλλάζουν και ισχύει πάντα το κείμενο του νόμου και ό,τι ανακοινώνει το Τμήμα Αλιείας και Θαλασσίων Ερευνών (ΤΑΘΕ). Όπου η πηγή είναι δευτερογενής, το γράφει.'})));
+  L.append(lawCard('Όρια ποσότητας (ανά έξοδο και ανά 24ωρο)',[
+    'Από σκάφος: 10 kg συνολικά, ή 5 kg και 1 ψάρι οποιουδήποτε βάρους, ανεξάρτητα από τον αριθμό των αδειούχων.',
+    'Μακρύπτερος τόνος (Thunnus alalunga) από σκάφος: 3 ψάρια ανά αδειούχο επιβαίνοντα, μέχρι 9 ανά σκάφος. Μαζί με άλλα είδη: 3 μακρύπτερους και 5 kg άλλων ειδών ανά σκάφος.',
+    'Ψαροντούφεκο: 5 kg και 1 ψάρι οποιουδήποτε βάρους.',
+    'Το ΤΑΘΕ μπορεί να αλλάξει το όριο μόνο για διαγωνισμούς ή τουριστική δραστηριότητα, και μόνο για μακρύπτερο τόνο και λαγοκέφαλο.'
+  ],['ΚΔΠ 416/2019, Κανονισμός 17Β(1)(ε) · ',lnk('https://www.cylaw.org/KDP/data/2019_1_416.pdf','κείμενο (cylaw)')]));
+  L.append(lawCard('Άδεια και εργαλεία',[
+    'Ερασιτεχνική αλιεία με σκάφος απαγορεύεται χωρίς άδεια του ΤΑΘΕ. Η άδεια είναι ατομική και δεν δένεται με συγκεκριμένο σκάφος. Τέλος 35 € (το ίδιο και για ψαροντούφεκο).',
+    'Κάθε εργαλείο ή μέθοδος που δεν προβλέπεται από τον νόμο και τους όρους της άδειας απαγορεύεται.',
+    'Ψαροπαγίδες: έως 4 στον βυθό, χωρίς σκάφος, εκτός προστατευόμενων περιοχών και περιοχών λουομένων, με ειδική γραπτή άδεια.',
+    'Ψαροντούφεκο: άνω των 15 ετών με άδεια (15–17 με συνοδεία ενήλικου κατόχου). Όχι από τη δύση ως την ανατολή του ηλίου, όχι με φωτεινή πηγή, όχι με αναπνευστική συσκευή εκτός των περιοχών του Παραρτήματος VI.',
+    'Οι έξοδοι πρέπει να καταγράφονται στην εφαρμογή Cy-FIS του ΤΑΘΕ (δευτερογενής πηγή).'
+  ],['ΚΔΠ 416/2019, Κανονισμοί 17, 17Α, 19Α, Παράρτημα IV · ',lnk('https://www.gov.cy/en/service/issue-of-fishing-licence/','gov.cy: άδεια αλιείας'),' · ',lnk('https://cyprus-faq.com/en/south/entertainment/pravila-rybnoi-lovli-na-kipre/','cyprus-faq.com (δευτ.)')]));
+  L.append(lawCard('Χειρισμός αλιεύματος',[
+    'Απαγορεύεται η πώληση ή εμπορική εκμετάλλευση ερασιτεχνικού αλιεύματος.',
+    'Δεν επιτρέπεται να κρατάς ψάρι χωρίς κομμένο το πάνω τμήμα του ουραίου πτερυγίου.',
+    'Στο σκάφος επιτρέπεται μόνο εκσπλάχνιση και απολέπιση. Όχι φιλεταρισμός, αποκεφαλισμός ή άλλος καθαρισμός.',
+    'Διαγωνισμοί και τουριστική δραστηριότητα απαιτούν γραπτή άδεια.'
+  ],['ΚΔΠ 416/2019, Κανονισμός 17Β']));
+  const rows=Object.keys(MIN).map(la=>{const c=CYL[la.toLowerCase()]; return [c?c.n:la,la,MIN[la]];}).sort((a,b)=>a[0].localeCompare(b[0],'el'));
+  L.append(h('div',{class:'card'},h('h3',{text:'Ελάχιστα μεγέθη (ολικό μήκος)'}),
+    h('div',{class:'bar',style:'grid-template-columns:1fr auto;font-weight:600'},h('span',{text:'Είδος'}),h('span',{text:'cm'})),
+    rows.map(r=>h('div',{class:'bar',style:'grid-template-columns:1fr auto'},h('span',{},r[0],' ',h('i',{class:'muted',text:r[1]})),h('span',{class:'n',text:String(r[2])}))),
+    h('div',{class:'note',style:'margin-top:8px'},'Πηγή: βιβλίο «Τα 100 σημαντικότερα είδη ψαριών των κυπριακών θαλασσών» του ΤΑΘΕ (περίπου 2012), που παραπέμπει σε ευρωπαϊκούς κανονισμούς. Δεν ελέγχθηκε με τον ισχύοντα κατάλογο της ΕΕ (Καν. 2019/1241), άρα επιβεβαίωσε πριν κρατήσεις οριακό ψάρι. Για όσα είδη δεν αναγράφονται, ρώτα το ΤΑΘΕ.')));
+  L.append(lawCard('Ειδικά είδη (δευτερογενής πηγή, επιβεβαίωσε)',[
+    'Κόκκινος τόνος (Thunnus thynnus): απαγορεύεται η αλιεία, η διατήρηση και η εκφόρτωση όλο τον χρόνο. Ελευθέρωση αμέσως.',
+    'Μακρύπτερος τόνος: κλειστή περίοδος 1–31 Μαρτίου και 1 Οκτωβρίου–30 Νοεμβρίου, και ως τυχαίο αλίευμα.',
+    'Ξιφίας, καρχαρίες και σελάχια: δεν επιτρέπονται ως ερασιτεχνικό αλίευμα. Ελευθέρωση.',
+    'Ένας ορφός (ή συναγρίδα) το πολύ ανά έξοδο ή 24ωρο, ανά αλιέα ή σκάφος.',
+    'Λαγοκέφαλος (Lagocephalus sceleratus): τοξικός, δεν τρώγεται, δεν δίνεται και δεν πωλείται (ΤΑΘΕ).'
+  ],[lnk('https://cyprus-faq.com/en/south/entertainment/pravila-rybnoi-lovli-na-kipre/','cyprus-faq.com'),' · βιβλίο ΤΑΘΕ για τον λαγοκέφαλο']));
+  L.append(h('div',{class:'card'},h('h3',{text:'Περιοχές απαγόρευσης ('+ZONES.length+')'}),
+    h('p',{class:'note',text:'Τα όρια είναι από το αρχείο «Fishing_restricted_areas» (KMZ) του Cy-FIS και φαίνονται κόκκινα στον χάρτη. Οι ημερομηνίες ισχύος του αρχείου δεν είναι γνωστές και τα διατάγματα αλλάζουν. Πριν ψαρέψεις κοντά σε προστατευόμενη περιοχή, έλεγξε το Cy-FIS και τον νόμο που αναγράφεται.'}),
+    ZONES.slice().sort((x,y)=>x.n.localeCompare(y.n,'el')).map(z=>h('div',{class:'item',style:'margin-top:8px'},h('div',{},h('b',{text:z.n}),h('div',{class:'meta',text:z.d})),h('div',{class:'acts'},h('button',{class:'btn ghost sm',type:'button',text:'Χάρτης',onclick:()=>showZone(z)})))),
+    h('div',{class:'note',style:'margin-top:8px'},lnk('https://apps.apple.com/app/id1510935028','Cy-FIS (iPhone)'),' · ',lnk('https://play.google.com/store/apps/details?id=cyprus.dfmr.fishing','Cy-FIS (Android)'))));
+  L.append(lawCard('Άλλοι περιορισμοί',[
+    'Περιοχές λουομένων: όχι ψαροπαγίδες ή δίχτυα.',
+    'Έξι θαλάσσιες προστατευόμενες περιοχές με τεχνητούς υφάλους: καμία αλιεία (δευτερογενής πηγή, ελέγξτε με τη λίστα πάνω).',
+    'Μπορεί να υπάρχουν και άλλοι μόνιμοι ή εποχικοί περιορισμοί που δεν είναι στο αρχείο.'
+  ],null));
+  L.append(h('div',{class:'card'},h('h3',{text:'Πηγές'}),h('ul',{class:'law'},
+    [['https://www.cylaw.org/KDP/data/2019_1_416.pdf','Κ.Δ.Π. 416/2019, Αλιεία (Τροποποιητικοί) Κανονισμοί'],['https://www.cylaw.org/KDP/data/2024_1_256.pdf','Κ.Δ.Π. 256/2024, Αλιεία (Τροποποιητικοί) Κανονισμοί'],['https://www.gov.cy/en/service/issue-of-fishing-licence/','gov.cy: άδεια ερασιτεχνικής αλιείας'],['https://www.gov.cy/moa-dfmr/en/','Τμήμα Αλιείας και Θαλασσίων Ερευνών']].map(x=>h('li',{},lnk(x[0],x[1]))))));
+}
+function latinForName(name){
+  if(curLatin) return curLatin;
+  const n=strip(name).trim(); if(!n) return '';
+  const m=DB.find(d=>strip(dispName(d))===n||(d.el&&strip(d.el)===n)||(d.alt&&strip(d.alt).split(' ').join(' ').includes(n)&&n.length>3));
+  return m?m.la:'';
+}
+function updateLaw(){
+  const out=$('bLaw'); const msgs=[];
+  const lat=latinForName($('bSpecies').value), len=+$('bLen').value||0, mn=lat&&MIN[lat];
+  if(mn&&len&&len<mn) msgs.push('⚠ Κάτω από το ελάχιστο μέγεθος ('+mn+' cm). Ελευθέρωσέ το.');
+  else if(mn) msgs.push('Ελάχιστο μέγεθος: '+mn+' cm.');
+  if(lat==='Thunnus thynnus') msgs.push('⚠ Ο κόκκινος τόνος απαγορεύεται να κρατηθεί. Ελευθέρωσέ τον (δευτερογενής πηγή).');
+  if(lat==='Xiphias gladius') msgs.push('⚠ Ο ξιφίας δεν επιτρέπεται ως ερασιτεχνικό αλίευμα (δευτερογενής πηγή).');
+  if(lat==='Lagocephalus sceleratus') msgs.push('⚠ Τοξικός. Μην τον φας και μην τον δώσεις.');
+  if(lat==='Thunnus alalunga'){ const mo=+(($('bWhen').value||'').slice(5,7)); if(mo===3||mo===10||mo===11) msgs.push('⚠ Πιθανή κλειστή περίοδος μακρύπτερου (1–31 Μαρτίου, 1 Οκτ.–30 Νοεμβρίου). Έλεγξε με το ΤΑΘΕ.'); }
+  { const m=$('bLocMode').value; let p=null;
+    if(m==='auto'&&cond&&cond.lat!=null) p=[cond.lat,cond.lon];
+    else if(m==='pick'&&pickedPt) p=[pickedPt.lat,pickedPt.lon];
+    else if(m==='spot'){ const sp=Store.get('spots').find(x=>x.id===$('bSpot').value); if(sp) p=[sp.lat,sp.lon]; }
+    if(p){ const zz=zonesAt(p[0],p[1]); if(zz.length) msgs.push('⚠ Η θέση είναι μέσα σε περιοχή απαγόρευσης: '+zz.map(zoneText).join(' | ')); } }
+  let kg=+$('bKg').value||0; const since=Date.now()-86400000;
+  for(const b of Store.get('bites')) if(b.kg&&biteMs(b)>=since) kg+=+b.kg;
+  if(kg>0) msgs.push('Καταγεγραμμένα τις τελευταίες 24 ώρες: '+kg.toFixed(1)+' kg. Όριο από σκάφος: 10 kg, ή 5 kg και 1 ψάρι.'+(kg>10?' ⚠ Πάνω από το όριο, αν τα κρατάς όλα.':''));
+  out.textContent=msgs.join(' ');
+}
+$('biteForm').addEventListener('input',updateLaw);
+
+/* ---------- AI fish identification (own API key) ---------- */
+const AI_PROMPT='You are helping an angler in Cyprus (eastern Mediterranean). Identify the fish in the photo. Reply with ONLY a JSON array of up to 3 candidates, best first: [{"el":"Greek common name or null","en":"English common name","latin":"Latin name","confidence":0.0-1.0}]. If the photo does not show a fish, reply []. Be honest about uncertainty; do not guess a rare species when a common look-alike fits.';
+async function identifyFish(blob){
+  const key=lsGet('psaro-akey',''); if(!key) throw new Error('nokey');
+  const b64=(await blobToDataUrl(blob)).split(',')[1];
+  const ac=new AbortController(), tm=setTimeout(()=>ac.abort(),45000);
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal:ac.signal,
+      headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-5-5',max_tokens:600,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},{type:'text',text:AI_PROMPT}]}]})});
+    if(!r.ok){ const e=new Error('http'); e.status=r.status; throw e; }
+    const j=await r.json();
+    const txt=(j.content||[]).filter(x=>x.type==='text').map(x=>x.text).join('');
+    const m=/\[[\s\S]*\]/.exec(txt); if(!m) throw new Error('parse');
+    const arr=JSON.parse(m[0]);
+    return Array.isArray(arr)?arr.filter(x=>x&&x.latin).slice(0,3):[];
+  } finally { clearTimeout(tm); }
+}
+$('bAI').addEventListener('click',async()=>{
+  const out=$('bAIOut'), msg=$('bAIMsg'), b=$('bAI'); out.replaceChildren(); msg.textContent='';
+  if(!photoBlob) return;
+  if(!lsGet('psaro-akey','')){ msg.textContent='Βάλε πρώτα το κλειδί API στο Ημερολόγιο → Αναγνώριση ψαριού με AI.'; return; }
+  b.disabled=true; b.textContent='Αναγνώριση…';
+  try{
+    const res=await identifyFish(photoBlob);
+    if(!res.length) msg.textContent='Δεν αναγνωρίστηκε ψάρι στη φωτογραφία.';
+    else{
+      res.forEach(x=>{
+        const row=DB.find(d=>d.la.toLowerCase()===String(x.latin).toLowerCase());
+        const name=row?dispName(row):(x.el||x.en||x.latin);
+        const pct=typeof x.confidence==='number'?' '+Math.round(x.confidence*100)+'%':'';
+        out.append(h('button',{type:'button',class:'chip',text:name+' ('+x.latin+')'+pct,onclick:()=>{$('bSpecies').value=name;curLatin=x.latin;updateLaw();}}));
+      });
+      msg.textContent='Πρόταση AI, μπορεί να είναι λάθος. Μη βασίζεσαι σε αυτήν για το αν επιτρέπεται ή αν τρώγεται ένα ψάρι.';
+    }
+  }catch(e){
+    msg.textContent=e.message==='nokey'?'Λείπει το κλειδί API.':e.status===401?'Το κλειδί API δεν έγινε δεκτό.':e.status===429||e.status===402?'Όριο χρήσης ή υπόλοιπο λογαριασμού: έλεγξε το console.anthropic.com.':e.name==='AbortError'?'Η αναγνώριση άργησε. Δοκίμασε ξανά.':'Η αναγνώριση δεν δούλεψε (σύνδεση, κλειδί ή περιορισμός του browser).';
+  }
+  b.disabled=false; b.textContent='🔍 Αναγνώριση με AI';
+});
+$('aiSave').addEventListener('click',()=>{
+  const k=$('aiKey').value.trim();
+  if(!/^sk-ant-/.test(k)){ $('aiMsg').textContent='Το κλειδί πρέπει να ξεκινά με sk-ant-.'; return; }
+  lsSet('psaro-akey',k); $('aiKey').value=''; $('aiMsg').textContent='Το κλειδί αποθηκεύτηκε σε αυτή τη συσκευή.';
+});
+$('aiClear').addEventListener('click',()=>{ try{localStorage.removeItem('psaro-akey');}catch(e){} $('aiMsg').textContent='Το κλειδί διαγράφηκε.'; });
+if(lsGet('psaro-akey','')) $('aiMsg').textContent='Υπάρχει αποθηκευμένο κλειδί.';
+
+/* ---------- Forecast and notifications ---------- */
+const nt=lsGet('psaro-notify',{on:false,threshold:75,last:null});
+const cfgUrlPage=()=>new URL('__cfg',location.href).href;
+async function saveCfg(){
+  const cfg={on:nt.on,threshold:nt.threshold,last:nt.last,lat:cond&&cond.lat!=null?cond.lat:null,lon:cond&&cond.lon!=null?cond.lon:null};
+  lsSet('psaro-notify',nt);
+  try{ const c=await caches.open('psaro-cfg'); await c.put(cfgUrlPage(),new Response(JSON.stringify(cfg))); }catch(e){}
+}
+const DAYN=['Κυριακή','Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο'];
+function renderForecast(fc,note){
+  const B=$('fcBody'); B.replaceChildren();
+  if(!fc){ B.append(h('div',{class:'empty',text:note||'Δεν υπάρχει πρόγνωση ακόμα.'})); return; }
+  const today=fc.nowLocal.slice(0,10);
+  for(const d of fc.days){
+    const dt=new Date(d.date+'T12:00:00Z'), lab=(d.date===today?'Σήμερα':DAYN[dt.getUTCDay()])+' '+d.date.slice(8)+'/'+d.date.slice(5,7);
+    const good=d.safe&&d.best>=75, mid=d.safe&&d.best>=60;
+    const row=h('div',{class:'item'},
+      h('div',{},h('b',{text:lab}),
+        h('div',{class:'meta',text:(d.safe&&d.win?('Καλύτερη ώρα '+pad(d.win.s)+':00–'+pad((d.win.e+1)%24)+':00 · άνεμος '+Math.round(d.avgWind)+' kn'+(d.avgWave!=null?' · κύμα '+d.avgWave.toFixed(1)+' m':'')):(d.why==='night'?'Δεν απομένει φως σήμερα':'Δεν υπάρχει ασφαλές παράθυρο (πολύς άνεμος ή κύμα)'))})),
+      h('span',{class:'pill '+(good?'good':mid?'warn':'bad'),text:d.safe?String(d.best):'–'}));
+    B.append(row);
+  }
+  $('fcNote').textContent='Ώρες τοπικές, μόνο μέρα (από μία ώρα πριν την ανατολή ως μία ώρα μετά τη δύση) και με άνεμο ως 14 kn και κύμα ως 0,9 m. Ενδεικτικό μοντέλο, όχι επίσημη πρόγνωση.';
+}
+let fcBusy=false;
+async function refreshForecast(){
+  if(fcBusy) return; fcBusy=true;
+  try{
+    const pos=cond&&cond.lat!=null?cond:null; if(!pos){ renderForecast(lsGet('psaro-fc',null),'Χρειάζεται θέση για πρόγνωση.'); return; }
+    const fc=await PF.getForecast(pos.lat,pos.lon); lsSet('psaro-fc',fc); renderForecast(fc);
+    if(nt.on&&Notification.permission==='granted'){
+      const f=PF.findIdeal(fc,nt.threshold);
+      if(f&&f.key!==nt.last){ const m=PF.message(f); nt.last=f.key; await saveCfg(); showNote(m.title,m.body); }
+    }
+  }catch(e){ renderForecast(lsGet('psaro-fc',null),'Η πρόγνωση δεν φορτώθηκε. Έλεγξε τη σύνδεση.'); }
+  finally{ fcBusy=false; }
+}
+async function showNote(title,body){
+  try{
+    const reg=await navigator.serviceWorker.getRegistration();
+    if(reg) await reg.showNotification(title,{body:body,tag:'psaro-ideal',icon:'icon-192.png',badge:'icon-192.png',data:{url:reg.scope}});
+    else new Notification(title,{body:body});
+  }catch(e){ try{ new Notification(title,{body:body}); }catch(e2){} }
+}
+async function syncRegister(on){
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    if(!reg.periodicSync) return 'no';
+    if(on){ await reg.periodicSync.register('psaro-forecast',{minInterval:12*3600*1000}); return 'ok'; }
+    await reg.periodicSync.unregister('psaro-forecast'); return 'off';
+  }catch(e){ return 'no'; }
+}
+function ntStatus(txt){ $('ntMsg').textContent=txt; }
+$('ntOn').checked=!!nt.on; $('ntThr').value=String(nt.threshold);
+$('ntOn').addEventListener('change',async()=>{
+  if($('ntOn').checked){
+    if(!('Notification' in window)){ $('ntOn').checked=false; ntStatus('Ο browser δεν υποστηρίζει ειδοποιήσεις.'); return; }
+    const p=await Notification.requestPermission();
+    if(p!=='granted'){ $('ntOn').checked=false; ntStatus('Δεν δόθηκε άδεια ειδοποιήσεων. Επίτρεψέ τες στις ρυθμίσεις του browser.'); return; }
+    nt.on=true; nt.last=null; await saveCfg();
+    const r=await syncRegister(true);
+    ntStatus(r==='ok'?'Ενεργό. Το Android ελέγχει την πρόγνωση στο παρασκήνιο περίπου κάθε 12 ώρες, όταν το επιτρέπει (η εφαρμογή πρέπει να είναι εγκατεστημένη στην αρχική οθόνη). Επίσης ελέγχεται κάθε φορά που ανοίγεις την εφαρμογή.':'Ενεργό μόνο όταν ανοίγεις την εφαρμογή. Ο έλεγχος στο παρασκήνιο δεν υποστηρίζεται εδώ (χρειάζεται εγκατεστημένη εφαρμογή σε Chrome/Android).');
+    refreshForecast();
+  } else { nt.on=false; await saveCfg(); await syncRegister(false); ntStatus('Οι ειδοποιήσεις έκλεισαν.'); }
+});
+$('ntThr').addEventListener('change',async()=>{ nt.threshold=+$('ntThr').value; nt.last=null; await saveCfg(); });
+$('ntTest').addEventListener('click',async()=>{
+  if(!('Notification' in window)){ ntStatus('Ο browser δεν υποστηρίζει ειδοποιήσεις.'); return; }
+  const p=Notification.permission==='granted'?'granted':await Notification.requestPermission();
+  if(p!=='granted'){ ntStatus('Δεν δόθηκε άδεια ειδοποιήσεων.'); return; }
+  await showNote('Δοκιμή ειδοποίησης','Οι ειδοποιήσεις της Ψαρόβαρκας δουλεύουν.'); ntStatus('Στάλθηκε δοκιμαστική ειδοποίηση.');
+});
+if(nt.on) ntStatus('Ενεργό.');
 
 /* ---------- Backup ---------- */
 const blobToDataUrl=b=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(b);});
@@ -790,7 +1026,7 @@ $('dDate').value=today; $('tDate').value=today;
 $('hdrDate').textContent=today.split('-').reverse().join('/');
 ['dDate','dWind','dWave','dPress','dCloud'].forEach(id=>$(id).addEventListener('input',()=>{renderToday();renderReco();}));
 initMap();
-renderToday(); renderSpecies(); renderTech(); renderChecks(); renderSpots(); renderTrips(); renderWx();
+renderToday(); renderSpecies(); renderTech(); renderChecks(); renderLaw(); renderForecast(lsGet('psaro-fc',null)); renderSpots(); renderTrips(); renderWx();
 Store.on('spots',()=>{drawMap();renderSpots();});
 Store.on('trips',renderTrips);
 Store.on('bites',()=>{renderBites();renderStats();});

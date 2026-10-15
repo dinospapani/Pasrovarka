@@ -1,12 +1,15 @@
 // Network first for the app's own files so updates arrive at once; cache is the offline fallback.
 // Weather APIs and fonts are cross-origin and always go straight to the network.
-const V = 'psarovarka-v3';
-const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'species.js', 'cy100.js', 'leaflet.js', 'leaflet.css', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
+importScripts('forecast.js');
+const V = 'psarovarka-v6';
+const CFG = 'psaro-cfg';
+const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'species.js', 'cy100.js', 'rules.js', 'zones.js', 'forecast.js', 'leaflet.js', 'leaflet.css', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
+const cfgUrl = () => new URL('__cfg', self.registration.scope).href;
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V && k !== CFG).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
@@ -16,4 +19,30 @@ self.addEventListener('fetch', e => {
       .then(r => { const cp = r.clone(); caches.open(V).then(c => c.put(e.request, cp)); return r; })
       .catch(() => caches.match(e.request).then(r => r || caches.match('index.html')))
   );
+});
+async function readCfg() {
+  try { const r = await (await caches.open(CFG)).match(cfgUrl()); return r ? await r.json() : null; } catch (e) { return null; }
+}
+async function writeCfg(cfg) {
+  try { await (await caches.open(CFG)).put(cfgUrl(), new Response(JSON.stringify(cfg))); } catch (e) {}
+}
+async function runCheck() {
+  const cfg = await readCfg();
+  if (!cfg || !cfg.on) return;
+  try {
+    const r = await PF.check(cfg);
+    if (r) {
+      await self.registration.showNotification(r.title, { body: r.body, tag: 'psaro-ideal', icon: 'icon-192.png', badge: 'icon-192.png', data: { url: self.registration.scope } });
+      cfg.last = r.key; await writeCfg(cfg);
+    }
+  } catch (e) {}
+}
+self.addEventListener('periodicsync', e => { if (e.tag === 'psaro-forecast') e.waitUntil(runCheck()); });
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || self.registration.scope;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => {
+    for (const c of cs) { if ('focus' in c) return c.focus(); }
+    return self.clients.openWindow(url);
+  }));
 });

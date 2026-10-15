@@ -165,3 +165,9 @@ nav.tabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:60;background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:99px;font-weight:600;font-size:14px}
 nav.tabs button.fab{flex:none;width:56px;height:56px;margin-top:-18px;border-radius:50%;background:var(--accent);color:var(--accent-ink);padding:0;justify-content:center;box-shadow:0 3px 10px #0006}
 nav.tabs button.fab svg{width:28px;height:28px;stroke-width:2.4}
+
+ul.law{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.card a{color:var(--sea);overflow-wrap:anywhere}
+#bLaw{color:var(--ink)}
+.zonewarn{position:absolute;left:8px;right:8px;bottom:12px;z-index:790;background:var(--bad);color:#fff;border-radius:8px;padding:8px 10px;font-size:13px;font-weight:600;max-height:40%;overflow:auto}
+.maphint{z-index:800}
