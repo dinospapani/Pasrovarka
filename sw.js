@@ -1,9 +1,9 @@
 // Network first for the app's own files so updates arrive at once; cache is the offline fallback.
 // Weather APIs and fonts are cross-origin and always go straight to the network.
 importScripts('forecast.js');
-const V = 'psarovarka-v6';
+const V = 'psarovarka-v11';
 const CFG = 'psaro-cfg';
-const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'species.js', 'cy100.js', 'rules.js', 'zones.js', 'forecast.js', 'leaflet.js', 'leaflet.css', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
+const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'species.js', 'cy100.js','i18n.js','cloud.js','fish-photos.js', 'rules.js', 'zones.js', 'forecast.js', 'leaflet.js', 'leaflet.css', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 const cfgUrl = () => new URL('__cfg', self.registration.scope).href;
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -38,6 +38,11 @@ async function runCheck() {
   } catch (e) {}
 }
 self.addEventListener('periodicsync', e => { if (e.tag === 'psaro-forecast') e.waitUntil(runCheck()); });
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { try { d = { body: e.data.text() }; } catch (e2) {} }
+  e.waitUntil(self.registration.showNotification(d.title || 'BiteCast', { body: d.body || 'Άνοιξε την εφαρμογή για την πρόγνωση.', tag: 'psaro-ideal', icon: 'icon-192.png', badge: 'icon-192.png', data: { url: self.registration.scope } }));
+});
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   const url = (e.notification.data && e.notification.data.url) || self.registration.scope;

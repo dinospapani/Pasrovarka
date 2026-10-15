@@ -155,20 +155,35 @@ function drawHours(c){
 
 /* ---------- Store (this device, localStorage) ---------- */
 const Store=(function(){
-  const cache={spots:[],trips:[],bites:[]}, subs={spots:[],trips:[],bites:[]};
+  const cache={spots:[],trips:[],bites:[]}, subs={spots:[],trips:[],bites:[]}, hooks=[];
+  let tombs=[];
   const emit=k=>subs[k].forEach(f=>f(cache[k]));
   const persist=k=>lsSet('psaro-'+k,cache[k]);
+  const ptomb=()=>lsSet('psaro-tomb',tombs);
+  const changed=(k,id)=>hooks.forEach(f=>{try{f(k,id);}catch(e){}});
   async function init(){
     for(const k in cache){cache[k]=lsGet('psaro-'+k,[]);emit(k);}
+    tombs=lsGet('psaro-tomb',[]);
     try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist(); }catch(e){}
   }
   async function save(k,obj){
     const id=obj.id||(Date.now().toString(36)+Math.random().toString(36).slice(2,6));
-    const data=Object.assign({},obj,{id:id});
-    cache[k]=cache[k].filter(x=>x.id!==id).concat([data]); persist(k); emit(k); return id;
+    const data=Object.assign({},obj,{id:id,_u:Date.now()});
+    cache[k]=cache[k].filter(x=>x.id!==id).concat([data]); tombs=tombs.filter(t=>!(t.k===k&&t.id===id)); persist(k); ptomb(); emit(k); changed(k,id); return id;
   }
-  async function remove(k,id){cache[k]=cache[k].filter(x=>x.id!==id);persist(k);emit(k);}
-  return {init,save,remove,on:(k,f)=>{subs[k].push(f);f(cache[k]);},get:k=>cache[k]};
+  async function remove(k,id){cache[k]=cache[k].filter(x=>x.id!==id);tombs=tombs.filter(t=>!(t.k===k&&t.id===id)).concat([{k:k,id:id,u:Date.now()}]);persist(k);ptomb();emit(k);changed(k,id);}
+  /* Συγχρονισμός: ενσωμάτωση από τον server (το πιο πρόσφατο κερδίζει) */
+  function mergeIn(k,id,data,deleted,u){
+    const cur=cache[k].find(x=>x.id===id), t=tombs.find(x=>x.k===k&&x.id===id);
+    const lu=Math.max(cur?(cur._u||0):0,t?t.u:0);
+    if(u<=lu) return false;
+    if(deleted){ cache[k]=cache[k].filter(x=>x.id!==id); tombs=tombs.filter(x=>!(x.k===k&&x.id===id)).concat([{k:k,id:id,u:u}]); }
+    else { cache[k]=cache[k].filter(x=>x.id!==id).concat([Object.assign({},data,{id:id,_u:u})]); tombs=tombs.filter(x=>!(x.k===k&&x.id===id)); }
+    return true;
+  }
+  function flush(){ for(const k in cache){persist(k);emit(k);} ptomb(); }
+  function wipe(){ for(const k in cache){cache[k]=[];} tombs=[]; flush(); }
+  return {init,save,remove,mergeIn,flush,wipe,tombs:()=>tombs,hook:f=>hooks.push(f),on:(k,f)=>{subs[k].push(f);f(cache[k]);},get:k=>cache[k]};
 })();
 
 /* ---------- Photos (IndexedDB) ---------- */
@@ -178,6 +193,7 @@ const Photos=(function(){
   async function tx(mode,fn){const d=await db();return new Promise((res,rej)=>{const t=d.transaction('photos',mode);const rq=fn(t.objectStore('photos'));t.oncomplete=()=>res(rq&&rq.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error);});}
   return {put:(id,b)=>tx('readwrite',s=>s.put(b,id)),get:id=>tx('readonly',s=>s.get(id)),del:id=>tx('readwrite',s=>s.delete(id))};
 })();
+window.PsaroCore={Store:Store,Photos:Photos,toast:null};
 async function resizeImage(file){
   let bmp;
   try{ bmp=await createImageBitmap(file,{imageOrientation:'from-image'}); }
@@ -188,6 +204,7 @@ async function resizeImage(file){
   return new Promise((res,rej)=>cv.toBlob(b=>b?res(b):rej(new Error('blob')),'image/jpeg',0.78));
 }
 const toast=(m)=>{const e=$('toast');e.textContent=m;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,3500);};
+window.PsaroCore.toast=toast; window.PsaroCore.Photos=Photos;
 
 /* ---------- Map (Leaflet, world) ---------- */
 const REFS=[['Πάφος',32.41,34.75],['Λατσί',32.43,35.04],['Λεμεσός',33.04,34.67],['Ακρ. Γάτα',33.03,34.56],['Ζύγι',33.34,34.72],['Λάρνακα',33.63,34.91],['Κάβο Γκρέκο',34.08,34.96]];
@@ -449,6 +466,8 @@ async function gbifSearch(q){
     return {el:null,en:v?v.vernacularName:(r.canonicalName||r.scientificName),la:r.canonicalName||r.scientificName,k:''};
   });
 }
+let imgP=null;
+function loadFishImgs(){ if(window.FISH_IMG) return Promise.resolve(); if(!imgP) imgP=new Promise(r=>{const s=document.createElement('script');s.src='fish-photos.js';s.onload=()=>r();s.onerror=()=>{imgP=null;r();};document.head.append(s);}); return imgP; }
 function spItem(sp){
   const d=DETAIL[(sp.la||'').toLowerCase()], cy=CYL[(sp.la||'').toLowerCase()];
   const slug=(sp.la||'').trim().replace(/\s+/g,'-');
@@ -456,9 +475,13 @@ function spItem(sp){
   const body=d?h('dl',{class:'dl'},h('dt',{text:'Πού'}),h('dd',{text:d.w}),h('dt',{text:'Πώς'}),h('dd',{text:d.m}),h('dt',{text:'Σημείωση'}),h('dd',{text:d.t}))
     :h('p',{class:'muted',text:'Δεν υπάρχει αναλυτική περιγραφή στην εφαρμογή. Δες περισσότερα στο '}) ;
   if(!d&&!cy) body.append(fb);
-  return h('details',{class:'sp'},
-    h('summary',{},h('span',{},h('b',{text:cy?cy.n:(d?d.n:dispName(sp))}),d&&d.warn?h('span',{class:'tag',text:d.warn}):null,(sp.el&&sp.en&&!d)?h('span',{class:'muted',text:' · '+sp.en}):null),h('span',{class:'lat',text:sp.la})),
+  const ci=cy?CY.indexOf(cy):-1; const pic=h('img',{class:'spimg',alt:cy?cy.n:'',hidden:true});
+  const det=h('details',{class:'sp'},
+    h('summary',{},h('span',{},h('b',{text:cy?((window.LANG==='en'&&cy.e)?cy.e+' ('+cy.n+')':cy.n):(d?d.n:dispName(sp))}),d&&d.warn?h('span',{class:'tag',text:d.warn}):null,(sp.el&&sp.en&&!d)?h('span',{class:'muted',text:' · '+sp.en}):null),h('span',{class:'lat',text:sp.la})),
     h('div',{class:'body'},cy?h('p',{text:cy.t}):null,cy?h('p',{class:'note',text:'Πηγή: «Τα 100 σημαντικότερα είδη ψαριών των κυπριακών θαλασσών», Τμήμα Αλιείας και Θαλασσίων Ερευνών, Κύπρος.'}):null,(d&&cy)?h('h3',{text:'Πρακτικά για το ψάρεμα',style:'margin-top:10px'}):null,d?body:(cy?null:body)));
+  det.querySelector('.body').prepend(pic);
+  if(ci>=0) det.addEventListener('toggle',()=>{ if(!det.open||pic.src) return; loadFishImgs().then(()=>{const u=(window.FISH_IMG||[])[ci]; if(u){pic.src=u;pic.hidden=false;}}); });
+  return det;
 }
 function renderSpecies(extra){
   const q=$('spQ').value.trim(); const L=$('spList'); L.replaceChildren();
@@ -551,14 +574,14 @@ $('bClose').addEventListener('click',closeSheet);
 $('sheet').addEventListener('click',e=>{ if(e.target===$('sheet')) closeSheet(); });
 $('bLocMode').addEventListener('change',()=>{syncLoc();updateLaw();});
 $('bPickBtn').addEventListener('click',()=>{ closeSheet(); startPick('bite'); });
-$('bFile').addEventListener('change',async e=>{
+['bFile','bCam'].forEach(id=>$(id).addEventListener('change',async e=>{
   const f=e.target.files[0]; if(!f) return;
   try{
     photoBlob=await resizeImage(f);
     $('bPrev').src=URL.createObjectURL(photoBlob); $('bPrev').hidden=false; $('bPrevX').hidden=false; $('bAI').hidden=false; $('bAIOut').replaceChildren(); $('bAIMsg').textContent='';
   }catch(err){ toast('Η φωτογραφία δεν διαβάστηκε.'); }
   e.target.value='';
-});
+}));
 $('bPrevX').addEventListener('click',()=>{photoBlob=null;$('bPrev').hidden=true;$('bPrevX').hidden=true;$('bAI').hidden=true;$('bAIOut').replaceChildren();$('bAIMsg').textContent='';});
 function renderChips(){
   const bites=Store.get('bites').slice().sort((a,b)=>biteMs(b)-biteMs(a));
@@ -983,9 +1006,31 @@ $('ntTest').addEventListener('click',async()=>{
   if(!('Notification' in window)){ ntStatus('Ο browser δεν υποστηρίζει ειδοποιήσεις.'); return; }
   const p=Notification.permission==='granted'?'granted':await Notification.requestPermission();
   if(p!=='granted'){ ntStatus('Δεν δόθηκε άδεια ειδοποιήσεων.'); return; }
-  await showNote('Δοκιμή ειδοποίησης','Οι ειδοποιήσεις της Ψαρόβαρκας δουλεύουν.'); ntStatus('Στάλθηκε δοκιμαστική ειδοποίηση.');
+  await showNote('Δοκιμή ειδοποίησης','Οι ειδοποιήσεις του BiteCast δουλεύουν.'); ntStatus('Στάλθηκε δοκιμαστική ειδοποίηση.');
 });
 if(nt.on) ntStatus('Ενεργό.');
+
+/* server push (GitHub Actions) */
+const b64u=s=>{const p='='.repeat((4-s.length%4)%4),r=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(r,c=>c.charCodeAt(0));};
+$('pushBtn').addEventListener('click',async()=>{
+  const m=$('pushMsg'); m.textContent='';
+  try{
+    if(!('serviceWorker' in navigator)||!('PushManager' in window)){ m.textContent='Ο browser δεν υποστηρίζει push.'; return; }
+    if(!window.VAPID_PUBLIC){ m.textContent='Λείπει το push-config.js.'; return; }
+    if(!(cond&&cond.lat!=null)){ m.textContent='Χρειάζεται πρώτα θέση. Πάτα «Η θέση μου» στον χάρτη.'; return; }
+    const p=await Notification.requestPermission();
+    if(p!=='granted'){ m.textContent='Δεν δόθηκε άδεια ειδοποιήσεων.'; return; }
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(window.VAPID_PUBLIC)});
+    const code=JSON.stringify([{sub:sub.toJSON(),lat:+cond.lat.toFixed(3),lon:+cond.lon.toFixed(3),threshold:nt.threshold||75}]);
+    $('pushOut').value=code; $('pushOut').hidden=false; $('pushCopy').hidden=false;
+    m.textContent='Αντίγραψε τον κωδικό και βάλε τον ως μυστικό PUSH_SUBS στο GitHub (Settings → Secrets and variables → Actions). Η θέση που αποθηκεύεται είναι η τωρινή. Αν ψαρέψεις αλλού, φτιάξε νέο κωδικό.';
+  }catch(e){ m.textContent='Δεν δημιουργήθηκε ο κωδικός: '+(e&&e.message?e.message:'σφάλμα'); }
+});
+$('pushCopy').addEventListener('click',async()=>{
+  const t=$('pushOut'); try{ await navigator.clipboard.writeText(t.value); $('pushMsg').textContent='Αντιγράφηκε.'; }catch(e){ t.select(); $('pushMsg').textContent='Επίλεξε και αντίγραψε με το χέρι.'; }
+});
 
 /* ---------- Backup ---------- */
 const blobToDataUrl=b=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(b);});
@@ -1013,6 +1058,7 @@ $('impFile').addEventListener('change',async e=>{
 });
 
 /* ---------- Tabs and init ---------- */
+(function(){const ls=document.getElementById('langSel'); if(ls){ ls.value=window.LANG||'el'; ls.addEventListener('change',()=>window.setLang(ls.value)); }})();
 function switchTab(t2){
   document.querySelectorAll('nav.tabs button[data-tab]').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.tab===t2)));
   for(const n of ['today','map','log','guide']) $('tab-'+n).hidden=(n!==t2);

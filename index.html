@@ -6,11 +6,11 @@
 <meta name="theme-color" content="#0c2b3a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Ψαρόβαρκα">
+<meta name="apple-mobile-web-app-title" content="BiteCast">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<title>Ψαρόβαρκα</title>
+<title>BiteCast</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -20,8 +20,8 @@
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="brand">Ψαρόβαρκα</div>
-    <div class="sub">Όλος ο κόσμος<br><span id="hdrDate"></span></div>
+    <div class="brand"><img src="icon-192.png" alt="" width="26" height="26" style="vertical-align:-6px;border-radius:6px;margin-right:8px">BiteCast</div>
+    <div class="sub"><select id="langSel" class="nosub" aria-label="Γλώσσα / Language"><option value="el">Ελληνικά</option><option value="en">English</option></select><br><span id="hdrDate"></span></div>
   </header>
 
   <!-- ΣΗΜΕΡΑ -->
@@ -93,6 +93,12 @@
       <label class="f" style="margin-top:8px">Ελάχιστος δείκτης<select id="ntThr"><option value="65">65</option><option value="70">70</option><option value="75" selected>75</option><option value="80">80</option><option value="85">85</option></select></label>
       <div class="row" style="margin-top:8px"><button class="btn sm ghost" type="button" id="ntTest">Δοκιμαστική ειδοποίηση</button></div>
       <div class="note" id="ntMsg" style="margin-top:6px"></div>
+      <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
+      <h3>Push από server (GitHub)</h3>
+      <p class="note">Για ειδοποιήσεις που φτάνουν και με κλειστή εφαρμογή. Απαιτεί μία φορά ρύθμιση στο GitHub (δες οδηγίες που σου έδωσα).</p>
+      <div class="row"><button class="btn sm" type="button" id="pushBtn">Δημιουργία κωδικού συσκευής</button><button class="btn sm ghost" type="button" id="pushCopy" hidden>Αντιγραφή</button></div>
+      <textarea id="pushOut" readonly hidden style="margin-top:8px;font-family:var(--font-mono);font-size:11px;min-height:90px"></textarea>
+      <div class="note" id="pushMsg" style="margin-top:6px"></div>
     </div>
 
     <div class="card" id="recoCard" hidden>
@@ -160,6 +166,21 @@
   <!-- ΗΜΕΡΟΛΟΓΙΟ -->
   <section class="tab" id="tab-log" hidden>
     <div><h2>Ημερολόγιο</h2></div>
+    <div class="card" id="acCard">
+      <h3>Λογαριασμός</h3>
+      <div id="acOut">
+        <p class="note">Συνδέσου για να έχεις τα δεδομένα σου σε κάθε συσκευή και να μην χαθούν αν αλλάξεις κινητό. Η εφαρμογή δουλεύει και χωρίς λογαριασμό.</p>
+        <label class="f">Email<input type="email" id="acEmail" autocomplete="username" inputmode="email"></label>
+        <label class="f">Κωδικός<input type="password" id="acPass" autocomplete="current-password"></label>
+        <div class="row"><button class="btn sm" id="acLogin" type="button">Σύνδεση</button><button class="btn ghost sm" id="acSignup" type="button">Εγγραφή</button><button class="btn ghost sm" id="acForgot" type="button">Ξέχασα τον κωδικό</button></div>
+      </div>
+      <div id="acIn" hidden>
+        <p>Συνδεδεμένος ως <b id="acWho"></b></p>
+        <div class="row"><button class="btn sm" id="acSync" type="button">Συγχρονισμός τώρα</button><button class="btn ghost sm" id="acLogout" type="button">Αποσύνδεση</button></div>
+      </div>
+      <p class="note" id="acStatus"></p>
+      <p class="note" id="acMsg" role="status"></p>
+    </div>
     <div class="seg" id="logSeg" role="group" aria-label="Προβολή ημερολογίου">
       <button type="button" data-l="trips" aria-pressed="true">Έξοδοι</button>
       <button type="button" data-l="bites" aria-pressed="false">Τσιμπήματα</button>
@@ -257,7 +278,7 @@
     </div>
     <div class="chips" id="bChipsSp"></div>
     <div class="row" style="margin-top:10px;align-items:center">
-      <label class="btn ghost sm" style="cursor:pointer">📷 Φωτογραφία<input type="file" id="bFile" accept="image/*" hidden></label>
+      <label class="btn ghost sm" style="cursor:pointer">📷 Κάμερα<input type="file" id="bCam" accept="image/*" capture="environment" hidden></label> <label class="btn ghost sm" style="cursor:pointer">🖼 Συλλογή<input type="file" id="bFile" accept="image/*" hidden></label>
       <img id="bPrev" class="thumb" alt="Προεπισκόπηση" hidden>
       <button class="btn ghost sm" type="button" id="bPrevX" hidden>Αφαίρεση</button>
       <button class="btn sm" type="button" id="bAI" hidden>🔍 Αναγνώριση με AI</button>
@@ -301,8 +322,11 @@
 <script src="species.js"></script>
 <script src="cy100.js"></script>
 <script src="rules.js"></script>
+<script src="i18n.js"></script>
 <script src="forecast.js"></script>
+<script src="push-config.js"></script>
 <script src="zones.js"></script>
 <script src="app.js"></script>
+<script src="cloud.js"></script>
 </body>
 </html>

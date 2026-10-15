@@ -127,7 +127,7 @@ nav.tabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1
 @media (prefers-reduced-motion:no-preference){.score{transition:color .2s}}
 
 /* ---- World map ---- */
-.mapbox{position:relative;height:calc(100vh - 150px);height:calc(100dvh - 150px);min-height:380px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--water)}
+.mapbox{position:relative;isolation:isolate;z-index:0;height:calc(100vh - 150px);height:calc(100dvh - 150px);min-height:380px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--water)}
 #lmap{position:absolute;inset:0;z-index:0;font-family:var(--font-body)}
 .leaflet-container{background:var(--water)}
 .leaflet-control-zoom a{background:var(--surface)!important;color:var(--ink)!important;border-color:var(--line)!important}
@@ -171,3 +171,7 @@ ul.law{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;fon
 #bLaw{color:var(--ink)}
 .zonewarn{position:absolute;left:8px;right:8px;bottom:12px;z-index:790;background:var(--bad);color:#fff;border-radius:8px;padding:8px 10px;font-size:13px;font-weight:600;max-height:40%;overflow:auto}
 .maphint{z-index:800}
+
+.spimg{display:block;max-width:100%;max-height:200px;margin:0 auto 8px;border-radius:6px}
+
+#langSel{font:inherit;font-size:12px;padding:2px 4px;border:1px solid var(--line);border-radius:4px;background:transparent;color:inherit;margin-bottom:2px}
