@@ -186,3 +186,23 @@ html.gated body>*:not(#gate):not(script){display:none!important}
 #gate .f{text-align:left}
 #gate .row{justify-content:center}
 #gate select{align-self:center}
+
+.avatar{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--accent);color:#fff;font:700 16px var(--font-body);cursor:pointer;padding:0}
+.avatar.big{width:52px;height:52px;font-size:22px;flex:none;display:flex;align-items:center;justify-content:center}
+#profile{position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;overflow:auto}
+#profile[hidden]{display:none}
+#profile .pbox{width:100%;max-width:520px;background:var(--bg);border:1px solid var(--line);border-radius:16px 16px 0 0;padding:18px 16px 24px;display:flex;flex-direction:column;gap:12px;max-height:92vh;overflow:auto}
+#profile .phead{display:flex;align-items:center;gap:12px}
+#profile .phead .btn{margin-left:auto}
+#profile select{width:100%}
+html.gated #profile{display:none}
+
+#factors.factors{display:block}
+.fx{padding:8px 0;border-top:1px solid var(--line)}
+.fxh{display:flex;align-items:center;gap:8px}
+.fxh b{flex:1}
+.fxc{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line)}
+.fxc.good{color:var(--good);border-color:var(--good)} .fxc.bad{color:var(--bad);border-color:var(--bad)}
+.fxs{margin:6px 0}
+.fxd{margin-top:8px}.fxd summary{cursor:pointer;font-size:13px;opacity:.8}
+.fxd .factors{margin-top:8px}

@@ -32,10 +32,24 @@
     <select id="langSel2" class="nosub" aria-label="Γλώσσα / Language"><option value="el">Ελληνικά</option><option value="en">English</option></select>
   </div>
 </div>
+<div id="profile" hidden role="dialog" aria-label="Προφίλ">
+  <div class="pbox">
+    <div class="phead"><div class="avatar big" id="pAvatar">?</div><div><b id="pNameShow"></b><div class="note" id="acWho"></div></div><button type="button" class="btn ghost sm" id="pClose">Κλείσιμο</button></div>
+    <label class="f">Όνομα<input type="text" id="pName" maxlength="40" autocomplete="name"></label>
+    <div class="row"><button class="btn sm" id="pNameSave" type="button">Αποθήκευση</button></div>
+    <label class="f">Γλώσσα / Language<select id="langSel" class="nosub"><option value="el">Ελληνικά</option><option value="en">English</option></select></label>
+    <div class="row"><button class="btn sm" id="acSync" type="button">Συγχρονισμός τώρα</button></div>
+    <p class="note" id="acStatus"></p>
+    <label class="f">Νέος κωδικός<input type="password" id="pPass" autocomplete="new-password"></label>
+    <div class="row"><button class="btn ghost sm" id="pPassSave" type="button">Αλλαγή κωδικού</button></div>
+    <p class="note" id="pMsg" role="status"></p>
+    <div class="row"><button class="btn" id="acLogout" type="button">Αποσύνδεση</button></div>
+  </div>
+</div>
 <div class="wrap">
   <header class="top">
     <div class="brand"><img src="icon-192.png" alt="" width="26" height="26" style="vertical-align:-6px;border-radius:6px;margin-right:8px">BiteCast</div>
-    <div class="sub"><select id="langSel" class="nosub" aria-label="Γλώσσα / Language"><option value="el">Ελληνικά</option><option value="en">English</option></select><br><span id="hdrDate"></span></div>
+    <div class="sub"><button type="button" id="profBtn" class="avatar" aria-label="Προφίλ">?</button><br><span id="hdrDate"></span></div>
   </header>
 
   <!-- ΣΗΜΕΡΑ -->
@@ -180,15 +194,6 @@
   <!-- ΗΜΕΡΟΛΟΓΙΟ -->
   <section class="tab" id="tab-log" hidden>
     <div><h2>Ημερολόγιο</h2></div>
-    <div class="card" id="acCard">
-      <h3>Λογαριασμός</h3>
-      <div id="acIn">
-        <p>Συνδεδεμένος ως <b id="acWho"></b></p>
-        <div class="row"><button class="btn sm" id="acSync" type="button">Συγχρονισμός τώρα</button><button class="btn ghost sm" id="acLogout" type="button">Αποσύνδεση</button></div>
-      </div>
-      <p class="note" id="acStatus"></p>
-      <p class="note" id="acMsg" role="status"></p>
-    </div>
     <div class="seg" id="logSeg" role="group" aria-label="Προβολή ημερολογίου">
       <button type="button" data-l="trips" aria-pressed="true">Έξοδοι</button>
       <button type="button" data-l="bites" aria-pressed="false">Τσιμπήματα</button>

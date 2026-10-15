@@ -115,8 +115,31 @@ function renderToday(){
   const pill=$('safePill'); pill.className='pill '+lvl;
   pill.textContent={good:'Ήπια θάλασσα',warn:'Προσοχή',bad:'Δύσκολες συνθήκες'}[lvl];
   $('safeText').textContent={good:'Συνθήκες κατάλληλες για έξοδο με μικρό σκάφος.',warn:'Αρκετός άνεμος ή κύμα για μικρό σκάφος. Κοίτα την πρόγνωση για ριπές.',bad:'Άνεμος ή κύμα ψηλά για μικρό σκάφος. Ξανασκέψου την έξοδο.'}[lvl];
-  const fx=$('factors'); fx.replaceChildren(h('div',{class:'muted',text:'Βάση'}),h('div',{class:'v',text:'50'}));
-  for(const [n,v] of c.factors){ fx.append(h('div',{text:n}),h('div',{class:'v '+(v>0?'pos':v<0?'neg':''),text:(v>0?'+':'')+v})); }
+  const fx=$('factors'); fx.replaceChildren();
+  const pressTx={slow:['Πέφτει αργά','Η πίεση πέφτει αργά: τα ψάρια τρώνε πιο πολύ πριν αλλάξει ο καιρός.'],stable:['Σταθερή','Η πίεση είναι σταθερή: φυσιολογική δραστηριότητα.'],rise:['Ανεβαίνει','Η πίεση ανεβαίνει: συνήθως πιο ήσυχα ψάρια.'],fast:['Πέφτει απότομα','Η πίεση πέφτει απότομα: έρχεται αλλαγή καιρού και τα ψάρια συχνά σταματούν.']};
+  const cloudTx={clear:['Καθαρός','Καθαρός ουρανός: δυνατό φως, τα ψάρια πάνε πιο βαθιά.'],part:['Λίγα σύννεφα','Λίγα σύννεφα: καλό, μαλακό φως.'],over:['Συννεφιά','Συννεφιά: χαμηλό φως, τα ψάρια πλησιάζουν πιο εύκολα.']};
+  const moonTx=c.factors[0][1]>=4?'Κοντά σε νέα ή πανσέληνο: ισχυρότερα ρεύματα και πιο έντονη όρεξη στα ψάρια.':c.factors[0][1]<=-4?'Κοντά σε τέταρτο: πιο ήρεμα ρεύματα και λιγότερη όρεξη στα ψάρια.':'Ενδιάμεση φάση σελήνης: ουδέτερη επίδραση.';
+  const windTx=c.wind<5?'Σχεδόν άπνοια: εύκολο ψάρεμα και ασφαλής έξοδος.':c.wind<=12?'Ήπιος άνεμος: ιδανικός, ανακατεύει λίγο την επιφάνεια.':c.wind<=18?'Αρκετός άνεμος: δύσκολο το ψάρεμα και η ρίψη.':c.wind<=25?'Δυνατός άνεμος: κουραστικό και ανασφαλές για μικρό σκάφος.':'Πολύ δυνατός άνεμος: μην βγεις με μικρό σκάφος.';
+  const waveTx=c.wave<=0.5?'Ήρεμη θάλασσα: καλή για ψάρεμα και ασφαλής.':c.wave<=1?'Μικρό κύμα: αποδεκτό.':c.wave<=1.5?'Μέτριο κύμα: ταλαιπωρεί το σκάφος και δυσκολεύει το ψάρεμα.':c.wave<=2?'Μεγάλο κύμα: δύσκολο και επικίνδυνο για μικρό σκάφος.':'Πολύ μεγάλο κύμα: μην βγεις με μικρό σκάφος.';
+  const rows=[
+    ['Σελήνη',moonName(c.sm.f),c.factors[0][1],moonTx],
+    ['Πίεση',pressTx[$('dPress').value][0],c.factors[1][1],pressTx[$('dPress').value][1]],
+    ['Άνεμος',c.wind+' kn',c.factors[2][1],windTx],
+    ['Κύμα',c.wave.toFixed(1)+' m',c.factors[3][1],waveTx],
+    ['Ουρανός',cloudTx[$('dCloud').value][0],c.factors[4][1],cloudTx[$('dCloud').value][1]]
+  ];
+  const good=[],bad=[];
+  for(const [n,val,v,tx] of rows){
+    const k=v>=2?'good':v<=-3?'bad':'mid';
+    if(k==='good') good.push(n); if(k==='bad') bad.push(n);
+    fx.append(h('div',{class:'fx'},h('div',{class:'fxh'},h('b',{text:n}),h('span',{class:'mono',text:val}),h('span',{class:'fxc '+k,text:k==='good'?'Βοηθά':k==='bad'?'Δεν βοηθά':'Ουδέτερο'})),h('div',{class:'note',text:tx})));
+  }
+  const EN_=window.LANG==='en', nmE={'Σελήνη':'Moon','Πίεση':'Pressure','Άνεμος':'Wind','Κύμα':'Waves','Ουρανός':'Sky'}, jn=l=>l.map(x=>EN_?nmE[x]:x).join(', ');
+  if(EN_) fx.prepend(h('p',{class:'note fxs',text:'Score 0–100: how favourable conditions are for fish to bite. 50 is average. Helps: '+(jn(good)||'nothing in particular')+'. Does not help: '+(jn(bad)||'nothing')+'.'}));
+  else fx.prepend(h('p',{class:'note fxs',text:'Βαθμός 0–100: πόσο ευνοϊκές είναι οι συνθήκες για να τσιμπήσουν τα ψάρια. Το 50 είναι ο μέσος όρος. Βοηθά: '+(good.join(', ')||'τίποτα ιδιαίτερα')+'. Δεν βοηθά: '+(bad.join(', ')||'τίποτα')+'.'}));
+  const dt=h('details',{class:'fxd'},h('summary',{text:'Δες τους πόντους'}),h('div',{class:'factors'},h('div',{class:'muted',text:'Βάση'}),h('div',{class:'v',text:'50'})));
+  for(const [n,v] of c.factors){ dt.querySelector('.factors').append(h('div',{text:n}),h('div',{class:'v '+(v>0?'pos':v<0?'neg':''),text:(v>0?'+':'')+v})); }
+  fx.append(dt);
   drawHours(c);
   const sm=c.sm;
   $('moonName').textContent=moonName(sm.f);

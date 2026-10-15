@@ -18,7 +18,7 @@ async function auth(path,body){
   return j;
 }
 function setSess(j){
-  sess={access_token:j.access_token,refresh_token:j.refresh_token,exp:Date.now()+((j.expires_in||3600)-60)*1000,uid:(j.user&&j.user.id)||(sess&&sess.uid),email:(j.user&&j.user.email)||(sess&&sess.email)};
+  sess={access_token:j.access_token,refresh_token:j.refresh_token,exp:Date.now()+((j.expires_in||3600)-60)*1000,uid:(j.user&&j.user.id)||(sess&&sess.uid),email:(j.user&&j.user.email)||(sess&&sess.email),name:(j.user&&j.user.user_metadata&&j.user.user_metadata.name)||(sess&&sess.name)||''};
   ls('psaro-sess',sess);
 }
 async function ensure(){
@@ -102,7 +102,12 @@ function msg(m,bad){ var e=$('gMsg'); if(e){ e.textContent=m||''; e.style.color=
 function gate(on){ document.documentElement.classList.toggle('gated',!!on); if(!on){ try{ window.dispatchEvent(new Event('resize')); }catch(e){} } }
 function render(){
   gate(!sess);
-  if($('acWho')) $('acWho').textContent=sess?(sess.email||''):'';
+  var nm=sess?(sess.name||''):'', em=sess?(sess.email||''):'', ch=(nm||em||'?').trim().charAt(0).toUpperCase();
+  if($('acWho')) $('acWho').textContent=em;
+  if($('profBtn')) $('profBtn').textContent=ch;
+  if($('pAvatar')) $('pAvatar').textContent=ch;
+  if($('pNameShow')) $('pNameShow').textContent=nm||em;
+  if($('pName')&&document.activeElement!==$('pName')) $('pName').value=nm;
   if(sess&&$('acStatus')&&!$('acStatus').textContent){ var l=ls('psaro-last'); if(l) $('acStatus').textContent='Τελευταίος συγχρονισμός '+new Date(l).toLocaleString('el-GR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
 }
 function localCount(){ return Store.get('spots').length+Store.get('trips').length+Store.get('bites').length; }
@@ -140,6 +145,19 @@ function wire(){
     try{ await auth('recover',{email:em}); msg('Αν υπάρχει λογαριασμός, στάλθηκε email για νέο κωδικό.'); }catch(e){ msg(errText(e),true); }
   });
   var l2=$('langSel2'); if(l2){ l2.value=window.LANG||'el'; l2.addEventListener('change',function(){ window.setLang(l2.value); }); }
+  function pmsg(m,bad){ var e=$('pMsg'); if(e){ e.textContent=m||''; e.style.color=bad?'#ff8a80':''; } }
+  function openP(on){ if($('profile')) $('profile').hidden=!on; if(on){ pmsg(''); render(); } }
+  if($('profBtn')) $('profBtn').addEventListener('click',function(){ openP(true); });
+  if($('pClose')) $('pClose').addEventListener('click',function(){ openP(false); });
+  if($('profile')) $('profile').addEventListener('click',function(e){ if(e.target===$('profile')) openP(false); });
+  if($('pNameSave')) $('pNameSave').addEventListener('click',async function(){
+    var n=$('pName').value.trim();
+    try{ await ensure(); var r=await fetch(URL_+'/auth/v1/user',{method:'PUT',headers:H(),body:JSON.stringify({data:{name:n}})}); if(!r.ok) throw new Error('HTTP '+r.status); sess.name=n; ls('psaro-sess',sess); render(); pmsg('Το όνομα αποθηκεύτηκε.'); }catch(e){ pmsg(errText(e),true); }
+  });
+  if($('pPassSave')) $('pPassSave').addEventListener('click',async function(){
+    var pw=$('pPass').value; if(pw.length<6){ pmsg('Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.',true); return; }
+    try{ await ensure(); var r=await fetch(URL_+'/auth/v1/user',{method:'PUT',headers:H(),body:JSON.stringify({password:pw})}); var jj={}; try{ jj=await r.json(); }catch(x){} if(!r.ok) throw new Error(jj.msg||jj.message||('HTTP '+r.status)); $('pPass').value=''; pmsg('Ο κωδικός άλλαξε.'); }catch(e){ pmsg(errText(e),true); }
+  });
   if($('acSync')) $('acSync').addEventListener('click',function(){ sync(true); });
   if($('acLogout')) $('acLogout').addEventListener('click',async function(){
     if(busy) return;
@@ -147,7 +165,7 @@ function wire(){
     var wipe=confirm('Αποσύνδεση. Να σβηστούν και τα δεδομένα από αυτή τη συσκευή; (Μένουν αποθηκευμένα στον λογαριασμό σου.)');
     try{ await fetch(URL_+'/auth/v1/logout',{method:'POST',headers:H()}); }catch(e){}
     if(wipe){ Store.wipe(); pup={}; ls('psaro-pup',pup); ls('psaro-uid',null); }
-    signedOut();
+    openP(false); signedOut();
   });
   render();
   if(sess) setTimeout(function(){ sync(false); },1200);
