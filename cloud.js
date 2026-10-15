@@ -80,7 +80,7 @@ async function sync(manual){
     ls('psaro-last',Date.now());
     status('Συγχρονίστηκε '+new Date().toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'})+(got?' · ήρθαν '+got:'')+(out.length?' · στάλθηκαν '+out.length:''));
   }catch(e){
-    if(/HTTP 4(01|03)|JWT/.test(String(e.message))){ status('Η σύνδεση έληξε. Συνδέσου ξανά.'); }
+    if(/HTTP 4(01|03)|JWT|refresh_token|Refresh Token|invalid_grant/i.test(String(e.message))){ signedOut(); msg('Η σύνδεση έληξε. Συνδέσου ξανά.',true); }
     else if(/relation .*records|PGRST205|HTTP 404/.test(String(e.message))) status('Λείπει η βάση δεδομένων στο Supabase (πίνακας records).');
     else status(errText(e));
   }
@@ -98,27 +98,26 @@ document.addEventListener('visibilitychange',function(){ if(!document.hidden) sc
 
 /* ---------- Οθόνη λογαριασμού ---------- */
 function status(m){ var e=$('acStatus'); if(e) e.textContent=m||''; }
-function msg(m,bad){ var e=$('acMsg'); if(e){ e.textContent=m||''; e.style.color=bad?'var(--bad,#b3261e)':''; } }
+function msg(m,bad){ var e=$('gMsg'); if(e){ e.textContent=m||''; e.style.color=bad?'#ff8a80':''; } }
+function gate(on){ document.documentElement.classList.toggle('gated',!!on); if(!on){ try{ window.dispatchEvent(new Event('resize')); }catch(e){} } }
 function render(){
-  var inn=!!sess;
-  if(!$('acCard')) return;
-  $('acOut').hidden=inn; $('acIn').hidden=!inn;
-  if(inn){ $('acWho').textContent=sess.email||''; var l=ls('psaro-last'); if(l&&!$('acStatus').textContent) $('acStatus').textContent='Τελευταίος συγχρονισμός '+new Date(l).toLocaleString('el-GR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
+  gate(!sess);
+  if($('acWho')) $('acWho').textContent=sess?(sess.email||''):'';
+  if(sess&&$('acStatus')&&!$('acStatus').textContent){ var l=ls('psaro-last'); if(l) $('acStatus').textContent='Τελευταίος συγχρονισμός '+new Date(l).toLocaleString('el-GR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
 }
 function localCount(){ return Store.get('spots').length+Store.get('trips').length+Store.get('bites').length; }
 async function afterLogin(j){
   var prev=ls('psaro-uid'); setSess(j);
   if(prev&&prev!==sess.uid&&localCount()>0){
-    if(!confirm('Σε αυτή τη συσκευή υπάρχουν δεδομένα άλλου λογαριασμού. Να σβηστούν (OK) ή να προστεθούν και στον νέο λογαριασμό (Άκυρο);')){ /* merge */ }
-    else { Store.wipe(); pup={}; ls('psaro-pup',pup); }
+    if(confirm('Σε αυτή τη συσκευή υπάρχουν δεδομένα άλλου λογαριασμού. Να σβηστούν (OK) ή να προστεθούν και στον νέο λογαριασμό (Άκυρο);')){ Store.wipe(); pup={}; ls('psaro-pup',pup); }
   }
-  ls('psaro-uid',sess.uid); render(); msg('');
+  ls('psaro-uid',sess.uid); msg(''); $('gPass').value=''; render();
   await sync(true);
 }
 async function doLogin(signup){
-  var em=$('acEmail').value.trim(), pw=$('acPass').value;
+  var em=$('gEmail').value.trim(), pw=$('gPass').value;
   if(!em||!pw){ msg('Γράψε email και κωδικό.',true); return; }
-  $('acLogin').disabled=$('acSignup').disabled=true; msg(signup?'Δημιουργία λογαριασμού…':'Σύνδεση…');
+  $('gLogin').disabled=$('gSignup').disabled=true; msg(signup?'Δημιουργία λογαριασμού…':'Σύνδεση…');
   try{
     if(signup){
       var j=await auth('signup',{email:em,password:pw});
@@ -128,25 +127,27 @@ async function doLogin(signup){
       await afterLogin(await auth('token?grant_type=password',{email:em,password:pw}));
     }
   }catch(e){ msg(errText(e),true); }
-  $('acLogin').disabled=$('acSignup').disabled=false;
+  $('gLogin').disabled=$('gSignup').disabled=false;
 }
+function signedOut(){ sess=null; ls('psaro-sess',null); ls('psaro-last',null); if($('acStatus')) $('acStatus').textContent=''; render(); }
 function wire(){
-  if(!$('acCard')) return;
-  $('acLogin').addEventListener('click',function(){ doLogin(false); });
-  $('acSignup').addEventListener('click',function(){ doLogin(true); });
-  $('acForgot').addEventListener('click',async function(){
-    var em=$('acEmail').value.trim(); if(!em){ msg('Γράψε πρώτα το email σου.',true); return; }
+  if(!$('gate')) return;
+  $('gLogin').addEventListener('click',function(){ doLogin(false); });
+  $('gSignup').addEventListener('click',function(){ doLogin(true); });
+  $('gPass').addEventListener('keydown',function(e){ if(e.key==='Enter') doLogin(false); });
+  $('gForgot').addEventListener('click',async function(){
+    var em=$('gEmail').value.trim(); if(!em){ msg('Γράψε πρώτα το email σου.',true); return; }
     try{ await auth('recover',{email:em}); msg('Αν υπάρχει λογαριασμός, στάλθηκε email για νέο κωδικό.'); }catch(e){ msg(errText(e),true); }
   });
-  $('acSync').addEventListener('click',function(){ sync(true); });
-  $('acLogout').addEventListener('click',async function(){
+  var l2=$('langSel2'); if(l2){ l2.value=window.LANG||'el'; l2.addEventListener('change',function(){ window.setLang(l2.value); }); }
+  if($('acSync')) $('acSync').addEventListener('click',function(){ sync(true); });
+  if($('acLogout')) $('acLogout').addEventListener('click',async function(){
     if(busy) return;
     await sync(true);
     var wipe=confirm('Αποσύνδεση. Να σβηστούν και τα δεδομένα από αυτή τη συσκευή; (Μένουν αποθηκευμένα στον λογαριασμό σου.)');
     try{ await fetch(URL_+'/auth/v1/logout',{method:'POST',headers:H()}); }catch(e){}
-    sess=null; ls('psaro-sess',null); ls('psaro-last',null);
     if(wipe){ Store.wipe(); pup={}; ls('psaro-pup',pup); ls('psaro-uid',null); }
-    $('acStatus').textContent=''; render();
+    signedOut();
   });
   render();
   if(sess) setTimeout(function(){ sync(false); },1200);

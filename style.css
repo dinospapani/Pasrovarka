@@ -175,3 +175,14 @@ ul.law{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;fon
 .spimg{display:block;max-width:100%;max-height:200px;margin:0 auto 8px;border-radius:6px}
 
 #langSel{font:inherit;font-size:12px;padding:2px 4px;border:1px solid var(--line);border-radius:4px;background:transparent;color:inherit;margin-bottom:2px}
+
+#gate{display:none;position:fixed;inset:0;z-index:5000;align-items:center;justify-content:center;padding:20px;background:linear-gradient(180deg,#0f8aa8,#072a3a 70%);overflow:auto}
+html.gated #gate{display:flex}
+html.gated body>*:not(#gate):not(script){display:none!important}
+#gate .gbox{width:100%;max-width:360px;background:var(--bg,#0c2b3a);color:var(--ink,#e8f4f8);border-radius:16px;padding:22px 20px;display:flex;flex-direction:column;gap:12px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+#gate .glogo{margin:0 auto;border-radius:20px}
+#gate h1{margin:0;font-size:26px}
+#gate .gtag{margin:0;opacity:.85}
+#gate .f{text-align:left}
+#gate .row{justify-content:center}
+#gate select{align-self:center}
