@@ -227,6 +227,8 @@ if(nt.on) ntStatus(nt.server?'Ενεργό (server).':'Ενεργό.');
 $('plGo').addEventListener('click',geocode);
 $('plQ').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); geocode(); } });
 $('plSpots').addEventListener('click',showSpots);
+$('plMap').addEventListener('click',function(){ window.dispatchEvent(new Event('psaro-pickfc')); });
+window.addEventListener('psaro-fcpick',function(e){ var d=e.detail; addPlace((EN?'Point ':'Σημείο ')+d.lat.toFixed(2)+', '+d.lon.toFixed(2),d.lat,d.lon); });
 $('fcRefresh').addEventListener('click',function(){ load(true); });
 $('fcWatch').addEventListener('click',function(){
   var p=findPlace(sel); if(!p) return;

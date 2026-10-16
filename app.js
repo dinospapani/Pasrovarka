@@ -352,6 +352,7 @@ const Photos=(function(){
   return {put:(id,b)=>tx('readwrite',s=>s.put(b,id)),get:id=>tx('readonly',s=>s.get(id)),del:id=>tx('readwrite',s=>s.delete(id))};
 })();
 window.PsaroCore={Store:Store,Photos:Photos,toast:null};
+window.addEventListener('psaro-pickfc',()=>startPick('fc'));
 async function resizeImage(file){
   let bmp;
   try{ bmp=await createImageBitmap(file,{imageOrientation:'from-image'}); }
@@ -422,7 +423,7 @@ function initMap(){
   });
   $('bLoc').addEventListener('click',async()=>{ const c2=await refreshConditions(); if(c2&&c2.lat!=null) map.flyTo([c2.lat,c2.lon],Math.max(map.getZoom(),12)); });
   $('bSpotPick').addEventListener('click',()=>startPick('spot'));
-  $('mapHintX').addEventListener('click',()=>{const was=pick; endPick(); if(was==='bite') openSheet();});
+  $('mapHintX').addEventListener('click',()=>{const was=pick; endPick(); if(was==='bite') openSheet(); if(was==='fc') switchTab('fc');});
   zonesG=L.layerGroup();
   for(const z of ZONES){
     L.polygon(z.p,{color:'#e02020',weight:2,fillColor:'#e02020',fillOpacity:.22}).bindPopup(()=>h('div',{class:'pop'},h('b',{text:z.n}),h('div',{text:z.d}),h('div',{class:'note',text:'Επιβεβαίωσε στο Cy-FIS και στον νόμο.'}))).addTo(zonesG);
@@ -436,11 +437,13 @@ function initMap(){
   map.on('moveend',()=>{const p=map.getCenter(); lsSet('psaro-view',{lat:+p.lat.toFixed(4),lon:+p.lng.toFixed(4),z:map.getZoom()});});
   map.on('click',e=>{
     const ll=e.latlng.wrap(), lat=+ll.lat.toFixed(5), lon=+ll.lng.toFixed(5);
+    if(pick==='fc'){ endPick(); switchTab('fc'); window.dispatchEvent(new CustomEvent('psaro-fcpick',{detail:{lat:lat,lon:lon}})); return; }
     if(pick==='spot'){ endPick(); openSpotForm({lat:lat,lon:lon}); return; }
     if(pick==='bite'){ endPick(); pickedPt={lat:lat,lon:lon}; $('bLocMode').value='pick'; syncLoc(); openSheet(); return; }
     const box=h('div',{class:'pop'},h('div',{class:'mono',text:lat.toFixed(4)+', '+lon.toFixed(4)}),
       h('div',{class:'row',style:'margin-top:6px'},
         h('button',{class:'btn sm',type:'button',text:'Νέο σημείο',onclick:()=>{map.closePopup();openSpotForm({lat:lat,lon:lon});}}),
+        h('button',{class:'btn ghost sm',type:'button',text:'Πρόγνωση εδώ',onclick:()=>{map.closePopup();switchTab('fc');window.dispatchEvent(new CustomEvent('psaro-fcpick',{detail:{lat:lat,lon:lon}}));}}),
         h('button',{class:'btn acc sm',type:'button',text:'Τσίμπημα εδώ',onclick:()=>{map.closePopup();pickedPt={lat:lat,lon:lon};$('bLocMode').value='pick';syncLoc();openSheet();}})));
     L.popup().setLatLng(ll).setContent(box).openOn(map);
   });
@@ -453,7 +456,7 @@ function setYou(lat,lon){
 }
 function startPick(mode){
   pick=mode; $('mapHint').hidden=false;
-  $('mapHintTxt').textContent=mode==='spot'?'Πάτα στον χάρτη για το νέο σημείο':'Πάτα στον χάρτη εκεί που έπιασες';
+  $('mapHintTxt').textContent=mode==='fc'?'Πάτα στον χάρτη για πρόγνωση σε αυτό το σημείο':mode==='spot'?'Πάτα στον χάρτη για το νέο σημείο':'Πάτα στον χάρτη εκεί που έπιασες';
   switchTab('map');
 }
 function endPick(){ pick=null; $('mapHint').hidden=true; }
