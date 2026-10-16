@@ -167,8 +167,15 @@ function start(){
   toast(window.LANG==='en'?(hasContact(d)?'Have a good trip! Your contact has been notified.':'Have a good trip! You have no safety contact, so you only get a reminder on your phone.'):(hasContact(d)?'Καλή έξοδος! Η επαφή σου ενημερώθηκε.':'Καλή έξοδος! Δεν έχεις επαφή ασφαλείας, θα έχεις μόνο υπενθύμιση στο κινητό.'));
 }
 function summary(s){
-  var from=(s.startDate||'')+' '+hm(s.start), n=0, kg=0, sp={};
-  (C.Store.get('bites')||[]).forEach(function(b){ if(b.date&&b.time&&(b.date+' '+b.time)>=from){ n++; kg+=+b.kg||0; if(b.species) sp[b.species]=(sp[b.species]||0)+1; } });
+  /* Μετράμε μόνο τσιμπήματα με ώρα μέσα στο παράθυρο της εξόδου (από την έναρξη μέχρι τώρα), με σύγκριση χρονικών τιμών. */
+  var n=0, kg=0, sp={}, off=C.utcMin()*60000, lo=(s.start||0)-5*60000, hi=Date.now()+10*60000;
+  if(!s.start) return {n:0,kg:0,species:''};
+  (C.Store.get('bites')||[]).forEach(function(b){
+    if(!b.date||!b.time) return;
+    var p=b.date.split('-').map(Number), q=b.time.split(':').map(Number); if(p.length<3||q.length<2||isNaN(p[0])||isNaN(q[0])) return;
+    var ms=Date.UTC(p[0],p[1]-1,p[2],q[0],q[1])-off;
+    if(ms>=lo&&ms<=hi){ n++; kg+=+b.kg||0; if(b.species) sp[b.species]=(sp[b.species]||0)+1; }
+  });
   var top=Object.keys(sp).sort(function(a,b){ return sp[b]-sp[a]; })[0]||'';
   return {n:n,kg:Math.round(kg*10)/10,species:top};
 }

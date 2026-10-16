@@ -1,7 +1,7 @@
 // Network first for the app's own files so updates arrive at once; cache is the offline fallback.
 // Weather APIs and fonts are cross-origin and always go straight to the network.
 importScripts('forecast.js');
-const V = 'psarovarka-v26';
+const V = 'psarovarka-v27';
 const CFG = 'psaro-cfg';
 const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'species.js', 'cy100.js','i18n.js','cloud.js','extras.js','forecast-tab.js','fish-photos.js', 'rules.js', 'zones.js', 'forecast.js', 'personal.js', 'mine-tab.js', 'leaflet.js', 'leaflet.css', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 const cfgUrl = () => new URL('__cfg', self.registration.scope).href;
