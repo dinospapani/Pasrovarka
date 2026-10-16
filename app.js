@@ -417,6 +417,11 @@ function initMap(){
     if(lay==='sat'){map.removeLayer(baseSat);baseOsm.addTo(map);lay='osm';} else {map.removeLayer(baseOsm);baseSat.addTo(map);lay='sat';}
     lsSet('psaro-layer',lay); if(map.hasLayer(seaL)) seaL.bringToFront();
   });
+  const wmsU='https://ows.emodnet-bathymetry.eu/wms', depthC=L.tileLayer.wms(wmsU,{layers:'emodnet:mean_multicolour',format:'image/png',transparent:true,opacity:.6,version:'1.3.0',attribution:'EMODnet Bathymetry'}), depthK=L.tileLayer.wms(wmsU,{layers:'emodnet:contours',format:'image/png',transparent:true,version:'1.3.0',attribution:'EMODnet Bathymetry'});
+  let dm=+lsGet('psaro-depth',0)||0;
+  const applyDepth=()=>{ [depthC,depthK].forEach(l=>{ if(map.hasLayer(l)) map.removeLayer(l); }); if(dm===1) depthC.addTo(map); if(dm===2) depthK.addTo(map); if(map.hasLayer(seaL)) seaL.bringToFront(); $('bDepth').setAttribute('aria-pressed',String(dm!==0)); $('bDepth').title=['Βάθη θάλασσας: κλειστά','Βάθη θάλασσας: χρώματα','Βάθη θάλασσας: γραμμές βάθους'][dm]; };
+  applyDepth();
+  $('bDepth').addEventListener('click',()=>{ dm=(dm+1)%3; lsSet('psaro-depth',dm); applyDepth(); toast(['Βάθη: κλειστά','Βάθη: χρώματα','Βάθη: γραμμές βάθους'][dm]); });
   $('bSea').addEventListener('click',()=>{
     const on=!map.hasLayer(seaL); if(on) seaL.addTo(map); else map.removeLayer(seaL);
     $('bSea').setAttribute('aria-pressed',String(on));

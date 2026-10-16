@@ -101,7 +101,7 @@ function renderFc(p,f,note,t){
   $('fcSub').textContent=p&&f?('Ενημερώθηκε '+new Date(t||Date.now()).toLocaleTimeString(EN?'en-GB':'el-GR',{hour:'2-digit',minute:'2-digit'})+' · '+p.lat.toFixed(2)+', '+p.lon.toFixed(2)):'';
   $('fcNote').textContent=note||'';
   var wb=$('fcWatch'), delBtn=$('plDel');
-  wb.hidden=!p; delBtn.hidden=!p||!!(p&&p.gps);
+  wb.hidden=!p; delBtn.hidden=!p||!!(p&&p.gps); $('plRen').hidden=delBtn.hidden;
   if(p){ var on=p.watch!==false; wb.setAttribute('aria-pressed',String(on)); wb.textContent=on?'🔔 Ειδοποιήσεις: ναι':'🔕 Ειδοποιήσεις: όχι'; }
   if(!f){ $('fcBest').textContent=''; if(note) D.append(h('div',{class:'empty',text:note})); $('fcNote').textContent=''; return; }
   var today=f.nowLocal.slice(0,10), bestD=null;
@@ -228,14 +228,41 @@ $('plGo').addEventListener('click',geocode);
 $('plQ').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); geocode(); } });
 $('plSpots').addEventListener('click',showSpots);
 $('plMap').addEventListener('click',function(){ window.dispatchEvent(new Event('psaro-pickfc')); });
-window.addEventListener('psaro-fcpick',function(e){ var d=e.detail; addPlace((EN?'Point ':'Σημείο ')+d.lat.toFixed(2)+', '+d.lon.toFixed(2),d.lat,d.lon); });
+async function revName(lat,lon){
+  var pts=[[0,0],[.03,0],[-.03,0],[0,.03],[0,-.03]];
+  for(var i=0;i<pts.length;i++){
+    try{
+      var r=await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14&accept-language='+(EN?'en':'el')+'&lat='+(lat+pts[i][0])+'&lon='+(lon+pts[i][1]));
+      if(!r.ok) continue; var j=await r.json(); if(!j||j.error) continue;
+      var a=j.address||{}, n=a.suburb||a.village||a.town||a.city||a.hamlet||a.neighbourhood||a.municipality||j.name||'';
+      if(n) return (i?(EN?'Near ':'Κοντά: '):'')+n;
+    }catch(e){ return ''; }
+  }
+  return '';
+}
+window.addEventListener('psaro-fcpick',function(e){
+  var d=e.detail, id=pid(d.lat,d.lon), had=places.some(function(p){ return p.id===id; });
+  addPlace((EN?'Point ':'Σημείο ')+d.lat.toFixed(2)+', '+d.lon.toFixed(2),d.lat,d.lon);
+  if(had) return;
+  var p=places.filter(function(x){ return x.id===id; })[0]; if(p) p.auto=true;
+  revName(d.lat,d.lon).then(function(n){
+    var q=places.filter(function(x){ return x.id===id; })[0];
+    if(n&&q&&q.auto){ q.name=n; save(); renderPlaces(); if(sel===id) renderFc(fcPlace&&findPlace(sel),fc,'',Date.now()); syncNotify(); }
+  });
+});
 $('fcRefresh').addEventListener('click',function(){ load(true); });
 $('fcWatch').addEventListener('click',function(){
   var p=findPlace(sel); if(!p) return;
   if(p.gps) nt.gpsWatch=!(nt.gpsWatch!==false); else p.watch=!(p.watch!==false);
   save(); renderPlaces(); renderFc(fcPlace&&findPlace(sel),fc,'',Date.now()); syncNotify();
 });
+$('plRen').addEventListener('click',function(){
+  var p=places.filter(function(x){ return x.id===sel; })[0]; if(!p) return;
+  var n=prompt(EN?'Location name:':'Όνομα τοποθεσίας:',p.name); if(n==null) return; n=n.trim().slice(0,40); if(!n) return;
+  p.name=n; p.auto=false; save(); renderPlaces(); renderFc(fcPlace&&findPlace(sel),fc,'',Date.now()); syncNotify();
+});
 $('plDel').addEventListener('click',function(){
+  var p=findPlace(sel); if(p&&!confirm((EN?'Delete ':'Διαγραφή ')+'«'+p.name+'»;')) return;
   places=places.filter(function(p){ return p.id!==sel; }); sel='gps'; save(); renderPlaces(); load(); syncNotify();
 });
 document.querySelectorAll('nav.tabs button[data-tab="fc"]').forEach(function(b){ b.addEventListener('click',function(){ renderPlaces(); load(); }); });
