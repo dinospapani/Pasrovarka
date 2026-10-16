@@ -13,7 +13,7 @@ var EN=window.LANG==='en';
 var DAYN=EN?['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']:['Κυριακή','Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο'];
 var DAYS=EN?['Sun','Mon','Tue','Wed','Thu','Fri','Sat']:['Κυρ','Δευ','Τρί','Τετ','Πέμ','Παρ','Σάβ'];
 function dl(date){ var dt=new Date(date+'T12:00:00Z'); return DAYS[dt.getUTCDay()]+' '+date.slice(8)+'/'+date.slice(5,7); }
-var DIRS=['Β','ΒΑ','Α','ΝΑ','Ν','ΝΔ','Δ','ΒΔ'];
+var DIRS=window.LANG==='en'?['N','NE','E','SE','S','SW','W','NW']:['Β','ΒΑ','Α','ΝΑ','Ν','ΝΔ','Δ','ΒΔ'];
 function dirName(d){ return d==null?'':DIRS[Math.round(d/45)%8]; }
 function wxIcon(c){ if(c==null) return '🌤️'; if(c>=95) return '⛈️'; if(c>=80) return '🌦️'; if(c>=61) return '🌧️'; if(c>=51) return '🌦️'; if(c>=45) return '🌫️'; if(c<=1) return '☀️'; if(c===2) return '🌤️'; return '☁️'; }
 function wxText(c){ if(c==null) return ''; if(c>=95) return 'Καταιγίδα'; if(c>=80) return 'Μπόρες'; if(c>=61) return 'Βροχή'; if(c>=51) return 'Ψιχάλα'; if(c>=45) return 'Ομίχλη'; if(c<=1) return 'Καθαρός ουρανός'; if(c===2) return 'Λίγα σύννεφα'; return 'Συννεφιά'; }
@@ -88,9 +88,9 @@ function reason(d){
   if(d.safe) return '';
   var w=d.wx||{}, r=[];
   if(d.why==='night') return 'Δεν απομένει φως.';
-  if(w.windMax!=null&&w.windMax>14) r.push('άνεμος έως '+PF.bft(w.windMax)+' Bft');
-  if(w.waveMax!=null&&w.waveMax>0.9) r.push('κύμα έως '+w.waveMax.toFixed(1)+' m');
-  if(w.gustMax!=null&&w.gustMax>24) r.push('ριπές έως '+PF.bft(w.gustMax)+' Bft');
+  if(w.windMax!=null&&w.windMax>14) r.push((EN?'wind up to ':'άνεμος έως ')+PF.bft(w.windMax)+' Bft');
+  if(w.waveMax!=null&&w.waveMax>0.9) r.push((EN?'waves up to ':'κύμα έως ')+w.waveMax.toFixed(1)+' m');
+  if(w.gustMax!=null&&w.gustMax>24) r.push((EN?'gusts up to ':'ριπές έως ')+PF.bft(w.gustMax)+' Bft');
   if(w.code!=null&&w.code>=95) r.push('καταιγίδα');
   return 'Δεν υπάρχει ασφαλές παράθυρο'+(r.length?': '+r.join(', '):'')+'.';
 }
@@ -98,7 +98,7 @@ function renderFc(p,f,note,t){
   fc=f; fcPlace=p;
   var D=$('fcDays'), W=$('fcWeek'); D.replaceChildren(); W.replaceChildren();
   $('fcName').textContent=p?p.name:'';
-  $('fcSub').textContent=p&&f?('Ενημερώθηκε '+new Date(t||Date.now()).toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'})+' · '+p.lat.toFixed(2)+', '+p.lon.toFixed(2)):'';
+  $('fcSub').textContent=p&&f?('Ενημερώθηκε '+new Date(t||Date.now()).toLocaleTimeString(EN?'en-GB':'el-GR',{hour:'2-digit',minute:'2-digit'})+' · '+p.lat.toFixed(2)+', '+p.lon.toFixed(2)):'';
   $('fcNote').textContent=note||'';
   var wb=$('fcWatch'), delBtn=$('plDel');
   wb.hidden=!p; delBtn.hidden=!p||!!(p&&p.gps);
@@ -121,12 +121,12 @@ function renderFc(p,f,note,t){
     var tiles=h('div',{class:'ftiles'},
       tileEl('Καιρός',wxText(w.code)||'–'),
       tileEl('Θερμοκρασία',w.tmax!=null?Math.round(w.tmin)+'–'+Math.round(w.tmax)+'°C':'–'),
-      tileEl('Άνεμος',w.windMax!=null?PF.bft(w.windAvg)+' Bft (έως '+PF.bft(w.windMax)+')':'–'),
+      tileEl('Άνεμος',w.windMax!=null?PF.bft(w.windAvg)+' Bft ('+(EN?'up to ':'έως ')+PF.bft(w.windMax)+')':'–'),
       tileEl('Ριπές',w.gustMax!=null?PF.bft(w.gustMax)+' Bft':'–'),
       tileEl('Βροχή',w.rainMax!=null?w.rainMax+'%'+(w.rainMm>=0.1?' · '+w.rainMm.toFixed(1)+' mm':''):'–'),
       tileEl('Σύννεφα',w.cloudAvg!=null?Math.round(w.cloudAvg)+'%':'–'),
       tileEl('Πίεση',w.pStart!=null?Math.round(w.pEnd)+' hPa '+(w.pEnd-w.pStart>=1.5?'↑':w.pEnd-w.pStart<=-1.5?'↓':'→'):'–'),
-      tileEl('Κύμα',w.waveMax!=null?w.waveAvg.toFixed(1)+' m (έως '+w.waveMax.toFixed(1)+')'+(w.period?' · '+Math.round(w.period)+' s':''):'–'),
+      tileEl('Κύμα',w.waveMax!=null?w.waveAvg.toFixed(1)+' m ('+(EN?'up to ':'έως ')+w.waveMax.toFixed(1)+')'+(w.period?' · '+Math.round(w.period)+' s':''):'–'),
       tileEl('Θάλασσα',w.sst!=null?w.sst.toFixed(1)+'°C':'–'),
       tileEl('Σελήνη',Math.round(w.illum*100)+'%'),
       tileEl('Ανατολή / Δύση',fmtMin(w.rise)+' / '+fmtMin(w.set)),
@@ -139,7 +139,7 @@ function renderFc(p,f,note,t){
       h('div',{class:'label',style:'margin-top:8px',text:'Δείκτης ανά ώρα (00 → 23, αχνές οι ώρες με ανασφαλείς συνθήκες)'}),bars);
     D.append(det);
   });
-  $('fcNote').textContent=note||'Δείκτης 0–100 από άνεμο, ριπές, κύμα, πίεση, σύννεφα, καταιγίδες, φως και σελήνη. Μετράνε μόνο ώρες με άνεμο ως 4 Bft, ριπές ως 6 Bft και κύμα ως 0,9 m. Ώρες τοπικές.';
+  $('fcNote').textContent=note||(EN?'Index 0–100 from wind, gusts, waves, pressure, clouds, storms, light and moon. Only hours with wind up to 4 Bft, gusts up to 6 Bft and waves up to 0.9 m count. Local times.':'Δείκτης 0–100 από άνεμο, ριπές, κύμα, πίεση, σύννεφα, καταιγίδες, φως και σελήνη. Μετράνε μόνο ώρες με άνεμο ως 4 Bft, ριπές ως 6 Bft και κύμα ως 0,9 m. Ώρες τοπικές.')
 }
 
 /* ---------- ειδοποιήσεις ---------- */

@@ -10,7 +10,7 @@ function load(){ return C.lsGet(KEY,null)||{}; }
 function save(s){ C.lsSet(KEY,s); }
 function srvMsg(m){ var x=$('sfSrv'); if(x) x.textContent=m||''; }
 function hm(ms){ var d=new Date(ms+C.utcMin()*60000); return ('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2); }
-function dur(ms){ var m=Math.max(0,Math.round(ms/60000)), hh=Math.floor(m/60); return hh?hh+'ω '+('0'+(m%60)).slice(-2)+'λ':m+'λ'; }
+function dur(ms){ var m=Math.max(0,Math.round(ms/60000)), hh=Math.floor(m/60), en=window.LANG==='en', H=en?'h':'ω', M=en?'m':'λ'; return hh?hh+H+' '+('0'+(m%60)).slice(-2)+M:m+M; }
 function newCode(){ var a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',o=''; for(var i=0;i<10;i++) o+=a[Math.floor(Math.random()*a.length)]; return o; }
 function localMinToMs(hhmm){
   var p=hhmm.split(':'), off=C.utcMin(), nowL=Date.now()+off*60000, d=new Date(nowL);
@@ -163,7 +163,7 @@ function start(){
   save(s); $('sfMsg').textContent=''; render(); closeSheet();
   pushContact().then(function(){ return trackPos(); }).then(function(){ pushTrip(); });
   clearInterval(timer); timer=setInterval(tick,60000);
-  toast(hasContact(d)?'Καλή έξοδος! Η επαφή σου ενημερώθηκε.':'Καλή έξοδος! Δεν έχεις επαφή ασφαλείας, θα έχεις μόνο υπενθύμιση στο κινητό.');
+  toast(window.LANG==='en'?(hasContact(d)?'Have a good trip! Your contact has been notified.':'Have a good trip! You have no safety contact, so you only get a reminder on your phone.'):(hasContact(d)?'Καλή έξοδος! Η επαφή σου ενημερώθηκε.':'Καλή έξοδος! Δεν έχεις επαφή ασφαλείας, θα έχεις μόνο υπενθύμιση στο κινητό.'));
 }
 function summary(s){
   var from=(s.startDate||'')+' '+hm(s.start), n=0, kg=0, sp={};

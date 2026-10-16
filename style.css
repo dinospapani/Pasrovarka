@@ -320,3 +320,7 @@ html.gated #tripSheet,html.gated .tripbtn{display:none}
 .sc i{font-size:10px}
 .sc b{font-size:12.5px;white-space:nowrap}
 button.sc.more{padding:3px 8px}
+
+/* centered floating add button above the bar */
+nav.tabs button.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--navh,64px) + 12px);margin:0;width:56px;height:56px;z-index:11}
+.leaflet-top.leaflet-left .leaflet-control-zoom{margin-top:10px;margin-left:10px}

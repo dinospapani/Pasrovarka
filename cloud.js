@@ -79,7 +79,7 @@ async function sync(manual){
     ls('psaro-pup',pup);
     if(dl) Store.flush();
     ls('psaro-last',Date.now());
-    status('Συγχρονίστηκε '+new Date().toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'})+(got?' · ήρθαν '+got:'')+(out.length?' · στάλθηκαν '+out.length:''));
+    status('Συγχρονίστηκε '+new Date().toLocaleTimeString(window.LANG==='en'?'en-GB':'el-GR',{hour:'2-digit',minute:'2-digit'})+(got?' · ήρθαν '+got:'')+(out.length?' · στάλθηκαν '+out.length:''));
   }catch(e){
     if(/HTTP 4(01|03)|JWT|refresh_token|Refresh Token|invalid_grant/i.test(String(e.message))){ signedOut(); msg('Η σύνδεση έληξε. Συνδέσου ξανά.',true); }
     else if(/relation .*records|PGRST205|HTTP 404/.test(String(e.message))) status('Λείπει η βάση δεδομένων στο Supabase (πίνακας records).');
@@ -109,7 +109,7 @@ function render(){
   if($('pAvatar')) $('pAvatar').textContent=ch;
   if($('pNameShow')) $('pNameShow').textContent=nm||em;
   if($('pName')&&document.activeElement!==$('pName')) $('pName').value=nm;
-  if(sess&&$('acStatus')&&!$('acStatus').textContent){ var l=ls('psaro-last'); if(l) $('acStatus').textContent='Τελευταίος συγχρονισμός '+new Date(l).toLocaleString('el-GR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
+  if(sess&&$('acStatus')&&!$('acStatus').textContent){ var l=ls('psaro-last'); if(l) $('acStatus').textContent='Τελευταίος συγχρονισμός '+new Date(l).toLocaleString(window.LANG==='en'?'en-GB':'el-GR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
 }
 function localCount(){ return Store.get('spots').length+Store.get('trips').length+Store.get('bites').length; }
 async function afterLogin(j){
