@@ -156,10 +156,11 @@ function setDur(hrs){
   $('sfTime').value=('0'+t.getUTCHours()).slice(-2)+':'+('0'+t.getUTCMinutes()).slice(-2);
   Array.prototype.forEach.call(document.querySelectorAll('#sfDur .chip'),function(b){ b.setAttribute('aria-pressed',String(+b.dataset.h===hrs)); });
 }
+function snap0(){ var c=C.getCond(); return c?{lat:c.lat,lon:c.lon,press:c.press,ptrend:c.ptrend,wind:c.wind,wave:c.wave,cloud:c.cloud,sst:c.sst}:null; }
 function start(){
   var d=load(), time=$('sfTime').value;
   if(!time){ $('sfMsg').textContent='Βάλε ώρα επιστροφής.'; return; }
-  var s=Object.assign({},d,{active:true,id:'trip-'+Date.now().toString(36),route:$('sfRoute').value.trim(),due:localMinToMs(time),last:null,start:Date.now(),startDate:C.nicosiaToday(),sil:+$('sfSil').value||0,synced:undefined});
+  var s=Object.assign({},d,{active:true,id:'trip-'+Date.now().toString(36),route:$('sfRoute').value.trim(),due:localMinToMs(time),last:null,start:Date.now(),startDate:C.nicosiaToday(),cond0:snap0(),sil:+$('sfSil').value||0,synced:undefined});
   save(s); $('sfMsg').textContent=''; render(); closeSheet();
   pushContact().then(function(){ return trackPos(); }).then(function(){ pushTrip(); });
   clearInterval(timer); timer=setInterval(tick,60000);
@@ -173,14 +174,14 @@ function summary(s){
 }
 function back(){
   var s=load(); if(!s.active) return;
-  var d=Date.now()-s.start, sm=summary(s);
+  var d=Date.now()-s.start, sm=summary(s), en=window.LANG==='en';
   s.active=false; save(s); pushTrip(); clearInterval(timer);
-  $('sfMsg').textContent='Καλωσόρισες πίσω.'; render(); closeSheet();
-  var txt='Τέλος εξόδου. Διάρκεια '+dur(d)+'. '+(sm.n?(sm.n===1?'1 τσίμπημα':sm.n+' τσιμπήματα')+', '+sm.kg+' kg.':'Δεν καταγράφηκαν τσιμπήματα.')+'\nΝα καταχωρηθεί η έξοδος στο Ημερολόγιο;';
-  if(confirm(txt)){
-    C.Store.save('trips',{date:s.startDate||C.nicosiaToday(),spot:s.route||'',tech:'',species:sm.species,count:sm.n,kg:sm.kg,notes:'Καταγραφή από Έναρξη/Τέλος εξόδου ('+dur(d)+')'}).catch(function(){});
-    toast('Καταχωρήθηκε στο Ημερολόγιο.');
-  } else toast('Καλωσόρισες πίσω.');
+  $('sfMsg').textContent=en?'Welcome back.':'Καλωσόρισες πίσω.'; render(); closeSheet();
+  if(d>=20*60000){
+    var pos=s.last||(s.cond0&&s.cond0.lat!=null?{lat:s.cond0.lat,lon:s.cond0.lon}:null);
+    C.Store.save('trips',{date:s.startDate||C.nicosiaToday(),spot:s.route||'',tech:'',species:sm.species,count:sm.n,kg:sm.kg,startMs:s.start,endMs:Date.now(),cond0:s.cond0||null,lat:pos?pos.lat:null,lon:pos?pos.lon:null,notes:(en?'Recorded from Start/End trip (':'Καταγραφή από Έναρξη/Τέλος εξόδου (')+dur(d)+')'}).catch(function(){});
+    toast((en?'Trip saved: ':'Η έξοδος καταχωρήθηκε: ')+dur(d)+' · '+(sm.n?sm.n+(en?' bites':' τσιμπήματα'):(en?'no bites':'χωρίς τσιμπήματα')));
+  } else toast(en?'Welcome back.':'Καλωσόρισες πίσω.');
 }
 function ext(){ var s=load(); s.due=Math.max(s.due,Date.now())+30*60000; save(s); render(); pushTrip(); }
 function sos(){

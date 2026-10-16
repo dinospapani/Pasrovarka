@@ -220,6 +220,7 @@
   <!-- ΠΡΟΓΝΩΣΗ -->
   <section class="tab" id="tab-fc" hidden>
     <h2>Πρόγνωση</h2>
+    <div class="seg" id="fcSeg" role="group" aria-label="Είδος πρόγνωσης"><button type="button" data-s="gen" aria-pressed="true">Γενική πρόγνωση</button><button type="button" data-s="mine" aria-pressed="false">Δικά μου δεδομένα</button></div>
     <div class="card" id="plCard">
       <div class="label">Τοποθεσία</div>
       <div class="chips" id="plChips"></div>
@@ -231,6 +232,7 @@
       <div class="row" style="margin-top:8px"><button class="btn ghost sm" id="plSpots" type="button">Από τα σημεία μου</button> <button class="btn ghost sm" id="plMap" type="button">🗺 Επιλογή στον χάρτη</button></div>
       <div class="chips" id="plSpotList" hidden></div>
     </div>
+    <div id="fcGen">
     <div class="card" id="fcHead">
       <div class="fchead"><div><h3 id="fcName" style="margin:0"></h3><div class="note" id="fcSub"></div></div>
         <div class="row" style="gap:6px"><button class="btn sm ghost" id="fcWatch" type="button" aria-pressed="false">🔔 Ειδοποιήσεις</button><button class="btn sm ghost" id="fcRefresh" type="button">Ανανέωση</button></div></div>
@@ -250,6 +252,8 @@
       <div class="note" id="ntMsg" style="margin-top:6px"></div>
     </div>
     <p class="note">Καιρός και κύμα: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo.com</a>. Ενδεικτικό μοντέλο, όχι επίσημη πρόγνωση. Η ακρίβεια μειώνεται μετά τις πρώτες 3 ημέρες.</p>
+    </div>
+    <div id="fcMine" hidden></div>
   </section>
 
   <!-- ΧΑΡΤΗΣ -->
@@ -439,11 +443,13 @@
 <script src="rules.js"></script>
 <script src="i18n.js"></script>
 <script src="forecast.js"></script>
+<script src="personal.js"></script>
 <script src="push-config.js"></script>
 <script src="zones.js"></script>
 <script src="app.js"></script>
 <script src="cloud.js"></script>
 <script src="extras.js"></script>
 <script src="forecast-tab.js"></script>
+<script src="mine-tab.js"></script>
 </body>
 </html>

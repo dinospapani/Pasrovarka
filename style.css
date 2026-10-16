@@ -324,3 +324,16 @@ button.sc.more{padding:3px 8px}
 /* centered floating add button above the bar */
 nav.tabs button.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--navh,64px) + 12px);margin:0;width:56px;height:56px;z-index:11}
 .leaflet-top.leaflet-left .leaflet-control-zoom{margin-top:10px;margin-left:10px}
+/* v25: υπο-καρτέλες πρόγνωσης και σύγκριση */
+#fcSeg{margin:0 0 12px}
+.cmp{display:grid;grid-template-columns:minmax(84px,1fr) 1fr 1fr;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:13px}
+.cmph{border-top:0;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;padding-top:0}
+.cmpc{display:flex;flex-direction:column}
+.cmpc b{font-family:var(--font-mono);font-size:16px}
+.cmpc small{color:var(--muted)}
+.cmpc.p b{color:var(--acc,#e8683a)}
+details.card>summary{cursor:pointer;font-weight:600}
+.sessrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.sessrow .btn{flex:none;width:38px;padding:6px 0}
+/* v25b: κρύβουμε το + όσο διαλέγεις σημείο στον χάρτη */
+body.picking nav.tabs button.fab{display:none}

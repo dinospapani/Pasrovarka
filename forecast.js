@@ -72,7 +72,7 @@ async function getForecast(lat,lon,fetchFn,opt){
   const days=[];
   for(const date of Object.keys(byDay).sort().slice(0,nd)){
     const sm=sunMoon(date,lat,lon,tz), rows=byDay[date];
-    const hours=rows.map(h=>({t:h.t,hr:h.hr,p:h.p,wind:h.wind,wave:h.wave,gust:h.gust,code:h.code,score:hourScore(sm,h.hr,h),safe:safeHour(h)}));
+    const hours=rows.map(h=>({t:h.t,hr:h.hr,p:h.p,wind:h.wind,wave:h.wave,gust:h.gust,code:h.code,ptrend:h.ptrend,score:hourScore(sm,h.hr,h),safe:safeHour(h)}));
     const day=h=>{const t=h.hr*60+30;return t>=sm.rise-60&&t<=sm.set+60;};
     const cand=hours.filter(h=>h.safe&&day(h)&&(date>today||h.t>=nowLocal.slice(0,13)+':00'));
     let best=0,win=null;
@@ -90,7 +90,7 @@ async function getForecast(lat,lon,fetchFn,opt){
     const wx={tmax:mx(rows.map(r=>r.temp)),tmin:mn(rows.map(r=>r.temp)),windAvg:av(use.map(r=>r.wind)),windMax:mx(use.map(r=>r.wind)),gustMax:mx(use.map(r=>r.gust)),windDir:mid?mid.dir:null,
       rainMax:mx(use.map(r=>r.rain)),rainMm:num(rows.map(r=>r.mm)).reduce((x,y)=>x+y,0),code:storm?95:(mode!=null?+mode:null),cloudAvg:av(use.map(r=>r.cc)),
       pStart:rows[0].p,pEnd:rows[rows.length-1].p,waveMax:mx(use.map(r=>r.wave)),waveAvg:av(use.map(r=>r.wave)),period:av(use.map(r=>r.period)),sst:av(rows.map(r=>r.sst)),illum:(1-Math.cos(2*Math.PI*sm.f))/2,rise:sm.rise,set:sm.set};
-    days.push({date,best,win,why,hours,avgWind:av(used.map(h=>h.wind)),avgWave:av(used.filter(h=>h.wave!=null).map(h=>h.wave)),safe:cand.length>0,wx});
+    days.push({date,f:sm.f,rise:sm.rise,set:sm.set,best,win,why,hours,avgWind:av(used.map(h=>h.wind)),avgWave:av(used.filter(h=>h.wave!=null).map(h=>h.wave)),safe:cand.length>0,wx});
   }
   return {days,tz,nowLocal};
 }

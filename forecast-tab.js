@@ -95,7 +95,7 @@ function reason(d){
   return 'Δεν υπάρχει ασφαλές παράθυρο'+(r.length?': '+r.join(', '):'')+'.';
 }
 function renderFc(p,f,note,t){
-  fc=f; fcPlace=p;
+  fc=f; fcPlace=p; try{ window.dispatchEvent(new CustomEvent('psaro-fcloaded',{detail:{place:p,fc:f}})); }catch(e){}
   var D=$('fcDays'), W=$('fcWeek'); D.replaceChildren(); W.replaceChildren();
   $('fcName').textContent=p?p.name:'';
   $('fcSub').textContent=p&&f?('Ενημερώθηκε '+new Date(t||Date.now()).toLocaleTimeString(EN?'en-GB':'el-GR',{hour:'2-digit',minute:'2-digit'})+' · '+p.lat.toFixed(2)+', '+p.lon.toFixed(2)):'';

@@ -460,11 +460,11 @@ function setYou(lat,lon){
   if(youM) youM.setLatLng([lat,lon]); else youM=L.marker([lat,lon],{icon:L.divIcon({className:'',html:'<div class="you"></div>',iconSize:[18,18]}),interactive:false,zIndexOffset:-100}).addTo(map);
 }
 function startPick(mode){
-  pick=mode; $('mapHint').hidden=false;
+  pick=mode; $('mapHint').hidden=false; document.body.classList.add('picking');
   $('mapHintTxt').textContent=mode==='fc'?'Πάτα στον χάρτη για πρόγνωση σε αυτό το σημείο':mode==='spot'?'Πάτα στον χάρτη για το νέο σημείο':'Πάτα στον χάρτη εκεί που έπιασες';
   switchTab('map');
 }
-function endPick(){ pick=null; $('mapHint').hidden=true; }
+function endPick(){ pick=null; $('mapHint').hidden=true; document.body.classList.remove('picking'); }
 function showOnMap(lat,lon,id){
   switchTab('map'); if(!map) return;
   map.flyTo([lat,lon],Math.max(map.getZoom(),13));
