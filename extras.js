@@ -111,10 +111,12 @@ function sessBar(s){
   var b=$('sessBar');
   if(!s.active||late(s)){ if(b) b.remove(); return; }
   if(!b){
-    b=h('div',{id:'sessBar'},h('span',{id:'sessTxt'}),h('button',{class:'btn sm',type:'button',id:'sessEnd',text:'Τέλος εξόδου'}));
+    b=h('div',{id:'sessBar'},h('span',{id:'sessTxt'}),h('button',{class:'btn sm',type:'button',id:'sessBite','aria-label':window.LANG==='en'?'Quick bite':'Γρήγορο τσίμπημα',text:'🐟 +'}),h('button',{class:'btn sm dang',type:'button',id:'sessSos',text:'SOS'}),h('button',{class:'btn sm',type:'button',id:'sessEnd',text:'Τέλος εξόδου'}));
     var hd=document.querySelector('header.top'); hd.parentNode.insertBefore(b,hd.nextSibling);
     $('sessTxt').addEventListener('click',openSheet);
     $('sessEnd').addEventListener('click',back);
+    $('sessBite').addEventListener('click',function(){ var q=$('bQuick'); if(q&&!q.disabled) q.click(); });
+    $('sessSos').addEventListener('click',function(){ if(confirm(window.LANG==='en'?'Send an SOS with your location to your safety contact?':'Να σταλεί SOS με τη θέση σου στην επαφή ασφαλείας;')) trackPos().then(function(){ sos(); }); });
   }
   $('sessTxt').textContent='● Σε έξοδο '+dur(Date.now()-s.start)+' · επιστροφή '+hm(s.due);
 }
@@ -191,6 +193,7 @@ function back(){
     toast((en?'Trip saved: ':'Η έξοδος καταχωρήθηκε: ')+dur(d)+' · '+(sm.n?sm.n+(en?' bites':' τσιμπήματα'):(en?'no bites':'χωρίς τσιμπήματα')));
   } else toast(en?'Welcome back. The trip was under 20 minutes with no bites, so it was not saved.':'Καλωσόρισες πίσω. Η έξοδος ήταν κάτω από 20 λεπτά χωρίς τσιμπήματα, οπότε δεν καταχωρήθηκε.');
 }
+window.PsaroTrip={endSilent:function(){ var s=load(); if(!s.active) return false; s.active=false; save(s); pushTrip(); clearInterval(timer); render(); return true; },state:load};
 function ext(){ var s=load(); s.due=Math.max(s.due,Date.now())+30*60000; save(s); render(); pushTrip(); }
 function sos(){
   var s=load(); s.due=Date.now()-60000; save(s); pushTrip();

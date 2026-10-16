@@ -43,6 +43,12 @@
     <label class="f">Νέος κωδικός<input type="password" id="pPass" autocomplete="new-password"></label>
     <div class="row"><button class="btn ghost sm" id="pPassSave" type="button">Αλλαγή κωδικού</button></div>
     <p class="note" id="pMsg" role="status"></p>
+    <div class="card" id="dgCard">
+      <h3>Έλεγχος δεδομένων</h3>
+      <p class="note">Ψάχνει για διπλά τσιμπήματα, έξοδοι που επικαλύπτονται ή κρατούν υπερβολικά πολύ, ξεχασμένη ενεργή έξοδο και λάθος σύνολα σε παλιές εξόδους. Τίποτα δεν αλλάζει χωρίς να το πατήσεις.</p>
+      <div class="row"><button class="btn sm" id="dgRun" type="button">Έλεγχος τώρα</button></div>
+      <div id="dgOut"></div>
+    </div>
     <div class="card" id="pContacts">
       <h3>Επαφή ασφαλείας</h3>
       <p class="note">Το άτομο που ειδοποιείται αυτόματα αν δεν γυρίσεις στην ώρα σου ή αν χαθεί η επαφή μαζί σου. Δεν χρειάζεται να έχει την εφαρμογή.</p>
@@ -451,5 +457,6 @@
 <script src="extras.js"></script>
 <script src="forecast-tab.js"></script>
 <script src="mine-tab.js"></script>
+<script src="diag.js"></script>
 </body>
 </html>

@@ -558,10 +558,23 @@ function renderSpots(){
 }
 
 /* ---------- Log ---------- */
+/* Έξοδοι από το κουμπί «Έξοδος» (με startMs): τα ψάρια/kg υπολογίζονται ζωντανά από τα τσιμπήματα, ώστε οι αλλαγές στα bites να φαίνονται εδώ. */
+function tripEff(t,all){
+  if(!t.startMs||!t.endMs||t.manual) return {count:+t.count||0,kg:+t.kg||0,species:t.species||''};
+  const lo=Math.floor(t.startMs/60000)*60000, prev=(all||[]).filter(x=>x.id!==t.id&&x.startMs&&x.endMs&&x.startMs<t.startMs);
+  let n=0,kg=0; const sp={};
+  Store.get('bites').forEach(b=>{
+    if(!b.date||!b.time) return; const ms=biteMs(b); if(isNaN(ms)) return;
+    if(prev.some(x=>ms>=Math.floor(x.startMs/60000)*60000&&ms<=x.endMs)) return;
+    if(ms>=lo&&ms<=t.endMs){ n++; kg+=+b.kg||0; if(b.species) sp[b.species]=(sp[b.species]||0)+1; }
+  });
+  return {count:n,kg:Math.round(kg*10)/10,species:Object.keys(sp).sort((a,b)=>sp[b]-sp[a])[0]||''};
+}
 function renderTrips(){
-  const trips=Store.get('trips').slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-  const n=trips.length, fish=trips.reduce((a,t)=>a+(+t.count||0),0), kg=trips.reduce((a,t)=>a+(+t.kg||0),0);
-  const by={}; trips.forEach(t=>{if(t.spot)by[t.spot]=(by[t.spot]||0)+(+t.count||0);});
+  const all=Store.get('trips'), trips=all.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const eff=new Map(trips.map(t=>[t.id,tripEff(t,all)]));
+  const n=trips.length, fish=trips.reduce((a,t)=>a+eff.get(t.id).count,0), kg=trips.reduce((a,t)=>a+eff.get(t.id).kg,0);
+  const by={}; trips.forEach(t=>{if(t.spot)by[t.spot]=(by[t.spot]||0)+eff.get(t.id).count;});
   const best=Object.entries(by).sort((a,b)=>b[1]-a[1])[0];
   const st=$('stats'); st.replaceChildren();
   for(const [lab,val] of [['Έξοδοι',n],['Ψάρια',fish],['Kg',kg.toFixed(1)]]) st.append(h('div',{},h('b',{text:val}),h('span',{class:'label',text:lab})));
@@ -592,7 +605,7 @@ function renderTrips(){
     }
     L.append(h('div',{class:'item'},
       h('div',{},h('b',{text:(t.date||'')+(t.spot?' · '+t.spot:'')}),
-        h('div',{class:'meta',text:[t.tech,(t.count||0)+' ψάρια',(+t.kg||0).toFixed(1)+' kg',t.species].filter(Boolean).join(' · ')}),
+        h('div',{class:'meta',text:[t.tech,eff.get(t.id).count+' ψάρια',eff.get(t.id).kg.toFixed(1)+' kg',eff.get(t.id).species].filter(Boolean).join(' · ')}),
         t.notes?h('div',{class:'meta',text:t.notes}):null,det),
       h('div',{class:'acts'},del)));
   }
@@ -1168,7 +1181,7 @@ $('csvBites').addEventListener('click',()=>{
 });
 $('csvTrips').addEventListener('click',()=>{
   const L=Store.get('trips').slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
-  csvDownload('bitecast-trips-'+nicosiaToday()+'.csv',['Ημερομηνία','Σημείο','Τεχνική','Είδη','Ψάρια','Βάρος kg','Σημειώσεις'],L.map(t=>[t.date,t.spot,t.tech,t.species,t.count,t.kg,t.notes]));
+  csvDownload('bitecast-trips-'+nicosiaToday()+'.csv',['Ημερομηνία','Σημείο','Τεχνική','Είδη','Ψάρια','Βάρος kg','Σημειώσεις'],L.map(t=>{const e=tripEff(t,L);return [t.date,t.spot,t.tech,e.species,e.count,e.kg,t.notes];}));
 });
 
 /* ---------- Backup ---------- */
@@ -1225,7 +1238,7 @@ setTimeout(fitMap,100); setTimeout(fitMap,1500);
 renderToday(); renderSpecies(); renderTech(); renderChecks(); renderLaw(); renderSpots(); renderTrips(); renderWx();
 Store.on('spots',()=>{drawMap();renderSpots();});
 Store.on('trips',renderTrips);
-Store.on('bites',()=>{renderBites();renderStats();});
+Store.on('bites',()=>{renderBites();renderStats();renderTrips();});
 Object.assign(window.PsaroCore,{h:h,$:$,fmt:fmt,pad:pad,nicosiaToday:nicosiaToday,nicosiaNowMin:nicosiaNowMin,getPosition:getPosition,getCond:()=>cond,showOnMap:showOnMap,lsGet:lsGet,lsSet:lsSet,switchTab:switchTab,utcMin:()=>utcOff()});
 Store.init();
 if(cond){ applyConditions(cond); } else { $('liveMain').textContent='Δεν υπάρχουν δεδομένα καιρού ακόμα.'; }
