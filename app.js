@@ -918,7 +918,7 @@ async function quickRec(miss,sp){
     const id=await Store.save('bites',rec);
     const en=window.LANG==='en';
     if(miss) toast(en?'Miss logged ✕'+(has?'':' (no position)'):'Καταγράφηκε miss ✕'+(has?'':' (χωρίς θέση)'));
-    else if(sp&&sp.species){ toast(sp.species+(sp.kg>0?' · '+sp.kg+' kg':'')+' ✓'+(has?'':(en?' (no position)':' (χωρίς θέση)'))); if(has&&$('tab-map').hidden===false) showOnMap(c.lat,c.lon,id); }
+    else if(sp&&sp.species){ toast(sp.species+(sp.kg>0?' · '+sp.kg+' kg':'')+' ✓'+(has?'':(en?' (no position)':' (χωρίς θέση)'))); if(has&&$('tab-map').hidden===false&&!document.body.classList.contains('live')) showOnMap(c.lat,c.lon,id); }
     else { toast(en?'Bite saved. Add the species from Log → Bites → Edit, or hold the Catch button next time.':'Τσίμπημα αποθηκεύτηκε. Πρόσθεσε είδος από Ημερολόγιο → Τσιμπήματα → Επεξεργασία, ή κράτα πατημένο το Catch την επόμενη φορά.'); if(has&&$('tab-map').hidden===false) showOnMap(c.lat,c.lon,id); }
   }catch(e){ toast(window.LANG==='en'?'Not saved. Try again.':'Δεν αποθηκεύτηκε. Δοκίμασε ξανά.'); }
   finally{ btn.disabled=false; quickBusy=false; }

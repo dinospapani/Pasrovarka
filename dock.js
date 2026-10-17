@@ -41,6 +41,7 @@ function info(){
 }
 function upd(){
   var s=st(), on=!!s.active, dk=$('dock');
+  document.body.classList.toggle('live',on);
   $('dkStart').hidden=on; $('dkLive').hidden=!on; dk.classList.toggle('paused',on&&!!s.pausedAt);
   if(on){
     var c=window.PsaroTrip.counts();
@@ -102,11 +103,10 @@ function drawWx(){
   var items=[
     cell('☁',c.press!=null?c.press+'':dash,'hPa '+(TR[c.ptrend]||'')),
     cell('🌡',c.temp!=null?Math.round(c.temp)+'°':dash,T('αέρας','air')),
-    cell('🌊',c.sst!=null?Math.round(c.sst)+'°':dash,T('θάλασσα','sea')),
     cell('➤',c.wind!=null?c.wind+'':dash,'kn '+wd),
     cell('〰',c.wave!=null?c.wave.toFixed(1):dash,T('κύμα m','wave m'))
   ];
-  wx.append(mh,h('div',{class:'mwg'},items));
+  wx.append(h('div',{class:'mwg'},items));
 }
 wx.addEventListener('click',function(){ open=!open; try{ localStorage.setItem('psaro-mapwx',open?'1':'0'); }catch(e){} drawWx(); });
 document.addEventListener('psaro-cond',function(){ setTimeout(drawWx,50); });

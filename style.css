@@ -483,3 +483,16 @@ body.picking .dock,body.picking .mapwx{display:none}
 .lkbar{position:absolute;left:0;top:0;bottom:0;width:0;background:#ff5a2a}
 .lkhold.go .lkbar{width:100%;transition:width 1s linear}
 .dkinfo{flex-wrap:nowrap;max-width:calc(100vw - 150px);min-width:0}.dkinfo span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+
+/* v33b: λιγότερο φορτωμένη οθόνη σε ενεργή έξοδο */
+body.live #fab,body.live .mapleg,body.live .mapwx{display:none!important}
+body.live .dock{bottom:14px;right:62px}
+body.live .dkrow button,body.live .dkp{height:56px;border-radius:18px}
+body.live .dkrow{grid-template-columns:1.4fr 1fr 48px;gap:6px}
+body.live .dkrow b{font-size:22px}
+body.live .dkrow span{font-size:13px}
+body.live .dkrow small{display:none}
+body.live .dksp button{height:34px;font-size:12px}
+body.live .dkinfo span{font-size:10.5px}
+body.live .dkinfo b{font-size:14px}
+body.live .dklive{gap:5px}
