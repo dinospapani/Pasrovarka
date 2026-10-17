@@ -15,11 +15,11 @@ function build(trips,bites,opt){
   const T={}; for(const k in LV) T[k]=Array.from({length:LV[k]},()=>({h:0,c:0}));
   let H=0,C=0;
   for(const s of S){
-    const hrs=(s.endMs-s.startMs)/3600000;
+    const gross=s.endMs-s.startMs, sc=gross>0?Math.max(0,gross-(+s.pauseMs||0))/gross:1, hrs=gross*sc/3600000;
     const inS=s.manual?[]:(bites||[]).map(b=>({b,ms:biteMs(b,utcMin)})).filter(x=>x.ms!=null&&x.ms>=s.startMs-600000&&x.ms<=s.endMs+600000);
     const c=s.manual?Math.max(0,+s.count||0):inS.length; H+=hrs; C+=c;
     const bh=new Array(8).fill(0); // ώρες ανά τρίωρο, μοιράζουμε τον χρόνο ανά 10 λεπτά
-    for(let t=s.startMs;t<s.endMs;t+=600000){ const loc=new Date(t+utcMin*60000); bh[Math.floor(loc.getUTCHours()/3)]+=Math.min(600000,s.endMs-t)/3600000; }
+    for(let t=s.startMs;t<s.endMs;t+=600000){ const loc=new Date(t+utcMin*60000); bh[Math.floor(loc.getUTCHours()/3)]+=Math.min(600000,s.endMs-t)/3600000*sc; }
     bh.forEach((v,i)=>{ T.block[i].h+=v; if(s.manual&&hrs>0) T.block[i].c+=c*v/hrs; });
     inS.forEach(x=>{ const loc=new Date(Math.min(Math.max(x.ms,s.startMs),s.endMs-1)+utcMin*60000); T.block[Math.floor(loc.getUTCHours()/3)].c++; });
     const mi=moonOf((s.startMs+s.endMs)/2); T.moon[mi].h+=hrs; T.moon[mi].c+=c;

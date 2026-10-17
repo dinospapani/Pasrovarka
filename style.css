@@ -347,3 +347,139 @@ body.picking nav.tabs button.fab{display:none}
 .dgok{color:var(--good);font-weight:600}
 #sessBar span{flex:1 1 100%}
 #sessBar .btn{flex:1 1 0}
+
+/* ================= v31: νέα εμφάνιση ================= */
+:root{
+  --accent:#0a7f73; --accent-ink:#ffffff; --catch:#ff6a3d;
+  --bg:#e9f1f4; --surface:#ffffff; --line:#d3e1e6; --r:16px;
+  --shadow:0 4px 18px rgba(10,42,61,.10);
+  --glass:rgba(255,255,255,.86); --glass-ink:#0a2a3d; --navbg:rgba(255,255,255,.92);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --accent:#2dd4bf; --accent-ink:#04211d; --bg:#071820; --surface:#0e2833; --line:#1c3b49;
+    --shadow:0 4px 18px rgba(0,0,0,.35);
+    --glass:rgba(14,40,51,.82); --glass-ink:#e3eff2; --navbg:rgba(10,30,40,.94);
+  }
+}
+:root[data-theme="dark"]{
+  --accent:#2dd4bf; --accent-ink:#04211d; --bg:#071820; --surface:#0e2833; --line:#1c3b49;
+  --shadow:0 4px 18px rgba(0,0,0,.35);
+  --glass:rgba(14,40,51,.82); --glass-ink:#e3eff2; --navbg:rgba(10,30,40,.94);
+}
+body{background:radial-gradient(1200px 500px at 50% -120px,color-mix(in srgb,var(--accent) 14%,var(--bg)),var(--bg) 70%) no-repeat,var(--bg);background-attachment:fixed}
+header.top{border-bottom:0;padding-block:14px 8px}
+.brand{font-size:30px;letter-spacing:.05em;display:flex;align-items:center}
+.brand img{border-radius:9px!important;margin-right:10px!important;width:32px;height:32px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+h2{font-size:21px;text-transform:none;letter-spacing:.01em;font-weight:700}
+.card{border-radius:var(--r);box-shadow:var(--shadow);border-color:var(--line)}
+.btn{border-radius:12px;padding:10px 16px}
+.btn.sm{padding:7px 12px;border-radius:10px}
+.btn.acc{background:var(--accent);color:var(--accent-ink)}
+input[type=text],input[type=number],input[type=date],input[type=tel],input[type=email],input[type=time],input[type=password],select,textarea{border-radius:10px;background:color-mix(in srgb,var(--bg) 70%,var(--surface))}
+.seg{border-radius:12px;padding:3px;background:color-mix(in srgb,var(--bg) 60%,var(--line));border:0;gap:3px}
+.seg button{border-radius:9px;background:transparent}
+.seg button[aria-pressed=true]{background:var(--surface);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.chip{padding:5px 12px}
+.chip[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.sc{border-radius:12px;box-shadow:var(--shadow)}
+.tripbtn{background:linear-gradient(135deg,#12b3a3,#0a7f73);color:#fff;box-shadow:0 3px 10px rgba(10,127,115,.35)}
+.tripbtn.on{background:linear-gradient(135deg,#25a56a,#177a4b)}
+.tripbtn.late{background:linear-gradient(135deg,#e14646,#b3261e)}
+#stats{display:none}
+
+/* μπάρα πλοήγησης */
+nav.tabs{background:var(--navbg);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:0;border-radius:22px 22px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.16);padding-top:4px}
+nav.tabs button[aria-selected=true]{box-shadow:none;color:var(--accent)}
+nav.tabs button[data-tab]{position:relative}
+nav.tabs button[aria-selected=true][data-tab]::after{content:"";position:absolute;top:2px;left:50%;width:22px;height:3px;margin-left:-11px;border-radius:3px;background:var(--accent)}
+nav.tabs button.fab{width:62px;height:62px;background:linear-gradient(145deg,#2dd4bf,#0a8f80);color:#04211d;border:5px solid var(--bg);box-shadow:0 6px 18px rgba(10,127,115,.5)}
+nav.tabs button.fab svg{width:30px;height:30px;stroke-width:2.2}
+
+/* χάρτης */
+.mapbox{border-radius:20px;border:0;box-shadow:var(--shadow)}
+.mbtn{background:var(--glass);color:var(--glass-ink);border:0;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.mbtn[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.mapwx{position:absolute;top:8px;left:8px;right:58px;z-index:800;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:20px;background:rgba(9,30,44,.8);color:#fff;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 4px 16px rgba(0,0,0,.35);cursor:pointer}
+.mwm{flex:none;display:grid;place-items:center}
+.mwm svg{display:block}
+.mwg{flex:1;min-width:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;text-align:center}
+.mw{display:flex;flex-direction:column;align-items:center;line-height:1.15}
+.mw i{font-style:normal;font-size:13px;opacity:.9}
+.mw b{font-family:var(--font-mono);font-weight:600;font-size:14px;white-space:nowrap}
+.mw span{font-size:9.5px;opacity:.7;white-space:nowrap}
+.mapwx.min{right:auto;padding:6px 10px}
+.mapwx.min .mwg{display:none}
+.zonewarn{bottom:calc(var(--dockh,60px) + 92px)}
+.leaflet-top.leaflet-left .leaflet-control-zoom{margin-top:64px;margin-left:10px}
+.dock{position:absolute;left:8px;right:58px;bottom:80px;z-index:801}
+.dkstart{width:100%;height:58px;border:0;border-radius:30px;background:#fff;color:#0a2a3d;font-weight:700;font-size:19px;letter-spacing:.01em;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer}
+.dkstart:active{transform:scale(.98)}
+.dklive{display:flex;flex-direction:column;gap:6px}
+.dkinfo{align-self:center;background:rgba(9,30,44,.85);color:#fff;border-radius:99px;padding:4px 12px;font-size:12px}
+.dock.paused .dkinfo{background:#a86b00}
+.dkrow{display:grid;grid-template-columns:1.5fr 1fr 54px;gap:8px}
+.dkrow button{border:0;border-radius:22px;height:68px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;box-shadow:0 8px 22px rgba(0,0,0,.4);-webkit-user-select:none;user-select:none;touch-action:manipulation}
+.dkrow button:active{transform:scale(.97)}
+.dkrow b{font-family:var(--font-display);font-size:26px;line-height:1}
+.dkrow span{font-size:14px;font-weight:700}
+.dkrow small{font-size:10px;opacity:.85}
+.dkc{background:linear-gradient(145deg,#ff8a50,#ff5a2a);color:#fff}
+.dkm{background:rgba(9,30,44,.9);color:#fff}
+.dkp{background:#fff;color:#0a2a3d;font-size:22px;height:68px}
+body.picking .dock,body.picking .mapwx{display:none}
+
+/* στατιστικά */
+.kpihead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.kpihead h3{margin:0;font-size:16px}
+.kpihead .chips{margin:0}
+.kpigrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kc{background:color-mix(in srgb,var(--bg) 70%,var(--surface));border-radius:14px;padding:10px 4px;text-align:center;display:flex;flex-direction:column;gap:1px;min-width:0}
+.kc b{font-family:var(--font-display);font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kc .label{font-size:10px;letter-spacing:.05em}
+.kc small{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* μπάρα εξόδου */
+#sessBar{background:linear-gradient(135deg,#1f9d63,#0a7f73);border-radius:16px;box-shadow:var(--shadow);padding:9px 10px}
+#sessBar .btn{border-radius:10px}
+/* στον χάρτη τα κουμπιά είναι στο dock, οπότε κρύβουμε τα διπλά από τη μπάρα εξόδου */
+.wrap:has(#tab-map:not([hidden])) #sessBite,.wrap:has(#tab-map:not([hidden])) #sessMiss,.wrap:has(#tab-map:not([hidden])) #sessPause{display:none}
+
+/* ================= v32 ================= */
+.mk-fish{background:var(--surface)}
+.mk-fish.w0{border-color:#8aa6b1}
+.mk-fish.w1{border-color:#4cc0d4;box-shadow:0 0 0 2px #4cc0d455,0 1px 4px #0008}
+.mk-fish.w2{border-color:#2fb36d;box-shadow:0 0 0 2px #2fb36d55,0 1px 4px #0008}
+.mk-fish.w3{border-color:#f0a81c;box-shadow:0 0 0 3px #f0a81c66,0 1px 4px #0008}
+.mk-fish.w4{border-color:#e5483b;box-shadow:0 0 0 4px #e5483b66,0 1px 4px #0008}
+.mk-fish{position:relative}
+.mk-fish.ph::after{content:"";position:absolute;right:-3px;top:-3px;width:9px;height:9px;border-radius:50%;background:var(--accent);border:2px solid #fff}
+.mapleg{position:absolute;left:10px;top:136px;z-index:700;display:flex;flex-direction:column;gap:3px;padding:6px 8px;border-radius:12px;background:rgba(9,30,44,.72);color:#fff;font-size:10.5px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.mapleg .lg{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.mapleg i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.pgal{display:flex;flex-direction:column;gap:4px}
+.thumbs{display:flex;gap:6px;flex-wrap:wrap}
+.xph{display:flex;align-items:center;gap:4px}
+#bAddPh.dis{opacity:.45}
+
+/* v33: κουμπιά ειδών, χρονόμετρο, GPS, κλείδωμα */
+.dktop{display:flex;align-items:center;justify-content:center;gap:8px}
+.dkinfo{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;justify-content:center}
+.dkinfo b{font-size:15px;letter-spacing:.02em}
+.dkinfo span{font-size:11px;opacity:.85}
+.dkt{width:36px;height:36px;border-radius:50%;border:0;background:rgba(9,30,44,.85);color:#fff;font-size:16px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.35);opacity:.65}
+.dkt[aria-pressed="true"]{opacity:1;background:#ff5a2a}
+.dksp{display:flex;gap:6px;justify-content:center}
+.dksp button{flex:1;max-width:120px;min-width:0;border:0;border-radius:99px;height:38px;padding:0 10px;background:rgba(255,255,255,.95);color:#0a2a3d;font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 4px 14px rgba(0,0,0,.35);cursor:pointer;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+.dksp button:active{transform:scale(.96)}
+.lockov{position:fixed;inset:0;z-index:5000;background:#05121c;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;padding:24px;-webkit-user-select:none;user-select:none;touch-action:none}
+.lockov[hidden]{display:none}
+.lkclock{font-size:clamp(44px,16vw,84px);font-weight:700;letter-spacing:.03em}
+.lkstats{display:flex;gap:22px;font-size:18px;text-align:center;flex-wrap:wrap;justify-content:center}
+.lkstats div b{display:block;font-size:34px;font-family:var(--font-display)}
+.lkstats div span{font-size:12px;opacity:.7}
+.lkhold{position:relative;overflow:hidden;width:min(320px,86vw);height:64px;border:2px solid rgba(255,255,255,.5);border-radius:32px;background:transparent;color:#fff;font-size:15px;touch-action:none}
+.lkhold b{position:relative;z-index:1;font-weight:600}
+.lkbar{position:absolute;left:0;top:0;bottom:0;width:0;background:#ff5a2a}
+.lkhold.go .lkbar{width:100%;transition:width 1s linear}
+.dkinfo{flex-wrap:nowrap;max-width:calc(100vw - 150px);min-width:0}.dkinfo span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
