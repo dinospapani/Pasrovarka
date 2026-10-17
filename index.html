@@ -90,7 +90,6 @@
         <button class="btn acc big" id="sfOpen" type="button" hidden>▶ Έναρξη εξόδου</button>
         <div id="sfForm">
           <label class="f">Πού πας (προαιρετικό)<input type="text" id="sfRoute" maxlength="120" placeholder="π.χ. Λατσί, ύφαλος βόρεια του φάρου"></label>
-          <label class="f" style="margin-top:8px">Εξοπλισμός (προαιρετικό)<input type="text" id="sfGear" maxlength="60" placeholder="π.χ. Spinning 30 lb"></label>
           <div class="label" style="margin-top:10px">Επιστροφή σε</div>
           <div class="chips" id="sfDur"><button type="button" class="chip" data-h="2">2 ώρες</button><button type="button" class="chip" data-h="4">4 ώρες</button><button type="button" class="chip" data-h="6">6 ώρες</button><button type="button" class="chip" data-h="8">8 ώρες</button></div>
           <label class="f" style="margin-top:8px">ή ώρα επιστροφής<input type="time" id="sfTime"></label>
@@ -111,8 +110,6 @@
           <button class="btn ghost" id="sfExt" type="button">+30 λεπτά</button>
           <button class="btn ghost" id="sfShare" type="button">Στείλε το σχέδιο</button>
         </div>
-        <div class="row" style="margin-top:8px"><button class="btn ghost" id="sfPause" type="button">⏸ Παύση</button></div>
-        <p class="note" style="margin-top:6px">Η παύση σταματά μόνο τον χρόνο ψαρέματος για τα στατιστικά. Η παρακολούθηση ασφαλείας συνεχίζεται κανονικά.</p>
         <div class="row" style="margin-top:8px"><button class="btn danger" id="sfSos" type="button">Στείλε SOS με τη θέση μου</button></div>
       </div>
       <p class="note" id="sfSrv"></p>
@@ -278,24 +275,6 @@
         <button class="mbtn" id="bLoc" type="button" aria-label="Η θέση μου" title="Η θέση μου"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
         <button class="mbtn" id="bSpotPick" type="button" aria-label="Νέο σημείο στον χάρτη" title="Νέο σημείο"><svg viewBox="0 0 24 24"><path d="M12 21s-6-6-6-11a6 6 0 1112 0c0 5-6 11-6 11z"/><path d="M12 7v6M9 10h6"/></svg></button>
       </div>
-      <div class="mapwx" id="mapWx" hidden></div>
-      <div class="mapleg" id="mapLeg" hidden></div>
-      <div class="dock" id="dock">
-        <button type="button" class="dkstart" id="dkStart">▶ Start Fishing</button>
-        <div class="dklive" id="dkLive" hidden>
-          <div class="dktop">
-            <button type="button" class="dkt" id="dkGps" aria-pressed="false" aria-label="Διαδρομή GPS">📍</button>
-            <div class="dkinfo mono"><b id="dkClock">00:00:00</b><span id="dkInfo"></span></div>
-            <button type="button" class="dkt" id="dkLock" aria-label="Κλείδωμα οθόνης">🔒</button>
-          </div>
-          <div class="dksp" id="dkSp" hidden></div>
-          <div class="dkrow">
-            <button type="button" class="dkc" id="dkCatch"><b id="dkN">0</b><span>🐟 Catch</span><small>κράτα = είδος</small></button>
-            <button type="button" class="dkm" id="dkMiss"><b id="dkM">0</b><span>✕ Miss</span></button>
-            <button type="button" class="dkp" id="dkPause" aria-label="Παύση">⏸</button>
-          </div>
-        </div>
-      </div>
       <div class="zonewarn" id="zoneWarn" hidden></div>
       <div class="maphint" id="mapHint" hidden><span id="mapHintTxt"></span><button class="btn sm ghost" type="button" id="mapHintX">Άκυρο</button></div>
     </div>
@@ -331,11 +310,6 @@
   <!-- ΗΜΕΡΟΛΟΓΙΟ -->
   <section class="tab" id="tab-log" hidden>
     <div><h2>Ημερολόγιο</h2></div>
-    <div class="card" id="kpiCard">
-      <div class="kpihead"><h3 id="kpiTitle">Τα στατιστικά μου</h3><div class="chips" id="kpiRange"><button type="button" class="chip" data-r="28" aria-pressed="false">28 ημέρες</button><button type="button" class="chip" data-r="year" aria-pressed="false">Φέτος</button><button type="button" class="chip" data-r="all" aria-pressed="true">Όλα</button></div></div>
-      <div class="kpigrid" id="kpiGrid"></div>
-      <p class="note" id="kpiNote" style="margin:8px 0 0"></p>
-    </div>
     <div class="seg" id="logSeg" role="group" aria-label="Προβολή ημερολογίου">
       <button type="button" data-l="trips" aria-pressed="true">Έξοδοι</button>
       <button type="button" data-l="bites" aria-pressed="false">Τσιμπήματα</button>
@@ -365,7 +339,6 @@
 
     <div class="col" id="l-bites" hidden>
       <button class="btn acc" type="button" id="bNew">+ Νέο τσίμπημα</button>
-      <div class="row" id="missRow" hidden style="align-items:center"><span id="missTxt" class="muted"></span><button class="btn ghost sm" type="button" id="missUndo">Αναίρεση τελευταίου miss</button></div>
       <div class="list" id="biteList"></div>
     </div>
 
@@ -433,8 +406,6 @@
       <button class="btn ghost sm" type="button" id="bPrevX" hidden>Αφαίρεση</button>
       <button class="btn sm" type="button" id="bAI" hidden>🔍 Αναγνώριση με AI</button>
     </div>
-    <div class="row" style="margin-top:6px;align-items:center"><label class="btn ghost sm" id="bAddPh" style="cursor:pointer">＋ Επιπλέον φωτογραφία<input type="file" id="bFile2" accept="image/*" hidden></label><span id="bExtraTxt" class="note"></span></div>
-    <div class="row" id="bExtra" style="margin-top:6px"></div>
     <div id="bAIOut" class="chips"></div>
     <div class="note" id="bAIMsg"></div>
     <div class="grid2 stack" style="margin-top:10px">
@@ -442,7 +413,6 @@
       <label class="f">Τεχνική
         <select id="bTech"><option>Βυθού</option><option>Jigging</option><option>Τρόλινγκ</option><option>Spinning</option><option>Ζωντανό δόλωμα</option><option>Άλλο</option></select>
       </label>
-      <label class="f">Εξοπλισμός<input type="text" id="bGear" maxlength="60" placeholder="π.χ. Καλάμι jigging 2 m"></label>
       <label class="f">Βάρος (kg)<input type="number" id="bKg" min="0" step="0.1" inputmode="decimal"></label>
       <label class="f">Μήκος (cm)<input type="number" id="bLen" min="0" step="1" inputmode="numeric"></label>
       <label class="f">Βάθος (m)<input type="number" id="bDepth" min="0" max="11000" step="1" inputmode="numeric"></label>
@@ -454,7 +424,6 @@
       </label>
     </div>
     <div class="chips" id="bChipsBait"></div>
-    <div class="chips" id="bChipsGear"></div>
     <div class="note" id="bLaw" style="margin-top:8px"></div>
     <label class="f" id="bSpotWrap" style="margin-top:10px" hidden>Σημείο<select id="bSpot"><option value="">—</option></select></label>
     <div id="bPickWrap" style="margin-top:10px" hidden><button class="btn sm" type="button" id="bPickBtn">Διάλεξε στον χάρτη</button> <span class="note" id="bPickTxt"></span></div>
@@ -470,7 +439,7 @@
   <button role="tab" data-tab="map" aria-selected="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>Χάρτης</button>
   <button role="tab" data-tab="today" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M2 12c3-4 5-4 8 0s5 4 8 0 3-3 4-2"/><path d="M2 18c3-4 5-4 8 0s5 4 8 0 3-3 4-2"/><path d="M12 3v3"/></svg>Σήμερα</button>
   <button role="tab" data-tab="fc" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M6 17a4 4 0 010-8 5 5 0 019.6-1A4 4 0 1117 17H6z"/><path d="M9 20l-1 2M13 20l-1 2M17 20l-1 2"/></svg>Πρόγνωση</button>
-  <button class="fab" id="fab" type="button" aria-label="Νέο τσίμπημα"><svg viewBox="0 0 24 24"><circle cx="12" cy="4.6" r="1.7"/><path d="M12 6.3V15a4.2 4.2 0 01-8.4 0v-3"/><path d="M1.7 13.4l1.9-1.9 1.9 1.9"/></svg></button>
+  <button class="fab" id="fab" type="button" aria-label="Νέο τσίμπημα"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
   <button role="tab" data-tab="log" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3V4z"/><path d="M8 17h11"/></svg>Ημερολόγιο</button>
   <button role="tab" data-tab="guide" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M3 12c3-5 9-6 13-2l5-3v10l-5-3c-4 4-10 3-13-2z"/><circle cx="8" cy="11" r=".6"/></svg>Οδηγός</button>
 </nav>
@@ -489,14 +458,5 @@
 <script src="forecast-tab.js"></script>
 <script src="mine-tab.js"></script>
 <script src="diag.js"></script>
-<script src="kpi.js"></script>
-<div class="lockov" id="lockOv" hidden>
-  <div class="lkclock mono" id="lkClock">00:00:00</div>
-  <div class="lkstats" id="lkStats"></div>
-  <button type="button" class="lkhold" id="lkHold"><span class="lkbar" id="lkBar"></span><b id="lkTxt">Κράτα 1″ για ξεκλείδωμα</b></button>
-</div>
-<script src="track.js"></script>
-<script src="dock.js"></script>
-<script src="share.js"></script>
 </body>
 </html>

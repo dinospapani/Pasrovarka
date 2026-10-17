@@ -94,13 +94,6 @@ async function trackPos(){
   try{ var p=await C.getPosition(); s=load(); s.last={lat:p.lat,lon:p.lon,t:Date.now()}; save(s); render(); pushTrip(); }catch(e){ pushTrip(); }
 }
 function late(s){ return s.active&&Date.now()>s.due; }
-function effMs(s){ var n=Date.now(); return Math.max(0,n-(s.start||n)-(s.pauseMs||0)-(s.pausedAt?n-s.pausedAt:0)); }
-function pauseToggle(){
-  var s=load(); if(!s.active) return; var en=window.LANG==='en';
-  if(s.pausedAt){ s.pauseMs=(s.pauseMs||0)+(Date.now()-s.pausedAt); delete s.pausedAt; save(s); toast(en?'Fishing resumed.':'Συνέχεια ψαρέματος.'); }
-  else { s.pausedAt=Date.now(); save(s); toast(en?'Paused. Safety monitoring keeps running.':'Παύση. Η παρακολούθηση ασφαλείας συνεχίζεται.'); }
-  render();
-}
 function bar(){
   var s=load(), b=$('lateBar');
   if(!late(s)){ if(b) b.remove(); return; }
@@ -118,17 +111,14 @@ function sessBar(s){
   var b=$('sessBar');
   if(!s.active||late(s)){ if(b) b.remove(); return; }
   if(!b){
-    b=h('div',{id:'sessBar'},h('span',{id:'sessTxt'}),h('button',{class:'btn sm',type:'button',id:'sessBite','aria-label':window.LANG==='en'?'Quick bite':'Γρήγορο τσίμπημα',text:'🐟 +'}),h('button',{class:'btn sm',type:'button',id:'sessMiss','aria-label':window.LANG==='en'?'Log a miss':'Καταγραφή miss',text:'✕'}),h('button',{class:'btn sm',type:'button',id:'sessPause','aria-label':window.LANG==='en'?'Pause or resume':'Παύση ή συνέχεια',text:'⏸'}),h('button',{class:'btn sm dang',type:'button',id:'sessSos',text:'SOS'}),h('button',{class:'btn sm',type:'button',id:'sessEnd',text:'Τέλος εξόδου'}));
+    b=h('div',{id:'sessBar'},h('span',{id:'sessTxt'}),h('button',{class:'btn sm',type:'button',id:'sessBite','aria-label':window.LANG==='en'?'Quick bite':'Γρήγορο τσίμπημα',text:'🐟 +'}),h('button',{class:'btn sm dang',type:'button',id:'sessSos',text:'SOS'}),h('button',{class:'btn sm',type:'button',id:'sessEnd',text:'Τέλος εξόδου'}));
     var hd=document.querySelector('header.top'); hd.parentNode.insertBefore(b,hd.nextSibling);
     $('sessTxt').addEventListener('click',openSheet);
     $('sessEnd').addEventListener('click',back);
     $('sessBite').addEventListener('click',function(){ var q=$('bQuick'); if(q&&!q.disabled) q.click(); });
-    $('sessMiss').addEventListener('click',function(){ if(C.quickMiss) C.quickMiss(); });
-    $('sessPause').addEventListener('click',pauseToggle);
     $('sessSos').addEventListener('click',function(){ if(confirm(window.LANG==='en'?'Send an SOS with your location to your safety contact?':'Να σταλεί SOS με τη θέση σου στην επαφή ασφαλείας;')) trackPos().then(function(){ sos(); }); });
   }
-  $('sessTxt').textContent=(s.pausedAt?(window.LANG==='en'?'⏸ Paused · ':'⏸ Παύση · '):'● ')+(window.LANG==='en'?'On trip ':'Σε έξοδο ')+dur(effMs(s))+(window.LANG==='en'?' · back ':' · επιστροφή ')+hm(s.due);
-  var pb=$('sessPause'); if(pb) pb.textContent=s.pausedAt?'▶':'⏸';
+  $('sessTxt').textContent='● Σε έξοδο '+dur(Date.now()-s.start)+' · επιστροφή '+hm(s.due);
 }
 function wxWarn(s){
   var el=$('sfWx'), c=C.getCond()||{}, msg='';
@@ -150,8 +140,7 @@ function render(){
   card.classList.toggle('live',!!(on&&!late(s))); card.classList.toggle('late',!!late(s));
   var bd=$('sfBadge'); bd.hidden=!on; bd.className='pill '+(late(s)?'bad':'good'); bd.textContent=late(s)?'Καθυστερείς':'Σε έξοδο';
   if(on){
-    $('sfInfo').textContent=(late(s)?'Η επιστροφή ήταν στις ':'Επιστροφή στις ')+hm(s.due)+' · διάρκεια '+dur(effMs(s))+(s.pausedAt?' · ⏸':'');
-    var pb2=$('sfPause'); if(pb2) pb2.textContent=s.pausedAt?'▶ Συνέχεια':'⏸ Παύση';
+    $('sfInfo').textContent=(late(s)?'Η επιστροφή ήταν στις ':'Επιστροφή στις ')+hm(s.due)+' · διάρκεια '+dur(Date.now()-s.start);
     $('sfLast').textContent=s.last?('Τελευταία γνωστή θέση: '+hm(s.last.t)+' · '+s.last.lat.toFixed(4)+', '+s.last.lon.toFixed(4)):'Δεν έχει καταγραφεί θέση ακόμα.';
     $('sfMon').textContent='Παρακολούθηση: '+(s.sil?'έλεγχος αν χαθεί το σήμα μετά από '+s.sil+' λεπτά, ':'')+'ειδοποίηση επαφής αν περάσει η ώρα επιστροφής, και αν η μπαταρία πέσει κάτω από 10%.';
   } else {
@@ -160,11 +149,10 @@ function render(){
   }
   var tb=$('tripBtn'); tb.textContent=!on?'▶ Έξοδος':(late(s)?'⚠ Καθυστερείς':'● Σε έξοδο'); tb.classList.toggle('on',!!on); tb.classList.toggle('late',!!late(s));
   wxWarn(s); bar(); sessBar(s);
-  try{ window.dispatchEvent(new Event('psaro-sess')); }catch(e){}
 }
 function openSheet(){ render(); $('tripSheet').hidden=false; }
 function closeSheet(){ $('tripSheet').hidden=true; }
-function openForm(){ $('sfMsg').textContent=''; setDur(4); var g=$('sfGear'); if(g&&!g.value) g.value=C.lsGet('psaro-gear-now','')||''; }
+function openForm(){ $('sfMsg').textContent=''; setDur(4); }
 function setDur(hrs){
   var t=new Date(Date.now()+C.utcMin()*60000+hrs*3600000);
   $('sfTime').value=('0'+t.getUTCHours()).slice(-2)+':'+('0'+t.getUTCMinutes()).slice(-2);
@@ -174,8 +162,7 @@ function snap0(){ var c=C.getCond(); return c?{lat:c.lat,lon:c.lon,press:c.press
 function start(){
   var d=load(), time=$('sfTime').value;
   if(!time){ $('sfMsg').textContent='Βάλε ώρα επιστροφής.'; return; }
-  var s=Object.assign({},d,{active:true,id:'trip-'+Date.now().toString(36),route:$('sfRoute').value.trim(),due:localMinToMs(time),last:null,start:Date.now(),pauseMs:0,pausedAt:undefined,startDate:C.nicosiaToday(),cond0:snap0(),sil:+$('sfSil').value||0,synced:undefined});
-  try{ var gv=($('sfGear').value||'').trim(); C.lsSet('psaro-gear-now',gv); }catch(x){}
+  var s=Object.assign({},d,{active:true,id:'trip-'+Date.now().toString(36),route:$('sfRoute').value.trim(),due:localMinToMs(time),last:null,start:Date.now(),startDate:C.nicosiaToday(),cond0:snap0(),sil:+$('sfSil').value||0,synced:undefined});
   save(s); $('sfMsg').textContent=''; render(); closeSheet();
   pushContact().then(function(){ return trackPos(); }).then(function(){ pushTrip(); });
   clearInterval(timer); timer=setInterval(tick,60000);
@@ -184,15 +171,7 @@ function start(){
 function summary(s){
   /* Μετράμε μόνο τσιμπήματα με ώρα μέσα στο παράθυρο της εξόδου (από την έναρξη μέχρι τώρα), με σύγκριση χρονικών τιμών. */
   var n=0, kg=0, sp={}, off=C.utcMin()*60000, lo=Math.floor((s.start||0)/60000)*60000, hi=Date.now()+10*60000, prev=(C.Store.get('trips')||[]).filter(function(t){ return t.startMs&&t.endMs&&t.startMs<(s.start||0); });
-  if(!s.start) return {n:0,kg:0,species:'',miss:0};
-  var mi=0;
-  (C.Store.misses?C.Store.misses():[]).forEach(function(b){
-    if(!b.date||!b.time) return;
-    var p=b.date.split('-').map(Number), q=b.time.split(':').map(Number); if(p.length<3||q.length<2||isNaN(p[0])||isNaN(q[0])) return;
-    var ms=Date.UTC(p[0],p[1]-1,p[2],q[0],q[1])-off;
-    if(prev.some(function(t){ return ms>=Math.floor(t.startMs/60000)*60000&&ms<=t.endMs; })) return;
-    if(ms>=lo&&ms<=hi) mi++;
-  });
+  if(!s.start) return {n:0,kg:0,species:''};
   (C.Store.get('bites')||[]).forEach(function(b){
     if(!b.date||!b.time) return;
     var p=b.date.split('-').map(Number), q=b.time.split(':').map(Number); if(p.length<3||q.length<2||isNaN(p[0])||isNaN(q[0])) return;
@@ -201,22 +180,20 @@ function summary(s){
     if(ms>=lo&&ms<=hi){ n++; kg+=+b.kg||0; if(b.species) sp[b.species]=(sp[b.species]||0)+1; }
   });
   var top=Object.keys(sp).sort(function(a,b){ return sp[b]-sp[a]; })[0]||'';
-  return {n:n,kg:Math.round(kg*10)/10,species:top,miss:mi};
+  return {n:n,kg:Math.round(kg*10)/10,species:top};
 }
 function back(){
   var s=load(); if(!s.active) return;
-  if(s.pausedAt){ s.pauseMs=(s.pauseMs||0)+(Date.now()-s.pausedAt); delete s.pausedAt; }
-  var d=Date.now()-s.start-(s.pauseMs||0), sm=summary(s), en=window.LANG==='en';
-  var tk=window.PsaroTrack?window.PsaroTrack.take():null;
+  var d=Date.now()-s.start, sm=summary(s), en=window.LANG==='en';
   s.active=false; save(s); pushTrip(); clearInterval(timer);
   $('sfMsg').textContent=en?'Welcome back.':'Καλωσόρισες πίσω.'; render(); closeSheet();
-  if(d>=20*60000||sm.n>0||sm.miss>0){
+  if(d>=20*60000||sm.n>0){
     var pos=s.last||(s.cond0&&s.cond0.lat!=null?{lat:s.cond0.lat,lon:s.cond0.lon}:null);
-    C.Store.save('trips',{date:s.startDate||C.nicosiaToday(),spot:s.route||'',tech:'',species:sm.species,count:sm.n,miss:sm.miss,kg:sm.kg,startMs:s.start,pauseMs:s.pauseMs||0,endMs:Date.now(),cond0:s.cond0||null,km:tk?tk.km:undefined,track:tk?tk.track:undefined,lat:pos?pos.lat:null,lon:pos?pos.lon:null,notes:(en?'Recorded from Start/End trip (':'Καταγραφή από Έναρξη/Τέλος εξόδου (')+dur(d)+')'}).catch(function(){});
+    C.Store.save('trips',{date:s.startDate||C.nicosiaToday(),spot:s.route||'',tech:'',species:sm.species,count:sm.n,kg:sm.kg,startMs:s.start,endMs:Date.now(),cond0:s.cond0||null,lat:pos?pos.lat:null,lon:pos?pos.lon:null,notes:(en?'Recorded from Start/End trip (':'Καταγραφή από Έναρξη/Τέλος εξόδου (')+dur(d)+')'}).catch(function(){});
     toast((en?'Trip saved: ':'Η έξοδος καταχωρήθηκε: ')+dur(d)+' · '+(sm.n?sm.n+(en?' bites':' τσιμπήματα'):(en?'no bites':'χωρίς τσιμπήματα')));
   } else toast(en?'Welcome back. The trip was under 20 minutes with no bites, so it was not saved.':'Καλωσόρισες πίσω. Η έξοδος ήταν κάτω από 20 λεπτά χωρίς τσιμπήματα, οπότε δεν καταχωρήθηκε.');
 }
-window.PsaroTrip={toggle:pauseToggle,effMs:effMs,counts:function(){ var s=load(); return s.active?summary(s):{n:0,kg:0,species:'',miss:0}; },endSilent:function(){ var s=load(); if(!s.active) return false; if(window.PsaroTrack) window.PsaroTrack.take(); s.active=false; save(s); pushTrip(); clearInterval(timer); render(); return true; },state:load};
+window.PsaroTrip={endSilent:function(){ var s=load(); if(!s.active) return false; s.active=false; save(s); pushTrip(); clearInterval(timer); render(); return true; },state:load};
 function ext(){ var s=load(); s.due=Math.max(s.due,Date.now())+30*60000; save(s); render(); pushTrip(); }
 function sos(){
   var s=load(); s.due=Date.now()-60000; save(s); pushTrip();
@@ -259,7 +236,6 @@ $('sfSil').addEventListener('change',function(){ this.dataset.touched='1'; });
 window.addEventListener('online',function(){ if(load().active) pushTrip(); });
 $('sfStart').addEventListener('click',start);
 $('sfBack').addEventListener('click',back);
-if($('sfPause')) $('sfPause').addEventListener('click',pauseToggle);
 $('sfExt').addEventListener('click',ext);
 $('sfShare').addEventListener('click',function(){ var s=load(); var via=(s.phone&&confirm('Στείλε το σχέδιο στην επαφή σου.\nOK = WhatsApp, Άκυρο = SMS'))?'wa':'sms'; send(s,'plan',via); });
 $('sfSos').addEventListener('click',function(){ trackPos().then(sos); });

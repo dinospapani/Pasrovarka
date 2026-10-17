@@ -13,24 +13,7 @@ var LAB={
   wind:function(i){ return [T('Ήπιος (έως 3 Bft)','Light (up to 3 Bft)'),T('Μέτριος (3–4 Bft)','Moderate (3–4 Bft)'),T('Δυνατός (5+ Bft)','Strong (5+ Bft)')][i]; }
 };
 var TITLE={block:T('Ώρα της ημέρας','Time of day'),moon:T('Φεγγάρι','Moon'),ptrend:T('Τάση πίεσης','Pressure trend'),wind:T('Άνεμος','Wind')};
-var spSel=C.lsGet('psaro-mnsp','')||'';
-function nm(x){ return (x||'').trim().toLowerCase(); }
-function model(){
-  var b=C.Store.get('bites'); if(spSel) b=b.filter(function(x){ return nm(x.species)===nm(spSel); });
-  return PP.build(C.Store.get('trips'),b,{utcMin:C.utcMin()});
-}
-function speciesList(){
-  var n={}, lab={}; C.Store.get('bites').forEach(function(b){ var k=nm(b.species); if(!k) return; n[k]=(n[k]||0)+1; lab[k]=lab[k]||b.species.trim(); });
-  return Object.keys(n).filter(function(k){ return n[k]>=3; }).sort(function(a,b){ return n[b]-n[a]; }).map(function(k){ return {k:lab[k],n:n[k]}; });
-}
-function speciesCard(){
-  var L=speciesList(); if(!L.length&&!spSel) return null;
-  var sel=h('select',{id:'mnSp'},h('option',{value:'',text:T('Όλα τα είδη','All species')}),L.map(function(o){ return h('option',{value:o.k,text:o.k+' ('+o.n+')'}); }));
-  if(spSel&&!L.some(function(o){ return nm(o.k)===nm(spSel); })) sel.append(h('option',{value:spSel,text:spSel}));
-  sel.value=spSel;
-  sel.addEventListener('change',function(){ spSel=sel.value; C.lsSet('psaro-mnsp',spSel); render(); });
-  return h('div',{class:'card'},h('label',{class:'f'},T('Πρόγνωση για είδος','Forecast for species'),sel),h('p',{class:'note',style:'margin:6px 0 0',text:T('Με ένα είδος μετράμε μόνο τα δικά του τσιμπήματα, αλλά όλες τις ώρες που ψάρευες. Χρειάζονται αρκετά τσιμπήματα του είδους για να έχει νόημα.','For one species we count only its bites, but all the hours you fished. You need enough bites of that species for it to mean anything.')}));
-}
+function model(){ return PP.build(C.Store.get('trips'),C.Store.get('bites'),{utcMin:C.utcMin()}); }
 function pct(v,n){ return Math.max(0,Math.min(100,Math.round(v/n*100))); }
 function prog(label,v,n,unit){
   return h('div',{class:'bar'},h('span',{text:label}),h('div',{class:'t'},h('i',{style:'width:'+pct(v,n)+'%'})),h('span',{class:'n',text:(Math.round(v*10)/10)+'/'+n+(unit||'')}));
@@ -70,7 +53,7 @@ function listCard(){
   var c=h('div',{class:'card'}); c.append(h('h3',{text:T('Πρόσφατες έξοδοι','Recent trips')}));
   var bites=C.Store.get('bites');
   S.forEach(function(s){
-    var hrs=(s.endMs-s.startMs-(+s.pauseMs||0))/3600000, n=s.manual?(+s.count||0):bites.filter(function(b){ var ms=PP.biteMs(b,C.utcMin()); return ms!=null&&ms>=s.startMs-600000&&ms<=s.endMs+600000; }).length;
+    var hrs=(s.endMs-s.startMs)/3600000, n=s.manual?(+s.count||0):bites.filter(function(b){ var ms=PP.biteMs(b,C.utcMin()); return ms!=null&&ms>=s.startMs-600000&&ms<=s.endMs+600000; }).length;
     c.append(h('div',{class:'sessrow'},h('div',{style:'flex:1;min-width:0'},h('b',{text:s.date||''}),h('div',{class:'meta',text:(Math.round(hrs*10)/10)+' h · '+n+(EN?' bites':' τσιμπήματα')+(s.manual?' · '+T('χειροκίνητη','manual'):'')})),
       h('button',{class:'btn ghost sm',type:'button','aria-label':T('Διαγραφή','Delete'),text:'✕',onclick:function(){ if(confirm(T('Να διαγραφεί η έξοδος;','Delete this trip?'))) C.Store.remove('trips',s.id).then(render); }})));
   });
@@ -109,7 +92,6 @@ function compareCard(m){
 function render(){
   root.replaceChildren();
   var m=model();
-  var sc=speciesCard(); if(sc) root.append(sc);
   root.append(statusCard(m),compareCard(m));
   if(m.ready) root.append(patternsCard(m));
   var l=listCard(); if(l) root.append(l);
