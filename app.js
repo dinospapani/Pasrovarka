@@ -440,7 +440,9 @@ function initMap(){
     const on=!map.hasLayer(zonesG); if(on) zonesG.addTo(map); else map.removeLayer(zonesG);
     $('bZones').setAttribute('aria-pressed',String(on)); lsSet('psaro-zones',on);
   });
-  spotsG=L.layerGroup().addTo(map); bitesG=L.layerGroup().addTo(map);
+  spotsG=L.layerGroup().addTo(map); bitesG=L.layerGroup();
+  const bitesVis=()=>{ if(!map||!bitesG) return; const on=tripActive(); if(on&&!map.hasLayer(bitesG)) bitesG.addTo(map); if(!on&&map.hasLayer(bitesG)){ map.closePopup(); map.removeLayer(bitesG); } };
+  window.addEventListener('psaro-sess',bitesVis); setTimeout(bitesVis,300); setTimeout(bitesVis,1500); setInterval(bitesVis,3000);
   map.on('moveend',()=>{const p=map.getCenter(); lsSet('psaro-view',{lat:+p.lat.toFixed(4),lon:+p.lng.toFixed(4),z:map.getZoom()});});
   map.on('click',e=>{
     const ll=e.latlng.wrap(), lat=+ll.lat.toFixed(5), lon=+ll.lng.toFixed(5);
@@ -452,7 +454,7 @@ function initMap(){
     const box=h('div',{class:'pop pmap'},h('div',{class:'pcoord'},ic('M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z M12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z'),h('span',{class:'mono',text:lat.toFixed(4)+', '+lon.toFixed(4)})),
       act('','M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z M12 7v6 M9 10h6','Νέο σημείο',()=>{map.closePopup();openSpotForm({lat:lat,lon:lon});}),
       act('','M7 18a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17 8.5a4.5 4.5 0 0 1 .5 9.5H7z','Πρόγνωση εδώ',()=>{map.closePopup();switchTab('fc');window.dispatchEvent(new CustomEvent('psaro-fcpick',{detail:{lat:lat,lon:lon}}));}),
-      act('acc','M3 12c3-5.5 10-6 14-1.5l4-3.5v10l-4-3.5C13 17.5 6 17.5 3 12z','Τσίμπημα εδώ',()=>{map.closePopup();pickedPt={lat:lat,lon:lon};$('bLocMode').value='pick';syncLoc();openSheet();}));
+      tripActive()?act('acc','M3 12c3-5.5 10-6 14-1.5l4-3.5v10l-4-3.5C13 17.5 6 17.5 3 12z','Τσίμπημα εδώ',()=>{map.closePopup();pickedPt={lat:lat,lon:lon};$('bLocMode').value='pick';syncLoc();openSheet();}):null);
     L.popup({minWidth:176,maxWidth:216}).setLatLng(ll).setContent(box).openOn(map);
   });
   if(cond&&cond.lat!=null) setYou(cond.lat,cond.lon);
@@ -492,7 +494,7 @@ function drawMap(){
     const m=L.marker([sp.lat,sp.lon],{icon:L.divIcon({className:'',html:'<div class="mk-spot'+(sp.id===selSpot?' sel':'')+'"></div>',iconSize:[22,22]}),title:sp.name});
     m.bindTooltip(sp.name||'',{direction:'right',offset:[10,0],className:'lbl'});
     m.bindPopup(()=>h('div',{class:'pop'},h('b',{text:sp.name||'Χωρίς όνομα'}),h('div',{class:'meta',text:[sp.type,sp.depth!=null?sp.depth+' m':null].filter(Boolean).join(' · ')}),sp.notes?h('div',{class:'meta',text:sp.notes}):null,
-      h('div',{class:'row',style:'margin-top:6px'},h('button',{class:'btn acc sm',type:'button',text:'Τσίμπημα εδώ',onclick:()=>{map.closePopup();pickedPt=null;$('bLocMode').value='spot';syncLoc();$('bSpot').value=sp.id;openSheet();}}))));
+      h('div',{class:'row',style:'margin-top:6px'},tripActive()?h('button',{class:'btn acc sm',type:'button',text:'Τσίμπημα εδώ',onclick:()=>{map.closePopup();pickedPt=null;$('bLocMode').value='spot';syncLoc();$('bSpot').value=sp.id;openSheet();}}):null)));
     m.addTo(spotsG); markerById[sp.id]=m;
   }
   for(const b of Store.get('bites')){
@@ -775,7 +777,13 @@ function syncLoc(){
   $('bSpotWrap').hidden=m!=='spot'; $('bPickWrap').hidden=m!=='pick';
   $('bPickTxt').textContent=pickedPt?pickedPt.lat.toFixed(4)+', '+pickedPt.lon.toFixed(4):'Δεν έχει επιλεγεί θέση.';
 }
+function tripActive(){ const ts=window.PsaroTrip&&window.PsaroTrip.state&&window.PsaroTrip.state(); return !!(ts&&ts.active); }
+function needTrip(){
+  const en=window.LANG==='en';
+  window.PsaroAsk(en?'To record a fish correctly (time, position, conditions and numbering) start a trip first.':'Για να καταγραφεί σωστά το ψάρι (ώρα, θέση, συνθήκες και αρίθμηση) ξεκίνα πρώτα έξοδο.',{title:en?'Start a trip first':'Ξεκίνα πρώτα έξοδο',ok:en?'Start trip':'Έναρξη εξόδου',cancel:en?'Cancel':'Άκυρο'}).then(y=>{ if(y) $('tripBtn').click(); });
+}
 function openSheet(){
+  if(!editRec&&!tripActive()){ needTrip(); return; }
   if(sheetFresh){
     $('bWhen').value=nowLocalInput();
     if(cond&&cond.press!=null) $('bPress').value=cond.press;

@@ -99,12 +99,13 @@ function render(){
 }
 function setSeg(s){
   seg=s; C.lsSet('psaro-fcseg',s);
-  var gen=$('fcGen'); if(gen) gen.hidden=s!=='gen'; root.hidden=s!=='mine';
+  var gen=$('fcGen'); if(gen) gen.hidden=s!=='gen'; root.hidden=s!=='mine'; var adv=$('fcAdv'); if(adv) adv.hidden=s!=='adv';
   Array.prototype.forEach.call(document.querySelectorAll('#fcSeg button'),function(b){ b.setAttribute('aria-pressed',String(b.dataset.s===s)); });
   if(s==='mine') render();
+  if(s==='adv'&&window.PsaroAdv) window.PsaroAdv.render();
 }
 Array.prototype.forEach.call(document.querySelectorAll('#fcSeg button'),function(b){ b.addEventListener('click',function(){ setSeg(b.dataset.s); }); });
 window.addEventListener('psaro-fcloaded',function(e){ last=e.detail||last; if(seg==='mine'&&!root.hidden) render(); });
 ['trips','bites'].forEach(function(k){ C.Store.on(k,function(){ if(seg==='mine'&&!root.hidden&&!document.activeElement.closest('#fcMine')) render(); }); });
-setSeg(seg==='mine'?'mine':'gen');
+setSeg(seg==='mine'||seg==='adv'?seg:'gen');
 })();

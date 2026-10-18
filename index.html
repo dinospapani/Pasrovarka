@@ -107,15 +107,16 @@
         <p class="note sfwarn" id="sfNoC" hidden>Δεν έχεις ορίσει επαφή ασφαλείας. <button type="button" class="btn ghost sm" id="sfGoProf">Πρόσθεσέ την στο προφίλ</button></p>
         <button class="btn acc big" id="sfOpen" type="button" hidden>▶ Έναρξη εξόδου</button>
         <div id="sfForm">
-          <label class="f">Πού πας (προαιρετικό)<input type="text" id="sfRoute" maxlength="120" placeholder="π.χ. Λατσί, ύφαλος βόρεια του φάρου"></label>
-          <div class="label" style="margin-top:10px">Επιστροφή σε</div>
-          <div class="chips" id="sfDur"><button type="button" class="chip" data-h="2">2 ώρες</button><button type="button" class="chip" data-h="4">4 ώρες</button><button type="button" class="chip" data-h="6">6 ώρες</button><button type="button" class="chip" data-h="8">8 ώρες</button></div>
-          <label class="f" style="margin-top:8px">ή ώρα επιστροφής<input type="time" id="sfTime"></label>
-          <label class="f" style="margin-top:8px">Έλεγχος αν χαθεί η επαφή με το κινητό
-            <select id="sfSil"><option value="0">Χωρίς</option><option value="30">Μετά από 30 λεπτά</option><option value="60" selected>Μετά από 60 λεπτά</option><option value="90">Μετά από 90 λεπτά</option></select>
-          </label>
-          <p class="note" id="sfSilNote"></p>
-          <div class="row" style="margin-top:8px"><button class="btn acc big" id="sfStart" type="button">▶ Έναρξη εξόδου</button></div>
+          <div class="sfsec"><label class="f">Πού πας (προαιρετικό)<input type="text" id="sfRoute" maxlength="120" placeholder="π.χ. Λατσί, ύφαλος βόρεια του φάρου"></label></div>
+          <div class="sfsec"><div class="sflabel">Επιστροφή σε</div>
+            <div class="sfdur" id="sfDur"><button type="button" class="chip" data-h="2">2 ώρες</button><button type="button" class="chip" data-h="4">4 ώρες</button><button type="button" class="chip" data-h="6">6 ώρες</button><button type="button" class="chip" data-h="8">8 ώρες</button></div>
+            <label class="f sftime"><span>ή ώρα επιστροφής</span><input type="time" id="sfTime"></label></div>
+          <div class="sfsec sfsafe"><div class="sflabel">Ασφάλεια</div>
+            <label class="f">Έλεγχος αν χαθεί η επαφή με το κινητό
+              <select id="sfSil"><option value="0">Χωρίς</option><option value="30">Μετά από 30 λεπτά</option><option value="60" selected>Μετά από 60 λεπτά</option><option value="90">Μετά από 90 λεπτά</option></select>
+            </label>
+            <p class="note" id="sfSilNote"></p></div>
+          <button class="btn acc big sfgo" id="sfStart" type="button">▶ Έναρξη εξόδου</button>
         </div>
       </div>
       <div id="safeActive" hidden>
@@ -245,7 +246,7 @@
   <!-- ΠΡΟΓΝΩΣΗ -->
   <section class="tab" id="tab-fc" hidden>
     <div class="seg tabseg" role="group" aria-label="Καιρός"><button type="button" data-go="today" aria-pressed="false">Σήμερα</button><button type="button" data-go="fc" aria-pressed="true">Πρόγνωση</button></div>
-    <div class="seg" id="fcSeg" role="group" aria-label="Είδος πρόγνωσης"><button type="button" data-s="gen" aria-pressed="true">Γενική πρόγνωση</button><button type="button" data-s="mine" aria-pressed="false">Δικά μου δεδομένα</button></div>
+    <div class="seg" id="fcSeg" role="group" aria-label="Είδος πρόγνωσης"><button type="button" data-s="gen" aria-pressed="true">Γενική πρόγνωση</button><button type="button" data-s="mine" aria-pressed="false">Δικά μου δεδομένα</button><button type="button" data-s="adv" aria-pressed="false">Τι να ψαρέψω</button></div>
     <div class="card" id="plCard">
       <div class="label">Τοποθεσία</div>
       <div class="chips" id="plChips"></div>
@@ -279,6 +280,7 @@
     <p class="note">Καιρός και κύμα: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo.com</a>. Ενδεικτικό μοντέλο, όχι επίσημη πρόγνωση. Η ακρίβεια μειώνεται μετά τις πρώτες 3 ημέρες.</p>
     </div>
     <div id="fcMine" hidden></div>
+    <div id="fcAdv" hidden></div>
   </section>
 
   <!-- ΧΑΡΤΗΣ -->
@@ -484,6 +486,8 @@
 <script src="extras.js"></script>
 <script src="forecast-tab.js"></script>
 <script src="mine-tab.js"></script>
+<script src="knowledge.js"></script>
+<script src="advisor.js"></script>
 <script src="diag.js"></script>
 <script src="track.js"></script>
 <script src="mapwx.js"></script>
