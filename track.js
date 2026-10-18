@@ -23,9 +23,11 @@ function cur(){
 }
 function km(){ var s=st(), t=s.active?load():null; return t&&t.id===s.id?t.m/1000:0; }
 
+var fixP=null;
 function onPos(p){
   var t=cur(); if(!t) return;
   var c=p.coords; if(c.accuracy&&c.accuracy>60) return;
+  fixP={lat:c.latitude,lon:c.longitude,t:Date.now()};
   var pt=[+c.latitude.toFixed(6),+c.longitude.toFixed(6),Date.now()];
   var last=t.pts[t.pts.length-1];
   if(last){ var d=dist(last,pt); if(d<12) return; if(d>2000&&pt[2]-last[2]<20000) return; t.m+=d; }
@@ -109,7 +111,7 @@ function setEnabled(v){
   window.dispatchEvent(new Event('psaro-track'));
 }
 
-window.PsaroTrack={enabled:enabled,setEnabled:setEnabled,km:km,take:take,show:show,draw:draw,active:function(){ return wid!=null; }};
+window.PsaroTrack={fix:function(){ return fixP; },enabled:enabled,setEnabled:setEnabled,km:km,take:take,show:show,draw:draw,active:function(){ return wid!=null; }};
 window.addEventListener('psaro-sess',function(){
   var s=st();
   if(!s.active){ stop(); if(layer){ layer.clearLayers(); line=dot=null; } return; }

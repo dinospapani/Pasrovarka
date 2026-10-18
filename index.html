@@ -38,18 +38,28 @@
     <div id="pMain">
       <div class="seg" id="pRange" role="group" aria-label="Περίοδος"><button type="button" data-r="28" aria-pressed="true">28 ημέρες</button><button type="button" data-r="year" aria-pressed="false">Έτος</button><button type="button" data-r="all" aria-pressed="false">Όλα</button></div>
       <div class="pstats" id="pStats"></div>
-      <div class="row"><button class="btn ghost" id="pOpenSet" type="button">⚙ Ρυθμίσεις</button></div>
     </div>
     <div id="pSettings" hidden>
       <div class="row"><button class="btn ghost sm" id="pBackMain" type="button">← Προφίλ</button></div>
-    <label class="f">Όνομα<input type="text" id="pName" maxlength="40" autocomplete="name"></label>
-    <div class="row"><button class="btn sm" id="pNameSave" type="button">Αποθήκευση</button></div>
-    <label class="f">Γλώσσα / Language<select id="langSel" class="nosub"><option value="el">Ελληνικά</option><option value="en">English</option></select></label>
-    <div class="row"><button class="btn sm" id="acSync" type="button">Συγχρονισμός τώρα</button></div>
-    <p class="note" id="acStatus"></p>
-    <label class="f">Νέος κωδικός<input type="password" id="pPass" autocomplete="new-password"></label>
-    <div class="row"><button class="btn ghost sm" id="pPassSave" type="button">Αλλαγή κωδικού</button></div>
-    <p class="note" id="pMsg" role="status"></p>
+    <div class="card setcard">
+      <h3>Λογαριασμός</h3>
+      <label class="f">Όνομα
+        <span class="inl"><input type="text" id="pName" maxlength="40" autocomplete="name"><button class="btn sm" id="pNameSave" type="button">Αποθήκευση</button></span>
+      </label>
+      <label class="f">Γλώσσα / Language<select id="langSel" class="nosub"><option value="el">Ελληνικά</option><option value="en">English</option></select></label>
+    </div>
+    <div class="card setcard">
+      <h3>Συγχρονισμός</h3>
+      <p class="note" id="acStatus"></p>
+      <button class="btn sm" id="acSync" type="button">Συγχρονισμός τώρα</button>
+    </div>
+    <div class="card setcard">
+      <h3>Κωδικός</h3>
+      <label class="f">Νέος κωδικός
+        <span class="inl"><input type="password" id="pPass" autocomplete="new-password"><button class="btn ghost sm" id="pPassSave" type="button">Αλλαγή</button></span>
+      </label>
+      <p class="note" id="pMsg" role="status"></p>
+    </div>
     <div class="card" id="dgCard">
       <h3>Έλεγχος δεδομένων</h3>
       <p class="note">Ψάχνει για διπλά τσιμπήματα, έξοδοι που επικαλύπτονται ή κρατούν υπερβολικά πολύ, ξεχασμένη ενεργή έξοδο και λάθος σύνολα σε παλιές εξόδους. Τίποτα δεν αλλάζει χωρίς να το πατήσεις.</p>
@@ -402,7 +412,7 @@
 
 <div class="sheet" id="sheet" hidden>
   <form class="sheet-in" id="biteForm" autocomplete="off">
-    <div class="row" style="justify-content:space-between;align-items:center"><h3 style="margin:0;font-size:18px">Νέο τσίμπημα</h3><button class="btn ghost sm" type="button" id="bClose">Κλείσιμο</button></div>
+    <div class="fhead"><h3 id="bTitle">Νέο ψάρι</h3><button class="btn ghost sm" type="button" id="bClose" aria-label="Κλείσιμο">✕</button></div>
     <div class="f" style="position:relative;margin-top:10px">
       <label for="bSpecies" style="color:var(--muted);font-size:13px">Είδος ψαριού</label>
       <input type="text" id="bSpecies" required maxlength="60" placeholder="Γράψε ένα όνομα, π.χ. λαβράκι, tuna, Seriola" autocapitalize="none">
@@ -417,29 +427,36 @@
     </div>
     <div id="bAIOut" class="chips"></div>
     <div class="note" id="bAIMsg"></div>
-    <div class="grid2 stack" style="margin-top:10px">
-      <label class="f">Δόλωμα ή τεχνητό<input type="text" id="bBait" maxlength="60" placeholder="π.χ. ζωντανό καλαμάρι"></label>
-      <label class="f">Τεχνική
-        <select id="bTech"><option>Βυθού</option><option>Jigging</option><option>Τρόλινγκ</option><option>Spinning</option><option>Ζωντανό δόλωμα</option><option>Άλλο</option></select>
-      </label>
+    <div class="fgrid3">
       <label class="f">Βάρος (kg)<input type="number" id="bKg" min="0" step="0.1" inputmode="decimal"></label>
       <label class="f">Μήκος (cm)<input type="number" id="bLen" min="0" step="1" inputmode="numeric"></label>
       <label class="f">Βάθος (m)<input type="number" id="bDepth" min="0" max="11000" step="1" inputmode="numeric"></label>
+    </div>
+    <div class="note" id="bLaw" style="margin-top:8px"></div>
+    <div class="fgrid2">
       <label class="f">Πότε<input type="datetime-local" id="bWhen" required></label>
-      <label class="f">Πίεση (hPa)<input type="number" id="bPress" min="850" max="1100" step="1" inputmode="numeric"></label>
       <label class="f">Θέση
         <select id="bLocMode"><option value="auto">Η θέση μου (GPS)</option><option value="spot">Αποθηκευμένο σημείο</option><option value="keep" hidden>Όπως είναι</option>
             <option value="pick">Επιλογή στον χάρτη</option><option value="none">Χωρίς θέση</option></select>
       </label>
     </div>
-    <div class="chips" id="bChipsBait"></div>
-    <div class="note" id="bLaw" style="margin-top:8px"></div>
-    <label class="f" id="bSpotWrap" style="margin-top:10px" hidden>Σημείο<select id="bSpot"><option value="">—</option></select></label>
-    <div id="bPickWrap" style="margin-top:10px" hidden><button class="btn sm" type="button" id="bPickBtn">Διάλεξε στον χάρτη</button> <span class="note" id="bPickTxt"></span></div>
-    <label class="f" style="margin-top:10px">Σημειώσεις<textarea id="bNotes" maxlength="300"></textarea></label>
-    <p class="note" style="margin:8px 0 0">Στην αποθήκευση παίρνονται αυτόματα ο καιρός και η θάλασσα της στιγμής (για παλιότερη ώρα μένουν κενά). Η σελήνη υπολογίζεται από την ώρα.</p>
+    <label class="f" id="bSpotWrap" hidden>Σημείο<select id="bSpot"><option value="">—</option></select></label>
+    <div id="bPickWrap" hidden><button class="btn sm" type="button" id="bPickBtn">Διάλεξε στον χάρτη</button> <span class="note" id="bPickTxt"></span></div>
+    <details class="fmore">
+      <summary>Περισσότερα στοιχεία</summary>
+      <div class="fgrid2">
+        <label class="f">Δόλωμα ή τεχνητό<input type="text" id="bBait" maxlength="60" placeholder="π.χ. ζωντανό καλαμάρι"></label>
+        <label class="f">Τεχνική
+          <select id="bTech"><option>Βυθού</option><option>Jigging</option><option>Τρόλινγκ</option><option>Spinning</option><option>Ζωντανό δόλωμα</option><option>Άλλο</option></select>
+        </label>
+        <label class="f">Πίεση (hPa)<input type="number" id="bPress" min="850" max="1100" step="1" inputmode="numeric"></label>
+      </div>
+      <div class="chips" id="bChipsBait"></div>
+      <label class="f">Σημειώσεις<textarea id="bNotes" maxlength="300" rows="2"></textarea></label>
+      <p class="note">Στην αποθήκευση παίρνονται αυτόματα ο καιρός και η θάλασσα της στιγμής (για παλιότερη ώρα μένουν κενά). Η σελήνη υπολογίζεται από την ώρα.</p>
+    </details>
     <div class="err" id="bErr" role="alert"></div>
-    <div class="row" style="margin-top:10px"><button class="btn acc" type="submit">Αποθήκευση στον χάρτη</button></div>
+    <button class="btn acc fsave" type="submit">Αποθήκευση</button>
   </form>
 </div>
 <div class="toast" id="toast" hidden></div>
@@ -460,6 +477,7 @@
 <script src="personal.js"></script>
 <script src="push-config.js"></script>
 <script src="zones.js"></script>
+<script src="dialog.js"></script>
 <script src="app.js"></script>
 <script src="cloud.js"></script>
 <script src="extras.js"></script>

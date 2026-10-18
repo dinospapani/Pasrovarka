@@ -31,8 +31,7 @@ function del(miss){
   var s=window.PsaroTrip.state(), list=miss?C.Store.misses():C.Store.get('bites'), b=lastOf(list,s.start||0);
   if(!b){ C.toast(T('Δεν υπάρχει καταγραφή σε αυτή την έξοδο.','Nothing logged on this trip yet.')); return; }
   var msg=miss?T('Να διαγραφεί η τελευταία αστοχία;','Delete the last miss?'):T('Να διαγραφεί το τελευταίο ψάρι','Delete the last fish')+(b.species?' ('+b.species+(b.kg?' '+b.kg+' kg':'')+')':'')+'?';
-  if(!confirm(msg)) return;
-  C.Store.remove('bites',b.id).then(function(){ C.toast(T('Διαγράφηκε.','Deleted.')); upd(); });
+  window.PsaroAsk(msg,{title:miss?T('Διαγραφή αστοχίας','Delete miss'):T('Διαγραφή ψαριού','Delete fish'),ok:T('Διαγραφή','Delete'),cancel:T('Άκυρο','Cancel'),danger:true}).then(function(ok){ if(!ok) return; C.Store.remove('bites',b.id).then(function(){ C.toast(T('Διαγράφηκε.','Deleted.')); upd(); }); });
   /* οι φωτογραφίες του ψαριού διαγράφονται από τον ίδιο μηχανισμό του Ημερολογίου, αν υπήρχαν */
 }
 function press(btn,miss){
@@ -52,7 +51,7 @@ tb.addEventListener('click',function(e){
   if(lheld){ lheld=false; e.stopImmediatePropagation(); return; }
   if(window.PsaroTrip.state().active){
     e.stopImmediatePropagation();
-    if(confirm(T('Να τελειώσει η έξοδος;\n(Κράτα πατημένο το κουμπί για λεπτομέρειες ή παράταση ώρας.)','End this trip?\n(Hold the button for details or to extend the return time.)'))) window.PsaroTrip.back();
+    window.PsaroAsk(T('Να τελειώσει η έξοδος;\n\nΚράτα πατημένο το κουμπί για λεπτομέρειες ή παράταση ώρας.','End this trip?\n\nHold the button for details or to extend the return time.'),{title:T('Τέλος εξόδου','End trip'),ok:T('Τέλος εξόδου','End trip'),cancel:T('Συνέχεια','Keep going')}).then(function(ok){ if(ok) window.PsaroTrip.back(); });
   }
 },true);
 tb.addEventListener('contextmenu',function(e){ e.preventDefault(); });

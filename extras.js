@@ -204,12 +204,11 @@ function back(){
     toast((en?'Trip saved: ':'Η έξοδος καταχωρήθηκε: ')+dur(d)+' · '+(sm.n?sm.n+(en?' bites':' τσιμπήματα'):(en?'no bites':'χωρίς τσιμπήματα')));
   } else toast(en?'Welcome back. The trip was under 20 minutes with no bites, so it was not saved.':'Καλωσόρισες πίσω. Η έξοδος ήταν κάτω από 20 λεπτά χωρίς τσιμπήματα, οπότε δεν καταχωρήθηκε.');
 }
-window.PsaroTrip={back:back,sheet:function(){ openSheet(); },sos:function(){ if(confirm(window.LANG==='en'?'Send an SOS with your location to your safety contact?':'Να σταλεί SOS με τη θέση σου στην επαφή ασφαλείας;')) trackPos().then(function(){ sos(); }); },counts:function(){ var s=load(); return s.active?summary(s):{n:0,kg:0,species:'',miss:0}; },endSilent:function(){ var s=load(); if(!s.active) return false; if(window.PsaroTrack) window.PsaroTrack.take(); s.active=false; save(s); pushTrip(); clearInterval(timer); render(); return true; },state:load};
+window.PsaroTrip={back:back,sheet:function(){ openSheet(); },sos:function(){ var en=window.LANG==='en'; window.PsaroAsk(en?'Send an SOS with your location to your safety contact?':'Να σταλεί SOS με τη θέση σου στην επαφή ασφαλείας;',{title:'SOS',ok:en?'Send SOS':'Αποστολή SOS',cancel:en?'Cancel':'Άκυρο',danger:true}).then(function(ok){ if(ok) trackPos().then(function(){ sos(); }); }); },counts:function(){ var s=load(); return s.active?summary(s):{n:0,kg:0,species:'',miss:0}; },endSilent:function(){ var s=load(); if(!s.active) return false; if(window.PsaroTrack) window.PsaroTrack.take(); s.active=false; save(s); pushTrip(); clearInterval(timer); render(); return true; },state:load};
 function ext(){ var s=load(); s.due=Math.max(s.due,Date.now())+30*60000; save(s); render(); pushTrip(); }
 function sos(){
   var s=load(); s.due=Date.now()-60000; save(s); pushTrip();
-  var via=confirm('Στείλε μήνυμα βοήθειας με την τελευταία σου θέση.\nOK = WhatsApp, Άκυρο = SMS')?'wa':'sms';
-  send(s,'sos',via);
+  window.PsaroAsk(window.LANG==='en'?'Send a help message with your last position. Choose how to send it.':'Στείλε μήνυμα βοήθειας με την τελευταία σου θέση. Διάλεξε πώς θα σταλεί.',{title:'SOS',ok:'WhatsApp',cancel:'SMS',danger:false}).then(function(ok){ send(s,'sos',ok?'wa':'sms'); });
 }
 function tick(){
   var s=load(); if(!s.active){ clearInterval(timer); return; }
@@ -248,7 +247,7 @@ window.addEventListener('online',function(){ if(load().active) pushTrip(); });
 $('sfStart').addEventListener('click',start);
 $('sfBack').addEventListener('click',back);
 $('sfExt').addEventListener('click',ext);
-$('sfShare').addEventListener('click',function(){ var s=load(); var via=(s.phone&&confirm('Στείλε το σχέδιο στην επαφή σου.\nOK = WhatsApp, Άκυρο = SMS'))?'wa':'sms'; send(s,'plan',via); });
+$('sfShare').addEventListener('click',function(){ var s=load(); (s.phone?window.PsaroAsk(window.LANG==='en'?'Send your trip plan to your contact. Choose how to send it.':'Στείλε το σχέδιο στην επαφή σου. Διάλεξε πώς θα σταλεί.',{title:window.LANG==='en'?'Trip plan':'Σχέδιο εξόδου',ok:'WhatsApp',cancel:'SMS'}):Promise.resolve(false)).then(function(ok){ send(s,'plan',ok?'wa':'sms'); }); });
 $('sfSos').addEventListener('click',function(){ trackPos().then(sos); });
 document.addEventListener('visibilitychange',function(){ if(!document.hidden){ render(); if(load().active) trackPos(); } });
 if(load().active){ clearInterval(timer); timer=setInterval(tick,60000); }

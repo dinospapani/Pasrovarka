@@ -426,3 +426,48 @@ body.picking .fishbtns{display:none}
 body.mapfull .maphint,body.mapfull .zonewarn{bottom:36px}
 
 .tripbtn,.fb{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+
+/* v30f: παράθυρο επιβεβαίωσης */
+.askov{position:fixed;inset:0;z-index:6000;background:rgba(5,15,25,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:24px}
+.askov[hidden]{display:none}
+.askbox{width:100%;max-width:340px;background:var(--surface);color:var(--ink);border-radius:20px;padding:20px 20px 16px;box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid var(--line)}
+.asktitle{font-family:var(--font-display);font-size:18px;font-weight:700;margin-bottom:8px}
+.asktext{font-size:14.5px;line-height:1.45;color:var(--muted)}
+.askbtns{display:flex;gap:10px;margin-top:18px}
+.askbtns .btn{flex:1;height:44px;border-radius:12px;font-weight:700}
+.askbtns .btn.danger{background:#c0392b;color:#fff;border-color:#c0392b}
+/* φόρμα ψαριού */
+.sheet-in{border-radius:22px 22px 0 0;padding:14px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px}
+.fhead{display:flex;justify-content:space-between;align-items:center}
+.fhead h3{margin:0;font-size:19px;font-family:var(--font-display)}
+.fhead .btn{width:34px;height:34px;padding:0;border-radius:50%}
+#biteForm .f{display:flex;flex-direction:column;gap:4px;font-size:11.5px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
+#biteForm .f input,#biteForm .f select,#biteForm .f textarea{width:100%;box-sizing:border-box;height:42px;border-radius:10px;font-size:15px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink);padding:0 10px}
+#biteForm .f textarea{height:auto;padding:8px 10px}
+#biteForm #bSpecies{height:46px;font-size:16px}
+#biteForm .f label,#biteForm label[for=bSpecies]{font-size:11.5px!important;text-transform:uppercase;letter-spacing:.03em;font-weight:600}
+.fgrid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.fgrid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fmore{border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.fmore summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--muted)}
+.fmore[open] summary{margin-bottom:8px}
+.fmore .fgrid2{margin-bottom:8px}
+.fmore .note{font-size:11px;margin:8px 0 0}
+.fsave{height:48px;border-radius:14px;font-size:16px;font-weight:700;width:100%}
+.sheet-in .row .btn.sm{height:34px}
+
+/* v30g: ρυθμίσεις προφίλ */
+#pSettings{display:flex;flex-direction:column;gap:12px}
+#pSettings .card,#pSettings .setcard{margin:0;padding:14px 16px;border-radius:16px;border:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;gap:10px}
+#pSettings .card h3,#pSettings .setcard h3{margin:0;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+#pSettings .note{margin:0;font-size:12.5px}
+#pSettings .f{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+#pSettings input[type=text],#pSettings input[type=password],#pSettings input[type=email],#pSettings input[type=tel],#pSettings select{height:44px;border-radius:10px;padding:0 12px;font-size:15px;width:100%;box-sizing:border-box}
+#pSettings .inl{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+#pSettings .inl .btn{height:44px;border-radius:10px;padding:0 16px}
+#pSettings .btn{border-radius:10px}
+#pSettings .row{display:flex;gap:8px;flex-wrap:wrap;margin:0}
+#pSettings .chk{border:0;padding:0;align-items:flex-start}
+#pBackMain{align-self:flex-start;border:0;padding:4px 2px;font-weight:700;color:var(--accent)}
+#acLogout{width:100%;height:46px;border-radius:12px;background:transparent;color:#d9534f;border:1px solid #d9534f}
+#profile .phead{padding-bottom:4px}

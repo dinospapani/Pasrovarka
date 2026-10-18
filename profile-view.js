@@ -28,12 +28,11 @@ function draw(){
   if(big>0){ var r=document.createElement('div'); r.className='pst pwide'; r.textContent='🏆 '+T('Μεγαλύτερο ψάρι: ','Biggest fish: ')+big+' kg'+(bigS?' · '+bigS:'')+' · '+Object.keys(sp).length+T(' είδη',' species'); box.append(r); }
 }
 document.querySelectorAll('#pRange button').forEach(function(b){ b.addEventListener('click',function(){ range=b.dataset.r; C.lsSet('psaro-prange',range); draw(); }); });
-$('pOpenSet').addEventListener('click',function(){ showSet(true); });
 $('pBackMain').addEventListener('click',function(){ showSet(false); draw(); });
 var gear=document.createElement('button'); gear.type='button'; gear.className='btn ghost sm'; gear.id='pGear'; gear.textContent='⚙'; gear.setAttribute('aria-label',T('Ρυθμίσεις','Settings'));
 gear.addEventListener('click',function(){ showSet(true); });
 var cl=$('pClose'); cl.parentNode.insertBefore(gear,cl); gear.style.marginLeft='auto'; cl.style.marginLeft='0';
-var gc=document.createElement('div'); gc.className='card';
+var gc=document.createElement('div'); gc.className='card setcard';
 gc.innerHTML='<label class="chk"><input type="checkbox" id="pGpsChk"><span><b></b><span class="note" style="display:block"></span></span></label>';
 gc.querySelector('b').textContent=T('Καταγραφή διαδρομής GPS στις εξόδους','Record GPS route during trips');
 gc.querySelector('.note').textContent=T('Αποθηκεύει απόσταση και διαδρομή στο παρασκήνιο, χωρίς να φαίνονται κατά την έξοδο. Καταναλώνει περισσότερη μπαταρία και δουλεύει μόνο όσο η εφαρμογή είναι ανοιχτή.','Saves distance and route in the background, hidden during the trip. Uses more battery and only works while the app is open.');
