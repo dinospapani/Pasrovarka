@@ -453,7 +453,7 @@ function initMap(){
       act('','M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z M12 7v6 M9 10h6','Νέο σημείο',()=>{map.closePopup();openSpotForm({lat:lat,lon:lon});}),
       act('','M7 18a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17 8.5a4.5 4.5 0 0 1 .5 9.5H7z','Πρόγνωση εδώ',()=>{map.closePopup();switchTab('fc');window.dispatchEvent(new CustomEvent('psaro-fcpick',{detail:{lat:lat,lon:lon}}));}),
       act('acc','M3 12c3-5.5 10-6 14-1.5l4-3.5v10l-4-3.5C13 17.5 6 17.5 3 12z','Τσίμπημα εδώ',()=>{map.closePopup();pickedPt={lat:lat,lon:lon};$('bLocMode').value='pick';syncLoc();openSheet();}));
-    L.popup().setLatLng(ll).setContent(box).openOn(map);
+    L.popup({minWidth:176,maxWidth:216}).setLatLng(ll).setContent(box).openOn(map);
   });
   if(cond&&cond.lat!=null) setYou(cond.lat,cond.lon);
   checkZoneHere();

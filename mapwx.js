@@ -57,7 +57,7 @@ function fit(p){
   var el=p&&p.getElement&&p.getElement(); if(!el||!p._map) return;
   var mr=map.getContainer().getBoundingClientRect(), r=el.getBoundingClientRect();
   var topLim=mr.top+64, botLim=mr.bottom-70-38; /* χώρος για το εικονίδιο κάτω από το popup και τη γραμμή αναφορών */
-  var dx=(mr.left+mr.width/2)-(r.left+r.width/2), dy=0;
+  var dx=(mr.left+(112+(mr.width-58))/2)-(r.left+r.width/2), dy=0;
   if(r.bottom>botLim) dy=botLim-r.bottom;
   if(r.top+dy<topLim) dy=topLim-r.top;
   if(Math.abs(dx)>1||Math.abs(dy)>1) map.panBy([-dx,-dy],{animate:true,duration:.3});
