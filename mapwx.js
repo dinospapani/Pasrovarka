@@ -7,11 +7,11 @@ var KEY='psaro-mapwx-items', DEF=['wind','press','sst'];
 var TR={fast:'↓↓',slow:'↓',stable:'→',rise:'↑'};
 var DIRS=['N','NE','E','SE','S','SW','W','NW'];
 var ITEMS=[
-  ['wind','➤',T('Άνεμος','Wind'),function(c){ if(c.wind==null) return null; var d=c.windDeg!=null?DIRS[Math.round((((c.windDeg%360)+360)%360)/45)%8]:''; return [c.wind+'',('kn '+d).trim()]; }],
-  ['press','☁',T('Πίεση','Pressure'),function(c){ return c.press!=null?[c.press+'','hPa '+(TR[c.ptrend]||'')]:null; }],
-  ['sst','🌊',T('Θερμ. νερού','Water temp'),function(c){ return c.sst!=null?[Math.round(c.sst)+'°',T('θάλασσα','sea')]:null; }],
-  ['air','🌡',T('Θερμ. αέρα','Air temp'),function(c){ return c.temp!=null?[Math.round(c.temp)+'°',T('αέρας','air')]:null; }],
-  ['wave','〰',T('Κύμα','Wave'),function(c){ return c.wave!=null?[c.wave.toFixed(1),T('κύμα m','wave m')]:null; }],
+  ['wind','➤',T('Άνεμος','Wind'),function(c){ if(c.wind==null) return null; var wp=window.PsaroUnits.windP(c.wind), d=c.windDeg!=null?DIRS[Math.round((((c.windDeg%360)+360)%360)/45)%8]:''; return [wp[0],(wp[1]+' '+d).trim()]; }],
+  ['press','☁',T('Πίεση','Pressure'),function(c){ if(c.press==null) return null; var pp=window.PsaroUnits.pressP(c.press); return [pp[0],pp[1]+' '+(TR[c.ptrend]||'')]; }],
+  ['sst','🌊',T('Θερμ. νερού','Water temp'),function(c){ if(c.sst==null) return null; var t=window.PsaroUnits.tempP(c.sst); return [t[0]+'°',T('θάλασσα','sea')]; }],
+  ['air','🌡',T('Θερμ. αέρα','Air temp'),function(c){ if(c.temp==null) return null; var t=window.PsaroUnits.tempP(c.temp); return [t[0]+'°',T('αέρας','air')]; }],
+  ['wave','〰',T('Κύμα','Wave'),function(c){ if(c.wave==null) return null; var wv=window.PsaroUnits.waveP(c.wave); return [wv[0],T('κύμα ','wave ')+wv[1]]; }],
   ['period','⏱',T('Περίοδος κύματος','Wave period'),function(c){ return c.wavePeriod?[Math.round(c.wavePeriod)+'',T('δευτ.','sec')]:null; }]
 ];
 var el=document.createElement('div'); el.className='mapwx'; el.hidden=true; box.appendChild(el);

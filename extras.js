@@ -124,8 +124,8 @@ function wxWarn(s){
   var el=$('sfWx'), c=C.getCond()||{}, msg='';
   if(s.active){
     var w=c.wind, v=c.wave;
-    if((w!=null&&w>=27)||(v!=null&&v>=2.5)) msg='Επικίνδυνες συνθήκες ('+(w!=null?window.PF.bft(w)+' Bft άνεμος':'')+(v!=null?(w!=null?', ':'')+v.toFixed(1)+' m κύμα':'')+'). Σκέψου να γυρίσεις.';
-    else if((w!=null&&w>=20)||(v!=null&&v>=1.5)) msg='Προσοχή: δυναμώνει ο καιρός ('+(w!=null?window.PF.bft(w)+' Bft άνεμος':'')+(v!=null?(w!=null?', ':'')+v.toFixed(1)+' m κύμα':'')+').';
+    if((w!=null&&w>=27)||(v!=null&&v>=2.5)) msg='Επικίνδυνες συνθήκες ('+(w!=null?window.PsaroUnits.wind(w)+' άνεμος':'')+(v!=null?(w!=null?', ':'')+window.PsaroUnits.wave(v)+' κύμα':'')+'). Σκέψου να γυρίσεις.';
+    else if((w!=null&&w>=20)||(v!=null&&v>=1.5)) msg='Προσοχή: δυναμώνει ο καιρός ('+(w!=null?window.PsaroUnits.wind(w)+' άνεμος':'')+(v!=null?(w!=null?', ':'')+window.PsaroUnits.wave(v)+' κύμα':'')+').';
   }
   el.textContent=msg; el.hidden=!msg;
 }

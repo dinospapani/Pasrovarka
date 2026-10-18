@@ -22,7 +22,7 @@ function draw(){
   var tiles=[
     ['🐟',bites.length,T('Ψάρια που έπιασα','Fish caught')],['✕',miss,T('Τσίμπησαν και χάθηκαν','Bites lost')],['🎯',succ,T('Ποσοστό επιτυχίας','Catch rate')],
     ['🎣',trips.length,T('Έξοδοι','Trips')],['📅',Object.keys(days).length,T('Μέρες ψαρέματος','Days fishing')],['⏱',ms?hrs(ms)+' h':'–',T('Ώρες στη θάλασσα','Hours at sea')],
-    ['↔',km?Math.round(km*10)/10+' km':'–',T('Απόσταση','Distance')],['⚖',Math.round(kg*10)/10+' kg',T('Συνολικό βάρος','Total weight')]
+    ['↔',km?PsaroUnits.dist(km):'–',T('Απόσταση','Distance')],['⚖',Math.round(kg*10)/10+' kg',T('Συνολικό βάρος','Total weight')]
   ];
   tiles.forEach(function(t){ var d=document.createElement('div'); d.className='pst'; var i=document.createElement('i'); i.textContent=t[0]; var b=document.createElement('b'); b.textContent=String(t[1]); var s=document.createElement('span'); s.textContent=t[2]; d.append(i,b,s); box.append(d); });
   if(big>0){ var r=document.createElement('div'); r.className='pst pwide'; r.textContent='🏆 '+T('Μεγαλύτερο ψάρι: ','Biggest fish: ')+big+' kg'+(bigS?' · '+bigS:'')+' · '+Object.keys(sp).length+T(' είδη',' species'); box.append(r); }
@@ -39,6 +39,21 @@ gc.querySelector('.note').textContent=T('Αποθηκεύει απόσταση �
 var sc=$('pSettings'), dg=$('dgCard'); sc.insertBefore(gc,dg||sc.children[1]);
 var chk=gc.querySelector('input'); chk.checked=!window.PsaroTrack||window.PsaroTrack.enabled();
 chk.addEventListener('change',function(){ if(window.PsaroTrack) window.PsaroTrack.setEnabled(chk.checked); });
+var uc=document.createElement('div'); uc.className='card setcard'; uc.id='unitsCard';
+var uh=document.createElement('b'); uh.textContent=T('Μονάδες μέτρησης','Units'); uc.append(uh);
+var UL={wind:T('Άνεμος','Wind'),temp:T('Θερμοκρασία','Temperature'),press:T('Πίεση','Pressure'),wave:T('Κύμα','Waves'),dist:T('Απόσταση','Distance')};
+Object.keys(UL).forEach(function(k){
+  var row=document.createElement('div'); row.className='unrow';
+  var l=document.createElement('span'); l.textContent=UL[k]; row.append(l);
+  var seg=document.createElement('div'); seg.className='unseg';
+  PsaroUnits.options[k].forEach(function(o){
+    var b=document.createElement('button'); b.type='button'; b.textContent=o[1]; b.setAttribute('aria-pressed',String(PsaroUnits.cfg[k]===o[0]));
+    b.addEventListener('click',function(){ PsaroUnits.set(k,o[0]); seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed','false'); }); b.setAttribute('aria-pressed','true'); setTimeout(function(){ location.reload(); },350); });
+    seg.append(b);
+  });
+  row.append(seg); uc.append(row);
+});
+sc.insertBefore(uc,gc.nextSibling);
 var wantSet=false;
 $('sfGoProf').addEventListener('click',function(){ wantSet=true; },true);
 $('profBtn').addEventListener('click',function(){ showSet(wantSet); wantSet=false; draw(); });

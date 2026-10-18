@@ -6,8 +6,8 @@ var C=window.PsaroCore, box=document.querySelector('.mapbox'); if(!C||!box||!win
 var EN=window.LANG==='en', T=function(el,en){ return EN?en:el; };
 var $=function(i){ return document.getElementById(i); };
 function buzz(){ try{ if(navigator.vibrate) navigator.vibrate(25); }catch(e){} }
-var FISH='<svg viewBox="0 0 48 32" aria-hidden="true"><path d="M4 16c6-9 17-12 26-6l8-6v8l6 4-6 4v8l-8-6c-9 6-20 3-26-6z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/><circle cx="14" cy="14" r="1.8" fill="currentColor"/></svg>';
-var MISS='<svg viewBox="0 0 48 32" aria-hidden="true"><path d="M4 16c6-9 17-12 26-6l8-6v8l6 4-6 4v8l-8-6c-9 6-20 3-26-6z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/><circle cx="14" cy="14" r="1.8" fill="currentColor"/><path d="M6 30L42 2" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg>';
+var FISH='<svg viewBox="0 0 48 32" aria-hidden="true"><path d="M17 4.5v15a6.5 6.5 0 0 1-13 0v-3M1.5 19.5l2.5-3 2.5 3" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="3.6" r="1.7" fill="currentColor"/><circle cx="35" cy="16" r="10" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M30 16.5l3.6 3.6 6.6-7.6" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var MISS='<svg viewBox="0 0 48 32" aria-hidden="true"><path d="M17 4.5v15a6.5 6.5 0 0 1-13 0v-3M1.5 19.5l2.5-3 2.5 3" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="3.6" r="1.7" fill="currentColor"/><circle cx="35" cy="16" r="10" fill="none" stroke="currentColor" stroke-width="2.6" stroke-dasharray="4 3"/><path d="M31 12l8 8M39 12l-8 8" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg>';
 var wrap=document.createElement('div'); wrap.className='fishbtns'; wrap.id='fishBtns'; wrap.hidden=true;
 function mk(id,cls,svg,label){
   var b=document.createElement('button'); b.type='button'; b.id=id; b.className='fb '+cls; b.setAttribute('aria-label',label);

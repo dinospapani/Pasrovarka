@@ -1,5 +1,6 @@
 (function(){
 'use strict';
+const PU=window.PsaroUnits;
 const $=id=>document.getElementById(id);
 function h(tag,props,...kids){
   const e=document.createElement(tag);
@@ -139,18 +140,18 @@ function renderTiles(c){
   const box=$('tiles'); if(!box) return; box.replaceChildren();
   const k=cond||{}, dash='–';
   box.append(
-    tile('arrow','Άνεμος',k.wind!=null?bft(k.wind)+' Bft':dash,wdir(k),k.windDeg!=null?k.windDeg+180:0),
-    tile('wave','Κύμα',k.wave!=null?k.wave.toFixed(1)+' m':dash,k.wavePeriod?Math.round(k.wavePeriod)+' s':''),
-    tile('gauge','Πίεση',k.press!=null?String(k.press):dash,(k.ptrend?PT_ARROW[k.ptrend]+' ':'')+'hPa'),
-    tile('temp','Αέρας',k.temp!=null?Math.round(k.temp)+'°C':dash,''),
-    tile('drop','Θάλασσα',k.sst!=null?Math.round(k.sst)+'°C':dash,''),
+    tile('arrow','Άνεμος',k.wind!=null?PU.wind(k.wind):dash,wdir(k),k.windDeg!=null?k.windDeg+180:0),
+    tile('wave','Κύμα',k.wave!=null?PU.wave(k.wave):dash,k.wavePeriod?Math.round(k.wavePeriod)+' s':''),
+    tile('gauge','Πίεση',k.press!=null?PU.pressP(k.press)[0]:dash,(k.ptrend?PT_ARROW[k.ptrend]+' ':'')+PU.label('press')),
+    tile('temp','Αέρας',k.temp!=null?PU.temp(k.temp):dash,''),
+    tile('drop','Θάλασσα',k.sst!=null?PU.temp(k.sst):dash,''),
     tile('arrow','Ρεύμα',k.cur!=null?k.cur.toFixed(1)+' kn':dash,k.curDir!=null?dirName(k.curDir):'',k.curDir!=null?k.curDir:0));
 }
 function renderSea(){
   const box=$('seaTiles'); if(!box) return; box.replaceChildren();
   const k=cond||{}, dash='–';
   box.append(
-    tile('drop','Θερμοκρασία',k.sst!=null?k.sst.toFixed(1)+'°C':dash,''),
+    tile('drop','Θερμοκρασία',k.sst!=null?PU.temp(k.sst,1):dash,''),
     tile('arrow','Ρεύμα',k.cur!=null?k.cur.toFixed(2)+' kn':dash,k.curDir!=null?dirName(k.curDir):'',k.curDir!=null?k.curDir:0),
     tile('clock','Περίοδος κύματος',k.wavePeriod?Math.round(k.wavePeriod)+' s':dash,''));
   const n=$('seaNote'); let t='';
@@ -169,11 +170,11 @@ function renderStrip(c){
   const rf=h('button',{type:'button',class:'sc rf',id:'hdrRef','aria-label':'Ανανέωση συνθηκών'},h('i',{text:'Τώρα'}),h('b',{text:'↻ '+(k.at||dash)}));
   rf.addEventListener('click',()=>{ rf.classList.add('spin'); refreshConditions().finally(()=>rf.classList.remove('spin')); });
   box.append(
-    chip('Άνεμος',k.wind!=null?bft(k.wind)+' Bft'+(wdir(k)?' '+wdir(k):''):dash),
+    chip('Άνεμος',k.wind!=null?PU.wind(k.wind)+(wdir(k)?' '+wdir(k):''):dash),
     chip('Πίεση',k.press!=null?k.press+' '+(k.ptrend?PT_ARROW[k.ptrend]:''):dash),
-    chip('Κύμα',k.wave!=null?k.wave.toFixed(1)+' m':dash),
+    chip('Κύμα',k.wave!=null?PU.wave(k.wave):dash),
     chip('Ρεύμα',k.cur!=null?k.cur.toFixed(1)+' kn'+(k.curDir!=null?' '+dirName(k.curDir):''):dash),
-    chip('Θάλασσα',k.sst!=null?Math.round(k.sst)+'°C':dash),
+    chip('Θάλασσα',k.sst!=null?PU.temp(k.sst):dash),
     chip(ph+' Σελήνη',Math.round(sm.illum*100)+'%'),
     chip('Ανατολή',fmt(sm.rise)),chip('Δύση',fmt(sm.set)),rf);
 }
@@ -220,15 +221,15 @@ function renderBest(c){
   const top=bestSpots(c);
   if(!top.length){ box.append(h('p',{class:'note',text:'Δεν βρέθηκε σημείο με αρκετά τσιμπήματα.'})); return; }
   top.forEach((t,i)=>{
-    const sub=t.n+' τσιμπήματα στο σημείο'+(t.dist!=null?' · '+(t.dist<1?Math.round(t.dist*1000)+' m':t.dist.toFixed(1)+' km')+' από εσένα':'');
+    const sub=t.n+' τσιμπήματα στο σημείο'+(t.dist!=null?' · '+(t.dist<1?Math.round(t.dist*1000)+' m':PU.dist(t.dist))+' από εσένα':'');
     box.append(h('div',{class:'bestrow'},h('span',{class:'rk',text:String(i+1)}),h('div',{style:'flex:1;min-width:0'},h('b',{text:t.x.name}),h('div',{class:'note',text:sub})),h('button',{class:'btn ghost sm',type:'button',text:'Χάρτης',onclick:()=>{switchTab('map');showOnMap(t.x.lat,t.x.lon);}})));
   });
   box.append(h('p',{class:'note',style:'margin:8px 0 0',text:'Βασίζεται στα δικά σου τσιμπήματα: ίδια περιοχή (έως 600 m), ώρα, πίεση και άνεμος παρόμοια με τώρα.'}));
 }
 function renderToday(){
   const c=compute();
-  $('vWind').textContent=bft(c.wind)+' Bft';
-  $('vWave').textContent=c.wave.toFixed(1)+' m';
+  $('vWind').textContent=PU.wind(c.wind);
+  $('vWave').textContent=PU.wave(c.wave);
   const sc=$('score'); sc.replaceChildren(String(c.day),h('small',{text:'/100'}));
   $('scoreText').textContent=c.day>=75?'Πολύ καλές προϋποθέσεις':c.day>=60?'Καλές προϋποθέσεις':c.day>=45?'Μέτριες προϋποθέσεις':'Δύσκολη μέρα για ψάρεμα';
   const rf=$('ringFg'); if(rf){ rf.style.strokeDashoffset=(326.7*(1-c.day/100)).toFixed(1); rf.setAttribute('class','rfg '+(c.day>=65?'good':c.day>=45?'mid':'bad')); }
@@ -245,8 +246,8 @@ function renderToday(){
   const rows=[
     ['Σελήνη',moonName(c.sm.f),c.factors[0][1],moonTx],
     ['Πίεση',pressTx[$('dPress').value][0],c.factors[1][1],pressTx[$('dPress').value][1]],
-    ['Άνεμος',bft(c.wind)+' Bft',c.factors[2][1],windTx],
-    ['Κύμα',c.wave.toFixed(1)+' m',c.factors[3][1],waveTx],
+    ['Άνεμος',PU.wind(c.wind),c.factors[2][1],windTx],
+    ['Κύμα',PU.wave(c.wave),c.factors[3][1],waveTx],
     ['Ουρανός',cloudTx[$('dCloud').value][0],c.factors[4][1],cloudTx[$('dCloud').value][1]]
   ];
   const good=[],bad=[];
@@ -472,7 +473,7 @@ function showOnMap(lat,lon,id){
 }
 function catchPopup(b){
   const img=h('img',{class:'pimg',alt:'Φωτογραφία ψαριού'}); img.hidden=true;
-  const cd=[b.wind!=null?bft(b.wind)+' Bft':null,b.wave!=null?b.wave+(window.LANG==='en'?' m wave':' m κύμα'):null,b.press!=null?b.press+' hPa':null,b.sst!=null?Math.round(b.sst)+'°C θάλασσα':null,MOON_LBL[biteMoon(b)]].filter(Boolean).join(' · ');
+  const cd=[b.wind!=null?PU.wind(b.wind):null,b.wave!=null?PU.wave(b.wave)+(window.LANG==='en'?' wave':' κύμα'):null,b.press!=null?PU.press(b.press):null,b.sst!=null?PU.temp(b.sst)+(window.LANG==='en'?' sea':' θάλασσα'):null,MOON_LBL[biteMoon(b)]].filter(Boolean).join(' · ');
   const size=[b.kg?b.kg+' kg':null,b.len?b.len+' cm':null].filter(Boolean).join(' · ');
   return h('div',{class:'pop'},img,h('b',{text:(b.n?'#'+b.n+' · ':'')+(b.species||'Άγνωστο')}),b.latin?h('div',{class:'meta',text:b.latin}):null,
     h('div',{class:'meta mono',text:(b.date||'')+' '+(b.time||'')}),
@@ -624,7 +625,7 @@ function renderTrips(){
     }
     L.append(h('div',{class:'item'},
       h('div',{},h('b',{text:(t.date||'')+(t.spot?' · '+t.spot:'')}),
-        h('div',{class:'meta',text:[t.tech,eff.get(t.id).count+' ψάρια',eff.get(t.id).miss?'✕ '+eff.get(t.id).miss+' miss':null,eff.get(t.id).kg.toFixed(1)+' kg',eff.get(t.id).species,(t.startMs&&t.endMs)?fmtDur(t.endMs-t.startMs):null,t.km>0?t.km.toFixed(1)+' km':null].filter(Boolean).join(' · ')}),
+        h('div',{class:'meta',text:[t.tech,eff.get(t.id).count+' ψάρια',eff.get(t.id).miss?'✕ '+eff.get(t.id).miss+' miss':null,eff.get(t.id).kg.toFixed(1)+' kg',eff.get(t.id).species,(t.startMs&&t.endMs)?fmtDur(t.endMs-t.startMs):null,t.km>0?PU.dist(t.km):null].filter(Boolean).join(' · ')}),
         t.notes?h('div',{class:'meta',text:t.notes}):null,det),
       h('div',{class:'acts'},(t.track&&t.track.length>1)?h('button',{class:'btn ghost sm',type:'button',text:window.LANG==='en'?'Route':'Διαδρομή',onclick:()=>{ if(window.PsaroTrack) window.PsaroTrack.show(t.track); }}):null,del)));
   }
@@ -824,6 +825,7 @@ $('bSpecies').addEventListener('input',()=>{
     },500);
   }
 });
+$('bSpecies').addEventListener('focus',()=>setTimeout(()=>{ try{ $('bSpecies').scrollIntoView({block:'start',behavior:'smooth'}); }catch(e){} },300));
 $('bSpecies').addEventListener('blur',()=>setTimeout(()=>{$('bSug').hidden=true;},200));
 $('biteForm').addEventListener('submit',async e=>{
   e.preventDefault();
@@ -919,7 +921,7 @@ function renderBites(){
     const acts=[del];
     acts.unshift(h('button',{class:'btn ghost sm',type:'button',text:'Επεξεργασία',onclick:()=>editBite(b)}));
     if(typeof b.lat==='number') acts.unshift(h('button',{class:'btn ghost sm',type:'button',text:'Χάρτης',onclick:()=>showOnMap(b.lat,b.lon,b.id)}));
-    const cd=[b.wind!=null?bft(b.wind)+' Bft':null,b.wave!=null?b.wave+' m κύμα':null,b.press!=null?b.press+' hPa':null,b.ptrend?PT[b.ptrend]:null,MOON_LBL[biteMoon(b)]].filter(Boolean).join(' · ');
+    const cd=[b.wind!=null?PU.wind(b.wind):null,b.wave!=null?PU.wave(b.wave)+' κύμα':null,b.press!=null?PU.press(b.press):null,b.ptrend?PT[b.ptrend]:null,MOON_LBL[biteMoon(b)]].filter(Boolean).join(' · ');
     const where=b.place||(typeof b.lat==='number'?b.lat.toFixed(4)+', '+b.lon.toFixed(4):'');
     const img=h('img',{class:'thumb',alt:''}); img.hidden=true; if(b.photo) loadPhoto(b.id,img);
     const td=nicosiaToday(), [ty,tm,tdd]=td.split('-').map(Number), yd=new Date(Date.UTC(ty,tm-1,tdd-1)).toISOString().slice(0,10);
@@ -1041,8 +1043,8 @@ function applyConditions(c){
   if(c.ptrend&&PT[c.ptrend]) $('dPress').value=c.ptrend;
   if(c.press!=null) $('bPress').value=c.press;
   const near=nearestRef(c.lat,c.lon);
-  const parts=[c.wind!=null?bft(c.wind)+' Bft'+(wdir(c)?' '+wdir(c):''):null,c.wave!=null?'κύμα '+c.wave.toFixed(1)+' m'+(c.wavePeriod?' · '+Math.round(c.wavePeriod)+' s':''):'κύμα μη διαθέσιμο',
-    c.temp!=null?c.temp.toFixed(0)+'°C αέρας':null,c.sst!=null?c.sst.toFixed(0)+'°C θάλασσα':null,c.press!=null?c.press+' hPa'+(c.ptrend?' · '+PT[c.ptrend].toLowerCase():''):null].filter(Boolean);
+  const parts=[c.wind!=null?PU.wind(c.wind)+(wdir(c)?' '+wdir(c):''):null,c.wave!=null?'κύμα '+PU.wave(c.wave)+(c.wavePeriod?' · '+Math.round(c.wavePeriod)+' s':''):'κύμα μη διαθέσιμο',
+    c.temp!=null?PU.temp(c.temp)+' αέρας':null,c.sst!=null?PU.temp(c.sst)+' θάλασσα':null,c.press!=null?PU.press(c.press)+(c.ptrend?' · '+PT[c.ptrend].toLowerCase():''):null].filter(Boolean);
   $('liveMain').textContent=parts.join(' · ');
   setLive('Ενημερώθηκε '+(c.date?c.date.split('-').reverse().join('/')+' ':'')+(c.at||'')+' · θέση '+c.lat.toFixed(2)+', '+c.lon.toFixed(2)+(near?' · κοντά σε '+near:''));
   setYou(c.lat,c.lon); renderWx(); checkZoneHere(); document.dispatchEvent(new Event('psaro-cond'));
@@ -1055,8 +1057,8 @@ function renderWx(){
   const c=cond||{};
   const dash='–';
   el.append(h('div',{class:'wxg'},
-    cell('Σελήνη',Math.round(sm.illum*100)+'%'),cell('Πίεση',c.press!=null?c.press+' hPa':dash),cell('Αέρας',c.temp!=null?Math.round(c.temp)+'°C':dash),
-    cell('Θάλασσα',c.sst!=null?Math.round(c.sst)+'°C':dash),cell('Άνεμος',c.wind!=null?bft(c.wind)+' Bft'+(wdir(c)?' '+wdir(c):''):dash),cell('Κύμα',c.wave!=null?c.wave.toFixed(1)+' m':dash)));
+    cell('Σελήνη',Math.round(sm.illum*100)+'%'),cell('Πίεση',c.press!=null?PU.press(c.press):dash),cell('Αέρας',c.temp!=null?PU.temp(c.temp):dash),
+    cell('Θάλασσα',c.sst!=null?PU.temp(c.sst):dash),cell('Άνεμος',c.wind!=null?PU.wind(c.wind)+(wdir(c)?' '+wdir(c):''):dash),cell('Κύμα',c.wave!=null?PU.wave(c.wave):dash)));
 }
 function refreshConditions(){
   if(refreshing) return refreshing;

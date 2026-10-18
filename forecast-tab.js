@@ -1,6 +1,7 @@
 /* Καρτέλα «Πρόγνωση»: 7 ημέρες συνθηκών και δείκτη ψαρέματος, επιλογή τοποθεσίας, ειδοποιήσεις για καλές μέρες. */
 (function(){
 'use strict';
+var PU=window.PsaroUnits;
 var C=window.PsaroCore, PF=window.PF; if(!C||!PF||!document.getElementById('tab-fc')) return;
 var $=C.$, h=C.h, pad=C.pad, lsGet=C.lsGet, lsSet=C.lsSet, toast=C.toast;
 var Cl=function(){ return window.PsaroCloud&&window.PsaroCloud.logged()?window.PsaroCloud:null; };
@@ -38,7 +39,8 @@ function renderPlaces(){
   var list=allPlaces();
   if(!list.length) box.append(h('span',{class:'note',text:'Πάτα «Η θέση μου» στον χάρτη ή αναζήτησε μια τοποθεσία.'}));
   list.forEach(function(p){
-    var b=h('button',{type:'button',class:'chip','aria-pressed':String(p.id===sel),text:(p.gps?'📍 ':'')+p.name+(p.watch===false?'':' 🔔')});
+    var b=h('button',{type:'button',class:'chip','aria-pressed':String(p.id===sel),text:p.name});
+    if(p.gps) b.classList.add('gpschip');
     b.addEventListener('click',function(){ sel=p.id; save(); renderPlaces(); load(); });
     box.append(b);
   });
@@ -88,9 +90,9 @@ function reason(d){
   if(d.safe) return '';
   var w=d.wx||{}, r=[];
   if(d.why==='night') return 'Δεν απομένει φως.';
-  if(w.windMax!=null&&w.windMax>14) r.push((EN?'wind up to ':'άνεμος έως ')+PF.bft(w.windMax)+' Bft');
-  if(w.waveMax!=null&&w.waveMax>0.9) r.push((EN?'waves up to ':'κύμα έως ')+w.waveMax.toFixed(1)+' m');
-  if(w.gustMax!=null&&w.gustMax>24) r.push((EN?'gusts up to ':'ριπές έως ')+PF.bft(w.gustMax)+' Bft');
+  if(w.windMax!=null&&w.windMax>14) r.push((EN?'wind up to ':'άνεμος έως ')+PU.wind(w.windMax));
+  if(w.waveMax!=null&&w.waveMax>0.9) r.push((EN?'waves up to ':'κύμα έως ')+PU.wave(w.waveMax));
+  if(w.gustMax!=null&&w.gustMax>24) r.push((EN?'gusts up to ':'ριπές έως ')+PU.wind(w.gustMax));
   if(w.code!=null&&w.code>=95) r.push('καταιγίδα');
   return 'Δεν υπάρχει ασφαλές παράθυρο'+(r.length?': '+r.join(', '):'')+'.';
 }
@@ -116,18 +118,18 @@ function renderFc(p,f,note,t){
     var lab=(d.date===today?(EN?'Today':'Σήμερα'):DAYN[dt.getUTCDay()])+' '+d.date.slice(8)+'/'+d.date.slice(5,7);
     var sum=h('summary',{},
       h('span',{class:'fdi',text:wxIcon(w.code)}),
-      h('span',{class:'fdt'},h('b',{text:lab}),h('span',{class:'meta',text:[w.tmax!=null?Math.round(w.tmin)+'–'+Math.round(w.tmax)+'°C':null,w.windAvg!=null?PF.bft(w.windAvg)+' Bft '+dirName(w.windDir):null,w.waveAvg!=null?w.waveAvg.toFixed(1)+' m':null].filter(Boolean).join(' · ')})),
+      h('span',{class:'fdt'},h('b',{text:lab}),h('span',{class:'meta',text:[w.tmax!=null?PU.tempP(w.tmin)[0]+'–'+PU.temp(w.tmax):null,w.windAvg!=null?PU.wind(w.windAvg)+' '+dirName(w.windDir):null,w.waveAvg!=null?PU.wave(w.waveAvg):null].filter(Boolean).join(' · ')})),
       h('span',{class:'pill '+(d.safe?(good?'good':mid?'warn':'bad'):'bad'),text:d.safe?String(d.best):'–'}));
     var tiles=h('div',{class:'ftiles'},
       tileEl('Καιρός',wxText(w.code)||'–'),
-      tileEl('Θερμοκρασία',w.tmax!=null?Math.round(w.tmin)+'–'+Math.round(w.tmax)+'°C':'–'),
-      tileEl('Άνεμος',w.windMax!=null?PF.bft(w.windAvg)+' Bft ('+(EN?'up to ':'έως ')+PF.bft(w.windMax)+')':'–'),
-      tileEl('Ριπές',w.gustMax!=null?PF.bft(w.gustMax)+' Bft':'–'),
+      tileEl('Θερμοκρασία',w.tmax!=null?PU.tempP(w.tmin)[0]+'–'+PU.temp(w.tmax):'–'),
+      tileEl('Άνεμος',w.windMax!=null?PU.wind(w.windAvg)+' ('+(EN?'up to ':'έως ')+PU.wind(w.windMax)+')':'–'),
+      tileEl('Ριπές',w.gustMax!=null?PU.wind(w.gustMax):'–'),
       tileEl('Βροχή',w.rainMax!=null?w.rainMax+'%'+(w.rainMm>=0.1?' · '+w.rainMm.toFixed(1)+' mm':''):'–'),
       tileEl('Σύννεφα',w.cloudAvg!=null?Math.round(w.cloudAvg)+'%':'–'),
-      tileEl('Πίεση',w.pStart!=null?Math.round(w.pEnd)+' hPa '+(w.pEnd-w.pStart>=1.5?'↑':w.pEnd-w.pStart<=-1.5?'↓':'→'):'–'),
-      tileEl('Κύμα',w.waveMax!=null?w.waveAvg.toFixed(1)+' m ('+(EN?'up to ':'έως ')+w.waveMax.toFixed(1)+')'+(w.period?' · '+Math.round(w.period)+' s':''):'–'),
-      tileEl('Θάλασσα',w.sst!=null?w.sst.toFixed(1)+'°C':'–'),
+      tileEl('Πίεση',w.pStart!=null?PU.press(w.pEnd)+' '+(w.pEnd-w.pStart>=1.5?'↑':w.pEnd-w.pStart<=-1.5?'↓':'→'):'–'),
+      tileEl('Κύμα',w.waveMax!=null?PU.wave(w.waveAvg)+' ('+(EN?'up to ':'έως ')+PU.wave(w.waveMax)+')'+(w.period?' · '+Math.round(w.period)+' s':''):'–'),
+      tileEl('Θάλασσα',w.sst!=null?PU.temp(w.sst,1):'–'),
       tileEl('Σελήνη',Math.round(w.illum*100)+'%'),
       tileEl('Ανατολή / Δύση',fmtMin(w.rise)+' / '+fmtMin(w.set)),
       tileEl('Καλύτερο παράθυρο',d.safe&&d.win?pad(d.win.s)+':00–'+pad((d.win.e+1)%24)+':00':'–'));
