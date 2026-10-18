@@ -341,7 +341,7 @@ const Store=(function(){
   }
   function flush(){ for(const k in cache){persist(k);emit(k);} ptomb(); }
   function wipe(){ for(const k in cache){cache[k]=[];} tombs=[]; flush(); }
-  return {init,save,remove,mergeIn,flush,wipe,tombs:()=>tombs,hook:f=>hooks.push(f),on:(k,f)=>{subs[k].push(f);f(cache[k]);},get:k=>cache[k]};
+  return {init,save,remove,mergeIn,flush,wipe,tombs:()=>tombs,hook:f=>hooks.push(f),on:(k,f)=>{subs[k].push(f);f(cache[k]);},get:k=>k==='bites'?cache.bites.filter(b=>!b.miss):cache[k],raw:k=>cache[k],misses:()=>cache.bites.filter(b=>b.miss)};
 })();
 
 /* ---------- Photos (IndexedDB) ---------- */
@@ -560,7 +560,7 @@ function renderSpots(){
 /* ---------- Log ---------- */
 /* Έξοδοι από το κουμπί «Έξοδος» (με startMs): τα ψάρια/kg υπολογίζονται ζωντανά από τα τσιμπήματα, ώστε οι αλλαγές στα bites να φαίνονται εδώ. */
 function tripEff(t,all){
-  if(!t.startMs||!t.endMs||t.manual) return {count:+t.count||0,kg:+t.kg||0,species:t.species||''};
+  if(!t.startMs||!t.endMs||t.manual) return {count:+t.count||0,kg:+t.kg||0,species:t.species||'',miss:+t.miss||0};
   const lo=Math.floor(t.startMs/60000)*60000, prev=(all||[]).filter(x=>x.id!==t.id&&x.startMs&&x.endMs&&x.startMs<t.startMs);
   let n=0,kg=0; const sp={};
   Store.get('bites').forEach(b=>{
@@ -568,8 +568,15 @@ function tripEff(t,all){
     if(prev.some(x=>ms>=Math.floor(x.startMs/60000)*60000&&ms<=x.endMs)) return;
     if(ms>=lo&&ms<=t.endMs){ n++; kg+=+b.kg||0; if(b.species) sp[b.species]=(sp[b.species]||0)+1; }
   });
-  return {count:n,kg:Math.round(kg*10)/10,species:Object.keys(sp).sort((a,b)=>sp[b]-sp[a])[0]||''};
+  let mi=0;
+  Store.misses().forEach(b=>{
+    if(!b.date||!b.time) return; const ms=biteMs(b); if(isNaN(ms)) return;
+    if(prev.some(x=>ms>=Math.floor(x.startMs/60000)*60000&&ms<=x.endMs)) return;
+    if(ms>=lo&&ms<=t.endMs) mi++;
+  });
+  return {count:n,kg:Math.round(kg*10)/10,species:Object.keys(sp).sort((a,b)=>sp[b]-sp[a])[0]||'',miss:mi};
 }
+const fmtDur=ms=>{const m=Math.max(0,Math.round(ms/60000)),hh=Math.floor(m/60),en=window.LANG==='en';return hh?hh+(en?'h ':'ω ')+('0'+(m%60)).slice(-2)+(en?'m':'λ'):m+(en?'m':'λ');};
 function renderTrips(){
   const all=Store.get('trips'), trips=all.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const eff=new Map(trips.map(t=>[t.id,tripEff(t,all)]));
@@ -605,9 +612,9 @@ function renderTrips(){
     }
     L.append(h('div',{class:'item'},
       h('div',{},h('b',{text:(t.date||'')+(t.spot?' · '+t.spot:'')}),
-        h('div',{class:'meta',text:[t.tech,eff.get(t.id).count+' ψάρια',eff.get(t.id).kg.toFixed(1)+' kg',eff.get(t.id).species].filter(Boolean).join(' · ')}),
+        h('div',{class:'meta',text:[t.tech,eff.get(t.id).count+' ψάρια',eff.get(t.id).miss?'✕ '+eff.get(t.id).miss+' miss':null,eff.get(t.id).kg.toFixed(1)+' kg',eff.get(t.id).species(t.startMs&&t.endMs)?fmtDur(t.endMs-t.startMs):null,t.km>0?t.km.toFixed(1)+' km':null].filter(Boolean).join(' · ')}),
         t.notes?h('div',{class:'meta',text:t.notes}):null,det),
-      h('div',{class:'acts'},del)));
+      h('div',{class:'acts'},(t.track&&t.track.length>1)?h('button',{class:'btn ghost sm',type:'button',text:window.LANG==='en'?'Route':'Διαδρομή',onclick:()=>{ if(window.PsaroTrack) window.PsaroTrack.show(t.track); }}):null,del)));
   }
 }
 $('tripForm').addEventListener('submit',async e=>{
@@ -849,19 +856,26 @@ function editBite(b){
   $('bLocMode').value=(typeof b.lat==='number')?'keep':'none';
   renderChips(); syncLoc(); updateLaw(); $('sheet').hidden=false;
 }
-async function quickBite(){
-  const btn=$('bQuick'); btn.disabled=true; toast('Αναζήτηση θέσης…');
+let quickBusy=false;
+async function quickRec(miss){
+  if(quickBusy) return; quickBusy=true;
+  const btn=$('bQuick'); btn.disabled=true; const en=window.LANG==='en';
   try{
-    const c=await refreshConditions();
-    if(!c||c.lat==null){ toast('Δεν βρέθηκε θέση.'); return; }
-    const rec={date:nicosiaToday(),time:fmt(nicosiaNowMin()),tz:utcOff(),species:'',latin:'',bait:'',tech:'',depth:null,kg:null,len:null,press:c.press,notes:'',
+    let c=null; try{ c=await refreshConditions(); }catch(e){}
+    c=c||cond||{};
+    const has=c.lat!=null;
+    const rec={date:nicosiaToday(),time:fmt(nicosiaNowMin()),tz:utcOff(),species:'',latin:'',bait:'',tech:'',depth:null,kg:null,len:null,press:c.press!=null?c.press:null,notes:'',
       ptrend:$('dPress').value,wind:+$('dWind').value,wave:+$('dWave').value,cloud:$('dCloud').value,temp:c.temp!=null?c.temp:null,sst:c.sst!=null?c.sst:null,
-      place:'',lat:c.lat,lon:c.lon,photo:false,src:'quick'};
+      place:'',lat:has?c.lat:null,lon:has?c.lon:null,photo:false,src:miss?'miss':'quick'};
+    if(miss) rec.miss=true;
     const id=await Store.save('bites',rec);
-    toast('Τσίμπημα αποθηκεύτηκε. Πρόσθεσε είδος από Ημερολόγιο → Τσιμπήματα → Επεξεργασία.'); showOnMap(c.lat,c.lon,id);
-  }catch(e){ toast('Δεν αποθηκεύτηκε. Δοκίμασε ξανά.'); }
-  finally{ btn.disabled=false; }
+    const live=document.body.classList.contains('ontrip');
+    if(miss) toast(en?'Miss logged ✕':'Καταγράφηκε αστοχία ✕');
+    else { toast(en?'Fish logged 🐟 Add the species later from Log → Bites → Edit.':'Ψάρι καταγράφηκε 🐟 Πρόσθεσε είδος αργότερα από Ημερολόγιο → Τσιμπήματα → Επεξεργασία.'); if(has&&!live&&$('tab-map').hidden===false) showOnMap(c.lat,c.lon,id); }
+  }catch(e){ toast(en?'Not saved. Try again.':'Δεν αποθηκεύτηκε. Δοκίμασε ξανά.'); }
+  finally{ btn.disabled=false; quickBusy=false; }
 }
+const quickBite=()=>quickRec(false);
 $('bQuick').addEventListener('click',quickBite);
 function updateSuggest(){
   const bites=Store.get('bites');
@@ -1189,7 +1203,7 @@ const blobToDataUrl=b=>new Promise((res,rej)=>{const r=new FileReader();r.onload
 $('expBtn').addEventListener('click',async()=>{
   const btn=$('expBtn'); btn.disabled=true;
   try{
-    const bites=Store.get('bites'), photos={};
+    const bites=Store.raw('bites'), photos={};
     for(const b of bites) if(b.photo){ try{const bl=await Photos.get(b.id); if(bl) photos[b.id]=await blobToDataUrl(bl);}catch(e){} }
     const data={app:'psarovarka',v:2,spots:Store.get('spots'),trips:Store.get('trips'),bites:bites,photos:photos};
     const a=h('a',{href:URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'})),download:'psarovarka-'+nicosiaToday()+'.json'});
@@ -1244,7 +1258,7 @@ renderToday(); renderSpecies(); renderTech(); renderChecks(); renderLaw(); rende
 Store.on('spots',()=>{drawMap();renderSpots();});
 Store.on('trips',renderTrips);
 Store.on('bites',()=>{renderBites();renderStats();renderTrips();});
-Object.assign(window.PsaroCore,{h:h,$:$,fmt:fmt,pad:pad,nicosiaToday:nicosiaToday,nicosiaNowMin:nicosiaNowMin,getPosition:getPosition,getCond:()=>cond,showOnMap:showOnMap,lsGet:lsGet,lsSet:lsSet,switchTab:switchTab,utcMin:()=>utcOff()});
+Object.assign(window.PsaroCore,{quick:()=>quickRec(false),quickMiss:()=>quickRec(true),map:()=>map,h:h,$:$,fmt:fmt,pad:pad,nicosiaToday:nicosiaToday,nicosiaNowMin:nicosiaNowMin,getPosition:getPosition,getCond:()=>cond,showOnMap:showOnMap,lsGet:lsGet,lsSet:lsSet,switchTab:switchTab,utcMin:()=>utcOff()});
 Store.init();
 if(cond){ applyConditions(cond); } else { $('liveMain').textContent='Δεν υπάρχουν δεδομένα καιρού ακόμα.'; }
 refreshConditions();

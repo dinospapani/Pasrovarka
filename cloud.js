@@ -67,12 +67,12 @@ async function sync(manual){
     if(got) Store.flush();
     // 2) αποστολή όσων είναι νεότερα τοπικά
     var out=[];
-    KINDS.forEach(function(k){ Store.get(k).forEach(function(o){ var rm=remote[k+'/'+o.id]; var ru=rm?((rm.data&&rm.data._u)||Date.parse(rm.updated_at)||0):0; if(!rm||(o._u||0)>ru) out.push({kind:k,id:o.id,data:o,deleted:false,updated_at:iso(o._u||Date.now())}); }); });
+    KINDS.forEach(function(k){ Store.raw(k).forEach(function(o){ var rm=remote[k+'/'+o.id]; var ru=rm?((rm.data&&rm.data._u)||Date.parse(rm.updated_at)||0):0; if(!rm||(o._u||0)>ru) out.push({kind:k,id:o.id,data:o,deleted:false,updated_at:iso(o._u||Date.now())}); }); });
     Store.tombs().forEach(function(t){ var rm=remote[t.k+'/'+t.id]; var ru=rm?((rm.data&&rm.data._u)||Date.parse(rm.updated_at)||0):0; if(!rm||(!rm.deleted&&t.u>ru)) out.push({kind:t.k,id:t.id,data:{_u:t.u},deleted:true,updated_at:iso(t.u)}); });
     for(var i=0;i<out.length;i+=200) await rest('records',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(out.slice(i,i+200))});
     // 3) φωτογραφίες
     var up=0;
-    for(var bi=0;bi<Store.get('bites').length;bi++){ var b=Store.get('bites')[bi]; if(!b.photo||pup[b.id]) continue; var bl=null; try{ bl=await Photos.get(b.id); }catch(e){} if(!bl) continue; var rr=await storage('POST','photos/'+sess.uid+'/'+b.id+'.jpg',bl,'image/jpeg'); if(rr.ok){ pup[b.id]=1; up++; } }
+    for(var bi=0;bi<Store.raw('bites').length;bi++){ var b=Store.raw('bites')[bi]; if(!b.photo||pup[b.id]) continue; var bl=null; try{ bl=await Photos.get(b.id); }catch(e){} if(!bl) continue; var rr=await storage('POST','photos/'+sess.uid+'/'+b.id+'.jpg',bl,'image/jpeg'); if(rr.ok){ pup[b.id]=1; up++; } }
     ls('psaro-pup',pup);
     var dl=0;
     for(var j=0;j<needPh.length;j++){ var id=needPh[j]; var have=null; try{ have=await Photos.get(id); }catch(e){} if(have){ pup[id]=1; continue; } var rs=await storage('GET','authenticated/photos/'+sess.uid+'/'+id+'.jpg'); if(rs.ok){ await Photos.put(id,await rs.blob()); pup[id]=1; dl++; } }
@@ -91,7 +91,7 @@ async function sync(manual){
 function sched(){ if(!sess) return; clearTimeout(timer); timer=setTimeout(function(){ sync(false); },2500); }
 Store.hook(function(k,id){
   if(!sess) return;
-  if(k==='bites'){ var still=Store.get('bites').some(function(b){return b.id===id;}); if(!still&&sess){ storage('DELETE','photos/'+sess.uid+'/'+id+'.jpg').catch(function(){}); delete pup[id]; ls('psaro-pup',pup); } }
+  if(k==='bites'){ var still=Store.raw('bites').some(function(b){return b.id===id;}); if(!still&&sess){ storage('DELETE','photos/'+sess.uid+'/'+id+'.jpg').catch(function(){}); delete pup[id]; ls('psaro-pup',pup); } }
   sched();
 });
 window.addEventListener('online',function(){ sched(); });
@@ -111,7 +111,7 @@ function render(){
   if($('pName')&&document.activeElement!==$('pName')) $('pName').value=nm;
   if(sess&&$('acStatus')&&!$('acStatus').textContent){ var l=ls('psaro-last'); if(l) $('acStatus').textContent='Τελευταίος συγχρονισμός '+new Date(l).toLocaleString(window.LANG==='en'?'en-GB':'el-GR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
 }
-function localCount(){ return Store.get('spots').length+Store.get('trips').length+Store.get('bites').length; }
+function localCount(){ return Store.raw('spots').length+Store.raw('trips').length+Store.raw('bites').length; }
 async function afterLogin(j){
   var prev=ls('psaro-uid'); setSess(j);
   if(prev&&prev!==sess.uid&&localCount()>0){

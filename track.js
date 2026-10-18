@@ -7,7 +7,7 @@ var KEY='psaro-track', ON='psaro-gps';
 var wid=null, layer=null, line=null, dot=null;
 
 function st(){ return (window.PsaroTrip&&window.PsaroTrip.state)?window.PsaroTrip.state():{}; }
-function enabled(){ return C.lsGet(ON,'')==='1'; }
+function enabled(){ return C.lsGet(ON,'1')!=='0'; }
 function load(){ var t=C.lsGet(KEY,null); return t&&Array.isArray(t.pts)?t:null; }
 function store(t){ try{ C.lsSet(KEY,t); }catch(e){} }
 function dist(a,b){ /* μέτρα, haversine */
@@ -34,7 +34,7 @@ function onPos(p){
   store(t); draw(); window.dispatchEvent(new Event('psaro-track'));
 }
 function onErr(e){
-  if(e&&e.code===1){ C.lsSet(ON,''); stop(); try{ C.toast(T('Δεν δόθηκε άδεια θέσης. Η διαδρομή απενεργοποιήθηκε.','Location permission denied. Route recording is off.')); }catch(x){} window.dispatchEvent(new Event('psaro-track')); }
+  if(e&&e.code===1){ C.lsSet(ON,'0'); stop(); try{ C.toast(T('Δεν δόθηκε άδεια θέσης. Η διαδρομή απενεργοποιήθηκε.','Location permission denied. Route recording is off.')); }catch(x){} window.dispatchEvent(new Event('psaro-track')); }
 }
 function begin(){
   if(wid!=null||!navigator.geolocation) return;
@@ -103,7 +103,7 @@ function show(track){
   },250);
 }
 function setEnabled(v){
-  C.lsSet(ON,v?'1':'');
+  C.lsSet(ON,v?'1':'0');
   if(v){ if(st().active) begin(); try{ C.toast(T('Διαδρομή GPS ενεργή. Καταναλώνει περισσότερη μπαταρία.','GPS route on. It uses more battery.')); }catch(e){} }
   else { stop(); var t=cur(); if(t) store(null); if(layer){ layer.clearLayers(); line=dot=null; } }
   window.dispatchEvent(new Event('psaro-track'));
