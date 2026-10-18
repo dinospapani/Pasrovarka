@@ -229,6 +229,7 @@ function renderPanel(){
   body.append(r);
   var mrow=row('MOB',mobs.length?(mobs.length+T(' σημ. στον χάρτη',' marks on the map')):T('Κουμπί MOB στον χάρτη κατά την έξοδο: ένα πάτημα σημειώνει τη θέση και ξεκινά πλοήγηση προς αυτήν.','MOB button on the map during a trip: one tap marks the spot and starts navigating to it.'),mobs.length?btn(T('Καθαρισμός','Clear'),'',function(){ mobs=[]; C.lsSet('psaro-mob',mobs); drawMob(); renderPanel(); }):null);
   body.append(mrow);
+  (window.PsaroSeaRows||[]).forEach(function(fn){ try{ var r=fn(); if(r) body.append(r); }catch(e){} });
 }
 function openP(){ panel.hidden=false; renderPanel(); }
 bTools.addEventListener('click',openP);
@@ -236,6 +237,6 @@ panel.querySelector('.spx').addEventListener('click',function(){ panel.hidden=tr
 panel.addEventListener('click',function(e){ if(e.target===panel) panel.hidden=true; });
 setInterval(function(){ if(!panel.hidden&&an) renderPanel(); },5000);
 map.on('moveend',function(){ if(!panel.hidden&&!dl.run) renderPanel(); });
-window.PsaroSea={mob:doMob,anchor:function(){ return an; },plan:plan,wxCheck:wxCheck,open:openP,wake:function(){ return !!wl; }};
+window.PsaroSea={notify:notify,mob:doMob,anchor:function(){ return an; },plan:plan,wxCheck:wxCheck,open:openP,wake:function(){ return !!wl; }};
 wlSync();
 })();
