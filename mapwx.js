@@ -18,8 +18,8 @@ var el=document.createElement('div'); el.className='mapwx'; el.hidden=true; box.
 var editing=false;
 function sel(){ var v=C.lsGet(KEY,null); return Array.isArray(v)?v:DEF.slice(); }
 function draw(){
-  var c=C.getCond(); if(!c){ el.hidden=true; return; }
-  var on=sel(); el.hidden=false; el.replaceChildren(); el.classList.toggle('edit',editing);
+  var c=C.getCond(); if(!c){ el.hidden=true; document.body.classList.remove('hasmw'); return; }
+  var on=sel(); el.hidden=false; document.body.classList.add('hasmw'); el.replaceChildren(); el.classList.toggle('edit',editing);
   var row=document.createElement('div'); row.className='mwrow';
   ITEMS.forEach(function(it){
     if(on.indexOf(it[0])<0) return;
@@ -48,4 +48,23 @@ function place(){
 }
 setInterval(place,500);
 setTimeout(draw,800); setTimeout(draw,3500);
+})();
+
+/* Παράθυρο πληροφοριών: κεντράρεται και φαίνεται ολόκληρο (και το ψάρι από κάτω) ανάμεσα στην κάρτα καιρού και τα κουμπιά */
+(function(){
+var Cc=window.PsaroCore, map=Cc&&Cc.map&&Cc.map(); if(!map) return;
+function fit(p){
+  var el=p&&p.getElement&&p.getElement(); if(!el||!p._map) return;
+  var mr=map.getContainer().getBoundingClientRect(), r=el.getBoundingClientRect();
+  var topLim=mr.top+64, botLim=mr.bottom-70-38; /* χώρος για το εικονίδιο κάτω από το popup και τη γραμμή αναφορών */
+  var dx=(mr.left+mr.width/2)-(r.left+r.width/2), dy=0;
+  if(r.bottom>botLim) dy=botLim-r.bottom;
+  if(r.top+dy<topLim) dy=topLim-r.top;
+  if(Math.abs(dx)>1||Math.abs(dy)>1) map.panBy([-dx,-dy],{animate:true,duration:.3});
+}
+map.on('popupopen',function(e){
+  var p=e.popup; setTimeout(function(){ fit(p); },40);
+  var im=p.getElement&&p.getElement()&&p.getElement().querySelector('img');
+  if(im&&!im.complete) im.addEventListener('load',function(){ fit(p); },{once:true});
+});
 })();

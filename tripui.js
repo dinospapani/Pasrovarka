@@ -6,8 +6,9 @@ var C=window.PsaroCore, box=document.querySelector('.mapbox'); if(!C||!box||!win
 var EN=window.LANG==='en', T=function(el,en){ return EN?en:el; };
 var $=function(i){ return document.getElementById(i); };
 function buzz(){ try{ if(navigator.vibrate) navigator.vibrate(25); }catch(e){} }
-var FISH='<svg viewBox="0 0 48 32" aria-hidden="true"><path d="M17 4.5v15a6.5 6.5 0 0 1-13 0v-3M1.5 19.5l2.5-3 2.5 3" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="3.6" r="1.7" fill="currentColor"/><circle cx="35" cy="16" r="10" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M30 16.5l3.6 3.6 6.6-7.6" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-var MISS='<svg viewBox="0 0 48 32" aria-hidden="true"><path d="M17 4.5v15a6.5 6.5 0 0 1-13 0v-3M1.5 19.5l2.5-3 2.5 3" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="3.6" r="1.7" fill="currentColor"/><circle cx="35" cy="16" r="10" fill="none" stroke="currentColor" stroke-width="2.6" stroke-dasharray="4 3"/><path d="M31 12l8 8M39 12l-8 8" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg>';
+var FB='<path d="M3 12C8 4.5 17 4 22 12c-5 8-14 7.5-19 0z"/><path d="M22 12l7-6.5v13z"/>';
+var FISH='<svg viewBox="0 0 32 24" aria-hidden="true" fill="currentColor" stroke="none">'+FB+'<circle cx="9" cy="10.3" r="1.5" fill="#2e9e7e"/></svg>';
+var MISS='<svg viewBox="0 0 32 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">'+FB+'<circle cx="9" cy="10.3" r="1.1" fill="currentColor" stroke="none"/><path d="M5 22L27 2" stroke-width="2.6"/></svg>';
 var wrap=document.createElement('div'); wrap.className='fishbtns'; wrap.id='fishBtns'; wrap.hidden=true;
 function mk(id,cls,svg,label){
   var b=document.createElement('button'); b.type='button'; b.id=id; b.className='fb '+cls; b.setAttribute('aria-label',label);

@@ -408,7 +408,7 @@ function showZone(z){
 function initMap(){
   if(typeof L==='undefined'){ $('lmap').textContent='Ο χάρτης δεν φόρτωσε.'; return; }
   const last=lsGet('psaro-view',null), c=cond&&cond.lat!=null?[cond.lat,cond.lon]:null;
-  L.Popup.mergeOptions({maxWidth:Math.max(200,Math.min(320,innerWidth-190)),minWidth:150,autoPanPaddingTopLeft:[96,84],autoPanPaddingBottomRight:[84,130],keepInView:true});
+  L.Popup.mergeOptions({maxWidth:Math.max(200,Math.min(320,innerWidth-190)),minWidth:150,autoPan:false});
   map=L.map('lmap',{minZoom:2,worldCopyJump:true,zoomControl:false}).setView(last?[last.lat,last.lon]:(c||[34.9,33.2]),last?last.z:(c?10:8));
   L.control.zoom({position:'topleft'}).addTo(map);
   baseSat=L.tileLayer(TILES.sat,{maxZoom:18,attribution:'Esri'});
@@ -447,11 +447,12 @@ function initMap(){
     if(pick==='fc'){ endPick(); switchTab('fc'); window.dispatchEvent(new CustomEvent('psaro-fcpick',{detail:{lat:lat,lon:lon}})); return; }
     if(pick==='spot'){ endPick(); openSpotForm({lat:lat,lon:lon}); return; }
     if(pick==='bite'){ endPick(); pickedPt={lat:lat,lon:lon}; $('bLocMode').value='pick'; syncLoc(); openSheet(); return; }
-    const box=h('div',{class:'pop'},h('div',{class:'mono',text:lat.toFixed(4)+', '+lon.toFixed(4)}),
-      h('div',{class:'row',style:'margin-top:6px'},
-        h('button',{class:'btn sm',type:'button',text:'Νέο σημείο',onclick:()=>{map.closePopup();openSpotForm({lat:lat,lon:lon});}}),
-        h('button',{class:'btn ghost sm',type:'button',text:'Πρόγνωση εδώ',onclick:()=>{map.closePopup();switchTab('fc');window.dispatchEvent(new CustomEvent('psaro-fcpick',{detail:{lat:lat,lon:lon}}));}}),
-        h('button',{class:'btn acc sm',type:'button',text:'Τσίμπημα εδώ',onclick:()=>{map.closePopup();pickedPt={lat:lat,lon:lon};$('bLocMode').value='pick';syncLoc();openSheet();}})));
+    const ic=d=>{const n='http://www.w3.org/2000/svg',s=document.createElementNS(n,'svg');s.setAttribute('viewBox','0 0 24 24');s.setAttribute('class','pi');const p=document.createElementNS(n,'path');p.setAttribute('d',d);s.append(p);return s;};
+    const act=(cls,d,txt,fn)=>h('button',{class:'pact '+cls,type:'button',onclick:fn},ic(d),h('span',{text:txt}));
+    const box=h('div',{class:'pop pmap'},h('div',{class:'pcoord'},ic('M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z M12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z'),h('span',{class:'mono',text:lat.toFixed(4)+', '+lon.toFixed(4)})),
+      act('','M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z M12 7v6 M9 10h6','Νέο σημείο',()=>{map.closePopup();openSpotForm({lat:lat,lon:lon});}),
+      act('','M7 18a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17 8.5a4.5 4.5 0 0 1 .5 9.5H7z','Πρόγνωση εδώ',()=>{map.closePopup();switchTab('fc');window.dispatchEvent(new CustomEvent('psaro-fcpick',{detail:{lat:lat,lon:lon}}));}),
+      act('acc','M3 12c3-5.5 10-6 14-1.5l4-3.5v10l-4-3.5C13 17.5 6 17.5 3 12z','Τσίμπημα εδώ',()=>{map.closePopup();pickedPt={lat:lat,lon:lon};$('bLocMode').value='pick';syncLoc();openSheet();}));
     L.popup().setLatLng(ll).setContent(box).openOn(map);
   });
   if(cond&&cond.lat!=null) setYou(cond.lat,cond.lon);
