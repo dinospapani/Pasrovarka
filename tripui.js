@@ -37,16 +37,16 @@ function del(miss){
 }
 function press(btn,miss){
   var t=null, held=false;
-  btn.addEventListener('pointerdown',function(){ held=false; clearTimeout(t); t=setTimeout(function(){ held=true; buzz(); del(miss); },700); });
+  btn.addEventListener('pointerdown',function(){ held=false; clearTimeout(t); t=setTimeout(function(){ held=true; buzz(); del(miss); },500); });
   ['pointerup','pointerleave','pointercancel'].forEach(function(ev){ btn.addEventListener(ev,function(){ clearTimeout(t); }); });
   btn.addEventListener('contextmenu',function(e){ e.preventDefault(); });
-  btn.addEventListener('click',function(){ if(held){ held=false; return; } buzz(); if(miss) C.quickMiss(); else C.quick(); });
+  btn.addEventListener('click',function(){ if(held){ held=false; return; } buzz(); if(miss) C.quickMiss(); else $('fab').click(); });
 }
 press(bc,false); press(bm,true);
 
 /* Κουμπί εξόδου: πάτημα = τέλος εξόδου (με επιβεβαίωση), παρατεταμένο = λεπτομέρειες/παράταση */
 var tb=$('tripBtn'), lt=null, lheld=false;
-tb.addEventListener('pointerdown',function(){ lheld=false; clearTimeout(lt); if(!window.PsaroTrip.state().active) return; lt=setTimeout(function(){ lheld=true; buzz(); window.PsaroTrip.sheet(); },650); });
+tb.addEventListener('pointerdown',function(){ lheld=false; clearTimeout(lt); if(!window.PsaroTrip.state().active) return; lt=setTimeout(function(){ lheld=true; buzz(); window.PsaroTrip.sheet(); },450); });
 ['pointerup','pointerleave','pointercancel'].forEach(function(ev){ tb.addEventListener(ev,function(){ clearTimeout(lt); }); });
 tb.addEventListener('click',function(e){
   if(lheld){ lheld=false; e.stopImmediatePropagation(); return; }
@@ -55,6 +55,7 @@ tb.addEventListener('click',function(e){
     if(confirm(T('Να τελειώσει η έξοδος;\n(Κράτα πατημένο το κουμπί για λεπτομέρειες ή παράταση ώρας.)','End this trip?\n(Hold the button for details or to extend the return time.)'))) window.PsaroTrip.back();
   }
 },true);
+tb.addEventListener('contextmenu',function(e){ e.preventDefault(); });
 $('sosBtn').addEventListener('click',function(){ window.PsaroTrip.sos(); });
 
 window.addEventListener('psaro-sess',upd);

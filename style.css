@@ -424,3 +424,5 @@ body.picking .fishbtns{display:none}
 .fbm{background:#ee6f66}
 /* μηνύματα χάρτη πάνω από τη γραμμή πηγών */
 body.mapfull .maphint,body.mapfull .zonewarn{bottom:36px}
+
+.tripbtn,.fb{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
