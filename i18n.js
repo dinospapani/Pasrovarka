@@ -8,6 +8,7 @@ Object.assign(I18N.en,{'Μονάδες μέτρησης':'Units','Θερμοκρ
 Object.assign(I18N.en,{"Περισσότερα στοιχεία":"More details","Νέο ψάρι":"New fish","Αποθήκευση":"Save","Τέλος εξόδου":"End trip","Συνέχεια":"Keep going","Εντάξει":"OK","Άκυρο":"Cancel"});
 Object.assign(I18N.en,{"■ Τέλος εξόδου":"■ End trip","⚠ Τέλος εξόδου":"⚠ End trip","Διαδρομή":"Route","Καταγραφή διαδρομής GPS στις εξόδους":"Record GPS route during trips"});
 Object.assign(I18N.en,{"Καιρός":"Weather","Σήμερα":"Today","Πρόγνωση":"Forecast","28 ημέρες":"28 days","Έτος":"Year","Όλα":"All","⚙ Ρυθμίσεις":"⚙ Settings","← Προφίλ":"← Profile","Περίοδος":"Period"});
+Object.assign(I18N.en,{"Ψάρεμα":"Fishing"});
 var LANG='el';
 try{ LANG=localStorage.getItem('psaro-lang')||((navigator.language||'el').slice(0,2)==='el'?'el':'en'); }catch(e){}
 if(!I18N[LANG]) LANG='el';
@@ -61,3 +62,4 @@ function start(){
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start); else start();
 })();
 window.setLang=function(l){ try{localStorage.setItem('psaro-lang',l);}catch(e){} location.reload(); };
+

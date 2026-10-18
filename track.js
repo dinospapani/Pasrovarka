@@ -92,7 +92,8 @@ function take(){
 }
 /* Εμφάνιση αποθηκευμένης διαδρομής στον χάρτη (από τη λίστα εξόδων) */
 var showL=null;
-function show(track){
+function hide(){ var map=C.map&&C.map(); if(showL&&map){ try{ map.removeLayer(showL); }catch(e){} } showL=null; }
+function show(track,nofit){
   C.switchTab('map');
   setTimeout(function(){
     var map=C.map&&C.map(); if(!map||!track||track.length<2) return;
@@ -101,7 +102,7 @@ function show(track){
     var a=L.circleMarker(track[0],{radius:6,color:'#fff',weight:2,fillColor:'#2e9e5b',fillOpacity:1});
     var b=L.circleMarker(track[track.length-1],{radius:6,color:'#fff',weight:2,fillColor:'#d33',fillOpacity:1});
     showL=L.layerGroup([pl,a,b]).addTo(map);
-    map.fitBounds(pl.getBounds(),{padding:[40,40],maxZoom:16});
+    if(!nofit) map.fitBounds(pl.getBounds(),{padding:[40,40],maxZoom:16});
   },250);
 }
 function setEnabled(v){
@@ -111,7 +112,7 @@ function setEnabled(v){
   window.dispatchEvent(new Event('psaro-track'));
 }
 
-window.PsaroTrack={fix:function(){ return fixP; },enabled:enabled,setEnabled:setEnabled,km:km,take:take,show:show,draw:draw,active:function(){ return wid!=null; }};
+window.PsaroTrack={hide:hide,fix:function(){ return fixP; },enabled:enabled,setEnabled:setEnabled,km:km,take:take,show:show,draw:draw,active:function(){ return wid!=null; }};
 window.addEventListener('psaro-sess',function(){
   var s=st();
   if(!s.active){ stop(); if(layer){ layer.clearLayers(); line=dot=null; } return; }

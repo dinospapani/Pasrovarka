@@ -114,12 +114,12 @@ function renderFc(p,f,note,t){
     var good=d.safe&&d.best>=75, mid=d.safe&&d.best>=60, cls=!d.safe?'none':good?'good':mid?'mid':'bad';
     var col=h('button',{type:'button',class:'wkc','aria-label':dl(d.date)},h('span',{class:'wkv',text:d.safe?String(d.best):'–'}),h('span',{class:'wkbar '+cls,style:'height:'+(d.safe?Math.max(8,d.best):8)+'%'}),h('span',{class:'wkl',text:dl(d.date).split(' ')[0]}));
     col.addEventListener('click',function(){ var el=document.getElementById('fd-'+d.date); if(el){ el.open=true; el.scrollIntoView({behavior:'smooth',block:'start'}); } });
-    W.append(col);
     var lab=(d.date===today?(EN?'Today':'Σήμερα'):DAYN[dt.getUTCDay()])+' '+d.date.slice(8)+'/'+d.date.slice(5,7);
     var sum=h('summary',{},
       h('span',{class:'fdi',text:wxIcon(w.code)}),
       h('span',{class:'fdt'},h('b',{text:lab}),h('span',{class:'meta',text:[w.tmax!=null?PU.tempP(w.tmin)[0]+'–'+PU.temp(w.tmax):null,w.windAvg!=null?PU.wind(w.windAvg)+' '+dirName(w.windDir):null,w.waveAvg!=null?PU.wave(w.waveAvg):null].filter(Boolean).join(' · ')})),
-      h('span',{class:'pill '+(d.safe?(good?'good':mid?'warn':'bad'):'bad'),text:d.safe?String(d.best):'–'}));
+      h('span',{class:'pill '+(d.safe?(good?'good':mid?'warn':'bad'):'bad'),text:d.safe?String(d.best):'–'}),
+      h('span',{class:'fdbar '+cls,title:EN?'Fishing index':'Δείκτης ψαρέματος'},h('i',{style:'width:'+(d.safe?Math.max(4,d.best):0)+'%'})));
     var tiles=h('div',{class:'ftiles'},
       tileEl('Καιρός',wxText(w.code)||'–'),
       tileEl('Θερμοκρασία',w.tmax!=null?PU.tempP(w.tmin)[0]+'–'+PU.temp(w.tmax):'–'),

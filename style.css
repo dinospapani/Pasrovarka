@@ -614,3 +614,78 @@ body:not(.ontrip) #bNew{display:none}
 
 /* v30v: μηνύματα (toast) κεντραρισμένα και καθαρά */
 .toast{left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:min(88vw,360px);box-sizing:border-box;text-align:center;border-radius:16px;padding:12px 18px;font-size:14px;font-weight:600;line-height:1.4;background:rgba(9,30,44,.95);color:#fff;border:1px solid rgba(255,255,255,.14);box-shadow:0 10px 28px rgba(0,0,0,.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+
+/* ---- v30w: MOB, εργαλεία θάλασσας, κάρτες, περίληψη ---- */
+.mbtn.mob{background:#d62828;border-color:#ff8a80;color:#fff}
+.mbtn.mob b{font-size:12px;font-weight:900;letter-spacing:.3px}
+body:not(.ontrip) #bMob{display:none}
+.mobic span{display:grid;place-items:center;width:46px;height:26px;border-radius:13px;background:#d62828;color:#fff;font:900 12px/1 system-ui;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.45)}
+#ancAlarm{position:fixed;left:10px;right:10px;top:calc(10px + env(safe-area-inset-top,0px));z-index:5000;background:#b3261e;color:#fff;border-radius:16px;padding:14px;box-shadow:0 8px 28px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:10px;animation:ancp 1s infinite}
+#ancAlarm[hidden]{display:none}
+#ancAlarm .amsg b{display:block;font-size:20px}
+#ancAlarm .amsg span{font-size:14px;opacity:.92}
+#ancAlarm .abtn{display:flex;gap:8px}
+#ancAlarm .abtn button{flex:1;min-height:44px;border-radius:12px;border:0;font-weight:700;font-size:15px;background:rgba(255,255,255,.2);color:#fff}
+#ancAlarm .abtn .astop{background:#fff;color:#b3261e}
+@keyframes ancp{50%{background:#e5483e}}
+#seaPanel{position:fixed;inset:0;z-index:4500;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center}
+#seaPanel[hidden]{display:none}
+#seaPanel .spcard{width:100%;max-width:520px;max-height:88vh;overflow:auto;background:var(--surface);color:var(--ink);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.sphead{display:flex;align-items:center;justify-content:space-between;font-size:18px;margin-bottom:6px}
+.spx{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px}
+.sprow{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.sprow:first-child{border-top:0}
+.sptx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.sptx b{font-size:15px}.sptx span{font-size:13px;opacity:.75}
+.sptx .spest{font-size:12px;opacity:.6}
+.sppb{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:6px}.sppb i{display:block;height:100%;background:var(--accent)}
+.spctl{display:flex;gap:6px;flex-shrink:0}
+.spb{min-height:40px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:600}
+.spb.acc{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.spb.danger{color:#d62828;border-color:#d62828}
+.spsw{width:52px;height:30px;border-radius:15px;border:0;background:var(--line);position:relative;flex-shrink:0}
+.spsw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .15s}
+.spsw[aria-checked=true]{background:var(--accent)}.spsw[aria-checked=true]::after{transform:translateX(22px)}
+.cdov{position:fixed;inset:0;z-index:4600;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:12px}
+.cdov[hidden]{display:none}
+.cdcard{background:var(--surface);color:var(--ink);border-radius:18px;padding:12px;max-width:440px;width:100%;max-height:94vh;overflow:auto}
+.cdimg img{width:100%;border-radius:12px;display:block}
+.cdbtn{display:flex;gap:8px;margin-top:10px}
+.cdbtn button{flex:1;min-height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:700}
+.cdbtn .cdsh,.cdbtn .acc{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.sumcard{padding:18px}.sumcard h3{margin:0 0 2px;font-size:20px}
+.sumsub{margin:0 0 12px;font-size:13px;opacity:.7}
+.sumgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sumst{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 6px;text-align:center;display:flex;flex-direction:column;gap:2px;min-width:0}
+.sumst b{font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sumst span{font-size:11px;opacity:.65}
+.sumlab{margin:14px 0 6px;font-size:13px;font-weight:700}
+.sumfs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sumf{display:flex;flex-direction:column;gap:3px;font-size:12px}
+.sumf input{width:100%;min-height:42px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:0 8px;font-size:16px}
+.sumtot{margin-top:8px;font-size:14px;font-weight:700;min-height:18px}
+.yrbtn{margin:8px 0}
+.micform{display:inline-flex;align-items:center;gap:6px;margin-bottom:8px}
+.micform svg,.fbmic svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#fishBtns .fbmic{width:46px;height:46px;align-self:center;border-radius:50%;background:var(--surface);color:var(--ink);border:1px solid var(--line);display:grid;place-items:center;padding:0}
+.cdov:not(.sumov){z-index:4700}
+
+/* ---- v30y: στήλες κεντραρισμένες, επιλογή εργαλείων, έξοδος στον χάρτη, μπάρα δείκτη ---- */
+.mapbtns,body.mapfull .mapbtns{top:50%!important;transform:translateY(-50%);max-height:calc(100% - 140px);overflow-y:auto;overflow-x:hidden;scrollbar-width:none;padding:2px}
+.mapbtns::-webkit-scrollbar{display:none}
+.mapwx,body.mapfull .mapwx{top:50%!important;transform:translateY(-50%)}
+.mbtn{position:relative;flex-shrink:0}
+.mbtn.tool-off{display:none}
+body.toolsedit .mbtn.tool-off{display:grid;opacity:.4;filter:grayscale(1)}
+body.toolsedit #bMob{display:grid!important}
+body.toolsedit .mbtn:not(.tool-off):not(#bToolsCfg)::after{content:"✓";position:absolute;top:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:#2e9e5b;color:#fff;font:700 11px/18px system-ui;text-align:center}
+#bToolsCfg.on{background:var(--accent);color:var(--accent-ink)}
+.rvbar{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:900;display:flex;align-items:center;gap:10px;max-width:calc(100% - 130px);background:rgba(9,30,44,.9);color:#fff;border-radius:99px;padding:8px 8px 8px 16px;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+.rvbar[hidden]{display:none}
+.rvtx{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rvx{width:32px;height:32px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:15px;flex-shrink:0}
+#fcWeek{display:none}
+details.fday>summary{flex-wrap:wrap}
+.fdbar{order:5;flex:0 0 100%;height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:2px}
+.fdbar i{display:block;height:100%;border-radius:4px;background:var(--line)}
+.fdbar.good i{background:var(--good)}.fdbar.mid i{background:var(--warn)}.fdbar.bad i{background:var(--bad)}
+.fdt{flex:1;min-width:0}
