@@ -1223,9 +1223,11 @@ function switchTab(t2){
   document.querySelectorAll('nav.tabs button[data-tab]').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.tab===t2)));
   for(const n of ['today','fc','map','log','guide']) $('tab-'+n).hidden=(n!==t2);
   window.scrollTo(0,0);
-  if(t2==='map'&&map) setTimeout(fitMap,50);
+  document.body.classList.toggle('mapfull',t2==='map');
+  if(t2==='map'){ const nv=document.querySelector('nav.tabs'); if(nv) document.documentElement.style.setProperty('--navh',nv.offsetHeight+'px'); if(map) setTimeout(()=>{ map.invalidateSize(); fitMap(); },60); }
 }
 document.querySelectorAll('nav.tabs button[data-tab]').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+document.body.classList.toggle('mapfull',!$('tab-map').hidden);
 const today=nicosiaToday();
 $('dDate').value=today; $('tDate').value=today;
 ['dDate','dWind','dWave','dPress','dCloud'].forEach(id=>$(id).addEventListener('input',()=>{renderToday();renderReco();}));
