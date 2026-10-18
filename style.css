@@ -689,3 +689,10 @@ details.fday>summary{flex-wrap:wrap}
 .fdbar i{display:block;height:100%;border-radius:4px;background:var(--line)}
 .fdbar.good i{background:var(--good)}.fdbar.mid i{background:var(--warn)}.fdbar.bad i{background:var(--bad)}
 .fdt{flex:1;min-width:0}
+/* ---- v30z: φράγματα, ⚙ ίδιο με τον καιρό ---- */
+#bToolsCfg{font-size:22px;line-height:1;font-family:inherit}
+.mk-dam{width:28px;height:28px;border-radius:50%;background:#1d78c1;border:2px solid #fff;display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,0,0,.45)}
+.mk-dam.bad{background:#c8332b}.mk-dam.warn{background:#d28a12}
+.mk-dam svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.dampop .damst{font-weight:700;font-size:13px;margin:4px 0}
+.dampop .damst.bad{color:#c8332b}.dampop .damst.warn{color:#b86e00}
