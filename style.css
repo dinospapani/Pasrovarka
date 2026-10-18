@@ -364,3 +364,35 @@ body.mapfull #sessBar{position:fixed;left:10px;right:62px;top:calc(54px + env(sa
 body.mapfull #tab-map>.note{position:fixed;left:6px;bottom:calc(var(--navh,60px) + 3px);z-index:30;margin:0!important;font-size:9px;line-height:1.2;background:rgba(0,0,0,.45);color:#fff;padding:1px 6px;border-radius:6px;max-width:60vw;pointer-events:none}
 body.mapfull #spotForm{position:fixed;left:8px;right:8px;bottom:calc(var(--navh,60px) + 8px);z-index:45;max-height:68dvh;overflow:auto;box-shadow:0 8px 30px rgba(0,0,0,.45)}
 @media (hover:none){body.mapfull .leaflet-control-zoom{display:none}}
+
+/* v30c */
+nav.tabs button.fab{display:none!important}
+body.ontrip nav.tabs button.fab{display:flex!important}
+.tabseg{margin:0 0 12px}
+#sessBar{background:none!important;padding:0!important;color:var(--ink)}
+#sessBar span{text-shadow:none}
+body.mapfull #sessBar{color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.9),0 0 2px rgba(0,0,0,.8)}
+#sessBar .btn{box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.mapwx{position:absolute;left:8px;top:8px;z-index:800;max-width:calc(100% - 66px);background:rgba(9,30,44,.78);color:#fff;border-radius:18px;padding:8px 10px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 6px 18px rgba(0,0,0,.35);cursor:pointer}
+.mapwx[hidden]{display:none}
+.mwrow{display:flex;align-items:center;gap:12px}
+.mw{display:flex;flex-direction:column;align-items:center;line-height:1.15;min-width:44px}
+.mw i{font-style:normal;font-size:14px}
+.mw b{font-family:var(--font-display);font-size:18px}
+.mw span{font-size:10px;opacity:.75;white-space:nowrap}
+.mwempty{font-size:12px;opacity:.8}
+.mwgear{margin-left:auto;background:rgba(255,255,255,.15);border:0;border-radius:50%;width:28px;height:28px;color:#fff;font-size:14px;cursor:pointer;padding:0}
+.mwchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.mwchip{border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;border-radius:99px;padding:5px 10px;font-size:12px;cursor:pointer}
+.mwchip[aria-pressed="true"]{background:#fff;color:#0a2a3d;font-weight:700}
+body.mapfull .mapwx{top:calc(58px + env(safe-area-inset-top,0px))}
+body.mapfull:has(#sessBar) .mapwx{top:calc(112px + env(safe-area-inset-top,0px))}
+.pstats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.pst{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:2px}
+.pst i{font-style:normal;font-size:18px}
+.pst b{font-family:var(--font-display);font-size:24px}
+.pst span{font-size:12px;color:var(--muted)}
+.pst.pwide{grid-column:1/-1;flex-direction:row;font-weight:600}
+#pRange{margin-top:12px}
+#sessBar .btn{white-space:nowrap;font-size:12px;padding-inline:8px}
+body.mapfull #sessBar{box-shadow:none!important}

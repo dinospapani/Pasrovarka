@@ -1220,13 +1220,16 @@ function fitMap(){
 }
 window.fitMap=fitMap;
 function switchTab(t2){
-  document.querySelectorAll('nav.tabs button[data-tab]').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.tab===t2)));
+  const navT=(t2==='today')?'fc':t2;
+  document.querySelectorAll('nav.tabs button[data-tab]').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.tab===navT)));
+  document.querySelectorAll('.tabseg button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.go===t2)));
   for(const n of ['today','fc','map','log','guide']) $('tab-'+n).hidden=(n!==t2);
   window.scrollTo(0,0);
   document.body.classList.toggle('mapfull',t2==='map');
   if(t2==='map'){ const nv=document.querySelector('nav.tabs'); if(nv) document.documentElement.style.setProperty('--navh',nv.offsetHeight+'px'); if(map) setTimeout(()=>{ map.invalidateSize(); fitMap(); },60); }
 }
-document.querySelectorAll('nav.tabs button[data-tab]').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+document.querySelectorAll('nav.tabs button[data-tab]').forEach(b=>b.addEventListener('click',()=>{ let t=b.dataset.tab; if(t==='fc'&&(!$('tab-today').hidden||!$('tab-fc').hidden)) return; if(t==='fc'&&lsGet('psaro-wxsub','today')==='today') t='today'; switchTab(t); }));
+document.querySelectorAll('.tabseg button').forEach(b=>b.addEventListener('click',()=>{ lsSet('psaro-wxsub',b.dataset.go); switchTab(b.dataset.go); }));
 document.body.classList.toggle('mapfull',!$('tab-map').hidden);
 const today=nicosiaToday();
 $('dDate').value=today; $('tDate').value=today;

@@ -35,6 +35,13 @@
 <div id="profile" hidden role="dialog" aria-label="Προφίλ">
   <div class="pbox">
     <div class="phead"><div class="avatar big" id="pAvatar">?</div><div><b id="pNameShow"></b><div class="note" id="acWho"></div></div><button type="button" class="btn ghost sm" id="pClose">Κλείσιμο</button></div>
+    <div id="pMain">
+      <div class="seg" id="pRange" role="group" aria-label="Περίοδος"><button type="button" data-r="28" aria-pressed="true">28 ημέρες</button><button type="button" data-r="year" aria-pressed="false">Έτος</button><button type="button" data-r="all" aria-pressed="false">Όλα</button></div>
+      <div class="pstats" id="pStats"></div>
+      <div class="row"><button class="btn ghost" id="pOpenSet" type="button">⚙ Ρυθμίσεις</button></div>
+    </div>
+    <div id="pSettings" hidden>
+      <div class="row"><button class="btn ghost sm" id="pBackMain" type="button">← Προφίλ</button></div>
     <label class="f">Όνομα<input type="text" id="pName" maxlength="40" autocomplete="name"></label>
     <div class="row"><button class="btn sm" id="pNameSave" type="button">Αποθήκευση</button></div>
     <label class="f">Γλώσσα / Language<select id="langSel" class="nosub"><option value="el">Ελληνικά</option><option value="en">English</option></select></label>
@@ -77,6 +84,7 @@
       <div class="note" id="aiMsg" style="margin-top:6px"></div>
     </div>
     <div class="row"><button class="btn" id="acLogout" type="button">Αποσύνδεση</button></div>
+    </div>
   </div>
 </div>
 <div id="tripSheet" hidden role="dialog" aria-label="Έξοδος για ψάρεμα">
@@ -149,6 +157,7 @@
 
   <!-- ΣΗΜΕΡΑ -->
   <section class="tab" id="tab-today" hidden>
+    <div class="seg tabseg" role="group" aria-label="Καιρός"><button type="button" data-go="today" aria-pressed="true">Σήμερα</button><button type="button" data-go="fc" aria-pressed="false">Πρόγνωση</button></div>
     <div class="card hero2" id="liveBox">
       <div class="h2top">
         <div><div class="label">Καιρός από την τοποθεσία σου</div><div class="note" id="liveSub"></div></div>
@@ -225,7 +234,7 @@
 
   <!-- ΠΡΟΓΝΩΣΗ -->
   <section class="tab" id="tab-fc" hidden>
-    <h2>Πρόγνωση</h2>
+    <div class="seg tabseg" role="group" aria-label="Καιρός"><button type="button" data-go="today" aria-pressed="false">Σήμερα</button><button type="button" data-go="fc" aria-pressed="true">Πρόγνωση</button></div>
     <div class="seg" id="fcSeg" role="group" aria-label="Είδος πρόγνωσης"><button type="button" data-s="gen" aria-pressed="true">Γενική πρόγνωση</button><button type="button" data-s="mine" aria-pressed="false">Δικά μου δεδομένα</button></div>
     <div class="card" id="plCard">
       <div class="label">Τοποθεσία</div>
@@ -437,8 +446,7 @@
 
 <nav class="tabs" role="tablist" aria-label="Ενότητες">
   <button role="tab" data-tab="map" aria-selected="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>Χάρτης</button>
-  <button role="tab" data-tab="today" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M2 12c3-4 5-4 8 0s5 4 8 0 3-3 4-2"/><path d="M2 18c3-4 5-4 8 0s5 4 8 0 3-3 4-2"/><path d="M12 3v3"/></svg>Σήμερα</button>
-  <button role="tab" data-tab="fc" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M6 17a4 4 0 010-8 5 5 0 019.6-1A4 4 0 1117 17H6z"/><path d="M9 20l-1 2M13 20l-1 2M17 20l-1 2"/></svg>Πρόγνωση</button>
+  <button role="tab" data-tab="fc" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M6 17a4 4 0 010-8 5 5 0 019.6-1A4 4 0 1117 17H6z"/><path d="M9 20l-1 2M13 20l-1 2M17 20l-1 2"/></svg>Καιρός</button>
   <button class="fab" id="fab" type="button" aria-label="Νέο τσίμπημα"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
   <button role="tab" data-tab="log" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3V4z"/><path d="M8 17h11"/></svg>Ημερολόγιο</button>
   <button role="tab" data-tab="guide" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M3 12c3-5 9-6 13-2l5-3v10l-5-3c-4 4-10 3-13-2z"/><circle cx="8" cy="11" r=".6"/></svg>Οδηγός</button>
@@ -458,5 +466,7 @@
 <script src="forecast-tab.js"></script>
 <script src="mine-tab.js"></script>
 <script src="diag.js"></script>
+<script src="mapwx.js"></script>
+<script src="profile-view.js"></script>
 </body>
 </html>

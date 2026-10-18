@@ -147,6 +147,7 @@ function render(){
     var d=load(); $('sfNoC').hidden=hasContact(d); silNote(d);
     if(!$('sfTime').value){ var t=new Date(Date.now()+C.utcMin()*60000+4*3600000); $('sfTime').value=('0'+t.getUTCHours()).slice(-2)+':'+('0'+t.getUTCMinutes()).slice(-2); }
   }
+  document.body.classList.toggle('ontrip',!!on);
   var tb=$('tripBtn'); tb.textContent=!on?'▶ Έξοδος':(late(s)?'⚠ Καθυστερείς':'● Σε έξοδο'); tb.classList.toggle('on',!!on); tb.classList.toggle('late',!!late(s));
   wxWarn(s); bar(); sessBar(s);
 }
