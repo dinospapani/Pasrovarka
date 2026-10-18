@@ -24,5 +24,14 @@ function ask(msg,o){
     root.hidden=false; try{ (o.danger?n:y).focus(); }catch(e){}
   });
 }
+/* Παράθυρο εισαγωγής κειμένου: PsaroAsk.prompt(μήνυμα,{value,title,ok,cancel,max}) → Promise<string|null> */
+function prompt_(msg,o){
+  o=o||{}; if(!root) build();
+  var box=root.querySelector('.askbox'), inp=box.querySelector('.askin');
+  if(!inp){ inp=document.createElement('input'); inp.type='text'; inp.className='askin'; inp.autocomplete='off'; box.insertBefore(inp,box.querySelector('.askbtns')); }
+  inp.hidden=false; inp.value=o.value||''; inp.maxLength=o.max||80;
+  return ask(msg,{title:o.title,ok:o.ok,cancel:o.cancel}).then(function(v){ var r=v?inp.value:null; inp.hidden=true; return r; });
+}
+ask.prompt=function(msg,o){ var p=prompt_(msg,o); setTimeout(function(){ var i=root&&root.querySelector('.askin'); if(i){ try{ i.focus(); i.select(); }catch(e){} } },60); return p; };
 window.PsaroAsk=ask;
 })();

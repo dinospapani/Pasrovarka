@@ -408,6 +408,7 @@ function showZone(z){
 function initMap(){
   if(typeof L==='undefined'){ $('lmap').textContent='Ο χάρτης δεν φόρτωσε.'; return; }
   const last=lsGet('psaro-view',null), c=cond&&cond.lat!=null?[cond.lat,cond.lon]:null;
+  L.Popup.mergeOptions({maxWidth:Math.max(200,Math.min(320,innerWidth-190)),minWidth:150,autoPanPaddingTopLeft:[96,84],autoPanPaddingBottomRight:[84,130],keepInView:true});
   map=L.map('lmap',{minZoom:2,worldCopyJump:true,zoomControl:false}).setView(last?[last.lat,last.lon]:(c||[34.9,33.2]),last?last.z:(c?10:8));
   L.control.zoom({position:'topleft'}).addTo(map);
   baseSat=L.tileLayer(TILES.sat,{maxZoom:18,attribution:'Esri'});
@@ -575,15 +576,17 @@ function renderSpots(){
 function tripEff(t,all){
   if(!t.startMs||!t.endMs||t.manual) return {count:+t.count||0,kg:+t.kg||0,species:t.species||'',miss:+t.miss||0};
   const lo=Math.floor(t.startMs/60000)*60000, prev=(all||[]).filter(x=>x.id!==t.id&&x.startMs&&x.endMs&&x.startMs<t.startMs);
+  const known=new Set(); (all||[]).forEach(x=>{ known.add(x.id); if(x.sid) known.add(x.sid); });
   let n=0,kg=0; const sp={};
   Store.get('bites').forEach(b=>{
     if(!b.date||!b.time) return; const ms=biteMs(b); if(isNaN(ms)) return;
-    if(prev.some(x=>ms>=Math.floor(x.startMs/60000)*60000&&ms<=x.endMs)) return;
-    if(ms>=lo&&ms<=t.endMs){ n++; kg+=+b.kg||0; if(b.species) sp[b.species]=(sp[b.species]||0)+1; }
+    if(b.trip&&known.has(b.trip)){ if(b.trip!==t.id&&b.trip!==t.sid) return; } else { if(prev.some(x=>ms>=Math.floor(x.startMs/60000)*60000&&ms<=x.endMs)) return; if(!(ms>=lo&&ms<=t.endMs)) return; }
+    { n++; kg+=+b.kg||0; if(b.species) sp[b.species]=(sp[b.species]||0)+1; }
   });
   let mi=0;
   Store.misses().forEach(b=>{
     if(!b.date||!b.time) return; const ms=biteMs(b); if(isNaN(ms)) return;
+    if(b.trip&&known.has(b.trip)){ if(b.trip===t.id||b.trip===t.sid) mi++; return; }
     if(prev.some(x=>ms>=Math.floor(x.startMs/60000)*60000&&ms<=x.endMs)) return;
     if(ms>=lo&&ms<=t.endMs) mi++;
   });
@@ -593,7 +596,10 @@ const fmtDur=ms=>{const m=Math.max(0,Math.round(ms/60000)),hh=Math.floor(m/60),e
 function renderTrips(){
   const all=Store.get('trips'), trips=all.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const eff=new Map(trips.map(t=>[t.id,tripEff(t,all)]));
-  const n=trips.length, fish=trips.reduce((a,t)=>a+eff.get(t.id).count,0), kg=trips.reduce((a,t)=>a+eff.get(t.id).kg,0);
+  let n=trips.length, fish=trips.reduce((a,t)=>a+eff.get(t.id).count,0), kg=trips.reduce((a,t)=>a+eff.get(t.id).kg,0);
+  /* Έξοδος σε εξέλιξη: μετράει ήδη στα σύνολα */
+  try{ const ts=window.PsaroTrip&&window.PsaroTrip.state&&window.PsaroTrip.state(); if(ts&&ts.active){ const ac=window.PsaroTrip.counts(); n++; fish+=+ac.n||0; kg+=+ac.kg||0; } }catch(e){}
+  kg=Math.round(kg*10)/10;
   const by={}; trips.forEach(t=>{if(t.spot)by[t.spot]=(by[t.spot]||0)+eff.get(t.id).count;});
   const best=Object.entries(by).sort((a,b)=>b[1]-a[1])[0];
   const st=$('stats'); st.replaceChildren();
@@ -1282,6 +1288,7 @@ renderToday(); renderSpecies(); renderTech(); renderChecks(); renderLaw(); rende
 Store.on('spots',()=>{drawMap();renderSpots();});
 Store.on('trips',renderTrips);
 Store.on('bites',()=>{renderBites();renderStats();renderTrips();});
+window.addEventListener('psaro-sess',()=>{try{renderTrips();}catch(e){}});
 Object.assign(window.PsaroCore,{quick:()=>quickRec(false),quickMiss:()=>quickRec(true),map:()=>map,h:h,$:$,fmt:fmt,pad:pad,nicosiaToday:nicosiaToday,nicosiaNowMin:nicosiaNowMin,getPosition:getPosition,getCond:()=>cond,showOnMap:showOnMap,lsGet:lsGet,lsSet:lsSet,switchTab:switchTab,utcMin:()=>utcOff()});
 Store.init();
 if(cond){ applyConditions(cond); } else { $('liveMain').textContent='Δεν υπάρχουν δεδομένα καιρού ακόμα.'; }

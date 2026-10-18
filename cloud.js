@@ -115,7 +115,7 @@ function localCount(){ return Store.raw('spots').length+Store.raw('trips').lengt
 async function afterLogin(j){
   var prev=ls('psaro-uid'); setSess(j);
   if(prev&&prev!==sess.uid&&localCount()>0){
-    if(confirm('Σε αυτή τη συσκευή υπάρχουν δεδομένα άλλου λογαριασμού. Να σβηστούν (OK) ή να προστεθούν και στον νέο λογαριασμό (Άκυρο);')){ Store.wipe(); pup={}; ls('psaro-pup',pup); }
+    if(await window.PsaroAsk(window.LANG==='en'?'This device holds data from another account. Delete it, or keep it and add it to the new account?':'Σε αυτή τη συσκευή υπάρχουν δεδομένα άλλου λογαριασμού. Να σβηστούν ή να προστεθούν και στον νέο λογαριασμό;',{title:window.LANG==='en'?'Another account':'Άλλος λογαριασμός',ok:window.LANG==='en'?'Delete data':'Σβήσιμο',cancel:window.LANG==='en'?'Keep and add':'Κράτα και πρόσθεσε',danger:true})){ Store.wipe(); pup={}; ls('psaro-pup',pup); }
   }
   ls('psaro-uid',sess.uid); msg(''); $('gPass').value=''; render();
   await sync(true);
@@ -163,7 +163,7 @@ function wire(){
   if($('acLogout')) $('acLogout').addEventListener('click',async function(){
     if(busy) return;
     await sync(true);
-    var wipe=confirm('Αποσύνδεση. Να σβηστούν και τα δεδομένα από αυτή τη συσκευή; (Μένουν αποθηκευμένα στον λογαριασμό σου.)');
+    var wipe=await window.PsaroAsk(window.LANG==='en'?'Delete the data from this device too? It stays saved in your account.':'Να σβηστούν και τα δεδομένα από αυτή τη συσκευή;\nΜένουν αποθηκευμένα στον λογαριασμό σου.',{title:window.LANG==='en'?'Sign out':'Αποσύνδεση',ok:window.LANG==='en'?'Sign out and delete':'Σβήσιμο και αποσύνδεση',cancel:window.LANG==='en'?'Sign out, keep data':'Αποσύνδεση, κράτα τα',danger:true});
     try{ await fetch(URL_+'/auth/v1/logout',{method:'POST',headers:H()}); }catch(e){}
     if(wipe){ Store.wipe(); pup={}; ls('psaro-pup',pup); ls('psaro-uid',null); }
     openP(false); signedOut();

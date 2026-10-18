@@ -116,7 +116,7 @@ function sessBar(s){
     $('sessTxt').addEventListener('click',openSheet);
     $('sessEnd').addEventListener('click',back);
     $('sessBite').addEventListener('click',function(){ var q=$('bQuick'); if(q&&!q.disabled) q.click(); });
-    $('sessSos').addEventListener('click',function(){ if(confirm(window.LANG==='en'?'Send an SOS with your location to your safety contact?':'Να σταλεί SOS με τη θέση σου στην επαφή ασφαλείας;')) trackPos().then(function(){ sos(); }); });
+    $('sessSos').addEventListener('click',function(){ window.PsaroAsk(window.LANG==='en'?'Send an SOS with your location to your safety contact?':'Να σταλεί SOS με τη θέση σου στην επαφή ασφαλείας;',{title:'SOS',ok:'SOS',danger:true}).then(function(y){ if(y) trackPos().then(function(){ sos(); }); }); });
   }
   $('sessTxt').textContent='● Σε έξοδο '+dur(Date.now()-s.start)+' · επιστροφή '+hm(s.due);
 }
@@ -200,7 +200,7 @@ function back(){
   $('sfMsg').textContent=en?'Welcome back.':'Καλωσόρισες πίσω.'; render(); closeSheet();
   if(d>=20*60000||sm.n>0||sm.miss>0){
     var pos=s.last||(s.cond0&&s.cond0.lat!=null?{lat:s.cond0.lat,lon:s.cond0.lon}:null);
-    C.Store.save('trips',{date:s.startDate||C.nicosiaToday(),spot:s.route||'',tech:'',species:sm.species,count:sm.n,miss:sm.miss,kg:sm.kg,startMs:s.start,endMs:Date.now(),cond0:s.cond0||null,km:tk?tk.km:undefined,track:tk?tk.track:undefined,lat:pos?pos.lat:null,lon:pos?pos.lon:null,notes:(en?'Recorded from Start/End trip (':'Καταγραφή από Έναρξη/Τέλος εξόδου (')+dur(d)+')'}).catch(function(){});
+    C.Store.save('trips',{sid:s.id,date:s.startDate||C.nicosiaToday(),spot:s.route||'',tech:'',species:sm.species,count:sm.n,miss:sm.miss,kg:sm.kg,startMs:s.start,endMs:Date.now(),cond0:s.cond0||null,km:tk?tk.km:undefined,track:tk?tk.track:undefined,lat:pos?pos.lat:null,lon:pos?pos.lon:null,notes:(en?'Recorded from Start/End trip (':'Καταγραφή από Έναρξη/Τέλος εξόδου (')+dur(d)+')'}).catch(function(){});
     toast((en?'Trip saved: ':'Η έξοδος καταχωρήθηκε: ')+dur(d)+' · '+(sm.n?sm.n+(en?' bites':' τσιμπήματα'):(en?'no bites':'χωρίς τσιμπήματα')));
   } else toast(en?'Welcome back. The trip was under 20 minutes with no bites, so it was not saved.':'Καλωσόρισες πίσω. Η έξοδος ήταν κάτω από 20 λεπτά χωρίς τσιμπήματα, οπότε δεν καταχωρήθηκε.');
 }

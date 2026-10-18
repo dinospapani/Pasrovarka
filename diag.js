@@ -44,7 +44,7 @@ function render(issues,ran){
     out.append(h('div',{class:'dgrow'},h('span',{text:it.txt}),b));
   });
   if(issues.length>1){ var all=h('button',{class:'btn sm',type:'button',style:'margin-top:8px',text:T('Διόρθωση όλων','Fix all')});
-    all.addEventListener('click',function(){ if(!confirm(T('Να εφαρμοστούν όλες οι διορθώσεις;','Apply all fixes?'))) return; all.disabled=true;
+    all.addEventListener('click',async function(){ if(!(await window.PsaroAsk(T('Να εφαρμοστούν όλες οι διορθώσεις;','Apply all fixes?'),{title:T('Διόρθωση όλων','Fix all'),ok:T('Εφαρμογή','Apply')}))) return; all.disabled=true;
       var pass=function(n){ var L=scan(); if(!L.length||n>3) return render(scan(),true); var chain=Promise.resolve(); L.forEach(function(it){ chain=chain.then(function(){ return it.run(); }); }); return chain.then(function(){ return pass(n+1); }); };
       pass(0); });
     out.append(all); }

@@ -55,7 +55,7 @@ function listCard(){
   S.forEach(function(s){
     var hrs=(s.endMs-s.startMs)/3600000, n=s.manual?(+s.count||0):bites.filter(function(b){ var ms=PP.biteMs(b,C.utcMin()); return ms!=null&&ms>=s.startMs-600000&&ms<=s.endMs+600000; }).length;
     c.append(h('div',{class:'sessrow'},h('div',{style:'flex:1;min-width:0'},h('b',{text:s.date||''}),h('div',{class:'meta',text:(Math.round(hrs*10)/10)+' h · '+n+(EN?' bites':' τσιμπήματα')+(s.manual?' · '+T('χειροκίνητη','manual'):'')})),
-      h('button',{class:'btn ghost sm',type:'button','aria-label':T('Διαγραφή','Delete'),text:'✕',onclick:function(){ if(confirm(T('Να διαγραφεί η έξοδος;','Delete this trip?'))) C.Store.remove('trips',s.id).then(render); }})));
+      h('button',{class:'btn ghost sm',type:'button','aria-label':T('Διαγραφή','Delete'),text:'✕',onclick:function(){ window.PsaroAsk(T('Να διαγραφεί η έξοδος;','Delete this trip?'),{title:T('Διαγραφή εξόδου','Delete trip'),ok:T('Διαγραφή','Delete'),danger:true}).then(function(y){ if(y) C.Store.remove('trips',s.id).then(render); }); }})));
   });
   return c;
 }

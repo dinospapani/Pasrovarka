@@ -258,13 +258,13 @@ $('fcWatch').addEventListener('click',function(){
   if(p.gps) nt.gpsWatch=!(nt.gpsWatch!==false); else p.watch=!(p.watch!==false);
   save(); renderPlaces(); renderFc(fcPlace&&findPlace(sel),fc,'',Date.now()); syncNotify();
 });
-$('plRen').addEventListener('click',function(){
+$('plRen').addEventListener('click',async function(){
   var p=places.filter(function(x){ return x.id===sel; })[0]; if(!p) return;
-  var n=prompt(EN?'Location name:':'Όνομα τοποθεσίας:',p.name); if(n==null) return; n=n.trim().slice(0,40); if(!n) return;
+  var n=await window.PsaroAsk.prompt(EN?'Location name':'Όνομα τοποθεσίας',{value:p.name,title:EN?'Rename location':'Μετονομασία τοποθεσίας',ok:EN?'Save':'Αποθήκευση',max:40}); if(n==null) return; n=n.trim().slice(0,40); if(!n) return;
   p.name=n; p.auto=false; save(); renderPlaces(); renderFc(fcPlace&&findPlace(sel),fc,'',Date.now()); syncNotify();
 });
-$('plDel').addEventListener('click',function(){
-  var p=findPlace(sel); if(p&&!confirm((EN?'Delete ':'Διαγραφή ')+'«'+p.name+'»;')) return;
+$('plDel').addEventListener('click',async function(){
+  var p=findPlace(sel); if(p&&!(await window.PsaroAsk((EN?'Delete ':'Διαγραφή ')+'«'+p.name+'»;',{title:EN?'Delete location':'Διαγραφή τοποθεσίας',ok:EN?'Delete':'Διαγραφή',danger:true}))) return;
   places=places.filter(function(p){ return p.id!==sel; }); sel='gps'; save(); renderPlaces(); load(); syncNotify();
 });
 document.querySelectorAll('nav.tabs button[data-tab="fc"]').forEach(function(b){ b.addEventListener('click',function(){ renderPlaces(); load(); }); });
