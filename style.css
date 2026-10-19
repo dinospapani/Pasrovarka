@@ -758,3 +758,10 @@ body:not(.ontrip) .rtchip{display:none}
 .mtdet{grid-column:1/-1;font-size:12px}.mtdet .sminp{width:70px;display:inline-block}
 .cstrow{display:flex;flex-direction:column;padding:6px 0;border-bottom:1px solid rgba(127,127,127,.15);font-size:13px}.cstrow span{opacity:.8;font-size:12px}
 #inPanel .sprow.wrap{flex-wrap:wrap;gap:8px}
+
+/* v31g: δικό μας dropdown προτάσεων */
+.sgbox{margin-top:6px;max-height:230px;overflow:auto;border:1px solid rgba(127,127,127,.35);border-radius:12px;background:var(--surface);box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.sgitem{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 12px;border:0;border-bottom:1px solid rgba(127,127,127,.15);background:transparent;color:var(--ink);font:inherit;font-size:15px;cursor:pointer;text-transform:none;letter-spacing:0}
+.sgitem b{font-weight:600}.sgitem small{opacity:.65;font-size:12px;white-space:nowrap}
+.sgempty{padding:10px 12px;font-size:13px;opacity:.7;text-transform:none;letter-spacing:0}
+.sfhint{font-size:12px;opacity:.7;margin-top:6px;text-transform:none;letter-spacing:0}
