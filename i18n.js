@@ -13,6 +13,7 @@ var LANG='el';
 try{ LANG=localStorage.getItem('psaro-lang')||((navigator.language||'el').slice(0,2)==='el'?'el':'en'); }catch(e){}
 if(!I18N[LANG]) LANG='el';
 window.LANG=LANG;
+window.spName=function(n){ return n; };
 document.documentElement.lang=LANG;
 if(LANG==='el') return;
 var D=I18N[LANG], keys=Object.keys(D);
@@ -22,7 +23,17 @@ var ZF={"Απαγορεύεται από 1/6 μέχρι 30/9 η διέλευση
 var zk=Object.keys(ZF).sort(function(a,b){return b.length-a.length;});
 var ZT=/ΘΠΠ|ΖΠΕΑ|Απαγορεύεται |Ναυάγιο ZENOBIA|Αφαλάτωση/;
 var G=/[Ͱ-Ͽ]/;
-function tr(s,sub){
+var SP=null, SPRX=null;
+function buildSp(){
+  SP={}; function add(g,e){ if(!g||!e) return; String(g).split(/[\/,]/).forEach(function(x){ x=x.trim(); var k=x.toLowerCase(); if(x.length>=3&&G.test(x)&&!SP[k]) SP[k]=e; }); }
+  (window.SPKB||[]).forEach(function(x){ add(x.n,x.en); }); (window.SPECIES_DB||[]).forEach(function(e){ add(e[0],e[1]); }); (window.CY100||[]).forEach(function(x){ add(x.n,x.e); });
+  var ks=Object.keys(SP).sort(function(a,b){ return b.length-a.length; }); if(!ks.length){ SPRX=null; return; }
+  SPRX=new RegExp('(?<![\\p{L}])('+ks.map(function(k){ return k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }).join('|')+')(?![\\p{L}])','giu');
+}
+function spTr(s){ if(!G.test(s)) return s; if(!SP) buildSp(); if(!SPRX) return s; return s.replace(SPRX,function(m){ return SP[m.toLowerCase()]||m; }); }
+window.spName=function(n){ return n?spTr(String(n)):n; };
+function tr(s,sub){ return spTr(tr0(s,sub)); }
+function tr0(s,sub){
   var t=s.trim(); if(!t||!G.test(t)) return s;
   var m=s.match(/^(\s*)([\s\S]*?)(\s*)$/);
   if(D[m[2]]!==undefined) return m[1]+D[m[2]]+m[3];

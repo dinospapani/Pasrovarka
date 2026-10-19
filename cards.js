@@ -2,6 +2,7 @@
 (function(){
 'use strict';
 var C=window.PsaroCore; if(!C) return;
+var SN=function(n){ return window.spName?window.spName(n):n; };
 var EN=window.LANG==='en', T=function(el,en){ return EN?en:el; }, U=window.PsaroUnits;
 var $=function(i){ return document.getElementById(i); };
 var FONT='-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif', URLS='dinospapani.github.io/psarovarka';
@@ -51,7 +52,7 @@ function fishCard(b){
   return photoOf(b).then(function(img){
     var cv=mk(1080,1350), x=cv.x; brand(cv,T('Ψάρι της εξόδου','Catch of the day'));
     if(img) cover(cv,img,70,150,940,640,36); else { x.fillStyle='rgba(0,0,0,.2)'; rr(x,70,150,940,640,36); x.fill(); fish(cv,540,470,17,'rgba(255,255,255,.38)'); }
-    txt(cv,b.species||T('Ψάρι','Fish'),70,885,84,'800','#fff','left',940);
+    txt(cv,SN(b.species)||T('Ψάρι','Fish'),70,885,84,'800','#fff','left',940);
     var sz=[b.kg?b.kg+' kg':null,b.len?b.len+' cm':null].filter(Boolean).join('  ·  ');
     if(sz) txt(cv,sz,70,965,60,'700','#ffb27a','left',940);
     var when=dmy(b.date)+(b.time?'  ·  '+b.time:''), where=b.place||'';
@@ -76,7 +77,7 @@ function tripCard(t){
   stat(cv,X[2],y0,w,h,(Math.round(s.kg*10)/10)+' kg',T('Βάρος','Weight'));
   stat(cv,X[0],y0+h+g,w,h,String(s.miss),T('Χάθηκαν','Lost'));
   stat(cv,X[1],y0+h+g,w,h,s.km&&U?U.dist(s.km):'–',T('Απόσταση','Distance'));
-  stat(cv,X[2],y0+h+g,w,h,t.species||'–',T('Κύριο είδος','Top species'));
+  stat(cv,X[2],y0+h+g,w,h,SN(t.species)||'–',T('Κύριο είδος','Top species'));
   foot(cv); return Promise.resolve(cv);
 }
 function yearData(y){
@@ -96,9 +97,9 @@ function yearCard(y){
   stat(cv,X[0],y0,w,h,String(d.fish),T('Ψάρια','Fish')); stat(cv,X[1],y0,w,h,String(d.trips),T('Έξοδοι','Trips')); stat(cv,X[2],y0,w,h,String(d.days),T('Μέρες','Days'));
   stat(cv,X[0],y0+h+g,w,h,d.ms?(Math.round(d.ms/360000)/10)+' h':'–',T('Στη θάλασσα','At sea')); stat(cv,X[1],y0+h+g,w,h,d.kg+' kg',T('Βάρος','Weight')); stat(cv,X[2],y0+h+g,w,h,d.km&&U?U.dist(d.km):'–',T('Απόσταση','Distance'));
   var yy=y0+2*(h+g)+50;
-  if(d.top.length){ txt(cv,T('Τα πιο συχνά είδη','Top species'),70,yy,34,'700','#ffb27a'); yy+=58; d.top.forEach(function(e,i){ txt(cv,(i+1)+'.  '+e[0],70,yy,44,'700','#fff','left',760); txt(cv,'×'+e[1],1010,yy,44,'700','rgba(255,255,255,.8)','right'); yy+=64; }); }
+  if(d.top.length){ txt(cv,T('Τα πιο συχνά είδη','Top species'),70,yy,34,'700','#ffb27a'); yy+=58; d.top.forEach(function(e,i){ txt(cv,(i+1)+'.  '+SN(e[0]),70,yy,44,'700','#fff','left',760); txt(cv,'×'+e[1],1010,yy,44,'700','rgba(255,255,255,.8)','right'); yy+=64; }); }
   yy+=14;
-  if(d.big){ txt(cv,'🏆 '+T('Μεγαλύτερο: ','Biggest: ')+d.big.kg+' kg'+(d.big.species?' · '+d.big.species:''),70,yy,36,'600','#fff','left',940); yy+=56; }
+  if(d.big){ txt(cv,'🏆 '+T('Μεγαλύτερο: ','Biggest: ')+d.big.kg+' kg'+(d.big.species?' · '+SN(d.big.species):''),70,yy,36,'600','#fff','left',940); yy+=56; }
   if(d.month) txt(cv,T('Καλύτερος μήνας: ','Best month: ')+MON[+d.month-1],70,yy,34,'600','rgba(255,255,255,.85)','left',940), yy+=54;
   if(d.cost>0&&d.fish) txt(cv,T('Κόστος: ','Cost: ')+money(d.cost)+'  ·  '+money(d.cost/d.fish)+T(' ανά ψάρι',' per fish'),70,yy,32,'600','rgba(255,255,255,.75)','left',940);
   foot(cv); return Promise.resolve(cv);
@@ -136,7 +137,7 @@ function openSum(id,edit){
   var card=el('div','cdcard sumcard'); card.append(el('h3','',edit?T('Κόστος εξόδου','Trip cost'):T('Τέλος εξόδου','Trip finished')));
   card.append(el('p','sumsub',[dmy(t.date),t.spot].filter(Boolean).join(' · ')));
   var g=el('div','sumgrid');
-  [[s.ms?fmtDur(s.ms):'–',T('Διάρκεια','Duration')],[String(s.fish),T('Ψάρια','Fish')],[(Math.round(s.kg*10)/10)+' kg',T('Βάρος','Weight')],[String(s.miss),T('Χάθηκαν','Lost')],[s.km&&U?U.dist(s.km):'–',T('Απόσταση','Distance')],[t.species||'–',T('Κύριο είδος','Top species')]].forEach(function(e){ var d=el('div','sumst'); d.append(el('b','',e[0]),el('span','',e[1])); g.append(d); });
+  [[s.ms?fmtDur(s.ms):'–',T('Διάρκεια','Duration')],[String(s.fish),T('Ψάρια','Fish')],[(Math.round(s.kg*10)/10)+' kg',T('Βάρος','Weight')],[String(s.miss),T('Χάθηκαν','Lost')],[s.km&&U?U.dist(s.km):'–',T('Απόσταση','Distance')],[SN(t.species)||'–',T('Κύριο είδος','Top species')]].forEach(function(e){ var d=el('div','sumst'); d.append(el('b','',e[0]),el('span','',e[1])); g.append(d); });
   card.append(g);
   card.append(el('div','sumlab',T('Κόστος εξόδου (προαιρετικά)','Trip cost (optional)')));
   var fr=el('div','sumfs'); fr.append(field(T('Καύσιμα €','Fuel €'),'scFuel',c.fuel),field(T('Δολώματα €','Bait €'),'scBait',c.bait),field(T('Άλλα €','Other €'),'scOther',c.other)); card.append(fr);
@@ -159,7 +160,7 @@ function addBtn(acts,txt,fn){ var b=el('button','btn ghost sm',txt); b.type='but
 function decorate(){
   Array.prototype.forEach.call(document.querySelectorAll('#biteList .item[data-bid]'),function(it){
     var a=it.querySelector('.acts'); if(!a||a.dataset.cx) return; a.dataset.cx='1'; var id=it.getAttribute('data-bid');
-    addBtn(a,T('Κάρτα','Card'),function(){ var b=C.Store.get('bites').find(function(x){ return x.id===id; }); if(b) preview(fishCard(b),'bitecast-fish.png',(b.species||T('Ψάρι','Fish'))+(b.kg?' '+b.kg+' kg':'')); });
+    addBtn(a,T('Κάρτα','Card'),function(){ var b=C.Store.get('bites').find(function(x){ return x.id===id; }); if(b) preview(fishCard(b),'bitecast-fish.png',(SN(b.species)||T('Ψάρι','Fish'))+(b.kg?' '+b.kg+' kg':'')); });
   });
   Array.prototype.forEach.call(document.querySelectorAll('#tripList .item[data-tid]'),function(it){
     var a=it.querySelector('.acts'); if(!a||a.dataset.cx) return; a.dataset.cx='1'; var id=it.getAttribute('data-tid');
@@ -217,7 +218,8 @@ function speciesIndex(){
   (window.SPECIES_DB||[]).forEach(function(e){
     var names=[]; if(e[0]) String(e[0]).split(/[\/,]/).forEach(function(x){ names.push(x.trim()); }); if(e[1]) names.push(e[1]);
     var disp=e[0]?String(e[0]).split('/')[0].trim():e[1];
-    names.forEach(function(n){ var k=nrm(n); if(k.length<4||seen[k+'|'+disp]) return; seen[k+'|'+disp]=1; spIdx.push({k:k,disp:disp,la:e[2]}); });
+    names.forEach(function(n){ var k=nrm(n); if(k.length<4||seen[k+'|'+disp]) return; seen[k+'|'+disp]=1; spIdx.push({k:k,disp:disp,la:e[2]});
+      if(n===e[1]&&k.indexOf(' ')>0){ var lw=k.split(' ').pop(); if(lw.length>=5&&!seen[lw+'|'+disp]){ seen[lw+'|'+disp]=1; spIdx.push({k:lw,disp:disp,la:e[2]}); } } });
   });
   return spIdx;
 }
@@ -229,17 +231,24 @@ function findSpecies(text){
     else { var st=e.k.length>5?e.k.slice(0,e.k.length-2):e.k; ok=toks.some(function(w){ return w.length>=st.length&&w.indexOf(st)===0&&w.length<=e.k.length+3; }); score=st.length; }
     if(ok&&(!best||score>best.score)) best={disp:e.disp,la:e.la,score:score};
   });
+  if(!best){ /* προσεγγιστική αντιστοίχιση για λάθη αναγνώρισης φωνής */
+    var bd=9;
+    speciesIndex().forEach(function(e){ if(e.k.indexOf(' ')>=0||e.k.length<5) return; toks.forEach(function(w){ if(w.length<5||Math.abs(w.length-e.k.length)>2) return;
+      var lim=e.k.length<8?1:2, d=lev(w,e.k); if(d<=lim&&d<bd){ bd=d; best={disp:e.disp,la:e.la,score:e.k.length-d*2,fuzzy:true}; } }); });
+  }
   return best;
 }
+function lev(a,b){ var m=a.length,n=b.length,p=[],i,j; for(j=0;j<=n;j++) p[j]=j; for(i=1;i<=m;i++){ var prev=p[0]; p[0]=i; for(j=1;j<=n;j++){ var t=p[j]; p[j]=Math.min(p[j]+1,p[j-1]+1,prev+(a[i-1]===b[j-1]?0:1)); prev=t; } } return p[n]; }
 function parseVoice(text){
   var r={species:null,kg:null,len:null,text:text}, sp=findSpecies(text); if(sp) r.species=sp;
   parseNums(text).forEach(function(n){ if(n.u==='kg'&&r.kg==null) r.kg=Math.round(n.v*100)/100; else if(n.u==='g'&&r.kg==null) r.kg=Math.round(n.v)/1000; else if(n.u==='cm'&&r.len==null) r.len=Math.round(n.v); });
   return r;
 }
 var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+function vlang(){ var v=C.lsGet('psaro-vlang',null); return v==='en-US'?'en-US':'el-GR'; }
 function listen(cb){
   if(!SR){ C.toast(T('Η φωνητική καταγραφή δεν υποστηρίζεται σε αυτόν τον browser.','Voice input is not supported in this browser.')); return; }
-  var rec=new SR(); rec.lang=EN?'en-US':'el-GR'; rec.interimResults=false; rec.maxAlternatives=3; var got=false;
+  var rec=new SR(); rec.lang=vlang(); rec.interimResults=false; rec.maxAlternatives=3; var got=false;
   C.toast(T('Μίλα τώρα… π.χ. «συναγρίδα τρία κιλά»','Speak now… e.g. “dentex three kilos”'));
   rec.onresult=function(e){ got=true; var alts=[]; for(var i=0;i<e.results[0].length;i++) alts.push(e.results[0][i].transcript); cb(alts); };
   rec.onerror=function(e){ if(e.error==='not-allowed') C.toast(T('Δεν δόθηκε άδεια μικροφώνου.','Microphone permission denied.')); else if(e.error==='network') C.toast(T('Χρειάζεται σύνδεση στο ίντερνετ για αναγνώριση φωνής.','Voice recognition needs an internet connection.')); else if(e.error!=='aborted'&&e.error!=='no-speech') C.toast(T('Δεν κατάλαβα. Δοκίμασε ξανά.','Did not catch that. Try again.')); };
@@ -266,8 +275,9 @@ var MIC='<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"
   b.addEventListener('click',function(){
     listen(function(alts){
       var r=best(alts); if(!r||r.sc===0){ C.toast(T('Δεν βρέθηκε είδος ή βάρος. Άκουσα: ','No species or weight found. Heard: ')+alts[0]); return; }
-      var msg=[r.species?r.species.disp:T('Άγνωστο είδος','Unknown species'),r.kg!=null?r.kg+' kg':null,r.len!=null?r.len+' cm':null].filter(Boolean).join(' · ');
-      window.PsaroAsk(msg+'\n\n'+T('Να καταγραφεί ως ψάρι;','Log as a catch?'),{title:T('Φωνητική καταγραφή','Voice log'),ok:T('Καταγραφή','Log'),cancel:T('Άκυρο','Cancel')}).then(function(ok){
+      if(!r.species){ window.PsaroAsk(T('Άκουσα: «','Heard: “')+alts[0]+T('». Δεν αναγνώρισα το είδος.','”. I did not recognise the species.')+' '+T('Να ξαναπείς;','Try again?'),{title:T('Φωνητική καταγραφή','Voice log'),ok:T('Ξανά','Again'),cancel:T('Άκυρο','Cancel')}).then(function(ok){ if(ok) b.click(); }); return; }
+      var msg=[r.species?SN(r.species.disp):T('Άγνωστο είδος','Unknown species'),r.kg!=null?r.kg+' kg':null,r.len!=null?r.len+' cm':null].filter(Boolean).join(' · ');
+      window.PsaroAsk(msg+'\n'+T('Άκουσα: «','Heard: “')+alts[0]+'”\n\n'+T('Να καταγραφεί ως ψάρι;','Log as a catch?'),{title:T('Φωνητική καταγραφή','Voice log'),ok:T('Καταγραφή','Log'),cancel:T('Άκυρο','Cancel')}).then(function(ok){
         if(!ok) return; $('fab').click();
         setTimeout(function(){ applyForm(r); setTimeout(function(){ try{ $('biteForm').requestSubmit(); }catch(e){ $('biteForm').querySelector('button[type=submit]').click(); } },450); },250);
       });
@@ -333,6 +343,11 @@ function importShare(){
 })();
 setTimeout(importShare,1500); window.addEventListener('hashchange',function(){ setTimeout(importShare,300); });
 
+(window.PsaroSeaRows=window.PsaroSeaRows||[]).push(function(){
+  var r=el('div','sprow'), x=el('div','sptx'); x.append(el('b','',T('Γλώσσα φωνητικής καταγραφής','Voice input language')),el('span','',T('Για τα ονόματα των ψαριών. Τώρα: ','For fish names. Now: ')+(vlang()==='en-US'?'English':'Ελληνικά')));
+  var bt=el('button','spb acc',vlang()==='en-US'?'Ελληνικά':'English'); bt.type='button'; bt.addEventListener('click',function(){ C.lsSet('psaro-vlang',vlang()==='en-US'?'el-GR':'en-US'); x.lastChild.textContent=T('Για τα ονόματα των ψαριών. Τώρα: ','For fish names. Now: ')+(vlang()==='en-US'?'English':'Ελληνικά'); bt.textContent=vlang()==='en-US'?'Ελληνικά':'English'; });
+  r.append(x,bt); return r;
+});
 window.PsaroCards={fish:function(b){ preview(fishCard(b),'bitecast-fish.png',''); },trip:function(t){ preview(tripCard(t),'bitecast-trip.png',''); },year:function(y){ preview(yearCard(y),'bitecast-'+y+'.png',''); },sum:openSum,parse:parseVoice,yearData:yearData,enc:enc,dec:dec,importShare:importShare};
 window.PsaroVoice={parse:parseVoice};
 })();

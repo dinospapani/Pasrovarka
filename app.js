@@ -1342,5 +1342,5 @@ document.addEventListener('visibilitychange',()=>{
 });
 setInterval(()=>{ if(document.visibilityState==='visible'&&navigator.onLine!==false) refreshConditions(); },10*60*1000);
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
-Object.assign(window.PsaroCore,{reviewTrip:reviewTrip,endReview:endReview});
+Object.assign(window.PsaroCore,{reviewTrip:reviewTrip,endReview:endReview,speciesDB:()=>DB,pickSpecies:sp=>{ $('bSpecies').value=dispName(sp); curLatin=sp.la; try{updateLaw();}catch(e){} $('bSpecies').dispatchEvent(new Event('change',{bubbles:true})); }});
 })();

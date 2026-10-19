@@ -48,7 +48,7 @@ async function rest(path,opt){
   if(!r.ok) throw new Error('HTTP '+r.status+' '+(await r.text()).slice(0,120));
   return r;
 }
-window.PsaroCloud={logged:function(){return !!sess;},rest:function(p,o){return rest(p,o);},name:function(){return sess&&sess.name||'';}};
+window.PsaroCloud={logged:function(){return !!sess;},rest:function(p,o){return rest(p,o);},name:function(){return sess&&sess.name||'';},uid:function(){return sess&&sess.uid||'';},url:URL_,storage:async function(m,p,b,t){ return storage(m,p,b,t); }};
 var pup=ls('psaro-pup')||{};
 async function storage(method,path,body,type){
   await ensure(); var h={apikey:KEY,Authorization:'Bearer '+sess.access_token}; if(type){ h['Content-Type']=type; h['x-upsert']='true'; }
