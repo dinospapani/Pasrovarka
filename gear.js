@@ -58,6 +58,16 @@ function startSet(type){
     C.toast(T('Ρίψη: '+nm(it),'Set: '+nm(it)));
   });
 }
+function startHaulNew(type){
+  if(active()){ C.toast(T('Τελείωσε πρώτα την τρέχουσα ρίψη ή ανέβασμα.','Finish the current set or haul first.')); return; }
+  here().then(function(p){
+    if(!p){ C.toast(T('Δεν βρέθηκε θέση GPS. Δοκίμασε ξανά.','No GPS fix. Try again.')); return; }
+    G.seq[type]=(G.seq[type]||0)+1;
+    var it={id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),type:type,name:tn(type)+' '+G.seq[type],state:'hauling',set:{a:null,ta:null,pts:[],b:null,tb:null,unknown:true},haul:{a:p,ta:Date.now(),pts:[p],b:null,tb:null}};
+    G.items.push(it); save(); watch(); draw(); render();
+    C.toast(T('Ανέβασμα: '+nm(it)+'. Τα ψάρια που καταγράφεις θα μαρκάρονται εδώ.','Hauling: '+nm(it)+'. Fish you log are marked here.'));
+  });
+}
 function endSet(it){
   here().then(function(p){
     var pts=it.set.pts; if(p){ var l=pts[pts.length-1]; if(!l||dist(l,p)>3) pts.push(p); it.set.b=p; } else it.set.b=pts[pts.length-1]||it.set.a;
@@ -163,12 +173,15 @@ function render(){
     sec(T('Νέα ρίψη','New set'));
     var row=el('div','sprow wrap'); Object.keys(TYPES).forEach(function(k){ row.append(btn(tn(k),'acc',function(){ startSet(k); })); }); body.append(row);
     body.append(el('div','sptx',T('Η ρίψη καταγράφει από πού ξεκινάς και τη διαδρομή μέχρι το «Τέλος ρίψης». Για ζεμπίλι αρκεί ένα πάτημα στο σημείο.','A set records where you start and the route until “End set”. For a pot one tap marks the spot.')));
+    sec(T('Το εργαλείο είναι ήδη στη θάλασσα','Gear already at sea'));
+    var row2=el('div','sprow wrap'); Object.keys(TYPES).forEach(function(k){ row2.append(btn(T('Ανέβασμα: ','Haul: ')+tn(k),'',function(){ startHaulNew(k); })); }); body.append(row2);
+    body.append(el('div','sptx',T('Αν δεν κατέγραψες τη ρίψη, ξεκίνα κατευθείαν το ανέβασμα. Η θέση και η διαδρομή θα καταγράφονται από τώρα.','If you did not record the set, start the haul directly. Position and route are recorded from now on.')));
   }
   var out=G.items.filter(function(i){ return i.state==='out'||(i.state==='setting'&&i!==a)||(i.state==='hauling'&&i!==a); });
   sec(T('Στη θάλασσα ','At sea ')+'('+out.length+')');
   if(!out.length) body.append(el('div','sptx',T('Κανένα εργαλείο.','No gear.')));
   out.forEach(function(it){
-    var r=el('div','sprow wrap'), x=el('div','sptx'); x.append(el('b','',nm(it)),el('span','',T('Ρίχτηκε ','Set ')+clock(it.set.ta)+' · '+hm(Date.now()-it.set.ta)));
+    var r=el('div','sprow wrap'), x=el('div','sptx'); x.append(el('b','',nm(it)),el('span','',it.set.ta?T('Ρίχτηκε ','Set ')+clock(it.set.ta)+' · '+hm(Date.now()-it.set.ta):T('Ρίψη χωρίς καταγραφή','Set not recorded')));
     r.append(x);
     if(it.state==='out') r.append(btn(T('Ανέβασμα','Haul'),'acc',function(){ startHaul(it); }));
     r.append(btn(T('Χάρτης','Map'),'',function(){ P.hidden=true; showItems([it]); }),btn('✎','',function(){ rename(it); }),btn('✕','danger',function(){ remove(it); }));
@@ -176,14 +189,14 @@ function render(){
   });
   var done=G.items.filter(function(i){ return i.state==='done'; }).sort(function(p,q){ return (q.done||0)-(p.done||0); }).slice(0,12);
   if(done.length){ sec(T('Ολοκληρωμένα','Completed'));
-    done.forEach(function(it){ var f=fishOf(it), r=el('div','sprow wrap'), x=el('div','sptx'); x.append(el('b','',nm(it)),el('span','',f.n+T(' ψάρια',' fish')+(f.kg?' · '+f.kg+' kg':'')+' · '+T('μέσα ','soaked ')+hm((it.haul&&it.haul.ta||0)-it.set.ta)));
+    done.forEach(function(it){ var f=fishOf(it), r=el('div','sprow wrap'), x=el('div','sptx'); x.append(el('b','',nm(it)),el('span','',f.n+T(' ψάρια',' fish')+(f.kg?' · '+f.kg+' kg':'')+(it.set.ta&&it.haul?' · '+T('μέσα ','soaked ')+hm(it.haul.ta-it.set.ta):'')));
       r.append(x,btn(T('Χάρτης','Map'),'',function(){ P.hidden=true; showItems([it]); }),btn('✕','danger',function(){ remove(it); })); body.append(r); });
   }
 }
 
 /* ---------- σύνοψη μέσα στην έξοδο ---------- */
 function compact(it){ var f=fishOf(it); function thin(p){ if(!p||p.length<=120) return p||[]; var k=Math.ceil(p.length/120); return p.filter(function(_,i){ return i%k===0||i===p.length-1; }); }
-  return {id:it.id,type:it.type,name:nm(it),set:{a:it.set.a,b:it.set.b,ta:it.set.ta,tb:it.set.tb,pts:thin(it.set.pts)},haul:it.haul?{a:it.haul.a,b:it.haul.b,ta:it.haul.ta,tb:it.haul.tb,pts:thin(it.haul.pts)}:null,n:f.n,kg:f.kg}; }
+  return {id:it.id,type:it.type,name:nm(it),set:{a:it.set.a||null,b:it.set.b,ta:it.set.ta,tb:it.set.tb,pts:thin(it.set.pts)},haul:it.haul?{a:it.haul.a,b:it.haul.b,ta:it.haul.ta,tb:it.haul.tb,pts:thin(it.haul.pts)}:null,n:f.n,kg:f.kg}; }
 function attachDone(tripId){
   /* προσθέτει στην πιο πρόσφατη έξοδο τα ολοκληρωμένα εργαλεία που δεν έχουν συνδεθεί */
   var pend=G.items.filter(function(i){ return i.state==='done'&&!i.att; }); if(!pend.length) return;
