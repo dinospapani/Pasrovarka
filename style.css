@@ -813,3 +813,26 @@ body:not(.ontrip) .rtchip{display:none}
 /* v31n: συντεταγμένες μοίρες/λεπτά */
 .coordin{font-variant-numeric:tabular-nums;letter-spacing:.02em}
 .coordin.bad{border-color:#d8431c!important;box-shadow:0 0 0 2px rgba(216,67,28,.25)}
+
+/* v31o: πεδία συντεταγμένων με σταθερά σύμβολα */
+.cfield{max-width:100%;box-sizing:border-box;display:flex;align-items:center;gap:5px;margin-top:4px;font-weight:700;font-size:18px}
+.cfield input{width:auto!important;min-width:0;box-sizing:border-box;height:42px;text-align:center;font-size:16px!important;font-weight:600;padding:0 6px!important}
+.cfield .cfd{flex:0 0 3.4em}
+.cfield .cfm{flex:1 1 0;min-width:3.5em}
+.cfield .cfh{flex:0 0 auto;min-width:2.4em;height:42px;border-radius:10px;border:1px solid var(--line,#3a4a58);background:transparent;color:var(--ink,inherit);font-weight:800;font-size:16px;cursor:pointer}
+.cfield.bad input,.cfield.bad .cfh{border-color:#d8431c!important;box-shadow:0 0 0 2px rgba(216,67,28,.25)}
+#spotForm .f{min-width:0}
+#spotForm input,#spotForm select,#spotForm textarea{box-sizing:border-box;max-width:100%}
+.cmcond{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:14px}
+
+/* v31t: εργαλεία (παραγάδι / δίχτυ / ζεμπίλι) */
+#gearPanel{position:fixed;inset:0;z-index:4800;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center}
+#gearPanel[hidden]{display:none}
+#gearPanel .spcard{width:100%;max-width:520px;max-height:88vh;overflow:auto;background:var(--surface);color:var(--ink);border-radius:20px 20px 0 0;padding:16px 16px 28px}
+#gearPanel .sprow.wrap{flex-wrap:wrap;gap:8px}
+#gearPanel .gwarn{font-size:13px;opacity:.85;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px}
+#gearPanel .gact{border:2px solid var(--accent);border-radius:14px;padding:12px;margin:8px 0;display:flex;flex-direction:column;gap:8px}
+#bGear{position:relative}
+#bGear.on{background:var(--accent);color:var(--accent-ink)}
+#bGear svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+#bGear .gbadge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:#d8431c;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px}

@@ -348,6 +348,13 @@ setTimeout(importShare,1500); window.addEventListener('hashchange',function(){ s
   var bt=el('button','spb acc',vlang()==='en-US'?'Ελληνικά':'English'); bt.type='button'; bt.addEventListener('click',function(){ C.lsSet('psaro-vlang',vlang()==='en-US'?'el-GR':'en-US'); x.lastChild.textContent=T('Για τα ονόματα των ψαριών. Τώρα: ','For fish names. Now: ')+(vlang()==='en-US'?'English':'Ελληνικά'); bt.textContent=vlang()==='en-US'?'Ελληνικά':'English'; });
   r.append(x,bt); return r;
 });
+(window.PsaroSeaRows=window.PsaroSeaRows||[]).push(function(){
+  var r=el('div','sprow'), x=el('div','sptx'); function on(){ return C.lsGet('psaro-showbites',true)!==false; }
+  x.append(el('b','',T('Ψάρια στον χάρτη','Fish on the map')),el('span','',T('Εμφάνιση των σημείων που έπιασες και χωρίς ενεργή έξοδο.','Show where you caught fish even without an active trip.')));
+  var bt=el('button','spb '+(on()?'acc':''),on()?T('Ναι','On'):T('Όχι','Off')); bt.type='button';
+  bt.addEventListener('click',function(){ C.lsSet('psaro-showbites',!on()); bt.textContent=on()?T('Ναι','On'):T('Όχι','Off'); bt.className='spb '+(on()?'acc':''); if(C.bitesVis) C.bitesVis(); });
+  r.append(x,bt); return r;
+});
 window.PsaroCards={fish:function(b){ preview(fishCard(b),'bitecast-fish.png',''); },trip:function(t){ preview(tripCard(t),'bitecast-trip.png',''); },year:function(y){ preview(yearCard(y),'bitecast-'+y+'.png',''); },sum:openSum,parse:parseVoice,yearData:yearData,enc:enc,dec:dec,importShare:importShare};
 window.PsaroVoice={parse:parseVoice};
 })();

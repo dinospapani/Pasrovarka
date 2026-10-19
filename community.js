@@ -129,8 +129,10 @@ async function openShare(b){
   if(blob){ var im=el('img','cmprev'); im.src=URL.createObjectURL(blob); bd.append(im); }
   var sz=[]; if(b.kg!=null) sz.push(b.kg+' kg'); if(b.len!=null) sz.push(b.len+' cm');
   bd.append(el('div','cmtitle',(b.species||'?')+(sz.length?' · '+sz.join(' · '):'')));
-  var ch=condChips({wind:b.wind,wave:b.wave,press:b.press,ptrend:b.ptrend,sst:b.sst,moon:moonIdx(b)}); if(ch.length){ var cr=el('div','cmchips'); ch.forEach(function(x){ cr.append(el('span','cmchip',x)); }); bd.append(cr); }
-  bd.append(el('div','cmnote',T('Θα φαίνονται: το όνομά σου, είδος, βάρος, δόλωμα/τεχνική, ημερομηνία, συνθήκες και η φωτογραφία. ΔΕΝ θα φαίνεται θέση ή όνομα σημείου. Πρόσεξε να μη δείχνει η φωτογραφία χαρακτηριστικό τοπίο.','Visible: your name, species, weight, bait/technique, date, conditions and the photo. NO location or spot name is shared. Make sure the photo does not show a recognisable landmark.')));
+  var withCond=false, ch=condChips({wind:b.wind,wave:b.wave,press:b.press,ptrend:b.ptrend,sst:b.sst,moon:moonIdx(b)});
+  if(ch.length){ var cr=el('div','cmchips'); cr.hidden=true; ch.forEach(function(x){ cr.append(el('span','cmchip',x)); });
+    var lb=el('label','cmcond'), cb=el('input'); cb.type='checkbox'; cb.addEventListener('change',function(){ withCond=cb.checked; cr.hidden=!withCond; }); lb.append(cb,document.createTextNode(' '+T('Να φαίνονται και οι συνθήκες (άνεμος, κύμα, πίεση)','Also show conditions (wind, waves, pressure)'))); bd.append(lb,cr); }
+  bd.append(el('div','cmnote',T('Θα φαίνονται: το όνομά σου, είδος, βάρος, δόλωμα/τεχνική, ημερομηνία και η φωτογραφία (και οι συνθήκες, μόνο αν το επιλέξεις). ΔΕΝ θα φαίνεται θέση ή όνομα σημείου. Πρόσεξε να μη δείχνει η φωτογραφία χαρακτηριστικό τοπίο.','Visible: your name, species, weight, bait/technique, date and the photo (conditions only if you tick the option). NO location or spot name is shared. Make sure the photo does not show a recognisable landmark.')));
   var row=el('div','sprow'); var go=el('button','spb acc',T('Δημοσίευση','Publish')); go.type='button'; row.append(go); bd.append(row); card.append(bd); ov.append(card); ov.hidden=false;
   go.addEventListener('click',async function(){
     if(!b.species){ C.toast(T('Λείπει το είδος.','Species is missing.')); return; }
@@ -139,7 +141,7 @@ async function openShare(b){
     try{
       await rest('community_posts?select=id&limit=1');
       if(blob){ var jb=await jpeg(blob); path=cloud().uid()+'/'+uuid()+'.jpg'; var r=await cloud().storage('POST','community/'+path,jb,'image/jpeg'); if(!r.ok) throw new Error('photo '+r.status); }
-      var cond={wind:b.wind,wave:b.wave,press:b.press,ptrend:b.ptrend,sst:b.sst,temp:b.temp,moon:moonIdx(b)}; Object.keys(cond).forEach(function(k){ if(cond[k]==null||cond[k]==='') delete cond[k]; else if(typeof cond[k]==='number') cond[k]=Math.round(cond[k]*10)/10; });
+      var cond=withCond?{wind:b.wind,wave:b.wave,press:b.press,ptrend:b.ptrend,sst:b.sst,temp:b.temp,moon:moonIdx(b)}:{}; Object.keys(cond).forEach(function(k){ if(cond[k]==null||cond[k]==='') delete cond[k]; else if(typeof cond[k]==='number') cond[k]=Math.round(cond[k]*10)/10; });
       var body={src:b.id,author:authorName(),species:b.species,latin:b.latin||null,kg:b.kg!=null?b.kg:null,len:b.len!=null?b.len:null,bait:b.bait||null,tech:b.tech||null,day:b.date||null,cond:cond,photo:path};
       var pr=await rest('community_posts',{method:'POST',body:JSON.stringify(body),headers:{Prefer:'return=representation'}}), rows=await pr.json();
       shared[b.id]=(rows[0]&&rows[0].id)||1; C.lsSet('psaro-comm-shared',shared); ov.hidden=true; C.toast(T('Δημοσιεύτηκε στην κοινότητα.','Shared to the community.')); decorate(); if(!box.hidden) load(true);
