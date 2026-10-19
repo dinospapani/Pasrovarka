@@ -38,15 +38,18 @@ function fetchHist(lat,lon,ms){
 }
 var KEYS=['wind','wave','press','ptrend','cloud','temp','sst'];
 function empty(b){ return KEYS.every(function(k){ return b[k]==null||b[k]===''; }); }
+/* καιρός που πιθανόν δεν αντιστοιχεί στην ώρα του ψαριού: η εγγραφή φτιάχτηκε πολύ μετά (ή πριν) την ώρα του ψαριού */
+function created(b){ var n=parseInt(String(b.id||'').slice(0,8),36); return (n>1.6e12&&n<2.1e12)?n:null; }
+function suspect(b,ms){ if(b.hist||empty(b)) return false; var c=created(b); return c!=null&&Math.abs(c-ms)>90*60000; }
 window.PsaroHist={fetch:fetchHist,keys:KEYS,empty:empty};
 
 /* ---- μαζική συμπλήρωση παλιών ψαριών (ρυθμίσεις θάλασσας) ---- */
 (window.PsaroSeaRows=window.PsaroSeaRows||[]).push(function(){
   var C=window.PsaroCore; if(!C||!C.Store||!C.biteMs) return null;
-  function todo(){ return (C.Store.get('bites')||[]).filter(function(b){ return typeof b.lat==='number'&&typeof b.lon==='number'&&empty(b)&&C.biteMs(b)<Date.now()-90*60000; }); }
+  function todo(){ return (C.Store.get('bites')||[]).filter(function(b){ return typeof b.lat==='number'&&typeof b.lon==='number'&&(empty(b)||suspect(b,C.biteMs(b)))&&C.biteMs(b)<Date.now()-90*60000; }); }
   var r=document.createElement('div'); r.className='sprow'; var x=document.createElement('div'); x.className='sptx';
   var b1=document.createElement('b'); b1.textContent=T('Καιρός παλιών ψαριών','Weather for older catches');
-  var sp=document.createElement('span'); function txt(){ var n=todo().length; sp.textContent=n?T('Υπάρχουν '+n+' ψάρια με θέση και χωρίς καιρό. Θα συμπληρωθούν με εκτίμηση ιστορικού.','There are '+n+' catches with a position but no weather. They will be filled with a historical estimate.'):T('Όλα τα ψάρια με θέση έχουν καιρό.','All catches with a position already have weather.'); }
+  var sp=document.createElement('span'); function txt(){ var n=todo().length; sp.textContent=n?T('Υπάρχουν '+n+' ψάρια με θέση που δεν έχουν καιρό ή έχουν καιρό άλλης ώρας. Θα ενημερωθούν με εκτίμηση ιστορικού.','There are '+n+' catches with a position and no weather, or with weather from another time. They will be updated with a historical estimate.'):T('Όλα τα ψάρια με θέση έχουν καιρό.','All catches with a position already have weather.'); }
   txt(); x.append(b1,sp);
   var bt=document.createElement('button'); bt.type='button'; bt.className='spb acc'; bt.textContent=T('Συμπλήρωση','Fill in');
   bt.addEventListener('click',function(){
@@ -56,7 +59,7 @@ window.PsaroHist={fetch:fetchHist,keys:KEYS,empty:empty};
       if(i>=list.length){ bt.disabled=false; bt.textContent=T('Συμπλήρωση','Fill in'); txt(); C.toast(T('Συμπληρώθηκαν '+done+' από '+list.length+'.','Filled '+done+' of '+list.length+'.')); return; }
       var b=list[i++]; bt.textContent=i+'/'+list.length+'…';
       fetchHist(b.lat,b.lon,C.biteMs(b)).then(function(h){
-        if(h){ var o=Object.assign({},b); KEYS.forEach(function(k){ if(h[k]!=null) o[k]=h[k]; }); o.hist=true; return C.Store.save('bites',o).then(function(){ done++; }); }
+        if(h){ var o=Object.assign({},b); var sus=suspect(b,C.biteMs(b)); KEYS.forEach(function(k){ if(h[k]!=null||sus) o[k]=h[k]==null?null:h[k]; }); if(h.wavePeriod!=null) o.wavePeriod=h.wavePeriod; o.hist=true; return C.Store.save('bites',o).then(function(){ done++; }); }
       }).catch(function(){}).then(function(){ setTimeout(next,350); });
     })();
   });

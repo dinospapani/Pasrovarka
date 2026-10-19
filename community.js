@@ -16,7 +16,7 @@ var segBtn=el('button','',T('Κοινότητα','Community')); segBtn.type='but
 var box=el('div','col'); box.id='l-comm'; box.hidden=true; var anchor=$('l-stats'); anchor.parentNode.insertBefore(box,anchor.nextSibling);
 var feedState={items:[],offset:0,end:false,loading:false,mine:false,liked:{},open:{}};
 Array.prototype.forEach.call(seg.querySelectorAll('button'),function(b){ b.addEventListener('click',function(){
-  var on=b===segBtn; box.hidden=!on; if(on){ Array.prototype.forEach.call(seg.querySelectorAll('button'),function(x){ x.setAttribute('aria-pressed',String(x===b)); }); ['l-trips','l-bites','l-stats'].forEach(function(id){ var n=$(id); if(n) n.hidden=true; }); if(!feedState.items.length&&!feedState.loading) load(true); render(); } }); });
+  var on=b===segBtn; box.hidden=!on; if(on){ Array.prototype.forEach.call(seg.querySelectorAll('button'),function(x){ x.setAttribute('aria-pressed',String(x===b)); }); ['l-trips','l-bites','l-stats','l-gear'].forEach(function(id){ var n=$(id); if(n) n.hidden=true; }); if(!feedState.items.length&&!feedState.loading) load(true); render(); } }); });
 
 /* ---------- δίκτυο ---------- */
 async function rest(path,opt){ return cloud().rest(path,opt); }

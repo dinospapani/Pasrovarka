@@ -215,15 +215,24 @@ function exportTrips(){
   var rows=trips().slice().sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
   dl('bitecast-έξοδοι-'+stamp()+'.csv','﻿'+[head.join(',')].concat(rows.map(function(r){ return cols.map(function(c){ return csvCell(typeof c==='function'?c(r):r[c]); }).join(','); })).join('\r\n'));
 }
+function exportGear(){
+  var it=(window.PsaroGear?window.PsaroGear.state().items:[]).slice(), bs=bites();
+  function iso(ms){ return ms?new Date(ms).toISOString():''; }
+  function km(a){ if(!a||a.length<2) return ''; var m=0; for(var i=1;i<a.length;i++) m+=distM(a[i-1][0],a[i-1][1],a[i][0],a[i][1]); return Math.round(m/10)/100; }
+  var cols=['name','type','state',function(g){ return iso(g.set&&g.set.ta); },function(g){ return iso(g.set&&g.set.tb); },function(g){ return g.set&&g.set.a?g.set.a[0]:''; },function(g){ return g.set&&g.set.a?g.set.a[1]:''; },function(g){ return g.set&&g.set.b?g.set.b[0]:''; },function(g){ return g.set&&g.set.b?g.set.b[1]:''; },function(g){ return km(g.set&&g.set.pts); },
+    function(g){ return iso(g.haul&&g.haul.ta); },function(g){ return iso(g.haul&&g.haul.tb); },function(g){ return km(g.haul&&g.haul.pts); },function(g){ return bs.filter(function(b){ return b.gear===g.id; }).length; },function(g){ return Math.round(bs.filter(function(b){ return b.gear===g.id; }).reduce(function(s,b){ return s+(+b.kg||0); },0)*10)/10; }];
+  var head=['name','type','state','set_start','set_end','set_start_lat','set_start_lon','set_end_lat','set_end_lon','set_km','haul_start','haul_end','haul_km','fish','kg'];
+  dl('bitecast-εργαλεία-'+stamp()+'.csv','﻿'+[head.join(',')].concat(it.map(function(r){ return cols.map(function(c){ return csvCell(typeof c==='function'?c(r):r[c]); }).join(','); })).join('\r\n'));
+}
 function exportSpots(){ dl('bitecast-σημεία-'+stamp()+'.csv',toCsv(spots(),['name','type','lat','lon','depth','notes','tips'])); }
 function exportAll(){
-  var o={app:'BiteCast',exported:new Date().toISOString(),bites:bites(),trips:trips().map(function(t){ return t; }),spots:spots(),smart:C.lsGet('psaro-smart',null),maintenance:M};
+  var o={app:'BiteCast',exported:new Date().toISOString(),bites:bites(),trips:trips().map(function(t){ return t; }),spots:spots(),gear:(window.PsaroGear?window.PsaroGear.state().items:[]),smart:C.lsGet('psaro-smart',null),maintenance:M};
   dl('bitecast-αντίγραφο-'+stamp()+'.json',JSON.stringify(o),'application/json');
 }
 function exportUI(box){
   box.append(el('div','smsec',T('Εξαγωγή δεδομένων','Export data')));
   box.append(el('div','sptx',T('Αρχεία CSV για Excel/Google Sheets και πλήρες αντίγραφο JSON. Οι φωτογραφίες δεν περιλαμβάνονται.','CSV files for Excel/Google Sheets and a full JSON copy. Photos are not included.')));
-  var r=el('div','sprow wrap'); r.append(btn(T('Ψάρια (CSV)','Catches (CSV)'),'',exportBites),btn(T('Έξοδοι (CSV)','Trips (CSV)'),'',exportTrips),btn(T('Σημεία (CSV)','Spots (CSV)'),'',exportSpots),btn(T('Πλήρες αντίγραφο (JSON)','Full backup (JSON)'),'acc',exportAll)); box.append(r);
+  var r=el('div','sprow wrap'); r.append(btn(T('Ψάρια (CSV)','Catches (CSV)'),'',exportBites),btn(T('Έξοδοι (CSV)','Trips (CSV)'),'',exportTrips),btn(T('Σημεία (CSV)','Spots (CSV)'),'',exportSpots),btn(T('Εργαλεία (CSV)','Gear (CSV)'),'',exportGear),btn(T('Πλήρες αντίγραφο (JSON)','Full backup (JSON)'),'acc',exportAll)); box.append(r);
 }
 
 /* ---------- πίνακας ---------- */

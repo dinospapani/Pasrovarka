@@ -920,13 +920,13 @@ $('biteForm').addEventListener('submit',async e=>{
     if(editing){ rec=Object.assign({},editing,{date:rec.date,time:rec.time,species:rec.species,latin:rec.latin,bait:rec.bait,tech:rec.tech,depth:rec.depth,kg:rec.kg,len:rec.len,press:rec.press,notes:rec.notes,photo:!!photoBlob||!!editing.photo,lat:lat,lon:lon,place:place}); }
     if(lat!=null&&window.PsaroHist){
       const tms=biteMs({date:date,time:rec.time,tz:rec.tz!=null?rec.tz:utcOff()});
-      const chg=editing&&editing.hist&&(editing.date!==date||editing.time!==rec.time||editing.lat!==lat||editing.lon!==lon);
+      const chg=!!editing&&((editing.hist&&(editing.date!==date||editing.time!==rec.time||editing.lat!==lat||editing.lon!==lon))||(!editing.hist&&Math.abs(tms-biteMs(editing))>90*60000));
       const need=tms<Date.now()-90*60000&&(!editing?!isNow:(PsaroHist.empty(editing)||chg));
       if(need){
         btn.textContent=window.LANG==='en'?'Looking up weather…':'Αναζήτηση καιρού…';
         const hc=await PsaroHist.fetch(lat,lon,tms);
         if(hc){ PsaroHist.keys.forEach(k=>{ if(hc[k]!=null&&(chg||rec[k]==null||rec[k]==='')) rec[k]=hc[k]; }); if(hc.wavePeriod!=null) rec.wavePeriod=hc.wavePeriod; rec.hist=true; }
-        else toast(window.LANG==='en'?'Historical weather not found. Left blank.':'Δεν βρέθηκε ιστορικός καιρός. Έμεινε κενό.');
+        else { if(chg){ PsaroHist.keys.forEach(k=>{ rec[k]=null; }); rec.wavePeriod=null; delete rec.hist; } toast(window.LANG==='en'?'Historical weather not found. Left blank.':'Δεν βρέθηκε ιστορικός καιρός. Έμεινε κενό.'); }
       }
     }
     if(!editing) tripStamp(rec,false);
@@ -1011,7 +1011,7 @@ function renderBites(){
     L.append(h('div',{class:'item bite','data-bid':b.id},
       h('div',{class:'ihead'},h('b',{class:'ititle',text:(b.n?'#'+b.n+' · ':'')+(b.species||'Άγνωστο')}),h('span',{class:'when mono',text:when})),
       sz?h('div',{class:'isz',text:sz}):null,
-      h('div',{class:'meta',text:[b.bait,b.tech,b.depth!=null?b.depth+' m βάθος':null,where].filter(Boolean).join(' · ')}),
+      h('div',{class:'meta',text:[b.gearName,b.bait,b.tech,b.depth!=null?b.depth+' m βάθος':null,where].filter(Boolean).join(' · ')}),
       h('div',{class:'meta',text:cd}),img,
       h('div',{class:'acts'},acts)));
   }
@@ -1309,7 +1309,7 @@ $('expBtn').addEventListener('click',async()=>{
   try{
     const bites=Store.raw('bites'), photos={};
     for(const b of bites) if(b.photo){ try{const bl=await Photos.get(b.id); if(bl) photos[b.id]=await blobToDataUrl(bl);}catch(e){} }
-    const data={app:'psarovarka',v:2,spots:Store.get('spots'),trips:Store.get('trips'),bites:bites,photos:photos};
+    const data={app:'psarovarka',v:2,spots:Store.get('spots'),trips:Store.get('trips'),bites:bites,gear:(window.PsaroGear?window.PsaroGear.state().items:[]),photos:photos};
     const a=h('a',{href:URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'})),download:'psarovarka-'+nicosiaToday()+'.json'});
     document.body.append(a); a.click(); a.remove();
   }catch(e){ $('impMsg').textContent='Η εξαγωγή απέτυχε.'; }
@@ -1320,6 +1320,7 @@ $('impFile').addEventListener('change',async e=>{
   try{
     const d=JSON.parse(await f.text()); let n=0;
     for(const k of ['spots','trips','bites']) for(const it of (Array.isArray(d[k])?d[k]:[])) if(it&&typeof it==='object'){await Store.save(k,it);n++;}
+    if(Array.isArray(d.gear)&&window.PsaroGear) n+=window.PsaroGear.import(d.gear);
     const ph=d.photos&&typeof d.photos==='object'?d.photos:{};
     for(const id in ph){ try{ const bl=await (await fetch(ph[id])).blob(); await Photos.put(id,bl); }catch(err){} }
     $('impMsg').textContent=n+' εγγραφές εισήχθησαν.';

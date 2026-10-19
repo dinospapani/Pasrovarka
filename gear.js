@@ -14,7 +14,7 @@ function el(tag,cls,txt){ var e=document.createElement(tag); if(cls) e.className
 function btn(t,cls,fn){ var b=el('button','spb '+(cls||''),t); b.type='button'; b.addEventListener('click',fn); return b; }
 function load(){ var g=C.lsGet(KEY,null); if(!g||!Array.isArray(g.items)) g={items:[],seq:{}}; if(!g.seq) g.seq={}; return g; }
 var G=load();
-function save(){ try{ C.lsSet(KEY,G); }catch(e){} }
+function save(){ try{ C.lsSet(KEY,G); }catch(e){} try{ if(typeof renderLog==='function') renderLog(); }catch(e){} }
 function R(x){ return Math.round(x*1e5)/1e5; }
 function dist(a,b){ var r=Math.PI/180,dl=(b[0]-a[0])*r,dn=(b[1]-a[1])*r,x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dn/2)*Math.sin(dn/2); return 12742000*Math.asin(Math.min(1,Math.sqrt(x))); }
 function len(pts){ var m=0; for(var i=1;i<pts.length;i++) m+=dist(pts[i-1],pts[i]); return m; }
@@ -132,8 +132,12 @@ function showItems(list,fit){
   C.switchTab('map');
   setTimeout(function(){
     var map=C.map&&C.map(); if(!map) return; if(shown){ try{ map.removeLayer(shown); }catch(e){} }
-    var ls=[]; list.forEach(function(it){ ls=ls.concat(layersFor(it)); }); if(!ls.length) return;
-    shown=L.layerGroup(ls).addTo(map); var pts=[]; list.forEach(function(it){ [it.set&&it.set.pts,it.haul&&it.haul.pts].forEach(function(a){ if(a) pts=pts.concat(a); }); });
+    var ls=[], fp=[]; list.forEach(function(it){ ls=ls.concat(layersFor(it));
+      (C.Store.get('bites')||[]).forEach(function(b){ if(it.id&&b.gear===it.id&&typeof b.lat==='number'&&typeof b.lon==='number'){
+        var m=L.marker([b.lat,b.lon],{icon:L.divIcon({className:'',html:'<div class="mk-fish'+(b.photo?' ph':'')+'">🐟</div>',iconSize:[30,30]}),title:b.species||''});
+        m.bindTooltip((b.species||T('Ψάρι','Fish'))+(b.kg?' · '+b.kg+' kg':'')+(b.time?' · '+b.time:''),{direction:'top'}); ls.push(m); fp.push([b.lat,b.lon]); } }); });
+    if(!ls.length) return;
+    shown=L.layerGroup(ls).addTo(map); var pts=fp.slice(); list.forEach(function(it){ [it.set&&it.set.pts,it.haul&&it.haul.pts].forEach(function(a){ if(a) pts=pts.concat(a); }); });
     if(fit!==false&&pts.length) map.fitBounds(L.latLngBounds(pts),{padding:[50,50],maxZoom:16});
   },250);
 }
@@ -194,6 +198,39 @@ function render(){
   }
 }
 
+/* ---------- τμήμα «Εργαλεία» στο Log ---------- */
+var seg=$('logSeg'), lbox=null, lbtn=null;
+function dayOf(ms){ var d=new Date(ms); return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2); }
+function renderLog(){
+  if(!lbox) return; lbox.replaceChildren();
+  var items=G.items.slice().sort(function(p,q){ return ((q.set&&q.set.ta)||(q.haul&&q.haul.ta)||0)-((p.set&&p.set.ta)||(p.haul&&p.haul.ta)||0); });
+  var tot=items.filter(function(i){ return i.state==='done'; }), tn_=0, tk=0; tot.forEach(function(i){ var f=fishOf(i); tn_+=f.n; tk+=f.kg; });
+  lbox.append(el('div','muted',items.length?T(items.length+' εργαλεία · '+tn_+' ψάρια · '+(Math.round(tk*10)/10)+' kg (ολοκληρωμένα)',items.length+' gear · '+tn_+' fish · '+(Math.round(tk*10)/10)+' kg (completed)'):T('Δεν υπάρχουν εργαλεία ακόμα. Ξεκίνα από το κουμπί εργαλείων στον χάρτη.','No gear yet. Start from the gear button on the map.')));
+  items.forEach(function(it){
+    var f=fishOf(it), s=it.set||{}, h=it.haul, card=el('div','item'), head=el('div','ihead');
+    var when=s.ta?dayOf(s.ta):(h&&h.ta?dayOf(h.ta):'');
+    head.append(el('b','ititle',nm(it)),el('span','when mono',when)); card.append(head);
+    var st=it.state==='done'?T('Ολοκληρώθηκε','Completed'):it.state==='out'?T('Στη θάλασσα','At sea'):it.state==='setting'?T('Σε ρίψη','Setting'):T('Σε ανέβασμα','Hauling');
+    var l1=[tn(it.type),st]; if(f.n||it.state==='done') l1.push(f.n+T(' ψάρια',' fish')+(f.kg?' · '+f.kg+' kg':'')); card.append(el('div','meta',l1.join(' · ')));
+    var l2=[]; if(s.ta) l2.push(T('Ρίψη ','Set ')+clock(s.ta)+(s.tb?' → '+clock(s.tb):'')+(len(s.pts||[])>20?' · '+(Math.round(len(s.pts)/10)/100)+' km':'')); else if(s.unknown) l2.push(T('Ρίψη χωρίς καταγραφή','Set not recorded'));
+    if(h&&h.ta) l2.push(T('Ανέβασμα ','Haul ')+dayOf(h.ta)+' '+clock(h.ta)+(h.tb?' → '+clock(h.tb):'')+(len(h.pts||[])>20?' · '+(Math.round(len(h.pts)/10)/100)+' km':''));
+    if(s.ta&&h&&h.ta) l2.push(T('Μέσα ','Soaked ')+hm(h.ta-s.ta));
+    if(l2.length) card.append(el('div','meta',l2.join(' · ')));
+    var acts=el('div','acts'); acts.append(btn(T('Χάρτης','Map'),'',function(){ showItems([it]); }),btn(T('Διαγραφή','Delete'),'',function(){ remove(it); })); card.append(acts);
+    lbox.append(card);
+  });
+}
+if(seg&&$('l-stats')){
+  lbtn=el('button','',T('Εργαλεία','Gear')); lbtn.type='button'; lbtn.dataset.l='gear'; lbtn.setAttribute('aria-pressed','false'); seg.appendChild(lbtn);
+  lbox=el('div','col'); lbox.id='l-gear'; lbox.hidden=true; $('l-stats').parentNode.insertBefore(lbox,$('l-stats').nextSibling);
+  Array.prototype.forEach.call(seg.querySelectorAll('button'),function(b){ b.addEventListener('click',function(){
+    var on=b===lbtn; lbox.hidden=!on;
+    if(on){ Array.prototype.forEach.call(seg.querySelectorAll('button'),function(x){ x.setAttribute('aria-pressed',String(x===b)); }); ['l-trips','l-bites','l-stats','l-comm'].forEach(function(id){ var n=$(id); if(n) n.hidden=true; }); renderLog(); }
+  }); });
+  if(C.Store&&C.Store.on) C.Store.on('bites',function(){ renderLog(); });
+}
+function importItems(arr){ var n=0; (Array.isArray(arr)?arr:[]).forEach(function(it){ if(it&&it.id&&it.type&&it.set&&!G.items.some(function(x){ return x.id===it.id; })){ G.items.push(it); n++; } }); if(n){ save(); draw(); } return n; }
+
 /* ---------- σύνοψη μέσα στην έξοδο ---------- */
 function compact(it){ var f=fishOf(it); function thin(p){ if(!p||p.length<=120) return p||[]; var k=Math.ceil(p.length/120); return p.filter(function(_,i){ return i%k===0||i===p.length-1; }); }
   return {id:it.id,type:it.type,name:nm(it),set:{a:it.set.a||null,b:it.set.b,ta:it.set.ta,tb:it.set.tb,pts:thin(it.set.pts)},haul:it.haul?{a:it.haul.a,b:it.haul.b,ta:it.haul.ta,tb:it.haul.tb,pts:thin(it.haul.pts)}:null,n:f.n,kg:f.kg}; }
@@ -208,7 +245,7 @@ function attachDone(tripId){
 }
 window.addEventListener('psaro-tripend',function(e){ var id=e&&e.detail&&e.detail.id; setTimeout(function(){ attachDone(id); },400); });
 
-window.PsaroGear={tag:tag,open:openPanel,state:function(){ return G; },show:function(list){ showItems((list||[]).map(function(g){ return {type:g.type,name:g.name,set:g.set,haul:g.haul}; })); },hide:hideShown,types:TYPES};
+window.PsaroGear={import:importItems,tag:tag,open:openPanel,state:function(){ return G; },show:function(list){ showItems((list||[]).map(function(g){ return {type:g.type,name:g.name,set:g.set,haul:g.haul}; })); },hide:hideShown,types:TYPES};
 setTimeout(function(){ watch(); draw(); },1500); setInterval(function(){ draw(); },20000);
 document.addEventListener('visibilitychange',function(){ if(!document.hidden){ if(wid!=null){ try{ navigator.geolocation.clearWatch(wid); }catch(e){} wid=null; } watch(); draw(); } });
 })();
