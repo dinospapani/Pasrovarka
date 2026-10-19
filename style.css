@@ -838,3 +838,35 @@ body:not(.ontrip) .rtchip{display:none}
 #bGear .gbadge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:#d8431c;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px}
 #logSeg{overflow-x:auto;-webkit-overflow-scrolling:touch}
 #logSeg button{flex:1 0 auto;white-space:nowrap}
+
+/* v31y: φόρμα ψαριού πιο επαγγελματική */
+#sheet .sheet-in{position:relative;gap:12px;padding:22px 16px calc(14px + env(safe-area-inset-bottom,0px));border-radius:24px 24px 0 0;box-shadow:0 -10px 40px #0009}
+#sheet .sheet-in::before{content:"";position:absolute;top:8px;left:50%;width:40px;height:4px;margin-left:-20px;border-radius:4px;background:var(--line)}
+#biteForm .fhead{padding:4px 0 10px;border-bottom:1px solid var(--line);margin:0 0 2px}
+#biteForm .fhead h3{font-size:22px;letter-spacing:.01em}
+#biteForm .fhead .btn{background:var(--bg);border:1px solid var(--line);color:var(--muted)}
+#biteForm .micform{position:absolute;top:26px;right:62px;margin:0;height:34px;padding:0 12px;border-radius:99px;font-size:13px;font-weight:600;background:var(--bg);color:var(--ink)}
+#biteForm .micform svg{width:16px;height:16px}
+.fsec{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--line);border-radius:16px;background:color-mix(in srgb,var(--bg) 55%,transparent)}
+.fsec:empty{display:none}
+#biteForm .flab{color:var(--muted)!important;font-size:11.5px!important}
+#biteForm .fsec input,#biteForm .fsec select,#biteForm .fsec textarea,#biteForm .fmore input,#biteForm .fmore select,#biteForm .fmore textarea{background:var(--bg);border:1px solid var(--line);transition:border-color .15s,box-shadow .15s}
+#biteForm input:focus,#biteForm select:focus,#biteForm textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+#biteForm #bSpecies{height:50px;font-size:17px;font-weight:600}
+#biteForm .fgrid3 input{text-align:center;font-weight:700;font-size:17px}
+#biteForm .fphoto{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#biteForm .fphoto label.btn{flex:1 1 0;justify-content:center;gap:8px;height:42px;border-radius:12px;font-weight:600}
+#biteForm .fphoto label.btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#biteForm .fphoto .thumb{width:42px;height:42px;object-fit:cover;border-radius:10px}
+#biteForm .fpick{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#biteForm .fpick .btn{height:38px;border-radius:10px;font-weight:600}
+#biteForm .fpick .note{font-variant-numeric:tabular-nums;color:var(--ink);font-size:13px}
+#biteForm .fmore{border-radius:16px;padding:12px}
+#biteForm .fmore summary{font-size:14px;color:var(--ink)}
+#biteForm #bLaw:not(:empty){padding:8px 10px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-size:12.5px}
+#biteForm .err:empty{display:none}
+#biteForm .fsave{position:sticky;bottom:0;height:52px;border-radius:14px;box-shadow:0 -14px 18px -4px var(--surface),0 6px 18px #0006;letter-spacing:.02em}
+#biteForm .fsec .fgrid2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+#biteForm #bWhen{font-size:14px;padding:0 8px}
+#biteForm #bLocMode{font-size:14px;padding:0 6px;text-overflow:ellipsis}
+#biteForm .fsec .fgrid2:has(#bWhen){grid-template-columns:minmax(0,1.15fr) minmax(0,.95fr)}

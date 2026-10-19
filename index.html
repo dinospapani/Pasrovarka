@@ -416,42 +416,48 @@
 <div class="sheet" id="sheet" hidden>
   <form class="sheet-in" id="biteForm" autocomplete="off">
     <div class="fhead"><h3 id="bTitle">Νέο ψάρι</h3><button class="btn ghost sm" type="button" id="bClose" aria-label="Κλείσιμο">✕</button></div>
-    <div class="f" style="position:relative;margin-top:10px">
-      <label for="bSpecies" style="color:var(--muted);font-size:13px">Είδος ψαριού</label>
-      <input type="text" id="bSpecies" required maxlength="60" placeholder="Γράψε ένα όνομα, π.χ. λαβράκι, tuna, Seriola" autocapitalize="none">
-      <div class="sug" id="bSug" hidden></div>
-    </div>
-    <div class="chips" id="bChipsSp"></div>
-    <div class="row" style="margin-top:10px;align-items:center">
-      <label class="btn ghost sm" style="cursor:pointer">📷 Κάμερα<input type="file" id="bCam" accept="image/*" capture="environment" hidden></label> <label class="btn ghost sm" style="cursor:pointer">🖼 Συλλογή<input type="file" id="bFile" accept="image/*" hidden></label>
-      <img id="bPrev" class="thumb" alt="Προεπισκόπηση" hidden>
-      <button class="btn ghost sm" type="button" id="bPrevX" hidden>Αφαίρεση</button>
-      <button class="btn sm" type="button" id="bAI" hidden>🔍 Αναγνώριση με AI</button>
-    </div>
-    <div id="bAIOut" class="chips"></div>
-    <div class="note" id="bAIMsg"></div>
-    <div class="fgrid3">
-      <label class="f">Βάρος (kg)<input type="number" id="bKg" min="0" step="0.1" inputmode="decimal"></label>
-      <label class="f">Μήκος (cm)<input type="number" id="bLen" min="0" step="1" inputmode="numeric"></label>
-      <label class="f">Βάθος (m)<input type="number" id="bDepth" min="0" max="11000" step="1" inputmode="numeric"></label>
-    </div>
-    <div class="note" id="bLaw" style="margin-top:8px"></div>
-    <div class="fgrid2">
-      <label class="f">Πότε<input type="datetime-local" id="bWhen" required></label>
-      <label class="f">Θέση
-        <select id="bLocMode"><option value="auto">Η θέση μου (GPS)</option><option value="spot">Αποθηκευμένο σημείο</option><option value="keep" hidden>Όπως είναι</option>
-            <option value="pick">Επιλογή στον χάρτη</option><option value="coords">Συντεταγμένες</option><option value="none">Χωρίς θέση</option></select>
-      </label>
-    </div>
-    <label class="f" id="bSpotWrap" hidden>Σημείο<select id="bSpot"><option value="">—</option></select></label>
-    <div id="bCoordWrap" hidden>
-      <div class="fgrid2">
-        <label class="f">Πλάτος<input type="text" id="bLat" class="coordin" placeholder="N 35°03.602′"></label>
-        <label class="f">Μήκος<input type="text" id="bLon" class="coordin" placeholder="E 32°23.856′"></label>
+    <section class="fsec">
+      <div class="f" style="position:relative">
+        <label for="bSpecies" class="flab">Είδος ψαριού</label>
+        <input type="text" id="bSpecies" required maxlength="60" placeholder="Γράψε ένα όνομα, π.χ. λαβράκι, tuna, Seriola" autocapitalize="none">
+        <div class="sug" id="bSug" hidden></div>
       </div>
-      <div class="note">Μοίρες και λεπτά, όπως στο πλότερ. Δέχεται και επικόλληση ολόκληρου του ζεύγους.</div>
-    </div>
-    <div id="bPickWrap" hidden><button class="btn sm" type="button" id="bPickBtn">Διάλεξε στον χάρτη</button> <span class="note" id="bPickTxt"></span></div>
+      <div class="chips" id="bChipsSp"></div>
+      <div class="row fphoto">
+        <label class="btn ghost sm" style="cursor:pointer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.6-2.2h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.2"/></svg> Κάμερα<input type="file" id="bCam" accept="image/*" capture="environment" hidden></label> <label class="btn ghost sm" style="cursor:pointer"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-4.5 3.5 3 3-2.5L20 17"/></svg> Συλλογή<input type="file" id="bFile" accept="image/*" hidden></label>
+        <img id="bPrev" class="thumb" alt="Προεπισκόπηση" hidden>
+        <button class="btn ghost sm" type="button" id="bPrevX" hidden>Αφαίρεση</button>
+        <button class="btn sm" type="button" id="bAI" hidden>🔍 Αναγνώριση με AI</button>
+      </div>
+      <div id="bAIOut" class="chips"></div>
+      <div class="note" id="bAIMsg"></div>
+    </section>
+    <section class="fsec">
+      <div class="fgrid3">
+        <label class="f">Βάρος (kg)<input type="number" id="bKg" min="0" step="0.1" inputmode="decimal"></label>
+        <label class="f">Μήκος (cm)<input type="number" id="bLen" min="0" step="1" inputmode="numeric"></label>
+        <label class="f">Βάθος (m)<input type="number" id="bDepth" min="0" max="11000" step="1" inputmode="numeric"></label>
+      </div>
+      <div class="note" id="bLaw"></div>
+    </section>
+    <section class="fsec">
+      <div class="fgrid2">
+        <label class="f">Πότε<input type="datetime-local" id="bWhen" required></label>
+        <label class="f">Θέση
+          <select id="bLocMode"><option value="auto">Η θέση μου (GPS)</option><option value="spot">Αποθηκευμένο σημείο</option><option value="keep" hidden>Όπως είναι</option>
+              <option value="pick">Επιλογή στον χάρτη</option><option value="coords">Συντεταγμένες</option><option value="none">Χωρίς θέση</option></select>
+        </label>
+      </div>
+      <label class="f" id="bSpotWrap" hidden>Σημείο<select id="bSpot"><option value="">—</option></select></label>
+      <div id="bCoordWrap" hidden>
+        <div class="fgrid2">
+          <label class="f">Πλάτος<input type="text" id="bLat" class="coordin" placeholder="N 35°03.602′"></label>
+          <label class="f">Μήκος<input type="text" id="bLon" class="coordin" placeholder="E 32°23.856′"></label>
+        </div>
+        <div class="note">Μοίρες και λεπτά, όπως στο πλότερ. Δέχεται και επικόλληση ολόκληρου του ζεύγους.</div>
+      </div>
+      <div id="bPickWrap" class="fpick" hidden><button class="btn sm" type="button" id="bPickBtn">Διάλεξε στον χάρτη</button> <span class="note" id="bPickTxt"></span></div>
+    </section>
     <details class="fmore">
       <summary>Περισσότερα στοιχεία</summary>
       <div class="fgrid2">
