@@ -885,3 +885,7 @@ body:not(.ontrip) .rtchip{display:none}
 .cfield .cff{flex:1.4 1 0;min-width:0}
 .cfield .cfdot{font-weight:800;opacity:.7;margin:0 -1px}
 #bCoordWrap .cfield .cfm2,#bCoordWrap .cfield .cff{min-width:0}
+/* v31z6: γραμμές εργαλείων: το κείμενο πάνω, τα κουμπιά από κάτω */
+#gearPanel .sprow.wrap{flex-wrap:wrap;gap:8px}
+#gearPanel .sprow.wrap>.sptx{flex:1 1 100%;min-width:0}
+#gearPanel .sprow.wrap>.spb{flex:0 1 auto}

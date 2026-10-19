@@ -33,8 +33,16 @@ function here(){
     navigator.geolocation.getCurrentPosition(function(p){ res([R(p.coords.latitude),R(p.coords.longitude)]); },function(){ res(null); },{enableHighAccuracy:true,timeout:15000,maximumAge:10000});
   });
 }
-var wid=null;
+var wid=null, wl=null;
+/* v31z6: η οθόνη μένει αναμμένη όσο τρέχει ρίψη ή ανέβασμα (ο browser σταματά το GPS όταν σβήνει η οθόνη) */
+function unwake(){ if(wl){ try{ wl.release(); }catch(e){} wl=null; } }
+function wake(){
+  if(!active()){ unwake(); return; }
+  if(wl||!navigator.wakeLock||document.hidden) return;
+  try{ navigator.wakeLock.request('screen').then(function(l){ wl=l; l.addEventListener('release',function(){ wl=null; }); }).catch(function(){ wl=null; }); }catch(e){ wl=null; }
+}
 function watch(){
+  wake();
   var it=active(); if(!it){ if(wid!=null){ try{ navigator.geolocation.clearWatch(wid); }catch(e){} wid=null; } return; }
   if(wid!=null||!navigator.geolocation) return;
   try{ wid=navigator.geolocation.watchPosition(function(p){
@@ -45,7 +53,7 @@ function watch(){
     save(); draw(); if(!P.hidden) render();
   },function(){},{enableHighAccuracy:true,maximumAge:5000,timeout:30000}); }catch(e){ wid=null; }
 }
-function stopWatchIfIdle(){ if(!active()&&wid!=null){ try{ navigator.geolocation.clearWatch(wid); }catch(e){} wid=null; } }
+function stopWatchIfIdle(){ if(!active()) unwake(); if(!active()&&wid!=null){ try{ navigator.geolocation.clearWatch(wid); }catch(e){} wid=null; } }
 
 /* ---------- ενέργειες ---------- */
 function startSet(type){
@@ -171,6 +179,7 @@ function render(){
     box.append(el('b','',(a.state==='setting'?T('Ρίχνεις: ','Setting: '):T('Ανεβάζεις: ','Hauling: '))+nm(a)));
     box.append(el('div','sptx',T('Διαδρομή ','Route ')+(Math.round(len(ph.pts)/10)/100)+' km · '+hm(Date.now()-(ph.ta||Date.now()))+(a.state==='hauling'?' · '+f.n+T(' ψάρια',' fish')+(f.kg?' · '+f.kg+' kg':''):'')));
     if(a.state==='hauling') box.append(el('div','sptx',T('Καταγράφεις τα ψάρια με το πράσινο κουμπί στον χάρτη και μαρκάρονται εδώ.','Log fish with the green button on the map; they are marked here.')));
+    box.append(el('div','sptx',T('Η οθόνη μένει αναμμένη για να συνεχίσει το GPS. Μην κλείσεις την εφαρμογή.','The screen stays on so GPS keeps running. Do not close the app.')));
     box.append(btn(a.state==='setting'?T('Τέλος ρίψης','End set'):T('Τέλος ανεβάσματος','End haul'),'acc',function(){ a.state==='setting'?endSet(a):endHaul(a); }));
     body.append(box);
   } else {
@@ -181,6 +190,7 @@ function render(){
     var row2=el('div','sprow wrap'); Object.keys(TYPES).forEach(function(k){ row2.append(btn(T('Ανέβασμα: ','Haul: ')+tn(k),'',function(){ startHaulNew(k); })); }); body.append(row2);
     body.append(el('div','sptx',T('Αν δεν κατέγραψες τη ρίψη, ξεκίνα κατευθείαν το ανέβασμα. Η θέση και η διαδρομή θα καταγράφονται από τώρα.','If you did not record the set, start the haul directly. Position and route are recorded from now on.')));
   }
+  body.append(el('div','sptx',T('Πορεία από άλλη εφαρμογή (GPX): πάτα «GPX ρίψης» ή «GPX ανεβ.» στο εργαλείο και διάλεξε το αρχείο.','Track from another app (GPX): tap “GPX set” or “GPX haul” on the gear and pick the file.')));
   var out=G.items.filter(function(i){ return i.state==='out'||(i.state==='setting'&&i!==a)||(i.state==='hauling'&&i!==a); });
   sec(T('Στη θάλασσα ','At sea ')+'('+out.length+')');
   if(!out.length) body.append(el('div','sptx',T('Κανένα εργαλείο.','No gear.')));
@@ -188,15 +198,43 @@ function render(){
     var r=el('div','sprow wrap'), x=el('div','sptx'); x.append(el('b','',nm(it)),el('span','',it.set.ta?T('Ρίχτηκε ','Set ')+clock(it.set.ta)+' · '+hm(Date.now()-it.set.ta):T('Ρίψη χωρίς καταγραφή','Set not recorded')));
     r.append(x);
     if(it.state==='out') r.append(btn(T('Ανέβασμα','Haul'),'acc',function(){ startHaul(it); }));
-    r.append(btn(T('Χάρτης','Map'),'',function(){ P.hidden=true; showItems([it]); }),btn('✎','',function(){ rename(it); }),btn('✕','danger',function(){ remove(it); }));
+    r.append(btn(T('Χάρτης','Map'),'',function(){ P.hidden=true; showItems([it]); }),btn('GPX '+T('ρίψης','set'),'',function(){ pickGpx(it,'set'); }),btn('✎','',function(){ rename(it); }),btn('✕','danger',function(){ remove(it); }));
     body.append(r);
   });
   var done=G.items.filter(function(i){ return i.state==='done'; }).sort(function(p,q){ return (q.done||0)-(p.done||0); }).slice(0,12);
   if(done.length){ sec(T('Ολοκληρωμένα','Completed'));
     done.forEach(function(it){ var f=fishOf(it), r=el('div','sprow wrap'), x=el('div','sptx'); x.append(el('b','',nm(it)),el('span','',f.n+T(' ψάρια',' fish')+(f.kg?' · '+f.kg+' kg':'')+(it.set.ta&&it.haul?' · '+T('μέσα ','soaked ')+hm(it.haul.ta-it.set.ta):'')));
-      r.append(x,btn(T('Χάρτης','Map'),'',function(){ P.hidden=true; showItems([it]); }),btn('✕','danger',function(){ remove(it); })); body.append(r); });
+      r.append(x,btn(T('Χάρτης','Map'),'',function(){ P.hidden=true; showItems([it]); }),btn('GPX '+T('ρίψης','set'),'',function(){ pickGpx(it,'set'); }),btn('GPX '+T('ανεβ.','haul'),'',function(){ pickGpx(it,'haul'); }),btn('✕','danger',function(){ remove(it); })); body.append(r); });
   }
 }
+
+/* ---------- εισαγωγή πορείας από GPX (άλλη εφαρμογή που καταγράφει στο παρασκήνιο) ---------- */
+function parseGpx(txt){
+  var doc=new DOMParser().parseFromString(txt,'application/xml'); if(doc.getElementsByTagName('parsererror').length) return null;
+  var els=doc.getElementsByTagName('trkpt'); if(!els.length) els=doc.getElementsByTagName('rtept'); if(!els.length) els=doc.getElementsByTagName('wpt');
+  var pts=[], t0=null, t1=null;
+  for(var i=0;i<els.length;i++){
+    var la=parseFloat(els[i].getAttribute('lat')), lo=parseFloat(els[i].getAttribute('lon')); if(!isFinite(la)||!isFinite(lo)) continue;
+    pts.push([R(la),R(lo)]);
+    var te=els[i].getElementsByTagName('time')[0]; if(te){ var ms=Date.parse(te.textContent); if(isFinite(ms)){ if(t0==null||ms<t0) t0=ms; if(t1==null||ms>t1) t1=ms; } }
+  }
+  return pts.length>=2?{pts:pts,t0:t0,t1:t1}:null;
+}
+function thinTo(pts,n){ if(pts.length<=n) return pts; var k=Math.ceil(pts.length/n), o=pts.filter(function(_,i){ return i%k===0; }), l=pts[pts.length-1]; if(o[o.length-1]!==l) o.push(l); return o; }
+function applyTrack(it,phase,g){
+  var pts=thinTo(g.pts,1500), old=it[phase]||{};
+  var ph={a:pts[0],ta:g.t0||old.ta||null,pts:pts,b:pts[pts.length-1],tb:g.t1||old.tb||null};
+  if(phase==='set'){ it.set=ph; } else { it.haul=ph; if(it.state==='out') it.state='out'; }
+  save(); draw(); render();
+  C.toast(T('Εισήχθη πορεία: ','Track imported: ')+pts.length+T(' σημεία · ',' points · ')+(Math.round(len(pts)/10)/100)+' km');
+}
+var gfile=document.createElement('input'); gfile.type='file'; gfile.hidden=true; document.body.appendChild(gfile);
+var gTarget=null;
+gfile.addEventListener('change',function(){
+  var f=gfile.files&&gfile.files[0], tg=gTarget; gfile.value=''; if(!f||!tg) return;
+  f.text().then(function(t){ var g=parseGpx(t); if(!g){ C.toast(T('Το αρχείο δεν έχει πορεία GPX με σημεία.','The file has no GPX track with points.')); return; } applyTrack(tg.it,tg.phase,g); }).catch(function(){ C.toast(T('Δεν διαβάστηκε το αρχείο.','Could not read the file.')); });
+});
+function pickGpx(it,phase){ gTarget={it:it,phase:phase}; gfile.click(); }
 
 /* ---------- τμήμα «Εργαλεία» στο Log ---------- */
 var seg=$('logSeg'), lbox=null, lbtn=null;
@@ -247,5 +285,5 @@ window.addEventListener('psaro-tripend',function(e){ var id=e&&e.detail&&e.detai
 
 window.PsaroGear={import:importItems,tag:tag,open:openPanel,state:function(){ return G; },show:function(list){ showItems((list||[]).map(function(g){ return {type:g.type,name:g.name,set:g.set,haul:g.haul}; })); },hide:hideShown,types:TYPES};
 setTimeout(function(){ watch(); draw(); },1500); setInterval(function(){ draw(); },20000);
-document.addEventListener('visibilitychange',function(){ if(!document.hidden){ if(wid!=null){ try{ navigator.geolocation.clearWatch(wid); }catch(e){} wid=null; } watch(); draw(); } });
+document.addEventListener('visibilitychange',function(){ if(!document.hidden){ if(wid!=null){ try{ navigator.geolocation.clearWatch(wid); }catch(e){} wid=null; } wake(); watch(); draw(); } });
 })();
