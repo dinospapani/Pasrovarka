@@ -338,7 +338,7 @@ function render(){
   var sel=el('select','sminp'); sel.append(new Option(T('Από τα σημεία μου…','From my spots…'),''));
   spots.forEach(function(s){ sel.append(new Option(s.name||'?',s.id)); });
   sel.addEventListener('change',function(){ var s=spots.find(function(x){ return x.id===sel.value; }); if(s){ S.home={lat:s.lat,lon:s.lon,name:s.name}; save(); autoStop(); autoStart(); render(); } });
-  row(S.home?(S.home.name||T('Λιμάνι','Port'))+' ✓':T('Δεν έχει οριστεί','Not set'),S.home?S.home.lat.toFixed(4)+', '+S.home.lon.toFixed(4):T('Χρειάζεται για «Πότε να γυρίσω», αυτονομία και αυτόματες προτάσεις.','Needed for “when to head back”, range and auto suggestions.'),null);
+  row(S.home?(S.home.name||T('Λιμάνι','Port'))+' ✓':T('Δεν έχει οριστεί','Not set'),S.home?PsaroCoord.fmt(S.home.lat,S.home.lon):T('Χρειάζεται για «Πότε να γυρίσω», αυτονομία και αυτόματες προτάσεις.','Needed for “when to head back”, range and auto suggestions.'),null);
   var r2=el('div','sprow'); r2.append(sel,btn(T('Θέση μου τώρα','My position'),'acc',function(){ fixNow(function(p){ S.home={lat:p.lat,lon:p.lon,name:T('Λιμάνι','Port')}; save(); autoStop(); autoStart(); render(); C.toast(T('Το λιμάνι ορίστηκε στη θέση σου.','Port set to your position.')); },function(){ C.toast(T('Δεν βρέθηκε θέση GPS.','No GPS fix.')); }); }));
   r2.append(btn(T('Βρες λιμάνι','Find port'),'',function(){ fixNow(function(p){ offerHome(p,'').then(function(){ render(); }); },function(){ C.toast(T('Δεν βρέθηκε θέση GPS.','No GPS fix.')); }); }));
   if(S.home) r2.append(btn(T('Καθαρισμός','Clear'),'',function(){ S.home=null; save(); autoStop(); render(); rt(); })); body.append(r2);

@@ -809,3 +809,7 @@ body:not(.ontrip) .rtchip{display:none}
 .cmcomments{padding:10px 14px 0;display:flex;flex-direction:column;gap:6px;font-size:14px}
 .cmc{display:flex;gap:4px;flex-wrap:wrap;align-items:baseline}.cmlink{margin-left:auto;border:0;background:transparent;color:var(--ink);opacity:.55;font-size:12px;cursor:pointer}
 .cmform{display:flex;gap:8px}.cmform input{flex:1;min-width:0;border-radius:12px;border:1px solid rgba(127,127,127,.35);padding:9px;font:inherit;background:var(--surface);color:var(--ink)}
+
+/* v31n: συντεταγμένες μοίρες/λεπτά */
+.coordin{font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.coordin.bad{border-color:#d8431c!important;box-shadow:0 0 0 2px rgba(216,67,28,.25)}

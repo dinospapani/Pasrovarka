@@ -4,6 +4,7 @@ var I18N={en:{"Έλεγχος δεδομένων":"Data check","Έλεγχος �
 Object.assign(I18N.en,{'Τι να ψαρέψω':'What to fish for'});
 Object.assign(I18N.en,{'Πηγαίνω εκεί':'Go there'});
 Object.assign(I18N.en,{'Προστατευόμενες περιοχές Ευρώπης':'European protected areas'});
+Object.assign(I18N.en,{'Συντεταγμένες':'Coordinates','Πλάτος':'Latitude','Μήκος':'Longitude','Μοίρες και λεπτά, όπως στο πλότερ. Δέχεται και επικόλληση ολόκληρου του ζεύγους.':'Degrees and minutes, as on the chartplotter. You can also paste the whole pair.','Γράψε έγκυρες συντεταγμένες, π.χ. N 35°03.602′ και E 32°23.856′.':'Enter valid coordinates, e.g. N 35°03.602′ and E 32°23.856′.','Γράψε έγκυρο πλάτος και μήκος, π.χ. N 35°03.602′ και E 32°23.856′, ή πάτα στον χάρτη.':'Enter a valid latitude and longitude, e.g. N 35°03.602′ and E 32°23.856′, or tap the map.'});
 Object.assign(I18N.en,{'Μονάδες μέτρησης':'Units','Θερμοκρασία':'Temperature','Απόσταση':'Distance'});
 Object.assign(I18N.en,{"Περισσότερα στοιχεία":"More details","Νέο ψάρι":"New fish","Αποθήκευση":"Save","Τέλος εξόδου":"End trip","Συνέχεια":"Keep going","Εντάξει":"OK","Άκυρο":"Cancel"});
 Object.assign(I18N.en,{"■ Τέλος εξόδου":"■ End trip","⚠ Τέλος εξόδου":"⚠ End trip","Διαδρομή":"Route","Καταγραφή διαδρομής GPS στις εξόδους":"Record GPS route during trips"});

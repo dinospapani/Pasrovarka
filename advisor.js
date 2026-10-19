@@ -187,7 +187,7 @@ function whenWhere(D){
   cl.forEach(function(z){
     var go=h('button',{class:'btn ghost sm',type:'button',text:T('Χάρτης','Map'),onclick:function(){ C.switchTab('map'); setTimeout(function(){ var m=C.map(); if(m) m.flyTo([z.lat,z.lon],14); },350); }});
     var dir=window.PsaroDirect?h('button',{class:'btn ghost sm',type:'button',text:T('Πηγαίνω εκεί','Go there'),onclick:function(){ C.switchTab('map'); setTimeout(function(){ window.PsaroDirect.go(z.lat,z.lon,(e?sName(e):spSel)); var m=C.map(); if(m) m.flyTo([z.lat,z.lon],13); },350); }}):null;
-    c.append(h('div',{class:'item advspot'},h('div',{},h('b',{text:z.n+' '+T('ψάρια','fish')+(z.kg?' · '+Math.round(z.kg*10)/10+' kg':'')}),h('div',{class:'meta mono',text:z.lat.toFixed(3)+', '+z.lon.toFixed(3)})),h('div',{class:'acts'},go,dir)));
+    c.append(h('div',{class:'item advspot'},h('div',{},h('b',{text:z.n+' '+T('ψάρια','fish')+(z.kg?' · '+Math.round(z.kg*10)/10+' kg':'')}),h('div',{class:'meta mono',text:PsaroCoord.fmt(z.lat,z.lon)})),h('div',{class:'acts'},go,dir)));
   });
   return c;
 }

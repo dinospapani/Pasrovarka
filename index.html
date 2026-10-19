@@ -312,8 +312,8 @@
             <option>Ταμπλά / κατωφλι</option><option>Ρεύμα / ανοιχτά</option><option>Λιμάνι / μώλος</option><option>Άλλο</option>
           </select>
         </label>
-        <label class="f">Γεωγραφικό πλάτος<input type="number" id="sLat" step="0.00001" inputmode="decimal" placeholder="34.70000"></label>
-        <label class="f">Γεωγραφικό μήκος<input type="number" id="sLon" step="0.00001" inputmode="decimal" placeholder="33.00000"></label>
+        <label class="f">Γεωγραφικό πλάτος<input type="text" id="sLat" class="coordin" placeholder="N 35°03.602′"></label>
+        <label class="f">Γεωγραφικό μήκος<input type="text" id="sLon" class="coordin" placeholder="E 032°23.856′"></label>
         <label class="f">Βάθος (m)<input type="number" id="sDepth" min="0" max="2000" step="1" inputmode="numeric"></label>
         <label class="f">Σημειώσεις<textarea id="sNotes" maxlength="400" placeholder="Δόλωμα, ρεύμα, ώρα που δούλεψε"></textarea></label>
       </div>
@@ -440,10 +440,17 @@
       <label class="f">Πότε<input type="datetime-local" id="bWhen" required></label>
       <label class="f">Θέση
         <select id="bLocMode"><option value="auto">Η θέση μου (GPS)</option><option value="spot">Αποθηκευμένο σημείο</option><option value="keep" hidden>Όπως είναι</option>
-            <option value="pick">Επιλογή στον χάρτη</option><option value="none">Χωρίς θέση</option></select>
+            <option value="pick">Επιλογή στον χάρτη</option><option value="coords">Συντεταγμένες</option><option value="none">Χωρίς θέση</option></select>
       </label>
     </div>
     <label class="f" id="bSpotWrap" hidden>Σημείο<select id="bSpot"><option value="">—</option></select></label>
+    <div id="bCoordWrap" hidden>
+      <div class="fgrid2">
+        <label class="f">Πλάτος<input type="text" id="bLat" class="coordin" placeholder="N 35°03.602′"></label>
+        <label class="f">Μήκος<input type="text" id="bLon" class="coordin" placeholder="E 32°23.856′"></label>
+      </div>
+      <div class="note">Μοίρες και λεπτά, όπως στο πλότερ. Δέχεται και επικόλληση ολόκληρου του ζεύγους.</div>
+    </div>
     <div id="bPickWrap" hidden><button class="btn sm" type="button" id="bPickBtn">Διάλεξε στον χάρτη</button> <span class="note" id="bPickTxt"></span></div>
     <details class="fmore">
       <summary>Περισσότερα στοιχεία</summary>
@@ -482,6 +489,7 @@
 <script src="push-config.js"></script>
 <script src="zones.js"></script>
 <script src="units.js"></script>
+<script src="coords.js"></script>
 <script src="dialog.js"></script>
 <script src="app.js"></script>
 <script src="cloud.js"></script>

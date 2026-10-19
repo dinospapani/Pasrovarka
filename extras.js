@@ -141,7 +141,7 @@ function render(){
   var bd=$('sfBadge'); bd.hidden=!on; bd.className='pill '+(late(s)?'bad':'good'); bd.textContent=late(s)?'Καθυστερείς':'Σε έξοδο';
   if(on){
     $('sfInfo').textContent=(late(s)?'Η επιστροφή ήταν στις ':'Επιστροφή στις ')+hm(s.due)+' · διάρκεια '+dur(Date.now()-s.start);
-    $('sfLast').textContent=s.last?('Τελευταία γνωστή θέση: '+hm(s.last.t)+' · '+s.last.lat.toFixed(4)+', '+s.last.lon.toFixed(4)):'Δεν έχει καταγραφεί θέση ακόμα.';
+    $('sfLast').textContent=s.last?('Τελευταία γνωστή θέση: '+hm(s.last.t)+' · '+PsaroCoord.fmt(s.last.lat,s.last.lon)):'Δεν έχει καταγραφεί θέση ακόμα.';
     $('sfMon').textContent='Παρακολούθηση: '+(s.sil?'έλεγχος αν χαθεί το σήμα μετά από '+s.sil+' λεπτά, ':'')+'ειδοποίηση επαφής αν περάσει η ώρα επιστροφής, και αν η μπαταρία πέσει κάτω από 10%.';
   } else {
     var d=load(); $('sfNoC').hidden=hasContact(d); silNote(d);

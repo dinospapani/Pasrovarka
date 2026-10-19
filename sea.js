@@ -37,7 +37,7 @@ function drawMob(){
     L.marker([m.lat,m.lon],{icon:icon,zIndexOffset:900}).bindPopup(function(){
       var d=document.createElement('div'); d.className='pop';
       var b=document.createElement('b'); b.textContent='MOB '+hm(m.t); d.appendChild(b);
-      var s=document.createElement('div'); s.className='note'; s.textContent=m.lat.toFixed(5)+', '+m.lon.toFixed(5); d.appendChild(s);
+      var s=document.createElement('div'); s.className='note'; s.textContent=PsaroCoord.fmt(m.lat,m.lon); d.appendChild(s);
       var x=document.createElement('button'); x.type='button'; x.className='pact solo'; x.textContent=T('Διαγραφή σημείου','Delete mark');
       x.addEventListener('click',function(){ mobs.splice(i,1); C.lsSet('psaro-mob',mobs); drawMob(); map.closePopup(); });
       d.appendChild(x); return d;

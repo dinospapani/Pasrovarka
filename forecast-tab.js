@@ -100,7 +100,7 @@ function renderFc(p,f,note,t){
   fc=f; fcPlace=p; try{ window.dispatchEvent(new CustomEvent('psaro-fcloaded',{detail:{place:p,fc:f}})); }catch(e){}
   var D=$('fcDays'), W=$('fcWeek'); D.replaceChildren(); W.replaceChildren();
   $('fcName').textContent=p?p.name:'';
-  $('fcSub').textContent=p&&f?('Ενημερώθηκε '+new Date(t||Date.now()).toLocaleTimeString(EN?'en-GB':'el-GR',{hour:'2-digit',minute:'2-digit'})+' · '+p.lat.toFixed(2)+', '+p.lon.toFixed(2)):'';
+  $('fcSub').textContent=p&&f?('Ενημερώθηκε '+new Date(t||Date.now()).toLocaleTimeString(EN?'en-GB':'el-GR',{hour:'2-digit',minute:'2-digit'})+' · '+PsaroCoord.fmt(p.lat,p.lon)):'';
   $('fcNote').textContent=note||'';
   var wb=$('fcWatch'), delBtn=$('plDel');
   wb.hidden=!p; delBtn.hidden=!p||!!(p&&p.gps); $('plRen').hidden=delBtn.hidden;
@@ -244,7 +244,7 @@ async function revName(lat,lon){
 }
 window.addEventListener('psaro-fcpick',function(e){
   var d=e.detail, id=pid(d.lat,d.lon), had=places.some(function(p){ return p.id===id; });
-  addPlace((EN?'Point ':'Σημείο ')+d.lat.toFixed(2)+', '+d.lon.toFixed(2),d.lat,d.lon);
+  addPlace((EN?'Point ':'Σημείο ')+PsaroCoord.fmt(d.lat,d.lon),d.lat,d.lon);
   if(had) return;
   var p=places.filter(function(x){ return x.id===id; })[0]; if(p) p.auto=true;
   revName(d.lat,d.lon).then(function(n){
