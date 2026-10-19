@@ -58,34 +58,44 @@ function upgrade(el,axis){
   if(el._cf) return;
   var w=document.createElement('div'); w.className='cfield';
   var hb=document.createElement('button'); hb.type='button'; hb.className='cfh';
-  var dg=document.createElement('input'), mn=document.createElement('input');
-  dg.type='text'; dg.inputMode='numeric'; dg.maxLength=axis==='lat'?2:3; dg.placeholder=axis==='lat'?'35':'32'; dg.className='cfd'; dg.setAttribute('aria-label',axis==='lat'?'Μοίρες πλάτους':'Μοίρες μήκους');
-  mn.type='text'; mn.inputMode='decimal'; mn.maxLength=6; mn.placeholder='00.000'; mn.className='cfm'; mn.setAttribute('aria-label','Λεπτά');
-  [dg,mn].forEach(function(i){ i.autocomplete='off'; i.setAttribute('autocapitalize','off'); i.spellcheck=false; });
+  var lat=axis==='lat', dg=document.createElement('input'), mm=document.createElement('input'), mf=document.createElement('input');
+  function cfg(i,cls,ph,ml,lab){ i.type='text'; i.inputMode='numeric'; i.maxLength=ml; i.placeholder=ph; i.className=cls; i.autocomplete='off'; i.setAttribute('autocapitalize','off'); i.setAttribute('aria-label',lab); i.spellcheck=false; }
+  cfg(dg,'cfd',lat?'35':'032',3,lat?'Μοίρες πλάτους':'Μοίρες μήκους'); cfg(mm,'cfm2','00',2,'Λεπτά'); cfg(mf,'cff','000',3,'Δεκαδικά λεπτών');
   var neg=false;
-  function lab(){ hb.textContent=axis==='lat'?(neg?'S':'N'):(neg?'W':'E'); }
+  function lab(){ hb.textContent=lat?(neg?'S':'N'):(neg?'W':'E'); }
   function push(){
-    var d=dg.value.replace(/\D/g,''), m=mn.value.replace(',','.').replace(/[^0-9.]/g,'');
-    el.value=(!d&&!m)?'':(axis==='lat'?(neg?'S':'N'):(neg?'W':'E'))+' '+(d||'0')+'°'+(m||'0')+'′';
+    var d=dg.value, m=mm.value, f=mf.value, mt=m||f?((m||'0')+(f?'.'+f:'')):'';
+    el.value=(!d&&!mt)?'':(lat?(neg?'S':'N'):(neg?'W':'E'))+' '+(d||'0')+'°'+(mt||'0')+'′';
     el.dispatchEvent(new Event('input',{bubbles:false}));
   }
+  function digits(i,max){ var v=i.value.replace(/\D/g,'').slice(0,max); if(v!==i.value) i.value=v; return v; }
+  /* αυτόματη μετάβαση στο επόμενο κουτί όταν γεμίσει· Backspace σε κενό γυρνά στο προηγούμενο */
+  function degFull(v){ return lat?v.length>=2:(v.length>=3||(v.length===2&&+v>=20)); }
   hb.addEventListener('click',function(){ neg=!neg; lab(); push(); });
-  dg.addEventListener('input',function(){ dg.value=dg.value.replace(/\D/g,''); if(axis==='lat'&&dg.value.length>=2) mn.focus(); push(); });
-  mn.addEventListener('input',function(){ mn.value=mn.value.replace(',','.').replace(/[^0-9.]/g,''); push(); });
+  dg.addEventListener('input',function(){ var v=digits(dg,lat?2:3); push(); if(degFull(v)) mm.focus(); });
+  mm.addEventListener('input',function(){ var v=digits(mm,2); push(); if(v.length>=2) mf.focus(); });
+  mf.addEventListener('input',function(){ digits(mf,3); push(); });
+  /* τελεία ή κόμμα = πήγαινε στο επόμενο κουτί */
+  function dot(from,to){ from.addEventListener('keydown',function(e){ if(e.key==='.'||e.key===','){ e.preventDefault(); if(from.value) to.focus(); } }); }
+  dot(dg,mm); dot(mm,mf);
+  function back(from,to){ from.addEventListener('keydown',function(e){ if(e.key==='Backspace'&&!from.value){ e.preventDefault(); to.focus(); var n=to.value.length; try{ to.setSelectionRange(n,n); }catch(x){} } }); }
+  back(mm,dg); back(mf,mm);
+  [dg,mm,mf].forEach(function(i){ i.addEventListener('focus',function(){ try{ i.select(); }catch(x){} }); });
   /* επικόλληση: ολόκληρη συντεταγμένη ή ζεύγος */
   w.addEventListener('paste',function(e){
-    var t=(e.clipboardData||window.clipboardData); t=t?String(t.getData('text')).trim():''; if(!t||!/[NSEW°′'’"]|\d\s+\d/i.test(t)) return;
+    var t=(e.clipboardData||window.clipboardData); t=t?String(t.getData('text')).trim():''; if(!t||/^\d{1,3}$/.test(t)) return;
     var pr=el._pair&&P.parsePair(t);
-    if(pr){ e.preventDefault(); var L=axis==='lat'?el:el._pair, O=axis==='lat'?el._pair:el; P.set(L,O,pr[0],pr[1]); L.dispatchEvent(new Event('input')); O.dispatchEvent(new Event('input')); return; }
+    if(pr){ e.preventDefault(); var L=lat?el:el._pair, O=lat?el._pair:el; P.set(L,O,pr[0],pr[1]); L.dispatchEvent(new Event('input')); O.dispatchEvent(new Event('input')); return; }
     var one=P.parse(t,axis); if(!isNaN(one)){ e.preventDefault(); el.value=P.fmtOne(one,axis); el._cfSet(one); el.dispatchEvent(new Event('input')); }
   });
-  w.append(hb,dg,document.createTextNode('°'),mn,document.createTextNode('′'));
+  var dotEl=function(){ var x=document.createElement('span'); x.className='cfdot'; x.textContent='.'; return x; };
+  w.append(hb,dg,document.createTextNode('°'),mm,dotEl(),mf,document.createTextNode('′'));
   el.style.display='none'; el.parentNode.insertBefore(w,el.nextSibling);
   el._cf=w; el._cfSet=function(v){
     var a=Math.abs(v), d=Math.floor(a), m=((a-d)*60).toFixed(3); if(parseFloat(m)>=60){ d+=1; m='0.000'; }
-    neg=v<0; lab(); dg.value=String(d); mn.value=(parseFloat(m)<10?'0':'')+m;
+    var pp=m.split('.'); neg=v<0; lab(); dg.value=String(d); mm.value=(pp[0].length<2?'0':'')+pp[0]; mf.value=pp[1]||'000';
   };
-  el._cfClear=function(){ neg=false; lab(); dg.value=''; mn.value=''; };
+  el._cfClear=function(){ neg=false; lab(); dg.value=''; mm.value=''; mf.value=''; };
   lab();
   var f=el.form; if(f) f.addEventListener('reset',function(){ setTimeout(function(){ el._cfClear(); },0); });
 }

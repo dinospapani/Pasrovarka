@@ -879,3 +879,9 @@ body:not(.ontrip) .rtchip{display:none}
 #bCoordWrap .cfield .cfh{flex:0 0 2.8em;min-width:0}
 #bCoordWrap .note{margin-top:8px}
 .spregrow .spregchips:empty{display:none}
+/* v31z4: λεπτά σε δύο κουτιά (λεπτά . δεκαδικά) */
+.cfield .cfd{flex:0 0 3.4em}
+.cfield .cfm2{flex:1 1 0;min-width:0}
+.cfield .cff{flex:1.4 1 0;min-width:0}
+.cfield .cfdot{font-weight:800;opacity:.7;margin:0 -1px}
+#bCoordWrap .cfield .cfm2,#bCoordWrap .cfield .cff{min-width:0}
