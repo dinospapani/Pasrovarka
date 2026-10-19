@@ -628,9 +628,9 @@ body:not(.ontrip) #bMob{display:none}
 #ancAlarm .abtn button{flex:1;min-height:44px;border-radius:12px;border:0;font-weight:700;font-size:15px;background:rgba(255,255,255,.2);color:#fff}
 #ancAlarm .abtn .astop{background:#fff;color:#b3261e}
 @keyframes ancp{50%{background:#e5483e}}
-#seaPanel,#smPanel{position:fixed;inset:0;z-index:4500;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center}
-#seaPanel[hidden],#smPanel[hidden]{display:none}
-#seaPanel .spcard,#smPanel .spcard{width:100%;max-width:520px;max-height:88vh;overflow:auto;background:var(--surface);color:var(--ink);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+#seaPanel,#smPanel,#inPanel,#spNote{position:fixed;inset:0;z-index:4500;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center}
+#seaPanel[hidden],#smPanel[hidden],#inPanel[hidden],#spNote[hidden]{display:none}
+#seaPanel .spcard,#smPanel .spcard,#inPanel .spcard,#spNote .spcard{width:100%;max-width:520px;max-height:88vh;overflow:auto;background:var(--surface);color:var(--ink);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
 .sphead{display:flex;align-items:center;justify-content:space-between;font-size:18px;margin-bottom:6px}
 .spx{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px}
 .sprow{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
@@ -725,3 +725,36 @@ body:not(.ontrip) .rtchip{display:none}
 .clbtn{width:100%;margin-bottom:8px}
 .sprow>select.sminp{flex:1 1 0;max-width:none}
 .sprow>input[type=date].sminp{flex:0 0 150px;max-width:none}
+
+/* v31f: αναλύσεις, σελήνη, συντήρηση */
+#inPanel,#spNote{z-index:4800}
+.mooncard{padding:12px 14px}
+.mcrow{display:flex;gap:12px;align-items:center}
+.mcem{font-size:42px;line-height:1}
+.mctx{display:flex;flex-direction:column;gap:2px;font-size:13px;color:var(--ink-soft,var(--ink))}
+.mctx b{font-size:16px;color:var(--ink)}
+.mcsl{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}
+.mclab{flex-basis:100%;font-size:12px;opacity:.7}
+.mcpill{padding:4px 9px;border-radius:99px;background:var(--surface-2,rgba(127,127,127,.15));font-size:12px}
+.mcpill.maj{background:var(--accent,#c44d2a);color:#fff}
+.mcstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:10px}
+.mcday{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;border-radius:10px;background:var(--surface-2,rgba(127,127,127,.1))}
+.mcday.now{outline:2px solid var(--accent,#c44d2a)}
+.mcd{font-size:11px;opacity:.7}.mce{font-size:20px}.mcs{font-size:9px;color:#e8a317;letter-spacing:1px}
+.mcfoot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;font-size:11px;opacity:.85}
+.mcfoot .spb{flex:none}
+.mphrow{display:grid;grid-template-columns:26px 1fr 90px 64px;gap:6px;align-items:center;font-size:13px;padding:3px 0}
+.mpe{font-size:18px}.mpbar{height:8px;border-radius:4px;background:rgba(127,127,127,.2);overflow:hidden}.mpbar i{display:block;height:100%;background:var(--accent,#c44d2a)}
+.mpv{text-align:right;font-size:12px;opacity:.8}
+.simcard{padding:12px 14px}
+.simhead{display:flex;gap:10px;align-items:baseline;margin:4px 0 8px}.simhead b{font-size:30px}.simhead span{font-size:13px}
+.simrow{display:flex;flex-direction:column;padding:6px 0;border-top:1px solid rgba(127,127,127,.2);font-size:13px}.simrow small{opacity:.75}
+.simfoot{display:block;margin-top:8px;opacity:.7}
+.nsrow{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid rgba(127,127,127,.15);font-size:13px}.nsrow b{text-align:right}
+.nsta{width:100%;box-sizing:border-box;border-radius:12px;border:1px solid rgba(127,127,127,.35);padding:10px;font:inherit;background:var(--surface);color:var(--ink)}
+.mtrow{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(127,127,127,.15)}
+.mtrow .sptx{display:flex;flex-direction:column;font-size:13px}.mtrow .sptx span{font-size:12px;opacity:.75}
+.mtrow.bad .sptx span{color:#d33;opacity:1}.mtrow.warn .sptx span{color:#c77c00;opacity:1}.mtrow.ok .sptx span{color:#2a8a4a;opacity:1}
+.mtdet{grid-column:1/-1;font-size:12px}.mtdet .sminp{width:70px;display:inline-block}
+.cstrow{display:flex;flex-direction:column;padding:6px 0;border-bottom:1px solid rgba(127,127,127,.15);font-size:13px}.cstrow span{opacity:.8;font-size:12px}
+#inPanel .sprow.wrap{flex-wrap:wrap;gap:8px}
