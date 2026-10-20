@@ -30,7 +30,7 @@ function onPos(p){
   fixP={lat:c.latitude,lon:c.longitude,t:Date.now()};
   var pt=[+c.latitude.toFixed(6),+c.longitude.toFixed(6),Date.now()];
   var last=t.pts[t.pts.length-1];
-  if(last){ var d=dist(last,pt); if(d<12) return; if(d>2000&&pt[2]-last[2]<20000) return; t.m+=d; }
+  if(last){ var d=dist(last,pt); if(d<12){ draw(); return; } if(d>2000&&pt[2]-last[2]<20000) return; t.m+=d; }
   t.pts.push(pt);
   if(t.pts.length>3000){ t.pts=t.pts.filter(function(_,i){ return i%2===0||i===t.pts.length-1; }); }
   store(t); draw(); window.dispatchEvent(new Event('psaro-track'));
@@ -52,6 +52,7 @@ function draw(){
   if(!t||!t.pts.length){ if(layer){ layer.clearLayers(); line=dot=null; } return; }
   if(!layer) layer=L.layerGroup().addTo(map); else if(!map.hasLayer(layer)) layer.addTo(map);
   var ll=t.pts.map(function(p){ return [p[0],p[1]]; });
+  if(fixP&&Date.now()-fixP.t<60000){ var lp=ll[ll.length-1]; if(!lp||dist(lp,[fixP.lat,fixP.lon])>1) ll.push([fixP.lat,fixP.lon]); }
   if(!line){ line=L.polyline(ll,{color:'#ff8a50',weight:4,opacity:.9}).addTo(layer); }
   else line.setLatLngs(ll);
   var e=ll[ll.length-1];
