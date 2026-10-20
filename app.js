@@ -1298,7 +1298,7 @@ function updateLaw(){
 $('biteForm').addEventListener('input',updateLaw);
 
 /* ---------- AI fish identification (own API key) ---------- */
-const AI_PROMPT='You are helping an angler in Cyprus (eastern Mediterranean). Identify the fish in the photo. Reply with ONLY a JSON array of up to 3 candidates, best first: [{"el":"Greek common name or null","en":"English common name","latin":"Latin name","confidence":0.0-1.0}]. If the photo does not show a fish, reply []. Be honest about uncertainty; do not guess a rare species when a common look-alike fits.';
+const AI_PROMPT='You are helping an angler in Cyprus (eastern Mediterranean). Identify the fish in the photo. Reply with ONLY a JSON array of up to 3 candidates, best first: [{"el":"Greek common name or null","en":"English common name","latin":"Latin name","confidence":0.0-1.0}]. If the photo does not show a fish, reply []. Be honest about uncertainty; do not guess a rare species when a common look-alike fits. Output the JSON array immediately with no explanation, no markdown and no text before or after it.';
 async function identifyFish(blob){
   const key=lsGet('psaro-akey',''); if(!key) throw new Error('nokey');
   const b64=(await blobToDataUrl(blob)).split(',')[1];
@@ -1306,12 +1306,16 @@ async function identifyFish(blob){
   try{
     const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal:ac.signal,
       headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-5-5',max_tokens:600,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},{type:'text',text:AI_PROMPT}]}]})});
-    if(!r.ok){ const e=new Error('http'); e.status=r.status; throw e; }
+      body:JSON.stringify({model:'claude-sonnet-5-5',max_tokens:4000,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},{type:'text',text:AI_PROMPT}]}]})});
+    if(!r.ok){ const e=new Error('http'); e.status=r.status; try{ const jj=await r.json(); e.api=(jj&&jj.error&&jj.error.message)||''; e.apitype=(jj&&jj.error&&jj.error.type)||''; }catch(x){} throw e; }
     const j=await r.json();
     const txt=(j.content||[]).filter(x=>x.type==='text').map(x=>x.text).join('');
-    const m=/\[[\s\S]*\]/.exec(txt); if(!m) throw new Error('parse');
-    const arr=JSON.parse(m[0]);
+    let arr=null; const m=/\[[\s\S]*\]/.exec(txt);
+    if(m){ try{ arr=JSON.parse(m[0]); }catch(e){ arr=null; } }
+    if(!arr){ /* κομμένη ή ακατάστατη απάντηση: μαζεύουμε τα ολόκληρα αντικείμενα {...} */
+      arr=[]; (txt.match(/\{[^{}]*\}/g)||[]).forEach(o=>{ try{ const x=JSON.parse(o); if(x&&x.latin) arr.push(x); }catch(e){} });
+      if(!arr.length){ const e=new Error('parse'); e.stop=j.stop_reason||''; throw e; }
+    }
     return Array.isArray(arr)?arr.filter(x=>x&&x.latin).slice(0,3):[];
   } finally { clearTimeout(tm); }
 }
@@ -1333,7 +1337,21 @@ $('bAI').addEventListener('click',async()=>{
       msg.textContent='Πρόταση AI, μπορεί να είναι λάθος. Μη βασίζεσαι σε αυτήν για το αν επιτρέπεται ή αν τρώγεται ένα ψάρι.';
     }
   }catch(e){
-    msg.textContent=e.message==='nokey'?'Λείπει το κλειδί API.':e.status===401?'Το κλειδί API δεν έγινε δεκτό.':e.status===429||e.status===402?'Όριο χρήσης ή υπόλοιπο λογαριασμού: έλεγξε το console.anthropic.com.':e.name==='AbortError'?'Η αναγνώριση άργησε. Δοκίμασε ξανά.':'Η αναγνώριση δεν δούλεψε (σύνδεση, κλειδί ή περιορισμός του browser).';
+    { const en=window.LANG==='en', st=e.status, am=(e.api||'').slice(0,160);
+      let t;
+      if(e.message==='nokey') t=en?'API key missing.':'Λείπει το κλειδί API.';
+      else if(st===401) t=en?'The API key was not accepted.':'Το κλειδί API δεν έγινε δεκτό.';
+      else if(/credit balance|billing/i.test(am)) t=en?'No credit on the API account. Add credit at console.anthropic.com → Plans & Billing.':'Δεν υπάρχει υπόλοιπο στον λογαριασμό API. Πρόσθεσε πίστωση στο console.anthropic.com → Plans & Billing.';
+      else if(st===429||st===402) t=en?'Usage limit or account balance: check console.anthropic.com.':'Όριο χρήσης ή υπόλοιπο λογαριασμού: έλεγξε το console.anthropic.com.';
+      else if(st===403) t=en?'The key has no permission for this request.':'Το κλειδί δεν έχει άδεια για αυτό το αίτημα.';
+      else if(st===404) t=en?'Model not found for this key.':'Το μοντέλο δεν βρέθηκε για αυτό το κλειδί.';
+      else if(st===529||st>=500) t=en?'The AI service is busy. Try again in a minute.':'Η υπηρεσία AI είναι φορτωμένη. Δοκίμασε ξανά σε λίγο.';
+      else if(e.name==='AbortError') t=en?'Identification took too long. Try again.':'Η αναγνώριση άργησε. Δοκίμασε ξανά.';
+      else if(e.message==='parse') t=en?'The answer could not be read. Try again.':'Δεν διαβάστηκε η απάντηση. Δοκίμασε ξανά.';
+      else if(!st) t=en?'Could not reach api.anthropic.com (network, VPN/ad-blocker or browser).':'Δεν έφτασε στο api.anthropic.com (δίκτυο, VPN/adblock ή browser).';
+      else t=en?'Identification failed.':'Η αναγνώριση δεν δούλεψε.';
+      msg.textContent=t+(st?' ['+st+(am?': '+am:'')+']':(e.name&&e.name!=='Error'?' ['+e.name+']':''));
+    }
   }
   b.disabled=false; b.textContent='🔍 Αναγνώριση με AI';
 });
