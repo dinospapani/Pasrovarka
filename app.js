@@ -1473,7 +1473,14 @@ Store.on('bites',()=>{renderBites();renderStats();renderTrips();});
 window.addEventListener('psaro-range',e=>{ if(e.detail&&e.detail.key==='log'){ renderBites();renderStats();renderTrips(); } });
 PsaroRange.ui('log',$('logRange'),true);
 /* η περίοδος δεν ισχύει στην Κοινότητα: κρύβεται εκεί */
-{ const seg=$('logSeg'); if(seg) seg.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('button'); if(b) setTimeout(()=>{ $('logRange').hidden=(b.dataset.l==='comm'); },0); }); }
+/* η μπάρα περιόδου μπαίνει ακριβώς πάνω από την ταξινόμηση (Έξοδοι/Τσιμπήματα) ή στην κορυφή (Στατιστικά/Εργαλεία) */
+function placeRange(l){
+  const r=$('logRange'); if(!r) return; r.hidden=(l==='comm');
+  const sel=l==='trips'?document.querySelector('#l-trips .sortsel'):l==='bites'?document.querySelector('#l-bites .sortsel'):null;
+  if(sel&&sel.parentNode) sel.parentNode.insertBefore(r,sel);
+  else { const t=$('l-trips'); if(t&&t.parentNode&&r.nextElementSibling!==t) t.parentNode.insertBefore(r,t); }
+}
+{ const seg=$('logSeg'); if(seg){ seg.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('button'); if(b) setTimeout(()=>placeRange(b.dataset.l),0); }); placeRange('trips'); } }
 window.addEventListener('psaro-sess',()=>{try{renderTrips();}catch(e){}});
 Object.assign(window.PsaroCore,{biteMs:biteMs,quick:()=>quickRec(false),quickMiss:()=>quickRec(true),map:()=>map,h:h,$:$,fmt:fmt,pad:pad,nicosiaToday:nicosiaToday,nicosiaNowMin:nicosiaNowMin,getPosition:getPosition,getCond:()=>cond,showOnMap:showOnMap,lsGet:lsGet,lsSet:lsSet,switchTab:switchTab,utcMin:()=>utcOff()});
 Store.init();
