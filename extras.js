@@ -172,7 +172,7 @@ function start(){
 }
 function summary(s){
   /* Μετράμε μόνο τσιμπήματα με ώρα μέσα στο παράθυρο της εξόδου (από την έναρξη μέχρι τώρα), με σύγκριση χρονικών τιμών. */
-  var n=0, kg=0, sp={}, off=C.utcMin()*60000, lo=Math.floor((s.start||0)/60000)*60000, hi=Date.now()+10*60000, prev=(C.Store.get('trips')||[]).filter(function(t){ return t.startMs&&t.endMs&&t.startMs<(s.start||0); });
+  var n=0, kg=0, pn=0, pkg=0, sp={}, off=C.utcMin()*60000, lo=Math.floor((s.start||0)/60000)*60000, hi=Date.now()+10*60000, prev=(C.Store.get('trips')||[]).filter(function(t){ return t.startMs&&t.endMs&&t.startMs<(s.start||0); });
   if(!s.start) return {n:0,kg:0,species:'',miss:0};
   var mi=0;
   (C.Store.misses?C.Store.misses():[]).forEach(function(b){
@@ -187,10 +187,10 @@ function summary(s){
     var p=b.date.split('-').map(Number), q=b.time.split(':').map(Number); if(p.length<3||q.length<2||isNaN(p[0])||isNaN(q[0])) return;
     var ms=Date.UTC(p[0],p[1]-1,p[2],q[0],q[1])-off;
     if(prev.some(function(t){ return ms>=Math.floor(t.startMs/60000)*60000&&ms<=t.endMs; })) return;   // ανήκει σε προηγούμενη έξοδο
-    if(ms>=lo&&ms<=hi){ n++; kg+=+b.kg||0; if(b.species) sp[b.species]=(sp[b.species]||0)+1; }
+    if(ms>=lo&&ms<=hi){ if(b.gear){ pn++; pkg+=b.rel?0:(+b.kg||0); return; } n++; kg+=b.rel?0:(+b.kg||0); if(b.species) sp[b.species]=(sp[b.species]||0)+1; }
   });
   var top=Object.keys(sp).sort(function(a,b){ return sp[b]-sp[a]; })[0]||'';
-  return {n:n,kg:Math.round(kg*10)/10,species:top,miss:mi};
+  return {n:n,kg:Math.round(kg*10)/10,species:top,miss:mi,pn:pn,pkg:Math.round(pkg*10)/10};
 }
 function back(){
   var s=load(); if(!s.active) return;
@@ -200,7 +200,7 @@ function back(){
   $('sfMsg').textContent=en?'Welcome back.':'Καλωσόρισες πίσω.'; render(); closeSheet();
   if(d>=20*60000||sm.n>0||sm.miss>0){
     var pos=s.last||(s.cond0&&s.cond0.lat!=null?{lat:s.cond0.lat,lon:s.cond0.lon}:null);
-    C.Store.save('trips',{sid:s.id,date:s.startDate||C.nicosiaToday(),spot:s.route||'',tech:'',species:sm.species,count:sm.n,miss:sm.miss,kg:sm.kg,startMs:s.start,endMs:Date.now(),cond0:s.cond0||null,km:tk?tk.km:undefined,track:tk?tk.track:undefined,lat:pos?pos.lat:null,lon:pos?pos.lon:null,notes:(en?'Recorded from Start/End trip (':'Καταγραφή από Έναρξη/Τέλος εξόδου (')+dur(d)+')'}).then(function(id){ try{ window.dispatchEvent(new CustomEvent('psaro-tripend',{detail:{id:id}})); }catch(x){} }).catch(function(){});
+    C.Store.save('trips',{sid:s.id,date:s.startDate||C.nicosiaToday(),spot:s.route||'',tech:'',species:sm.species,count:sm.n,miss:sm.miss,kg:sm.kg,pn:sm.pn||0,pkg:sm.pkg||0,startMs:s.start,endMs:Date.now(),cond0:s.cond0||null,km:tk?tk.km:undefined,track:tk?tk.track:undefined,lat:pos?pos.lat:null,lon:pos?pos.lon:null,notes:(en?'Recorded from Start/End trip (':'Καταγραφή από Έναρξη/Τέλος εξόδου (')+dur(d)+')'}).then(function(id){ try{ window.dispatchEvent(new CustomEvent('psaro-tripend',{detail:{id:id}})); }catch(x){} }).catch(function(){});
     toast((en?'Trip saved: ':'Η έξοδος καταχωρήθηκε: ')+dur(d)+' · '+(sm.n?sm.n+(en?' bites':' τσιμπήματα'):(en?'no bites':'χωρίς τσιμπήματα')));
   } else toast(en?'Welcome back. The trip was under 20 minutes with no bites, so it was not saved.':'Καλωσόρισες πίσω. Η έξοδος ήταν κάτω από 20 λεπτά χωρίς τσιμπήματα, οπότε δεν καταχωρήθηκε.');
 }

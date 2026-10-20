@@ -197,7 +197,7 @@ function licCheck(){
 }
 function weekly(){
   var now=Date.now(); if(S.weekly&&now-S.weekly<7*86400000) return; if(tripOn()) return;
-  var all=C.Store.get('bites')||[], tr=C.Store.get('trips')||[]; if(!all.length&&!tr.length){ return; }
+  var all=C.Store.act?C.Store.act():(C.Store.get('bites')||[]), tr=C.Store.get('trips')||[]; if(!all.length&&!tr.length){ return; }
   var lo=new Date(now-7*86400000+C.utcMin()*60000).toISOString().slice(0,10), b=all.filter(function(x){ return (x.date||'')>=lo; }), t=tr.filter(function(x){ return (x.date||'')>=lo; });
   S.weekly=now; save(); if(!b.length&&!t.length) return;
   var kg=b.reduce(function(a,x){ return a+(+x.kg||0); },0), sp={}; b.forEach(function(x){ if(x.species) sp[x.species]=(sp[x.species]||0)+1; });

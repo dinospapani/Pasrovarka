@@ -22,7 +22,7 @@ function hm(ms){ var m=Math.max(0,Math.round(ms/60000)),h=Math.floor(m/60); retu
 function clock(ms){ var d=new Date(ms); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
 function nm(it){ return it.name||tn(it.type); }
 function active(){ return G.items.find(function(i){ return i.state==='setting'||i.state==='hauling'; })||null; }
-function fishOf(it){ var n=0,kg=0; (C.Store.get('bites')||[]).forEach(function(b){ if(b.gear===it.id){ n++; kg+=+b.kg||0; } }); return {n:n,kg:Math.round(kg*10)/10}; }
+function fishOf(it){ var n=0,kg=0; (C.Store.get('bites')||[]).forEach(function(b){ if(b.gear===it.id){ n++; kg+=b.rel?0:(+b.kg||0); } }); return {n:n,kg:Math.round(kg*10)/10}; }
 
 /* ---------- θέση ---------- */
 function here(){
@@ -241,6 +241,7 @@ var seg=$('logSeg'), lbox=null, lbtn=null;
 function dayOf(ms){ var d=new Date(ms); return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2); }
 function renderLog(){
   if(!lbox) return; lbox.replaceChildren();
+  try{ if(window.PsaroGearStats) lbox.append(window.PsaroGearStats.build()); }catch(e){}
   var items=G.items.slice().sort(function(p,q){ return ((q.set&&q.set.ta)||(q.haul&&q.haul.ta)||0)-((p.set&&p.set.ta)||(p.haul&&p.haul.ta)||0); });
   var tot=items.filter(function(i){ return i.state==='done'; }), tn_=0, tk=0; tot.forEach(function(i){ var f=fishOf(i); tn_+=f.n; tk+=f.kg; });
   lbox.append(el('div','muted',items.length?T(items.length+' εργαλεία · '+tn_+' ψάρια · '+(Math.round(tk*10)/10)+' kg (ολοκληρωμένα)',items.length+' gear · '+tn_+' fish · '+(Math.round(tk*10)/10)+' kg (completed)'):T('Δεν υπάρχουν εργαλεία ακόμα. Ξεκίνα από το κουμπί εργαλείων στον χάρτη.','No gear yet. Start from the gear button on the map.')));

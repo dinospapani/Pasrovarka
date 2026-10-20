@@ -13,7 +13,7 @@ var LAB={
   wind:function(i){ return [T('Ήπιος (έως 3 Bft)','Light (up to 3 Bft)'),T('Μέτριος (3–4 Bft)','Moderate (3–4 Bft)'),T('Δυνατός (5+ Bft)','Strong (5+ Bft)')][i]; }
 };
 var TITLE={block:T('Ώρα της ημέρας','Time of day'),moon:T('Φεγγάρι','Moon'),ptrend:T('Τάση πίεσης','Pressure trend'),wind:T('Άνεμος','Wind')};
-function model(){ return PP.build(C.Store.get('trips'),C.Store.get('bites'),{utcMin:C.utcMin()}); }
+function model(){ return PP.build(C.Store.get('trips'),C.Store.act(),{utcMin:C.utcMin()}); }
 function pct(v,n){ return Math.max(0,Math.min(100,Math.round(v/n*100))); }
 function prog(label,v,n,unit){
   return h('div',{class:'bar'},h('span',{text:label}),h('div',{class:'t'},h('i',{style:'width:'+pct(v,n)+'%'})),h('span',{class:'n',text:(Math.round(v*10)/10)+'/'+n+(unit||'')}));
@@ -51,7 +51,7 @@ function listCard(){
   var S=PP.sessionsOf(C.Store.get('trips')).sort(function(a,b){ return b.startMs-a.startMs; }).slice(0,8);
   if(!S.length) return null;
   var c=h('div',{class:'card'}); c.append(h('h3',{text:T('Πρόσφατες έξοδοι','Recent trips')}));
-  var bites=C.Store.get('bites');
+  var bites=C.Store.act();
   S.forEach(function(s){
     var hrs=(s.endMs-s.startMs)/3600000, n=s.manual?(+s.count||0):bites.filter(function(b){ var ms=PP.biteMs(b,C.utcMin()); return ms!=null&&ms>=s.startMs-600000&&ms<=s.endMs+600000; }).length;
     c.append(h('div',{class:'sessrow'},h('div',{style:'flex:1;min-width:0'},h('b',{text:s.date||''}),h('div',{class:'meta',text:(Math.round(hrs*10)/10)+' h · '+n+(EN?' bites':' τσιμπήματα')+(s.manual?' · '+T('χειροκίνητη','manual'):'')})),

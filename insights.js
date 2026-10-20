@@ -11,7 +11,7 @@ function el(tag,cls,txt){ var e=document.createElement(tag); if(cls) e.className
 function btn(t,cls,fn){ var b=el('button','spb '+(cls||''),t); b.type='button'; b.addEventListener('click',fn); return b; }
 function money(v){ return '€'+(Math.round(v*100)/100).toFixed(v%1?2:0); }
 function distM(a,b,c,d){ var dl=(c-a)*R, dn=(d-b)*R, x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a*R)*Math.cos(c*R)*Math.sin(dn/2)*Math.sin(dn/2); return 12742000*Math.asin(Math.min(1,Math.sqrt(x))); }
-function bites(){ return C.Store.get('bites')||[]; }
+function bites(){ return (C.Store.act?C.Store.act():C.Store.get('bites'))||[]; }
 function trips(){ return C.Store.get('trips')||[]; }
 function spots(){ return C.Store.get('spots')||[]; }
 function loc(){ var c=C.getCond&&C.getCond(); if(c&&c.lat!=null) return {lat:c.lat,lon:c.lon}; return {lat:34.75,lon:32.42}; }
@@ -93,7 +93,7 @@ function moonStats(box){
 /* ---------- 4: μοιάζει με τις καλύτερες μέρες σου ---------- */
 var VARS=[['press',6,'hPa'],['wind',8,'kn'],['wave',0.8,'m'],['sst',3,'°C'],['temp',5,'°C']];
 function dayTable(){
-  var D={}; bites().forEach(function(b){ if(!b.date) return; var o=D[b.date]||(D[b.date]={date:b.date,n:0,kg:0,v:{}}); o.n++; o.kg+=+b.kg||0;
+  var D={}; bites().forEach(function(b){ if(!b.date) return; var o=D[b.date]||(D[b.date]={date:b.date,n:0,kg:0,v:{}}); o.n++; o.kg+=b.rel?0:(+b.kg||0);
     VARS.forEach(function(x){ var k=x[0]; if(b[k]!=null&&!isNaN(+b[k])){ (o.v[k]=o.v[k]||[]).push(+b[k]); } }); });
   return Object.keys(D).map(function(k){ var o=D[k], m={}; Object.keys(o.v).forEach(function(q){ m[q]=o.v[q].reduce(function(a,b){ return a+b; },0)/o.v[q].length; }); o.m=m; o.nv=Object.keys(m).length; o.score=o.n+o.kg*0.5; return o; }).filter(function(o){ return o.nv>=2; });
 }
@@ -122,7 +122,7 @@ function top(map,n){ return Object.keys(map).sort(function(a,b){ return map[b]-m
 function spotSummary(sp){
   var arr=bites().filter(function(b){ return b.place===sp.name||(typeof b.lat==='number'&&typeof sp.lat==='number'&&distM(b.lat,b.lon,sp.lat,sp.lon)<=250); });
   var o={n:arr.length,kg:0,sp:{},bait:{},tech:{},dmin:null,dmax:null,hr:{}};
-  arr.forEach(function(b){ o.kg+=+b.kg||0; if(b.species) o.sp[b.species]=(o.sp[b.species]||0)+1; if(b.bait) o.bait[b.bait]=(o.bait[b.bait]||0)+1; if(b.tech) o.tech[b.tech]=(o.tech[b.tech]||0)+1;
+  arr.forEach(function(b){ o.kg+=b.rel?0:(+b.kg||0); if(b.species) o.sp[b.species]=(o.sp[b.species]||0)+1; if(b.bait) o.bait[b.bait]=(o.bait[b.bait]||0)+1; if(b.tech) o.tech[b.tech]=(o.tech[b.tech]||0)+1;
     if(b.depth!=null&&!isNaN(+b.depth)){ var d=+b.depth; o.dmin=o.dmin==null?d:Math.min(o.dmin,d); o.dmax=o.dmax==null?d:Math.max(o.dmax,d); } if(b.time){ var h=+b.time.slice(0,2); var k=h<10?T('πρωί','morning'):h<15?T('μεσημέρι','midday'):h<20?T('απόγευμα','evening'):T('νύχτα','night'); o.hr[k]=(o.hr[k]||0)+1; } });
   return o;
 }

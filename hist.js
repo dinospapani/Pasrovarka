@@ -36,12 +36,31 @@ function fetchHist(lat,lon,ms){
     return out;
   }).catch(function(){ return null; });
 }
+/* Καιρός σε διάστημα [t0,t1] (UTC ms): μέσος/μέγιστος άνεμος (kn), μέγιστο κύμα (m), μέση πίεση και τάση πίεσης. */
+function fetchRange(lat,lon,t0,t1){
+  var age=Date.now()-t1; if(!(age>0)||!(t1>t0)||typeof lat!=='number'||typeof lon!=='number') return Promise.resolve(null);
+  var recent=Date.now()-t0<85*DAY, past=Math.min(92,Math.ceil((Date.now()-t0)/DAY)+2);
+  var d1=iso(t0-HOUR), d2=iso(t1+HOUR), pos='latitude='+lat.toFixed(4)+'&longitude='+lon.toFixed(4)+'&timezone=GMT';
+  var wu=recent?'https://api.open-meteo.com/v1/forecast?'+pos+'&hourly=pressure_msl,wind_speed_10m&past_days='+past+'&forecast_days=1&wind_speed_unit=kn'
+               :'https://archive-api.open-meteo.com/v1/archive?'+pos+'&hourly=pressure_msl,wind_speed_10m&start_date='+d1+'&end_date='+d2+'&wind_speed_unit=kn';
+  var mu='https://marine-api.open-meteo.com/v1/marine?'+pos+'&hourly=wave_height'+(recent?'&past_days='+past+'&forecast_days=1':'&start_date='+d1+'&end_date='+d2);
+  var a=new Date(Math.floor(t0/HOUR)*HOUR).toISOString().slice(0,13)+':00', b=new Date(Math.ceil(t1/HOUR)*HOUR).toISOString().slice(0,13)+':00';
+  function pick(h,key){ var tm=h.time||[], v=h[key]||[], out=[]; for(var i=0;i<tm.length;i++){ if(tm[i]>=a&&tm[i]<=b&&num(v[i])!=null) out.push(v[i]); } return out; }
+  return Promise.allSettled([getJson(wu),getJson(mu)]).then(function(r){
+    if(r[0].status!=='fulfilled') return null;
+    var h=(r[0].value&&r[0].value.hourly)||{}, ws=pick(h,'wind_speed_10m'), ps=pick(h,'pressure_msl'); if(!ws.length&&!ps.length) return null;
+    var avg=function(x){ return x.length?x.reduce(function(s,y){ return s+y; },0)/x.length:null; };
+    var out={w:ws.length?Math.round(avg(ws)*10)/10:null,wm:ws.length?Math.round(Math.max.apply(null,ws)):null,p:ps.length?Math.round(avg(ps)):null,pd:ps.length>1?Math.round((ps[ps.length-1]-ps[0])*10)/10:null,v:null};
+    if(r[1].status==='fulfilled'){ var ms=pick((r[1].value&&r[1].value.hourly)||{},'wave_height'); if(ms.length) out.v=Math.round(Math.max.apply(null,ms)*10)/10; }
+    return out;
+  }).catch(function(){ return null; });
+}
 var KEYS=['wind','wave','press','ptrend','cloud','temp','sst'];
 function empty(b){ return KEYS.every(function(k){ return b[k]==null||b[k]===''; }); }
 /* καιρός που πιθανόν δεν αντιστοιχεί στην ώρα του ψαριού: η εγγραφή φτιάχτηκε πολύ μετά (ή πριν) την ώρα του ψαριού */
 function created(b){ var n=parseInt(String(b.id||'').slice(0,8),36); return (n>1.6e12&&n<2.1e12)?n:null; }
 function suspect(b,ms){ if(b.hist||empty(b)) return false; var c=created(b); return c!=null&&Math.abs(c-ms)>90*60000; }
-window.PsaroHist={fetch:fetchHist,keys:KEYS,empty:empty};
+window.PsaroHist={fetch:fetchHist,range:fetchRange,keys:KEYS,empty:empty};
 
 /* ---- μαζική συμπλήρωση παλιών ψαριών (ρυθμίσεις θάλασσας) ---- */
 (window.PsaroSeaRows=window.PsaroSeaRows||[]).push(function(){

@@ -20,7 +20,7 @@ function sName(e){ return EN&&e.en?e.en:e.n; }
 
 /* ---------- δεδομένα ---------- */
 function collect(){
-  var bites=C.Store.get('bites')||[], trips=C.Store.get('trips')||[], utc=C.utcMin();
+  var bites=(C.Store.act?C.Store.act():C.Store.get('bites'))||[], trips=C.Store.get('trips')||[], utc=C.utcMin();
   var model=PP.build(trips,bites,{utcMin:utc}), by={}, total=0;
   bites.forEach(function(b){
     if(!b.species) return; var e=kbOf(b.species,b.latin), key=e?e.n:norm(b.species).replace(/\s*\(.*$/,'');

@@ -37,6 +37,7 @@
     <div class="phead"><div class="avatar big" id="pAvatar">?</div><div><b id="pNameShow"></b><div class="note" id="acWho"></div></div><button type="button" class="btn ghost sm" id="pClose">Κλείσιμο</button></div>
     <div id="pMain">
       <div class="seg" id="pRange" role="group" aria-label="Περίοδος"><button type="button" data-r="28" aria-pressed="true">28 ημέρες</button><button type="button" data-r="year" aria-pressed="false">Έτος</button><button type="button" data-r="all" aria-pressed="false">Όλα</button></div>
+      <div class="card" id="pRng" style="margin:8px 0"></div>
       <div class="pstats" id="pStats"></div>
     </div>
     <div id="pSettings" hidden>
@@ -338,10 +339,12 @@
       <button type="button" data-l="bites" aria-pressed="false">Τσιμπήματα</button>
       <button type="button" data-l="stats" aria-pressed="false">Στατιστικά</button>
     </div>
+    <div class="card" id="logRange"></div>
     <div class="col" id="l-trips">
     <div class="card stats" id="stats"></div>
 
-    <form class="card" id="tripForm">
+    <button class="btn acc" type="button" id="tNew">+ Νέα έξοδος</button>
+    <form class="card" id="tripForm" hidden>
       <h3>Νέα έξοδος</h3>
       <div class="grid2 stack">
         <label class="f">Ημερομηνία<input type="date" id="tDate" required></label>
@@ -354,7 +357,7 @@
         <label class="f">Συνολικό βάρος (kg)<input type="number" id="tKg" min="0" step="0.1" inputmode="decimal" value="0"></label>
       </div>
       <label class="f" style="margin-top:12px">Σημειώσεις<textarea id="tNotes" maxlength="500" placeholder="Δόλωμα, άνεμος, ώρες, τι δούλεψε"></textarea></label>
-      <div class="row" style="margin-top:10px"><button class="btn acc" type="submit">Αποθήκευση εξόδου</button></div>
+      <div class="row" style="margin-top:10px"><button class="btn acc" type="submit">Αποθήκευση εξόδου</button><button class="btn ghost" type="button" id="tCancel">Άκυρο</button></div>
     </form>
 
     <div class="list" id="tripList"></div>
@@ -439,6 +442,7 @@
         <label class="f">Μήκος (cm)<input type="number" id="bLen" min="0" step="1" inputmode="numeric"></label>
         <label class="f">Βάθος (m)<input type="number" id="bDepth" min="0" max="11000" step="1" inputmode="numeric"></label>
       </div>
+      <label class="chk" style="display:flex;align-items:center;gap:10px;margin-top:8px;font-weight:600"><input type="checkbox" id="bRel" style="width:22px;height:22px"><span>Catch &amp; release: το άφησα ελεύθερο</span></label>
       <div class="note" id="bLaw"></div>
     </section>
     <section class="fsec">
@@ -502,6 +506,7 @@
 <script src="coords.js"></script>
 <script src="hist.js"></script>
 <script src="dialog.js"></script>
+<script src="range.js"></script>
 <script src="app.js"></script>
 <script src="cloud.js"></script>
 <script src="extras.js"></script>
@@ -523,6 +528,7 @@
 <script src="insights.js"></script>
 <script src="speciespick.js"></script>
 <script src="community.js"></script>
+<script src="gearstats.js"></script>
 <script src="gear.js"></script>
 <script src="tools.js"></script>
 </body>
