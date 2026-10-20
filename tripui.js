@@ -17,9 +17,15 @@ function mk(id,cls,svg,label){
 var bc=mk('fbCatch','fbc',FISH,T('Έπιασα ψάρι (κράτα για διαγραφή του τελευταίου)','Caught a fish (hold to delete the last one)'));
 var bm=mk('fbMiss','fbm',MISS,T('Τσίμπησε αλλά χάθηκε (κράτα για διαγραφή του τελευταίου)','Bite but lost (hold to delete the last one)'));
 wrap.append(bm,bc); box.appendChild(wrap);
+/* v31z11: μεγάλο κουμπί «Ξεκίνα ψάρεμα» όταν δεν υπάρχει έξοδος· ανοίγει τη φόρμα εξόδου (δεν ξεκινά με ένα πάτημα) */
+var big=document.createElement('button'); big.type='button'; big.id='startBig'; big.className='startbig';
+big.innerHTML='<span class="sbi"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="13" cy="4.6" r="1.6"/><path d="M13 6.2V12a3.6 3.6 0 01-7.2 0"/><path d="M5.8 12v-2.2"/></svg></span><span class="sbt"></span>';
+big.querySelector('.sbt').textContent=T('Ξεκίνα ψάρεμα','Start fishing'); big.setAttribute('aria-label',T('Ξεκίνα ψάρεμα','Start fishing'));
+big.addEventListener('click',function(){ var tbn=$('tripBtn'); if(tbn) tbn.click(); });
+box.appendChild(big);
 
 function upd(){
-  var s=window.PsaroTrip.state(), on=!!(s&&s.active); wrap.hidden=!on;
+  var s=window.PsaroTrip.state(), on=!!(s&&s.active); wrap.hidden=!on; big.hidden=on;
   if(!on) return;
   var c=window.PsaroTrip.counts(); $('fbCatchN').textContent=c.n; $('fbMissN').textContent=c.miss;
 }
