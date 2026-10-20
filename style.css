@@ -962,3 +962,13 @@ nav.tabs .navprof .navav{width:24px;height:24px;border-radius:50%;background:var
 .startbig .sbtx small{font-size:10.5px}
 .startbig .sbarr{font-size:18px;right:14px}
 #tripSheet .sfsec .sgbox{max-height:150px}
+/* v31z15: ακόμη πιο μικρή μπάρα εκκίνησης, στο κέντρο */
+.startbig{left:50%;right:auto;width:min(calc(100% - 28px),270px);transform:translateX(-50%);height:46px;border-radius:14px;bottom:22px}
+.startbig .sbknob{left:4px;top:4px;width:38px;height:38px;border-radius:10px}
+.startbig .sbknob svg{width:21px;height:21px}
+.startbig .sbtx{padding-left:30px}
+.startbig .sbtx b{font-size:14.5px}
+.startbig .sbtx small{font-size:9.5px}
+.startbig .sbarr{font-size:15px;right:10px}
+/* v31z16: κουμπί εργαλείων (παραγάδι, δίχτυ) μόνο σε έξοδο, ή όσο υπάρχουν εργαλεία στη θάλασσα */
+body:not(.ontrip) #bGear:not(.on){display:none!important}
