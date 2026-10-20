@@ -27,7 +27,7 @@ function draw(){
     ['↔',km?PsaroUnits.dist(km):'–',T('Απόσταση','Distance')],['⚖',Math.round(kg*10)/10+' kg',T('Συνολικό βάρος','Total weight')]
   ];
   tiles.forEach(function(t){ var d=document.createElement('div'); d.className='pst'; var i=document.createElement('i'); i.textContent=t[0]; var b=document.createElement('b'); b.textContent=String(t[1]); var s=document.createElement('span'); s.textContent=t[2]; d.append(i,b,s); box.append(d); });
-  if(pbites.length){ var pk=0; pbites.forEach(function(b){ pk+=b.rel?0:(+b.kg||0); }); var g=document.createElement('div'); g.className='pst pwide'; g.textContent='🪢 '+T('Εργαλεία (δίχτυ, παραγάδι): ','Gear (net, longline): ')+pbites.length+T(' ψάρια · ',' fish · ')+Math.round(pk*10)/10+' kg'; box.append(g); }
+  if(pbites.length){ var pk=0; pbites.forEach(function(b){ pk+=b.rel?0:(+b.kg||0); }); var g=document.createElement('div'); g.className='pst pwide'; g.textContent='🪢 '+T('Εργαλεία (δίχτυ, παραγάδι): ','Gear (net, longline): ')+pbites.length+T(pbites.length===1?' ψάρι · ':' ψάρια · ',' fish · ')+Math.round(pk*10)/10+' kg'; box.append(g); }
   if(big>0){ var r=document.createElement('div'); r.className='pst pwide'; r.textContent='🏆 '+T('Μεγαλύτερο ψάρι: ','Biggest fish: ')+big+' kg'+(bigS?' · '+bigS:'')+' · '+Object.keys(sp).length+T(' είδη',' species'); box.append(r); }
 }
 document.querySelectorAll('#pRange button').forEach(function(b){ b.addEventListener('click',function(){ range=b.dataset.r; C.lsSet('psaro-prange',range); if(window.PsaroRange&&PsaroRange.active('prof')) PsaroRange.set('prof','',''); else draw(); }); });
@@ -35,6 +35,15 @@ if(window.PsaroRange){ PsaroRange.ui('prof',$('pRng'),false); window.addEventLis
 $('pBackMain').addEventListener('click',function(){ showSet(false); draw(); });
 var gear=document.createElement('button'); gear.type='button'; gear.className='btn ghost sm'; gear.id='pGear'; gear.textContent='⚙'; gear.setAttribute('aria-label',T('Ρυθμίσεις','Settings'));
 gear.addEventListener('click',function(){ showSet(true); });
+/* Οδηγός: μέσα στο Προφίλ, στην ίδια γραμμή με τη «Χρονιά μου» */
+setTimeout(function(){
+  var ps=$('pStats'); if(!ps||$('pActs')) return;
+  var row=document.createElement('div'); row.id='pActs'; row.className='pacts'; ps.parentNode.insertBefore(row,ps.nextSibling);
+  var gb=document.createElement('button'); gb.type='button'; gb.className='btn sm'; gb.id='pGuide'; gb.textContent=T('📖 Οδηγός','📖 Guide');
+  gb.addEventListener('click',function(){ var c=$('pClose'); if(c) c.click(); setTimeout(function(){ C.switchTab('guide'); },60); });
+  row.append(gb); var y=document.querySelector('#pMain .yrbtn'); if(y) row.append(y);
+},400);
+var gbp=$('gBackProf'); if(gbp) gbp.addEventListener('click',function(){ var pb=$('profBtn'); if(pb) pb.click(); });
 var cl=$('pClose'); cl.parentNode.insertBefore(gear,cl); gear.style.marginLeft='auto'; cl.style.marginLeft='0';
 /* επαγγελματικά εικονίδια: γρανάζι και ✕ σε στρογγυλά κουμπιά */
 gear.className='pibtn'; gear.textContent=''; gear.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';

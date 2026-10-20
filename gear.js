@@ -242,7 +242,17 @@ function dayOf(ms){ var d=new Date(ms); return ('0'+d.getDate()).slice(-2)+'/'+(
 function renderLog(){
   if(!lbox) return; lbox.replaceChildren();
   try{ if(window.PsaroGearStats) lbox.append(window.PsaroGearStats.build()); }catch(e){}
-  var items=G.items.slice().sort(function(p,q){ return ((q.set&&q.set.ta)||(q.haul&&q.haul.ta)||0)-((p.set&&p.set.ta)||(p.haul&&p.haul.ta)||0); });
+  var skey=C.lsGet('psaro-sort-gear','new');
+  function tOf(i){ return (i.set&&i.set.ta)||(i.haul&&i.haul.ta)||0; }
+  function soakH(i){ return (i.set&&i.set.ta&&i.haul&&(i.haul.tb||i.haul.ta))?((i.haul.tb||i.haul.ta)-i.set.ta)/3600000:0; }
+  var items=G.items.slice().sort(function(p,q){
+    if(skey==='old') return tOf(p)-tOf(q);
+    if(skey==='eff'){ var rp=soakH(p)>0?fishOf(p).n/soakH(p):-1, rq=soakH(q)>0?fishOf(q).n/soakH(q):-1; return (rq-rp)||(tOf(q)-tOf(p)); }
+    if(skey==='hrs') return (soakH(q)-soakH(p))||(tOf(q)-tOf(p));
+    return tOf(q)-tOf(p); });
+  (function(){ var w=el('label','f sortsel',T('Ταξινόμηση','Sort by')); var s=document.createElement('select');
+    [['new',T('Νεότερα πρώτα','Newest first')],['old',T('Παλαιότερα πρώτα','Oldest first')],['eff',T('Καλύτερη απόδοση (ψάρια/ώρα)','Best catch rate (fish/hour)')],['hrs',T('Περισσότερες ώρες μέσα','Most hours in water')]].forEach(function(o){ var op=document.createElement('option'); op.value=o[0]; op.textContent=o[1]; s.append(op); });
+    s.value=skey; s.addEventListener('change',function(){ C.lsSet('psaro-sort-gear',s.value); renderLog(); }); w.append(s); w.style.margin='6px 0'; lbox.append(w); })();
   var tot=items.filter(function(i){ return i.state==='done'; }), tn_=0, tk=0; tot.forEach(function(i){ var f=fishOf(i); tn_+=f.n; tk+=f.kg; });
   lbox.append(el('div','muted',items.length?T(items.length+' εργαλεία · '+tn_+' ψάρια · '+(Math.round(tk*10)/10)+' kg (ολοκληρωμένα)',items.length+' gear · '+tn_+' fish · '+(Math.round(tk*10)/10)+' kg (completed)'):T('Δεν υπάρχουν εργαλεία ακόμα. Ξεκίνα από το κουμπί εργαλείων στον χάρτη.','No gear yet. Start from the gear button on the map.')));
   items.forEach(function(it){

@@ -98,6 +98,8 @@ function condLine(S){
   p.push(MOON[x.moon]);
   return p.join(' · ');
 }
+var KTR={'Βυθού':'Bottom fishing','Ζωντανό δόλωμα':'Live bait','Τρόλινγκ':'Trolling','Άλλο':'Other','γαρίδα':'shrimp','ζωντανή γαρίδα':'live shrimp','ζωντανή σαρδέλα':'live sardine','ζωντανό καλαμάρι':'live squid','ζωντανό σκαθάρι':'live beetle','ζωντανό ψαράκι':'live small fish','κάβουρας':'crab','καλαμάρι':'squid','καλαμαριέρα':'squid jig','καλαμαριέρα (ζαλάκι)':'squid jig (zalaki)','κολιός':'chub mackerel','μικρό ψάρι':'small fish','μπουκιά':'chum ball','μύδι':'mussel','πάστα':'paste','πράσινα φύκια':'green algae','σαμπίκι':'sabiki','σαρδέλα':'sardine','σκουλήκι':'worm','σουπιά':'cuttlefish','τεχνητό':'artificial lure','ψωμί':'bread'};
+function kt(a){ return EN?a.map(function(x){ return KTR[x]||x; }):a; }
 function confText(c){ var n=c.o?c.o.n:0; return n===0?T('γενική γνώση','general knowledge'):n<8?T('αρχικά δεδομένα · ','early data · ')+n+T(' ψάρια',' fish'):T('από τα ψάρια σου · ','from your fish · ')+n; }
 
 /* ---------- κάρτα 1: τι να ψαρέψω ---------- */
@@ -118,7 +120,7 @@ function whatCard(D){
     var depth=r.o&&r.o.bites.filter(function(q){ return q.depth!=null; }).length>=3?(function(){ var v=r.o.bites.filter(function(q){ return q.depth!=null; }).map(function(q){ return +q.depth; }); return Math.round(v.reduce(function(a,b){return a+b;},0)/v.length)+' m'; })():(e?e.d[0]+'–'+e.d[1]+' m':'');
     var box=h('div',{class:'advsp'},
       h('div',{class:'bar'},h('span',{text:(e?sName(e):r.name)}),h('div',{class:'t'},h('i',{style:'width:'+Math.round(r.p/mx*100)+'%'})),h('span',{class:'n',text:Math.round(r.p*100)+'%'})),
-      h('div',{class:'meta advmeta',text:[tech.length?T('Τεχνική: ','Technique: ')+tech.join(', '):null,bait.length?T('Δόλωμα: ','Bait: ')+bait.join(', '):null,depth?T('Βάθος: ','Depth: ')+depth:null].filter(Boolean).join(' · ')}),
+      h('div',{class:'meta advmeta',text:[tech.length?T('Τεχνική: ','Technique: ')+kt(tech).join(', '):null,bait.length?T('Δόλωμα: ','Bait: ')+kt(bait).join(', '):null,depth?T('Βάθος: ','Depth: ')+depth:null].filter(Boolean).join(' · ')}),
       h('div',{class:'meta advmeta',text:confText(r)+(e&&e.warn?' · ⚠ '+(EN?e.warn[1]:e.warn[0]):'')}));
     c.append(box);
   });

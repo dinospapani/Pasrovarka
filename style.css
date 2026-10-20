@@ -1039,3 +1039,14 @@ body:not(.ontrip) #bGear:not(.on){display:none!important}
 .gssec{margin-top:12px}
 .gssec h4{margin:0 0 4px;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
 .gssec .tr{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px solid var(--line);font-size:14px}
+
+/* v31z36 Οδηγός μέσα στο Προφίλ */
+#profile .pacts{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+#profile .pacts .btn{margin:0}
+
+/* v31z38 γυαλιστερό φινίρισμα */
+#stats .tr,.card>.tr{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:6px 0;border-top:1px solid var(--line);font-size:14px}
+#stats .tr b,.card>.tr b{text-align:right}
+.item .acts{display:grid;grid-template-columns:repeat(auto-fit,minmax(86px,1fr));gap:6px}
+.item .acts .btn{width:100%;justify-content:center;text-align:center;white-space:nowrap}
+.rngbar{padding:8px 10px!important;margin-bottom:8px}
