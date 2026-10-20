@@ -90,19 +90,28 @@ setInterval(rt,60000); window.addEventListener('psaro-sess',function(){ if(tripO
 setTimeout(rt,3000);
 
 /* ---------- αυτόματη πρόταση έναρξης ---------- */
-var aw=null, aPrev=null, aHits=0;
-function autoStop(){ if(aw!=null){ try{ navigator.geolocation.clearWatch(aw); }catch(e){} aw=null; } aPrev=null; aHits=0; }
+var aw=null, aPrev=null, aHits=0, aRest=null;
+function autoStop(){ if(aw!=null){ try{ navigator.geolocation.clearWatch(aw); }catch(e){} aw=null; } aPrev=null; aHits=0; aRest=null; }
 function autoStart(){
-  if(aw!=null||!S.auto||!S.home||tripOn()||!navigator.geolocation) return;
+  if(aw!=null||!S.auto||tripOn()||!navigator.geolocation) return;
   try{ aw=navigator.geolocation.watchPosition(function(p){
     if(tripOn()){ autoStop(); return; }
     var c=p.coords, t=Date.now(), v=(c.speed!=null&&!isNaN(c.speed))?c.speed:null;
     if(v==null&&aPrev&&t-aPrev.t>=2000) v=distKm(aPrev.lat,aPrev.lon,c.latitude,c.longitude)*1000/((t-aPrev.t)/1000);
     aPrev={lat:c.latitude,lon:c.longitude,t:t};
-    var away=distKm(c.latitude,c.longitude,S.home.lat,S.home.lon)*1000>400;
-    aHits=(v!=null&&v>=2.5&&away)?aHits+1:0;
+    /* v31z17: σημείο ηρεμίας (≥60 s με ταχύτητα <1 m/s). Αν εκεί κοντά υπάρχει λιμάνι (το δικό σου ή άλλο), η κίνηση από εκεί μετράει ως αναχώρηση. */
+    if(v!=null&&v<1){
+      if(!aRest||distKm(aRest.lat,aRest.lon,c.latitude,c.longitude)*1000>80) aRest={lat:c.latitude,lon:c.longitude,since:t,port:undefined};
+      else if(t-aRest.since>=60000&&aRest.port===undefined){ var r0=aRest; r0.port=null;
+        if(S.home&&distKm(S.home.lat,S.home.lon,r0.lat,r0.lon)<=0.5) r0.port={name:S.home.name||''};
+        else findPort(r0.lat,r0.lon).then(function(r){ if(r&&r.d<=0.6) r0.port={name:r.name||''}; }).catch(function(){}); }
+    }
+    var away=S.home&&distKm(c.latitude,c.longitude,S.home.lat,S.home.lon)*1000>400;
+    var fromPort=aRest&&aRest.port&&distKm(aRest.lat,aRest.lon,c.latitude,c.longitude)*1000>400;
+    aHits=(v!=null&&v>=2.5&&(fromPort||(!aRest&&away)))?aHits+1:0;
+    var pname=aRest&&aRest.port&&aRest.port.name||'';
     if(aHits>=4){ aHits=0; var sent=C.lsGet('psaro-smart-sent',{}); if(sent.autoStart&&t-sent.autoStart<3*3600000) return; sent.autoStart=t; C.lsSet('psaro-smart-sent',sent);
-      window.PsaroAsk(T('Φαίνεται ότι ξεκίνησες από το λιμάνι. Να ξεκινήσεις έξοδο, ώστε να καταγράφονται τα ψάρια;','You seem to have left the port. Start a trip so catches get recorded?'),{title:T('Έναρξη εξόδου','Start trip'),ok:T('Έναρξη','Start'),cancel:T('Όχι τώρα','Not now')}).then(function(ok){ if(ok&&window.PsaroTrip) window.PsaroTrip.sheet(); }); }
+      window.PsaroAsk((pname?T('Φαίνεται ότι ξεκίνησες από «','You seem to have left “')+pname+T('». ','”. '):T('Φαίνεται ότι ξεκίνησες από το λιμάνι. ','You seem to have left the port. '))+T('Να ξεκινήσεις έξοδο, ώστε να καταγράφονται τα ψάρια;','Start a trip so catches get recorded?'),{title:T('Έναρξη εξόδου','Start trip'),ok:T('Έναρξη','Start'),cancel:T('Όχι τώρα','Not now')}).then(function(ok){ if(ok&&window.PsaroTrip) window.PsaroTrip.sheet(); }); }
   },function(){},{enableHighAccuracy:true,maximumAge:5000,timeout:30000}); }catch(e){ aw=null; }
 }
 

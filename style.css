@@ -972,3 +972,15 @@ nav.tabs .navprof .navav{width:24px;height:24px;border-radius:50%;background:var
 .startbig .sbarr{font-size:15px;right:10px}
 /* v31z16: κουμπί εργαλείων (παραγάδι, δίχτυ) μόνο σε έξοδο, ή όσο υπάρχουν εργαλεία στη θάλασσα */
 body:not(.ontrip) #bGear:not(.on){display:none!important}
+/* v31z18: μικρότερη μπάρα, λίγο ψηλότερα */
+.startbig{width:min(calc(100% - 28px),224px);height:40px;border-radius:12px;bottom:48px}
+.startbig .sbknob{left:3px;top:3px;width:34px;height:34px;border-radius:9px}
+.startbig .sbknob svg{width:19px;height:19px}
+.startbig .sbtx{padding-left:26px}
+.startbig .sbtx b{font-size:13px}
+.startbig .sbtx small{font-size:8.5px}
+.startbig .sbarr{font-size:13px;right:8px}
+/* v31z19: πιο μεγάλα γράμματα στη μπάρα εκκίνησης */
+.startbig .sbtx b{font-size:17px;font-weight:800;line-height:1.1}
+.startbig .sbtx small{font-size:10.5px;font-weight:700;line-height:1.1;opacity:.9}
+.startbig .sbtx{padding-left:24px}
