@@ -429,7 +429,19 @@ function initMap(){
     $('bSea').setAttribute('aria-pressed',String(on));
   });
   $('bLoc').addEventListener('click',async()=>{ const c2=await refreshConditions(); if(c2&&c2.lat!=null) map.flyTo([c2.lat,c2.lon],Math.max(map.getZoom(),12)); });
-  $('bSpotPick').addEventListener('click',()=>startPick('spot'));
+  $('bSpotPick').addEventListener('click',()=>{
+    const en=window.LANG==='en', b=$('bSpotPick'); if(b.dataset.busy==='1') return; b.dataset.busy='1';
+    const done=()=>{ b.dataset.busy=''; };
+    if(!navigator.geolocation){ done(); toast(en?'No GPS on this device.':'Δεν υπάρχει GPS σε αυτή τη συσκευή.'); return; }
+    toast(en?'Getting your position…':'Παίρνω τη θέση σου…');
+    navigator.geolocation.getCurrentPosition(async p=>{
+      const lat=+p.coords.latitude.toFixed(5), lon=+p.coords.longitude.toFixed(5), d=new Date();
+      const nm=(en?'Spot ':'Σημείο ')+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+      try{ const id=await Store.save('spots',{name:nm,type:$('sType').options[0].value,lat:lat,lon:lon,depth:null,notes:''}); selSpot=id; setYou(lat,lon); map.flyTo([lat,lon],Math.max(map.getZoom(),14)); toast(en?'Spot saved at your position. Tap it to edit.':'Αποθηκεύτηκε το σημείο στη θέση σου. Πάτα πάνω του για επεξεργασία.'); }
+      catch(e){ toast(en?'Not saved. Try again.':'Δεν αποθηκεύτηκε. Δοκίμασε ξανά.'); }
+      done();
+    },()=>{ done(); toast(en?'Could not get your position. Turn on location.':'Δεν πήρα θέση. Άνοιξε την τοποθεσία (GPS).'); },{enableHighAccuracy:true,timeout:10000,maximumAge:3000});
+  });
   $('mapHintX').addEventListener('click',()=>{const was=pick; endPick(); if(was==='bite') openSheet(); if(was==='fc') switchTab('fc');});
   zonesG=L.layerGroup();
   for(const z of ZONES){
@@ -464,6 +476,15 @@ function setYou(lat,lon){
   if(!map) return;
   if(youM) youM.setLatLng([lat,lon]); else youM=L.marker([lat,lon],{icon:L.divIcon({className:'',html:'<div class="you"></div>',iconSize:[18,18]}),interactive:false,zIndexOffset:-100}).addTo(map);
 }
+/* Ζωντανή θέση: η μπλε τελεία ακολουθεί το GPS όσο η εφαρμογή είναι ανοιχτή */
+let youW=null;
+function youStart(){
+  if(youW!=null||!navigator.geolocation) return;
+  try{ youW=navigator.geolocation.watchPosition(p=>{ const c=p.coords; if(c.accuracy&&c.accuracy>150) return; setYou(c.latitude,c.longitude); },()=>{},{enableHighAccuracy:true,maximumAge:2000,timeout:30000}); }catch(e){ youW=null; }
+}
+function youStop(){ if(youW!=null){ try{ navigator.geolocation.clearWatch(youW); }catch(e){} youW=null; } }
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) youStop(); else youStart(); });
+setTimeout(youStart,1500);
 function startPick(mode){
   pick=mode; $('mapHint').hidden=false; document.body.classList.add('picking');
   $('mapHintTxt').textContent=mode==='fc'?'Πάτα στον χάρτη για πρόγνωση σε αυτό το σημείο':mode==='spot'?'Πάτα στον χάρτη για το νέο σημείο':'Πάτα στον χάρτη εκεί που έπιασες';

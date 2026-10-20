@@ -250,6 +250,10 @@ $('sfExt').addEventListener('click',ext);
 $('sfShare').addEventListener('click',function(){ var s=load(); (s.phone?window.PsaroAsk(window.LANG==='en'?'Send your trip plan to your contact. Choose how to send it.':'Στείλε το σχέδιο στην επαφή σου. Διάλεξε πώς θα σταλεί.',{title:window.LANG==='en'?'Trip plan':'Σχέδιο εξόδου',ok:'WhatsApp',cancel:'SMS'}):Promise.resolve(false)).then(function(ok){ send(s,'plan',ok?'wa':'sms'); }); });
 $('sfSos').addEventListener('click',function(){ trackPos().then(sos); });
 document.addEventListener('visibilitychange',function(){ if(!document.hidden){ render(); if(load().active) trackPos(); } });
+/* Όταν χρησιμοποιείς την εφαρμογή (πάτημα, γράψιμο), ανανεώνεται το σήμα ζωής στον server: δεν σε ρωτάει «είσαι καλά;» όσο είσαι ενεργός */
+var lastAct=0;
+function activity(){ var n=Date.now(); if(n-lastAct<60000) return; if(!load().active) return; lastAct=n; lastTrack=n; trackPos(); }
+['pointerdown','keydown','touchstart'].forEach(function(ev){ document.addEventListener(ev,activity,{passive:true,capture:true}); });
 if(load().active){ clearInterval(timer); timer=setInterval(tick,60000); }
 fillContact(); render();
 })();
