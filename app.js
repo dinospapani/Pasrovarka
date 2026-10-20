@@ -834,11 +834,26 @@ function needTrip(){
   const en=window.LANG==='en';
   window.PsaroAsk(en?'To record a fish correctly (time, position, conditions and numbering) start a trip first.':'Για να καταγραφεί σωστά το ψάρι (ώρα, θέση, συνθήκες και αρίθμηση) ξεκίνα πρώτα έξοδο.',{title:en?'Start a trip first':'Ξεκίνα πρώτα έξοδο',ok:en?'Start trip':'Έναρξη εξόδου',cancel:en?'Cancel':'Άκυρο'}).then(y=>{ if(y) $('tripBtn').click(); });
 }
+/* v31z12: σε ποια έξοδο ανήκει το ψάρι (και αλλαγή εκ των υστέρων) */
+function fillTripSel(cur){
+  const s=$('bTrip'); if(!s) return; const en=window.LANG==='en';
+  const ts=Store.get('trips').filter(t=>t.sid).sort((x,y)=>(y.startMs||0)-(x.startMs||0)||String(y.date||'').localeCompare(String(x.date||''))).slice(0,40);
+  s.replaceChildren(new Option(en?'No trip':'Καμία έξοδος',''));
+  ts.forEach(t=>s.add(new Option((t.date||'')+' · '+(t.spot||(en?'trip':'έξοδος'))+' ('+(t.count||0)+')',t.sid)));
+  s.value=cur||'';
+  if(cur&&s.value!==cur){ s.add(new Option(en?'Current trip':'Τρέχουσα έξοδος',cur)); s.value=cur; }
+}
+function nextN(sid){ return Store.raw('bites').filter(b=>b.trip===sid&&!b.miss).reduce((m,b)=>Math.max(m,+b.n||0),0)+1; }
+async function recountTrip(sid){
+  if(!sid) return; const t=Store.get('trips').find(x=>x.sid===sid); if(!t) return;
+  const bs=Store.raw('bites').filter(b=>b.trip===sid&&!b.miss), kg=Math.round(bs.reduce((s,b)=>s+(+b.kg||0),0)*10)/10;
+  await Store.save('trips',Object.assign({},t,{count:bs.length,kg:kg}));
+}
 function openSheet(){
   if(sheetFresh){
     $('bWhen').value=nowLocalInput();
     if(cond&&cond.press!=null) $('bPress').value=cond.press;
-    sheetFresh=false;
+    sheetFresh=false; fillTripSel('');
     refreshConditions();
   }
   renderChips(); syncLoc(); updateLaw();
@@ -930,7 +945,11 @@ $('biteForm').addEventListener('submit',async e=>{
       }
     }
     if(!editing) tripStamp(rec,false);
+    const tsel=$('bTrip')?$('bTrip').value:'';
+    if(editing){ if(tsel!==(editing.trip||'')){ if(tsel){ rec.trip=tsel; rec.n=nextN(tsel); } else { delete rec.trip; delete rec.n; } } }
+    else if(tsel){ rec.trip=tsel; rec.n=nextN(tsel); }
     const id=await Store.save('bites',rec);
+    try{ if(editing&&(editing.trip||'')!==(rec.trip||'')){ await recountTrip(editing.trip); await recountTrip(rec.trip); } else if(!editing&&tsel) await recountTrip(tsel); }catch(e){}
     if(photoBlob){ try{await Photos.put(id,photoBlob);}catch(err){ rec.photo=false; await Store.save('bites',Object.assign({},rec,{id:id})); toast('Η φωτογραφία δεν αποθηκεύτηκε.'); } }
     resetSheet(); closeSheet();
     try{ const lw=latinForName(rec.species), mn=lw&&MIN[lw]; if(mn&&rec.len&&rec.len<mn) setTimeout(()=>toast('⚠ '+(window.LANG==='en'?'Under the minimum size (':'Κάτω από το ελάχιστο μέγεθος (')+mn+' cm)'),600); if(lw==='Lagocephalus sceleratus') setTimeout(()=>toast('⚠ '+(window.LANG==='en'?'Toxic species. Do not eat it.':'Τοξικό είδος. Μην το φας.')),600); }catch(e){}
@@ -948,6 +967,7 @@ function editBite(b){
   for(const [id,k] of [['bDepth','depth'],['bKg','kg'],['bLen','len'],['bPress','press']]) $(id).value=b[k]==null?'':b[k];
   $('bNotes').value=b.notes||'';
   $('bLocMode').value=(typeof b.lat==='number')?'keep':'none';
+  fillTripSel(b.trip||'');
   renderChips(); syncLoc(); updateLaw(); $('sheet').hidden=false;
 }
 function tripStamp(rec,miss){

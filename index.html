@@ -94,6 +94,7 @@
       <div class="note" id="aiMsg" style="margin-top:6px"></div>
     </div>
     <div class="row"><button class="btn" id="acLogout" type="button">Αποσύνδεση</button></div>
+    <p class="note verline" id="appVer" style="text-align:center;margin-top:10px"></p>
     </div>
   </div>
 </div>
@@ -467,6 +468,7 @@
         </label>
         <label class="f">Πίεση (hPa)<input type="number" id="bPress" min="850" max="1100" step="1" inputmode="numeric"></label>
       </div>
+      <label class="f" id="bTripWrap">Έξοδος<select id="bTrip"><option value="">Καμία έξοδος</option></select></label>
       <div class="chips" id="bChipsBait"></div>
       <label class="f">Σημειώσεις<textarea id="bNotes" maxlength="300" rows="2"></textarea></label>
       <p class="note">Στην αποθήκευση παίρνονται αυτόματα ο καιρός και η θάλασσα της στιγμής (για παλιότερη ώρα μένουν κενά). Η σελήνη υπολογίζεται από την ώρα.</p>
@@ -483,6 +485,7 @@
   <button class="fab" id="fab" type="button" aria-label="Νέο τσίμπημα"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
   <button role="tab" data-tab="log" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3V4z"/><path d="M8 17h11"/></svg>Ημερολόγιο</button>
   <button role="tab" data-tab="guide" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M3 12c3-5 9-6 13-2l5-3v10l-5-3c-4 4-10 3-13-2z"/><circle cx="8" cy="11" r=".6"/></svg>Οδηγός</button>
+  <button type="button" id="navProf" class="navprof" aria-label="Προφίλ"><span class="navav" id="navProfAv">?</span>Προφίλ</button>
 </nav>
 <script src="leaflet.js"></script>
 <script src="species.js"></script>
@@ -495,6 +498,7 @@
 <script src="push-config.js"></script>
 <script src="zones.js"></script>
 <script src="units.js"></script>
+<script src="version.js"></script>
 <script src="coords.js"></script>
 <script src="hist.js"></script>
 <script src="dialog.js"></script>

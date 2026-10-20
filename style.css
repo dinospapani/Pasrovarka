@@ -895,12 +895,20 @@ body:not(.ontrip) #bNew{display:block}
 
 /* v31z10: τα κουμπιά ψαριού στον χάρτη μόνο με ενεργό trip· το «+ Νέο τσίμπημα» του Log πάντα διαθέσιμο */
 
-/* v31z11: μεγάλο κουμπί «Ξεκίνα ψάρεμα» στον χάρτη χωρίς έξοδο */
-.startbig{position:absolute;left:16px;right:16px;bottom:30px;z-index:800;height:64px;border:0;border-radius:99px;background:var(--surface);color:var(--ink);display:flex;align-items:center;justify-content:center;gap:14px;font:700 20px var(--font-display,inherit);cursor:pointer;box-shadow:0 6px 22px rgba(0,0,0,.45)}
+/* v31z12: «Ξεκίνα έξοδο»: σύρσιμο προς τα δεξιά */
+.startbig{--p:0;position:absolute;left:14px;right:14px;bottom:30px;z-index:800;height:68px;border-radius:20px;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.45);user-select:none;-webkit-user-select:none;touch-action:pan-y}
 .startbig[hidden]{display:none}
-.startbig .sbi{flex:none;width:44px;height:44px;border-radius:50%;background:#2e9e7e;color:#fff;display:grid;place-items:center}
-.startbig .sbi svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.startbig:active{transform:scale(.98)}
+.startbig .sbknob{position:absolute;left:6px;top:6px;width:56px;height:56px;border-radius:16px;background:var(--accent-ink);color:var(--accent);display:grid;place-items:center;touch-action:none;cursor:grab;z-index:2;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.startbig.drag .sbknob{cursor:grabbing}
+.startbig:not(.drag) .sbknob{transition:transform .18s ease}
+.startbig .sbknob svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.startbig .sbtx{display:flex;flex-direction:column;align-items:center;gap:2px;padding-left:44px;opacity:calc(1 - var(--p)*1.4);pointer-events:none}
+.startbig .sbtx b{font:700 19px var(--font-display,inherit);letter-spacing:.01em}
+.startbig .sbtx small{font-size:11.5px;font-weight:600;opacity:.8}
+.startbig .sbarr{position:absolute;right:16px;font:800 22px/1 var(--font-body,inherit);opacity:.55;letter-spacing:-2px;animation:sbarr 1.6s ease-in-out infinite;pointer-events:none}
+@keyframes sbarr{0%,100%{transform:translateX(0);opacity:.35}50%{transform:translateX(6px);opacity:.8}}
+.startbig.nudge .sbknob{animation:sbnudge .5s ease}
+@keyframes sbnudge{0%{transform:translateX(0)}40%{transform:translateX(30px)}100%{transform:translateX(0)}}
 body.picking .startbig{display:none}
 body.mapfull:not(.ontrip) #tripBtn{display:none}
 body:not(.ontrip) .zonewarn{bottom:118px}
@@ -908,3 +916,39 @@ body.mapfull:not(.ontrip) .toast{bottom:calc(var(--navh,60px) + 112px)}
 body:not(.ontrip) #dtBar{bottom:112px}
 body.hasdt:not(.ontrip) .zonewarn{bottom:190px}
 body.mapfull.hasdt:not(.ontrip) .toast{bottom:calc(var(--navh,60px) + 190px)}
+
+/* v31z12: φόρμα εξόδου συμπαγής, χωρίς scroll */
+#tripSheet .pbox{padding:6px 14px calc(12px + env(safe-area-inset-bottom,0px));max-height:96vh;max-height:96dvh}
+#tripSheet .pbox::before{margin:0 auto 6px}
+#tripSheet .sfhead{margin:0 0 4px}
+#tripSheet .sfhead::before{width:34px;height:34px;border-radius:11px;background-size:20px}
+#tripSheet .sfhead h3{font-size:19px}
+#tripSheet .sheethead{top:10px;right:12px}
+#tripSheet #safeIdle>.note:first-of-type{margin:0 0 8px;font-size:12px;line-height:1.35}
+#tripSheet .sfwarn{padding:6px 10px;margin:0 0 8px;font-size:12px;line-height:1.35}
+#tripSheet .sfwarn .btn{padding:2px 8px;height:auto;font-size:12px;margin-left:4px}
+#sfForm{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:start}
+#sfForm>.sfsec{margin:0!important;padding:8px 10px!important;border-radius:14px}
+#sfForm>.sfsec:nth-child(n+3){grid-column:1 / -1}
+#sfForm>.sfgo{grid-column:1 / -1}
+#tripSheet .sfsec label.f{font-size:10.5px;letter-spacing:.03em;line-height:1.25}
+#tripSheet .sfsec input,#tripSheet .sfsec select{margin-top:4px;padding:0 10px;height:40px;border-radius:10px;font-size:15px}
+#tripSheet .sflabel{margin:0 0 5px;font-size:10.5px}
+#tripSheet .sfdur{gap:6px}
+#tripSheet .sfdur .chip{padding:9px 0;border-radius:10px;font-size:13px}
+#tripSheet .sftime{margin-top:6px!important}
+#tripSheet .sftime input{height:38px;min-width:120px}
+#tripSheet .sfsafe>.sflabel{display:none}
+#tripSheet .sfsafe .note{margin:5px 0 0;font-size:11px;line-height:1.3}
+#tripSheet .sfgo{height:50px;font-size:16px;margin-top:2px;border-radius:14px}
+#tripSheet .sfsec .sgbox{position:absolute;left:10px;right:10px;z-index:30;margin-top:2px;max-height:180px}
+#tripSheet .sfsec{position:relative}
+#tripSheet .sfhint{margin-top:3px;font-size:11px}
+/* v31z12 (2): λίστα ελέγχου και Έναρξη στην ίδια σειρά */
+#sfForm>.clbtn{grid-column:1;height:50px;margin:2px 0 0;padding:0 8px;font-size:14px;border-radius:14px;line-height:1.2}
+#sfForm>.sfgo{grid-column:2}
+.sfsafe:has(#sfSil option[value="0"]:checked) #sfSilNote{display:none}
+
+/* v31z12: προφίλ στη μπάρα κάτω· το «C» πάνω κρύβεται */
+#profBtn{display:none!important}
+nav.tabs .navprof .navav{width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font:700 13px var(--font-body,inherit);display:grid;place-items:center;line-height:1}

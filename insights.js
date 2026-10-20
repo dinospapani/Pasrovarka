@@ -228,10 +228,12 @@ function exportSpots(){ dl('bitecast-σημεία-'+stamp()+'.csv',toCsv(spots()
 function exportAll(){
   var o={app:'BiteCast',exported:new Date().toISOString(),bites:bites(),trips:trips().map(function(t){ return t; }),spots:spots(),gear:(window.PsaroGear?window.PsaroGear.state().items:[]),smart:C.lsGet('psaro-smart',null),maintenance:M};
   dl('bitecast-αντίγραφο-'+stamp()+'.json',JSON.stringify(o),'application/json');
+  C.lsSet('psaro-lastbackup',Date.now());
 }
 function exportUI(box){
   box.append(el('div','smsec',T('Εξαγωγή δεδομένων','Export data')));
   box.append(el('div','sptx',T('Αρχεία CSV για Excel/Google Sheets και πλήρες αντίγραφο JSON. Οι φωτογραφίες δεν περιλαμβάνονται.','CSV files for Excel/Google Sheets and a full JSON copy. Photos are not included.')));
+  var lb=+C.lsGet('psaro-lastbackup',0)||0; box.append(el('div','sptx',T('Τελευταίο πλήρες αντίγραφο: ','Last full backup: ')+(lb?new Date(lb).toLocaleDateString():T('ποτέ','never'))));
   var r=el('div','sprow wrap'); r.append(btn(T('Ψάρια (CSV)','Catches (CSV)'),'',exportBites),btn(T('Έξοδοι (CSV)','Trips (CSV)'),'',exportTrips),btn(T('Σημεία (CSV)','Spots (CSV)'),'',exportSpots),btn(T('Εργαλεία (CSV)','Gear (CSV)'),'',exportGear),btn(T('Πλήρες αντίγραφο (JSON)','Full backup (JSON)'),'acc',exportAll)); box.append(r);
 }
 
@@ -259,4 +261,20 @@ var tabs=document.querySelector('nav[role=tablist],[role=tablist]'); if(tabs) ta
 try{ C.Store.on('bites',function(){ setTimeout(refresh,200); }); C.Store.on('trips',function(){ setTimeout(refresh,200); }); }catch(e){}
 setTimeout(maintCheck,6000);
 window.PsaroInsights={dayInfo:dayInfo,phaseAt:phaseAt,open:openPanel,dayTable:dayTable,simScore:simScore,maint:function(){ return M; },exportBites:exportBites,exportTrips:exportTrips,exportSpots:exportSpots,exportAll:exportAll,spotSummary:spotSummary,maintCheck:maintCheck};
+
+/* v31z12: υπενθύμιση αντιγράφου ασφαλείας κάθε 30 ημέρες (όχι σε ενεργή έξοδο· «Αργότερα» = 7 ημέρες) */
+(function(){
+  var DAY=86400000;
+  function check(){
+    try{
+      var s=window.PsaroTrip&&window.PsaroTrip.state&&window.PsaroTrip.state(); if(s&&s.active) return;
+      var nb=bites().length, ns=spots().length; if(!nb&&!ns) return;
+      var now=Date.now(), since=+C.lsGet('psaro-backup-since',0)||0; if(!since){ C.lsSet('psaro-backup-since',now); since=now; }
+      var ref=Math.max(+C.lsGet('psaro-lastbackup',0)||0,since); if(now-ref<30*DAY) return;
+      if(now<(+C.lsGet('psaro-backup-snooze',0)||0)) return;
+      window.PsaroAsk(T('Έχεις '+nb+' ψάρια και '+ns+' σημεία. Πέρασαν πάνω από 30 ημέρες από το τελευταίο αντίγραφο ασφαλείας. Να το κάνω τώρα; Θα αποθηκευτεί ένα αρχείο στο κινητό.','You have '+nb+' catches and '+ns+' spots. It has been over 30 days since your last backup. Back up now? A file will be saved to your phone.'),{title:T('Αντίγραφο ασφαλείας','Backup'),ok:T('Αντίγραφο τώρα','Back up now'),cancel:T('Αργότερα','Later')}).then(function(ok){ if(ok) exportAll(); else C.lsSet('psaro-backup-snooze',Date.now()+7*DAY); });
+    }catch(e){}
+  }
+  setTimeout(check,9000);
+})();
 })();

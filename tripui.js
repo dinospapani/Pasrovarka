@@ -17,12 +17,31 @@ function mk(id,cls,svg,label){
 var bc=mk('fbCatch','fbc',FISH,T('Έπιασα ψάρι (κράτα για διαγραφή του τελευταίου)','Caught a fish (hold to delete the last one)'));
 var bm=mk('fbMiss','fbm',MISS,T('Τσίμπησε αλλά χάθηκε (κράτα για διαγραφή του τελευταίου)','Bite but lost (hold to delete the last one)'));
 wrap.append(bm,bc); box.appendChild(wrap);
-/* v31z11: μεγάλο κουμπί «Ξεκίνα ψάρεμα» όταν δεν υπάρχει έξοδος· ανοίγει τη φόρμα εξόδου (δεν ξεκινά με ένα πάτημα) */
-var big=document.createElement('button'); big.type='button'; big.id='startBig'; big.className='startbig';
-big.innerHTML='<span class="sbi"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="13" cy="4.6" r="1.6"/><path d="M13 6.2V12a3.6 3.6 0 01-7.2 0"/><path d="M5.8 12v-2.2"/></svg></span><span class="sbt"></span>';
-big.querySelector('.sbt').textContent=T('Ξεκίνα ψάρεμα','Start fishing'); big.setAttribute('aria-label',T('Ξεκίνα ψάρεμα','Start fishing'));
-big.addEventListener('click',function(){ var tbn=$('tripBtn'); if(tbn) tbn.click(); });
+/* v31z12: «Ξεκίνα έξοδο»: σύρε προς τα δεξιά για να ανοίξει η φόρμα εξόδου (προστασία από κατά λάθος πάτημα) */
+var big=document.createElement('div'); big.id='startBig'; big.className='startbig'; big.setAttribute('role','button'); big.tabIndex=0;
+big.setAttribute('aria-label',T('Ξεκίνα έξοδο. Σύρε προς τα δεξιά.','Start trip. Slide to the right.'));
+big.innerHTML='<div class="sbknob"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2.2"/><path d="M12 7.2V21M8 11h8"/><path d="M4 14c0 4 3.6 7 8 7s8-3 8-7"/></svg></div><div class="sbtx"><b></b><small></small></div><div class="sbarr" aria-hidden="true">›››</div>';
+big.querySelector('.sbtx b').textContent=T('Ξεκίνα έξοδο','Start trip'); big.querySelector('.sbtx small').textContent=T('Με παρακολούθηση ασφαλείας','With safety monitoring');
 box.appendChild(big);
+(function(){
+  var knob=big.querySelector('.sbknob'), x0=0, dx=0, drag=false, maxX=0, moved=false;
+  function reset(){ dx=0; knob.style.transform=''; big.style.setProperty('--p',0); }
+  function go(){ var tbn=$('tripBtn'); if(tbn) tbn.click(); }
+  knob.addEventListener('pointerdown',function(e){ drag=true; moved=false; x0=e.clientX; maxX=Math.max(40,big.clientWidth-knob.offsetWidth-12); try{ knob.setPointerCapture(e.pointerId); }catch(x){} big.classList.add('drag'); });
+  knob.addEventListener('pointermove',function(e){ if(!drag) return; dx=Math.max(0,Math.min(maxX,e.clientX-x0)); if(dx>6) moved=true; knob.style.transform='translateX('+dx+'px)'; big.style.setProperty('--p',(dx/maxX).toFixed(3)); });
+  function end(){ if(!drag) return; drag=false; big.classList.remove('drag');
+    if(dx>=maxX*0.78){ buzz(); knob.style.transform='translateX('+maxX+'px)'; setTimeout(function(){ reset(); go(); },140); }
+    else { reset(); if(!moved){ big.classList.remove('nudge'); void big.offsetWidth; big.classList.add('nudge'); C.toast(T('Σύρε προς τα δεξιά για έναρξη εξόδου.','Slide to the right to start a trip.')); } } }
+  knob.addEventListener('pointerup',end); knob.addEventListener('pointercancel',end);
+  big.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } });
+})();
+/* προφίλ: κουμπί στη μπάρα κάτω, με το γράμμα του χρήστη */
+(function(){
+  var np=$('navProf'), pb=$('profBtn'), av=$('navProfAv'); if(!np||!pb) return;
+  function sync(){ if(av) av.textContent=(pb.textContent||'').trim().slice(0,1)||'?'; }
+  sync(); try{ new MutationObserver(sync).observe(pb,{childList:true,characterData:true,subtree:true}); }catch(e){}
+  np.addEventListener('click',function(){ pb.click(); });
+})();
 
 function upd(){
   var s=window.PsaroTrip.state(), on=!!(s&&s.active); wrap.hidden=!on; big.hidden=on;
