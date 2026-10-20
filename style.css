@@ -984,3 +984,17 @@ body:not(.ontrip) #bGear:not(.on){display:none!important}
 .startbig .sbtx b{font-size:17px;font-weight:800;line-height:1.1}
 .startbig .sbtx small{font-size:10.5px;font-weight:700;line-height:1.1;opacity:.9}
 .startbig .sbtx{padding-left:24px}
+/* v31z20: πιο στενή, λίγο ψηλότερη μπάρα με μεγάλα γράμματα */
+.startbig{width:min(calc(100% - 28px),212px);height:54px;border-radius:15px;bottom:46px}
+.startbig .sbknob{left:4px;top:4px;width:46px;height:46px;border-radius:11px}
+.startbig .sbknob svg{width:24px;height:24px}
+.startbig .sbtx{padding-left:44px;gap:1px}
+.startbig .sbtx b{font-size:22px;font-weight:800;line-height:1.05;letter-spacing:.01em}
+.startbig .sbtx small{font-size:10px;font-weight:700;line-height:1.1}
+.startbig .sbarr{display:none}
+/* v31z21: βελάκια που κινούνται προς τα δεξιά (υπόδειξη σύρσιμου) */
+.startbig{width:min(calc(100% - 28px),236px)}
+.startbig .sbarr{display:block;right:9px;font-size:20px;opacity:.7;letter-spacing:-3px;animation:sbarr2 1.2s ease-in-out infinite}
+.startbig .sbtx{padding-left:42px;padding-right:20px}
+@keyframes sbarr2{0%{transform:translateX(-5px);opacity:.25}50%{opacity:.9}100%{transform:translateX(4px);opacity:.25}}
+.startbig .sbtx{padding-left:54px;padding-right:22px}.startbig .sbtx small{font-size:9.5px}
