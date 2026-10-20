@@ -275,7 +275,8 @@ function suggest(input,getItems,onPick,remote){
     items.forEach(function(x){ if(n>=30) return; if(q&&norm(x.name).indexOf(q)<0) return; n++;
       var b=el('button','sgitem'); b.type='button'; b.append(el('b','',x.name)); if(x.sub) b.append(el('small','',x.sub));
       b.addEventListener('mousedown',function(e){ e.preventDefault(); }); b.addEventListener('click',function(){ input.value=x.name; box.hidden=true; onPick&&onPick(x); }); box.append(b); });
-    if(!n) box.append(el('div','sgempty',busy?T('Αναζήτηση…','Searching…'):(cur||T('Δεν βρέθηκε. Γράψε ελεύθερο κείμενο.','No match. Type free text.')))); box.hidden=false; }
+    if(!n) box.append(el('div','sgempty',busy?T('Αναζήτηση…','Searching…'):(cur||T('Δεν βρέθηκε. Γράψε ελεύθερο κείμενο.','No match. Type free text.')))); box.hidden=false; place(); }
+  function place(){ try{ if(getComputedStyle(box).position==='absolute'){ box.style.top=(input.offsetTop+input.offsetHeight+4)+'px'; } }catch(e){} }
   function refresh(){ items=getItems(); draw(); }
   input.addEventListener('focus',refresh);
   input.addEventListener('input',function(){ draw(); clearTimeout(tm); var v=input.value.trim(); if(remote&&v.length>=3) busy=true; draw(); tm=setTimeout(function(){ remote(v,function(extra,msg){ busy=false; cur=msg||''; if(extra&&extra.length){ var have={}; items.forEach(function(x){ have[norm(x.name)+(x.lat||'')]=1; }); extra.forEach(function(x){ if(!have[norm(x.name)+(x.lat||'')]) items.push(x); }); } draw(); }); },350); });

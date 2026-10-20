@@ -952,3 +952,13 @@ body.mapfull.hasdt:not(.ontrip) .toast{bottom:calc(var(--navh,60px) + 190px)}
 /* v31z12: προφίλ στη μπάρα κάτω· το «C» πάνω κρύβεται */
 #profBtn{display:none!important}
 nav.tabs .navprof .navav{width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font:700 13px var(--font-body,inherit);display:grid;place-items:center;line-height:1}
+
+/* v31z14: πιο λεπτή μπάρα εκκίνησης + λίστα προτάσεων κάτω από το πεδίο */
+.startbig{height:54px;border-radius:16px;bottom:26px}
+.startbig .sbknob{left:5px;top:5px;width:44px;height:44px;border-radius:12px}
+.startbig .sbknob svg{width:24px;height:24px}
+.startbig .sbtx{padding-left:36px;gap:0}
+.startbig .sbtx b{font-size:16px}
+.startbig .sbtx small{font-size:10.5px}
+.startbig .sbarr{font-size:18px;right:14px}
+#tripSheet .sfsec .sgbox{max-height:150px}
