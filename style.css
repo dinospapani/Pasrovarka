@@ -1226,8 +1226,8 @@ body.wxrow.mapfull .mapbrand span{display:none!important}
 body.wxrow.mapfull .mapbrand img{width:28px;height:28px;border-radius:8px}
 body.wxrow.mapfull .mapwx{top:calc(7px + env(safe-area-inset-top,0px))!important}
 body.mapfull.ontrip #tripBtn{position:fixed!important;left:50%;transform:translateX(-50%);top:calc(56px + env(safe-area-inset-top,0px));z-index:45;height:36px;padding:0 16px;box-shadow:0 4px 14px rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.25)}
-body.mapfull.ontrip #sosBtn:not([hidden]){position:fixed!important;right:12px;bottom:calc(var(--navh,60px) + 26px);width:56px;height:56px;padding:0!important;border-radius:50%!important;font-size:14px;font-weight:900;letter-spacing:.03em;background:#c62828;color:#fff;border:3px solid #fff;box-shadow:0 6px 18px rgba(0,0,0,.5);z-index:850;display:grid;place-items:center}
-body.ontrip #bMob{position:absolute;right:12px;bottom:92px;width:56px;height:56px;border-radius:50%;background:#fff!important;color:#c62828!important;border:3px solid #c62828!important;display:grid;place-items:center;z-index:820;box-shadow:0 6px 18px rgba(0,0,0,.45);padding:0;cursor:pointer}
-body.ontrip #bMob b{font-size:13px;font-weight:900}
-body.ontrip .mapbtns,body.ontrip.mapfull .mapbtns{max-height:calc(100% - 340px)!important}
+body.mapfull.ontrip #sosBtn:not([hidden]){position:fixed!important;right:12px;left:auto;top:calc(56px + env(safe-area-inset-top,0px));bottom:auto;height:36px;width:auto;min-width:64px;padding:0 16px!important;border-radius:99px!important;font-size:14px;font-weight:900;letter-spacing:.05em;background:#c62828;color:#fff;border:2px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.5);z-index:850;display:flex;align-items:center;justify-content:center}
+body.ontrip #bMob{position:absolute;left:12px;right:auto;top:calc(56px + env(safe-area-inset-top,0px));bottom:auto;height:36px;width:auto;min-width:64px;padding:0 16px;border-radius:99px;background:#fff!important;color:#c62828!important;border:2px solid #c62828!important;display:flex;align-items:center;justify-content:center;z-index:820;box-shadow:0 4px 14px rgba(0,0,0,.4);cursor:pointer}
+body.ontrip #bMob b{font-size:14px;font-weight:900;letter-spacing:.05em}
 body.mapfull.ontrip #sosBtn,body.ontrip #bMob b{text-transform:uppercase;font-family:system-ui,sans-serif}
+body.mapfull.ontrip #sosBtn,body.ontrip #bMob b{font-family:Arial,Helvetica,sans-serif!important;font-variant:normal!important;font-feature-settings:normal!important}
