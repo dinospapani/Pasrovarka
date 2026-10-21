@@ -1177,3 +1177,33 @@ body.wxedit .mapbtns{opacity:.35;pointer-events:none}
 .startbig.drag .sbknob svg{animation:none}
 @keyframes sbanchor{0%,12%{transform:rotate(0)}42%{transform:rotate(-14deg)}52%{transform:rotate(8deg)}62%,100%{transform:rotate(0)}}
 @media (prefers-reduced-motion:reduce){.startbig .sbtx b,.startbig .sbknob,.startbig .sbknob svg{animation:none!important}.startbig .sbtx b{-webkit-text-fill-color:#fff}}
+
+/* v31z60: καιρός σε μία συμπαγή γραμμή πάνω-αριστερά· κουμπί σύρσιμου διάφανο που διασχίζει όλη τη μπάρα, χωρίς βελάκια */
+.mapwx,body.mapfull .mapwx{top:calc(54px + env(safe-area-inset-top,0px))!important;transform:none!important;left:8px!important;border-radius:16px!important;padding:5px 8px!important;max-width:calc(100% - 16px)!important}
+body.ontrip.mapfull .mapwx{top:calc(104px + env(safe-area-inset-top,0px))!important}
+.mapwx:not(.edit) .mwrow{display:flex!important;flex-direction:row!important;flex-wrap:wrap;align-items:center;gap:2px 4px!important}
+.mapwx:not(.edit) .mw::before{display:none!important}
+.mapwx:not(.edit) .mw{flex-direction:row!important;align-items:center;gap:5px;min-width:0!important;padding:3px 7px!important;border:0!important;border-radius:10px}
+.mapwx:not(.edit) .mw+.mw{border-left:1px solid rgba(255,255,255,.12)!important;border-radius:0}
+.mapwx:not(.edit) .mw i{margin:0!important;width:15px;height:15px}
+.mapwx:not(.edit) .mw i svg{width:15px;height:15px}
+.mapwx:not(.edit) .mw b{font-size:16px}
+.mapwx:not(.edit) .mw span{font-size:9px;margin:0!important;opacity:.7;white-space:nowrap}
+.mapwx:not(.edit) .mwgear{width:24px!important;height:24px!important;margin:0 0 0 2px!important;grid-column:auto}
+.startbig .sbarr{display:none!important}
+.startbig .sbtx{padding-right:20px!important;padding-left:56px!important}
+.startbig .sbknob{background:transparent!important;box-shadow:none!important;border:0!important;color:#fff!important}
+.startbig .sbknob svg{width:32px!important;height:32px!important;stroke-width:2.4;filter:drop-shadow(0 1px 3px rgba(0,0,0,.45))}
+.startbig:not(.drag):not(.nudge) .sbknob{animation:sbhint 3.4s ease-in-out infinite!important}
+@keyframes sbhint{0%,8%{transform:translateX(0);opacity:1}58%{transform:translateX(var(--mx,200px));opacity:1}66%{transform:translateX(var(--mx,200px));opacity:0}67%{transform:translateX(0);opacity:0}76%,100%{transform:translateX(0);opacity:1}}
+.startbig.drag .sbknob{opacity:1}
+
+/* v31z61: όλα τα στοιχεία καιρού σε μία γραμμή */
+.mapwx:not(.edit) .mwrow{flex-wrap:nowrap!important;gap:0!important}
+.mapwx:not(.edit) .mw{display:grid!important;grid-template-columns:auto auto;column-gap:3px;row-gap:0;align-items:center;justify-items:center;padding:2px 5px!important;flex:0 1 auto}
+.mapwx:not(.edit) .mw i{grid-column:1;grid-row:1;width:13px!important;height:13px!important}
+.mapwx:not(.edit) .mw i svg{width:13px!important;height:13px!important}
+.mapwx:not(.edit) .mw b{grid-column:2;grid-row:1;font-size:15px!important}
+.mapwx:not(.edit) .mw span{grid-column:1/-1;grid-row:2;font-size:8px!important;letter-spacing:.04em;line-height:1.1}
+.mapwx:not(.edit) .mwgear{flex:0 0 auto;margin-left:4px!important}
+.mapwx{padding:4px 6px!important}
