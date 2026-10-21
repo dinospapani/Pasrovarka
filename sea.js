@@ -25,7 +25,7 @@ function getFix(cb,fail){
 var bMob=document.createElement('button'); bMob.type='button'; bMob.id='bMob'; bMob.className='mbtn mob'; bMob.setAttribute('aria-label',T('Άνθρωπος στη θάλασσα (MOB)','Man overboard (MOB)')); bMob.title=bMob.getAttribute('aria-label'); bMob.innerHTML='<b>MOB</b>';
 var bTools=document.createElement('button'); bTools.type='button'; bTools.id='bTools'; bTools.className='mbtn'; bTools.setAttribute('aria-label',T('Εργαλεία θάλασσας','Sea tools')); bTools.title=bTools.getAttribute('aria-label');
 bTools.innerHTML=ic('<circle cx="12" cy="5" r="2.2"/><path d="M12 7.2V21M8 11h8"/><path d="M4 14c0 4 3.6 7 8 7s8-3 8-7"/>');
-mb.appendChild(bMob); mb.appendChild(bTools);
+(mb.parentNode||document.body).appendChild(bMob); mb.appendChild(bTools); /* v31z63: το MOB μένει σταθερά κάτω δεξιά, έξω από τη στήλη που σκρολάρει */
 
 /* ---------- MOB ---------- */
 var mobs=C.lsGet('psaro-mob',[]); if(!Array.isArray(mobs)) mobs=[];

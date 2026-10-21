@@ -1207,3 +1207,27 @@ body.ontrip.mapfull .mapwx{top:calc(104px + env(safe-area-inset-top,0px))!import
 .mapwx:not(.edit) .mw span{grid-column:1/-1;grid-row:2;font-size:8px!important;letter-spacing:.04em;line-height:1.1}
 .mapwx:not(.edit) .mwgear{flex:0 0 auto;margin-left:4px!important}
 .mapwx{padding:4px 6px!important}
+
+/* v31z62: λογότυπο + καιρός στην ίδια γραμμή, κεντραρισμένα· μικρότερη μπάρα με κεντραρισμένο κείμενο */
+body.wxrow:not(.ontrip).mapfull .mapbrand span{display:none}
+body.wxrow:not(.ontrip).mapfull .mapbrand{padding:0 7px 0 7px;gap:0;height:42px;top:calc(7px + env(safe-area-inset-top,0px))}
+body.wxrow:not(.ontrip).mapfull .mapbrand img{width:28px;height:28px;border-radius:8px}
+body.wxrow:not(.ontrip).mapfull .mapwx{top:calc(7px + env(safe-area-inset-top,0px))!important}
+.startbig{width:min(calc(100% - 28px),270px)!important;height:52px!important;bottom:44px!important;border-radius:18px!important}
+.startbig .sbknob{width:44px!important;height:44px!important;top:4px!important;left:4px!important}
+.startbig .sbknob svg{width:28px!important;height:28px!important}
+.startbig .sbtx{padding:0!important;align-items:center;text-align:center;width:100%}
+.startbig .sbtx b{font-size:16px!important}
+.startbig .sbtx small{font-size:9.5px!important;justify-content:center}
+
+/* v31z63: ίδια πάνω γραμμή και σε έξοδο· «Τέλος εξόδου» από κάτω· SOS και MOB σταθερά κάτω δεξιά */
+body.wxrow.mapfull .mapbrand{display:flex!important;padding:0 7px!important;gap:0!important;height:42px!important;top:calc(7px + env(safe-area-inset-top,0px))!important;right:auto!important}
+body.wxrow.mapfull .mapbrand span{display:none!important}
+body.wxrow.mapfull .mapbrand img{width:28px;height:28px;border-radius:8px}
+body.wxrow.mapfull .mapwx{top:calc(7px + env(safe-area-inset-top,0px))!important}
+body.mapfull.ontrip #tripBtn{position:fixed!important;left:50%;transform:translateX(-50%);top:calc(56px + env(safe-area-inset-top,0px));z-index:45;height:36px;padding:0 16px;box-shadow:0 4px 14px rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.25)}
+body.mapfull.ontrip #sosBtn:not([hidden]){position:fixed!important;right:12px;bottom:calc(var(--navh,60px) + 26px);width:56px;height:56px;padding:0!important;border-radius:50%!important;font-size:14px;font-weight:900;letter-spacing:.03em;background:#c62828;color:#fff;border:3px solid #fff;box-shadow:0 6px 18px rgba(0,0,0,.5);z-index:850;display:grid;place-items:center}
+body.ontrip #bMob{position:absolute;right:12px;bottom:92px;width:56px;height:56px;border-radius:50%;background:#fff!important;color:#c62828!important;border:3px solid #c62828!important;display:grid;place-items:center;z-index:820;box-shadow:0 6px 18px rgba(0,0,0,.45);padding:0;cursor:pointer}
+body.ontrip #bMob b{font-size:13px;font-weight:900}
+body.ontrip .mapbtns,body.ontrip.mapfull .mapbtns{max-height:calc(100% - 340px)!important}
+body.mapfull.ontrip #sosBtn,body.ontrip #bMob b{text-transform:uppercase;font-family:system-ui,sans-serif}
