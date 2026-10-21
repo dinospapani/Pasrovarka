@@ -49,17 +49,13 @@ function place(){
   el.style.top=(sb&&full&&sb.offsetParent!==null)?Math.round(sb.getBoundingClientRect().bottom+8)+'px':'';
 }
 function row(){
-  var br=document.querySelector('.mapbrand'), b=document.body, logo=false, line=false;
-  if(br&&b.classList.contains('mapfull')){
-    logo=true; b.classList.add('wxrow');
-    var W=box.clientWidth, bw=br.offsetWidth||44;
-    br.style.setProperty('left','8px','important'); br.style.setProperty('transform','none','important');
-    var ww=el.offsetWidth, lx=Math.max(Math.round((W-ww)/2),8+bw+8);
-    if(!el.hidden&&lx+ww<=W-8){ line=true; el.style.setProperty('left',lx+'px','important'); }
-  }
-  b.classList.toggle('wxrow',logo); b.classList.toggle('wxline',line);
-  if(!line) el.style.removeProperty('left');
-  if(!logo&&br){ br.style.removeProperty('left'); br.style.removeProperty('transform'); }
+  var b=document.body, line=false;
+  if(b.classList.contains('mapfull')){
+    var W=box.clientWidth, ww=el.offsetWidth, side=b.classList.contains('ontrip')?64:8;
+    var lx=Math.max(Math.round((W-ww)/2),8);
+    if(!el.hidden){ el.style.setProperty('left',lx+'px','important'); line=(lx>=side&&lx+ww<=W-side); }
+  } else el.style.removeProperty('left');
+  b.classList.toggle('wxline',line);
 }
 setInterval(function(){ place(); row(); },400);
 setTimeout(draw,800); setTimeout(draw,3500);

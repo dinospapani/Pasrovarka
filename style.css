@@ -1254,3 +1254,18 @@ body.wxrow.mapfull .mapbrand img{width:40px;height:40px;border-radius:11px}
 .startbig .sbknob{width:38px!important;height:38px!important;top:4px!important;left:4px!important}
 .startbig .sbtx b{font-size:14px!important;white-space:nowrap}
 .startbig .sbtx small{font-size:9px!important;white-space:nowrap}
+
+/* v31z69: χωρίς λογότυπο· MOB και SOS δεξιά και αριστερά από τον καιρό */
+body.mapfull .mapbrand{display:none!important}
+body.mapfull .mapwx{top:calc(54px + env(safe-area-inset-top,0px))!important}
+body.wxline.mapfull .mapwx{top:calc(7px + env(safe-area-inset-top,0px))!important}
+body:not(.ontrip).mapfull .mapwx{top:calc(7px + env(safe-area-inset-top,0px))!important}
+body.mapfull.ontrip .mapwx.edit{top:calc(54px + env(safe-area-inset-top,0px))!important}
+body.mapfull.ontrip #sosBtn:not([hidden]),body.ontrip #bMob{top:calc(7px + env(safe-area-inset-top,0px));bottom:auto;width:52px;min-width:0;height:40px;padding:0!important;font-size:13px;letter-spacing:.03em}
+body.mapfull.ontrip #sosBtn:not([hidden]){right:8px;left:auto}
+body.ontrip #bMob{left:8px;right:auto}
+body.ontrip #bMob b{font-size:13px}
+/* «Τέλος εξόδου»: από κάτω αν ο καιρός είναι στην πάνω γραμμή, αλλιώς στην πάνω γραμμή */
+body.mapfull.ontrip #tripBtn{top:calc(56px + env(safe-area-inset-top,0px))}
+body.mapfull.ontrip:not(.wxline) #tripBtn{top:calc(9px + env(safe-area-inset-top,0px));height:36px}
+body.mapfull.ontrip:not(.wxline) .mapwx{top:calc(54px + env(safe-area-inset-top,0px))!important}
