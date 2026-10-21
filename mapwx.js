@@ -7,12 +7,12 @@ var KEY='psaro-mapwx-items', DEF=['wind','press','sst'];
 var TR={fast:'↓↓',slow:'↓',stable:'→',rise:'↑'};
 var DIRS=['N','NE','E','SE','S','SW','W','NW'];
 var ITEMS=[
-  ['wind','➤',T('Άνεμος','Wind'),function(c){ if(c.wind==null) return null; var wp=window.PsaroUnits.windP(c.wind), d=c.windDeg!=null?DIRS[Math.round((((c.windDeg%360)+360)%360)/45)%8]:''; return [wp[0],(wp[1]+' '+d).trim()]; }],
-  ['press','☁',T('Πίεση','Pressure'),function(c){ if(c.press==null) return null; var pp=window.PsaroUnits.pressP(c.press); return [pp[0],pp[1]+' '+(TR[c.ptrend]||'')]; }],
-  ['sst','🌊',T('Θερμ. νερού','Water temp'),function(c){ if(c.sst==null) return null; var t=window.PsaroUnits.tempP(c.sst); return [t[0]+'°',T('θάλασσα','sea')]; }],
-  ['air','🌡',T('Θερμ. αέρα','Air temp'),function(c){ if(c.temp==null) return null; var t=window.PsaroUnits.tempP(c.temp); return [t[0]+'°',T('αέρας','air')]; }],
-  ['wave','〰',T('Κύμα','Wave'),function(c){ if(c.wave==null) return null; var wv=window.PsaroUnits.waveP(c.wave); return [wv[0],T('κύμα ','wave ')+wv[1]]; }],
-  ['period','⏱',T('Περίοδος κύματος','Wave period'),function(c){ return c.wavePeriod?[Math.round(c.wavePeriod)+'',T('δευτ.','sec')]:null; }]
+  ['wind','<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h13M12 6l6 6-6 6"/></svg>',T('Άνεμος','Wind'),function(c){ if(c.wind==null) return null; var wp=window.PsaroUnits.windP(c.wind), d=c.windDeg!=null?DIRS[Math.round((((c.windDeg%360)+360)%360)/45)%8]:''; return [wp[0],(wp[1]+' '+d).trim()]; }],
+  ['press','<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 12l4-4M8 4.5M12 5v1.5M5.5 8l1 .8M18.5 8l-1 .8"/></svg>',T('Πίεση','Pressure'),function(c){ if(c.press==null) return null; var pp=window.PsaroUnits.pressP(c.press); return [pp[0],pp[1]+' '+(TR[c.ptrend]||'')]; }],
+  ['sst','<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9c3-3 5-3 7 0s4 3 7 0 3-2 4-1"/><path d="M3 15c3-3 5-3 7 0s4 3 7 0 3-2 4-1"/></svg>',T('Θερμ. νερού','Water temp'),function(c){ if(c.sst==null) return null; var t=window.PsaroUnits.tempP(c.sst); return [t[0]+'°',T('θάλασσα','sea')]; }],
+  ['air','<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14V5a2 2 0 014 0v9a4 4 0 11-4 0z"/></svg>',T('Θερμ. αέρα','Air temp'),function(c){ if(c.temp==null) return null; var t=window.PsaroUnits.tempP(c.temp); return [t[0]+'°',T('αέρας','air')]; }],
+  ['wave','<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12c2.5-4 4.5-4 7 0s4.500 4 7 0 3.500-3 6-2"/></svg>',T('Κύμα','Wave'),function(c){ if(c.wave==null) return null; var wv=window.PsaroUnits.waveP(c.wave); return [wv[0],T('κύμα ','wave ')+wv[1]]; }],
+  ['period','<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="7"/><path d="M12 9v4l2.500 2M9.500 3h5"/></svg>',T('Περίοδος κύματος','Wave period'),function(c){ return c.wavePeriod?[Math.round(c.wavePeriod)+'',T('δευτ.','sec')]:null; }]
 ];
 var el=document.createElement('div'); el.className='mapwx'; el.hidden=true; box.appendChild(el);
 var editing=false;
@@ -24,7 +24,7 @@ function draw(){
   ITEMS.forEach(function(it){
     if(on.indexOf(it[0])<0) return;
     var v=it[3](c), d=document.createElement('div'); d.className='mw';
-    var i=document.createElement('i'); i.textContent=it[1]; var b=document.createElement('b'); b.textContent=v?v[0]:'–'; var s=document.createElement('span'); s.textContent=v?v[1]:it[2];
+    var i=document.createElement('i'); i.innerHTML=it[1]; var b=document.createElement('b'); b.textContent=v?v[0]:'–'; var s=document.createElement('span'); s.textContent=v?v[1]:it[2];
     d.append(i,b,s); row.append(d);
   });
   if(!row.childNodes.length){ var m=document.createElement('span'); m.className='mwempty'; m.textContent=T('Πάτα για να διαλέξεις στοιχεία','Tap to choose items'); row.append(m); }
@@ -33,7 +33,7 @@ function draw(){
   if(editing){
     var ch=document.createElement('div'); ch.className='mwchips';
     ITEMS.forEach(function(it){
-      var b=document.createElement('button'); b.type='button'; b.className='mwchip'; b.setAttribute('aria-pressed',String(on.indexOf(it[0])>=0)); b.textContent=it[1]+' '+it[2];
+      var b=document.createElement('button'); b.type='button'; b.className='mwchip'; b.setAttribute('aria-pressed',String(on.indexOf(it[0])>=0)); b.innerHTML=it[1]+'<span>'+it[2]+'</span>';
       b.addEventListener('click',function(e){ e.stopPropagation(); var cur=sel(), i=cur.indexOf(it[0]); if(i>=0) cur.splice(i,1); else cur.push(it[0]); cur=ITEMS.map(function(x){ return x[0]; }).filter(function(k){ return cur.indexOf(k)>=0; }); C.lsSet(KEY,cur); draw(); });
       ch.append(b);
     });

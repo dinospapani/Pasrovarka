@@ -1164,8 +1164,6 @@ function renderStats(){
   const bs=sel?all.filter(b=>norm(b.species)===norm(sel)):all;
   const B=$('stBody'); B.replaceChildren();
   if(!all.length){B.append(h('div',{class:'empty',text:'Τα στατιστικά εμφανίζονται μόλις καταγράψεις τσιμπήματα στην καρτέλα «Τσιμπήματα».'}));return;}
-  { const pg=Store.pas().filter(b=>PsaroRange.inR('log',b)); if(pg.length){ const gm=new Map(); pg.forEach(b=>{ const k=b.gearName||b.tech||'—'; const o=gm.get(k)||{n:0,kg:0}; o.n+=bc(b); o.kg+=b.rel?0:(+b.kg||0); gm.set(k,o); });
-    B.append(h('div',{class:'card'},h('h3',{text:window.LANG==='en'?'Gear (net, longline, pots)':'Εργαλεία (δίχτυ, παραγάδι, κλούβες)'}),h('p',{class:'muted',text:(window.LANG==='en'?'Counted separately from rod fishing.':'Μετράνε ξεχωριστά από το ψάρεμα με καλάμι.')}),...[...gm.entries()].sort((a,b)=>b[1].n-a[1].n).map(([k,o])=>h('div',{class:'tr'},h('span',{text:k}),h('b',{text:o.n+(window.LANG==='en'?' fish':(o.n===1?' ψάρι':' ψάρια'))+' · '+(Math.round(o.kg*10)/10).toFixed(1)+' kg'}))))); } }
   B.append(h('p',{class:'muted',text:bs.length+' τσιμπήματα'+(bs.length<15?'. Λίγα δεδομένα, δες τα ως ένδειξη και όχι ως κανόνα.':'')}));
   const sorted=m=>[...m.entries()].sort((a,b)=>b[1]-a[1]);
   if(!sel){
@@ -1176,6 +1174,8 @@ function renderStats(){
   const bm=tally(bs,b=>norm(b.bait)||'—');
   const baitRows=sorted(bm).slice(0,8).map(([k,v])=>[k==='—'?'Χωρίς καταγραφή':first.get(k),v]);
   B.append(barsCard('Με τι τσίμπησε',baitRows));
+  const tm=tally(bs,b=>(b.tech||'').trim()||'—',true);
+  B.append(barsCard('Ανά τεχνική',sorted(tm).slice(0,10).map(([k,v])=>[k==='—'?'Χωρίς καταγραφή':k,v])));
   const hm=tally(bs,b=>Math.floor(parseInt((b.time||'12:00').slice(0,2),10)/3));
   B.append(barsCard('Ώρα ημέρας',Array.from({length:8},(_,i)=>[pad(i*3)+'–'+pad((i*3+3)%24),hm.get(i)||0])));
   const mm=tally(bs,b=>biteMoon(b));

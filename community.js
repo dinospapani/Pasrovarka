@@ -12,7 +12,7 @@ var seg=$('logSeg'), tabLog=$('tab-log'); if(!seg||!tabLog) return;
 var PAGE=15;
 
 /* ---------- δομή: τέταρτο τμήμα στο Log ---------- */
-var segBtn=el('button','',T('Κοινότητα','Community')); segBtn.type='button'; segBtn.dataset.l='comm'; segBtn.setAttribute('aria-pressed','false'); seg.appendChild(segBtn);
+var segBtn=el('button','',T('Κοινότητα','Community')); segBtn.type='button'; segBtn.dataset.l='comm'; segBtn.setAttribute('aria-pressed','false'); /* v31z55: το κουμπί «Κοινότητα» αφαιρέθηκε από το Ημερολόγιο (το feed δεν έχει πια είσοδο εδώ) */
 var box=el('div','col'); box.id='l-comm'; box.hidden=true; var anchor=$('l-stats'); anchor.parentNode.insertBefore(box,anchor.nextSibling);
 var feedState={items:[],offset:0,end:false,loading:false,mine:false,liked:{},open:{}};
 Array.prototype.forEach.call(seg.querySelectorAll('button'),function(b){ b.addEventListener('click',function(){

@@ -1106,3 +1106,43 @@ html.rst body{visibility:hidden}
 .gdet .gcrow{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center}
 .gdet .gcl{font-weight:600;overflow-wrap:anywhere}
 .gdet .gci{min-width:36px;height:34px;padding:0 8px}
+
+/* v31z57: επαγγελματικό ύφος στην αρχική οθόνη του χάρτη */
+:root{--glass:rgba(10,28,41,.74);--glass-line:rgba(255,255,255,.14);--glass-sh:0 8px 24px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.06)}
+/* δεξιά μπάρα εργαλείων: ένα ενιαίο γυάλινο κάψουλα με διαχωριστικά */
+.mapbtns,body.mapfull .mapbtns{right:8px!important;gap:0!important;padding:4px!important;border-radius:22px;background:var(--glass);border:1px solid var(--glass-line);box-shadow:var(--glass-sh);backdrop-filter:blur(12px) saturate(1.2);-webkit-backdrop-filter:blur(12px) saturate(1.2)}
+.mapbtns .mbtn{width:46px;height:46px;border-radius:16px;border:0;background:transparent;color:rgba(255,255,255,.92);transition:background .15s,color .15s,transform .1s}
+.mapbtns .mbtn+.mbtn::before{content:"";position:absolute;left:11px;right:11px;top:-0.5px;height:1px;background:rgba(255,255,255,.1)}
+.mapbtns .mbtn:active{transform:scale(.94);background:rgba(255,255,255,.14)}
+.mapbtns .mbtn[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.mapbtns .mbtn[aria-pressed=true]::before,.mapbtns .mbtn[aria-pressed=true]+.mbtn::before{opacity:0}
+.mapbtns .mbtn svg{width:22px;height:22px;stroke-width:1.7}
+.mapbtns .mbtn.mob{background:#c62828;color:#fff;border-radius:16px}
+/* κάρτα καιρού */
+.mapwx,body.mapfull .mapwx{background:var(--glass)!important;border:1px solid var(--glass-line);border-radius:20px!important;padding:6px 4px!important;box-shadow:var(--glass-sh)!important;backdrop-filter:blur(12px) saturate(1.2);-webkit-backdrop-filter:blur(12px) saturate(1.2)}
+.mapwx .mwrow{gap:0!important}
+.mapwx .mw{min-width:56px;padding:8px 4px;position:relative}
+.mapwx .mw+.mw::before{content:"";position:absolute;left:12px;right:12px;top:0;height:1px;background:rgba(255,255,255,.1)}
+.mapwx .mw i{width:18px;height:18px;display:block;color:#7fd3c4;margin-bottom:3px}
+.mapwx .mw i svg,.mapwx .mwchip svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;display:block}
+.mapwx .mw b{font-size:19px;font-weight:600;line-height:1.05;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.mapwx .mw span{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;opacity:.7;margin-top:1px}
+.mapwx .mwgear{width:30px;height:30px;margin:4px auto 2px;background:rgba(255,255,255,.1);font-size:13px}
+.mapwx .mwchip{display:inline-flex;align-items:center;gap:6px;border-color:rgba(255,255,255,.25)}
+.mapwx .mwchip span{font-size:12px}
+.mapwx .mwchip[aria-pressed=true]{background:rgba(127,211,196,.18);border-color:#7fd3c4}
+/* λογότυπο */
+body.mapfull .mapbrand{background:var(--glass)!important;border:1px solid var(--glass-line);box-shadow:var(--glass-sh)!important;height:38px}
+body.mapfull .mapbrand span{font-weight:700;letter-spacing:.14em;font-size:14px}
+/* Έναρξη εξόδου: κύρια ενέργεια ασφαλείας */
+.startbig{height:66px!important;border-radius:22px!important;background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 92%,#fff 8%),var(--accent))!important;border:1px solid rgba(255,255,255,.22);box-shadow:0 10px 28px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.25)!important}
+.startbig .sbknob{width:54px!important;height:54px!important;top:5px!important;left:5px!important;border-radius:17px!important;background:#fff!important;box-shadow:0 3px 10px rgba(0,0,0,.35)!important}
+.startbig .sbtx b{font-weight:700;letter-spacing:.02em;text-transform:none}
+.startbig .sbtx small{display:flex;align-items:center;gap:5px;font-weight:600;letter-spacing:.02em;opacity:.92}
+.startbig .sbtx small::before{content:"";width:12px;height:12px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l8 3v6c0 5-3.500 8-8 9-4.500-1-8-4-8-9V6z'/%3E%3Cpath d='M8.500 12l2.500 2.500 4.500-5'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l8 3v6c0 5-3.500 8-8 9-4.500-1-8-4-8-9V6z'/%3E%3Cpath d='M8.500 12l2.500 2.500 4.500-5'/%3E%3C/svg%3E") center/contain no-repeat}
+.startbig{width:min(calc(100% - 28px),292px)!important;height:60px!important;bottom:44px!important}
+.startbig .sbknob{width:50px!important;height:50px!important;top:4px!important;left:4px!important}
+.startbig .sbtx{padding-left:56px!important;padding-right:26px!important}
+.startbig .sbtx b{font-size:18px!important;font-weight:700!important;white-space:nowrap;line-height:1.1}
+.startbig .sbtx small{font-size:10px!important;white-space:nowrap;line-height:1.2;margin-top:2px}
+.mapwx .mwchip,.mapwx .mwchip[aria-pressed=true]{color:#fff!important}
