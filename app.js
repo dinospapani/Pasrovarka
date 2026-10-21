@@ -792,6 +792,8 @@ function searchDB(q,max){
   return out.slice(0,max).map(x=>x[1]);
 }
 const dispName=sp=>sp.el||sp.en;
+const shownName=sp=>window.LANG==='en'?(sp.en||sp.el):(sp.el||sp.en);
+const matchSp=txt=>{ const n=strip((txt||'').trim()); if(!n) return null; return DB.find(d=>(d.el&&strip(d.el)===n)||(d.en&&strip(d.en)===n))||DB.find(d=>d.alt&&strip(d.alt).split(/[\/,;]/).some(w=>w.trim()===n))||null; };
 let gbifSeen=[];
 async function gbifSearch(q){
   const j=await fetchJson('https://api.gbif.org/v1/species/search?q='+encodeURIComponent(q)+'&rank=SPECIES&status=ACCEPTED&datasetKey=d7dddbf4-2cf0-4f39-9b2a-bb099caae36c&limit=15');
@@ -812,7 +814,7 @@ function spItem(sp){
   if(!d&&!cy) body.append(fb);
   const ci=cy?CY.indexOf(cy):-1; const pic=h('img',{class:'spimg',alt:cy?cy.n:'',hidden:true});
   const det=h('details',{class:'sp'},
-    h('summary',{},h('span',{},h('b',{text:cy?((window.LANG==='en'&&cy.e)?cy.e:cy.n):(d?d.n:dispName(sp))}),d&&d.warn?h('span',{class:'tag',text:d.warn}):null,(sp.el&&sp.en&&!d&&!cy)?h('span',{class:'muted',text:' · '+sp.en}):null),h('span',{class:'lat',text:sp.la})),
+    h('summary',{},h('span',{},h('b',{text:cy?((window.LANG==='en'&&cy.e)?cy.e:cy.n):(d?d.n:(window.LANG==='en'?(sp.en||dispName(sp)):dispName(sp)))}),d&&d.warn?h('span',{class:'tag',text:d.warn}):null,(sp.el&&sp.en&&!d&&!cy&&window.LANG!=='en')?h('span',{class:'muted',text:' · '+sp.en}):null),h('span',{class:'lat',text:sp.la})),
     h('div',{class:'body'},cy?h('p',{text:(window.LANG==='en'&&window.CY100EN&&window.CY100EN[cy.l])||cy.t}):null,cy?h('p',{class:'note',text:'Πηγή: «Τα 100 σημαντικότερα είδη ψαριών των κυπριακών θαλασσών», Τμήμα Αλιείας και Θαλασσίων Ερευνών, Κύπρος.'}):null,(d&&cy)?h('h3',{text:'Πρακτικά για το ψάρεμα',style:'margin-top:10px'}):null,d?body:(cy?null:body)));
   det.querySelector('.body').prepend(pic);
   if(ci>=0) det.addEventListener('toggle',()=>{ if(!det.open||pic.src) return; loadFishImgs().then(()=>{const u=(window.FISH_IMG||[])[ci]; if(u){pic.src=u;pic.hidden=false;}}); });
@@ -820,12 +822,28 @@ function spItem(sp){
 }
 let enP=null;
 function loadEN(){ if(window.LANG!=='en'||window.CY100EN) return Promise.resolve(); if(!enP) enP=new Promise(r=>{const s=document.createElement('script');s.src='cy100-en.js';s.onload=()=>r(true);s.onerror=()=>{enP=null;r(false);};document.head.append(s);}); return enP; }
+let spReg='cy';
+function spRegBar(){
+  const en=window.LANG==='en'; let bar=$('spRegs'); if(!bar){ bar=h('div',{class:'spregs',id:'spRegs',role:'group','aria-label':en?'Region':'Περιοχή'}); $('spQ').after(bar); }
+  bar.replaceChildren();
+  [['cy',en?'Cyprus (Dept. of Fisheries)':'Κύπρος (Τμήμα Αλιείας)'],['*',en?'All':'Όλα']].concat((window.SPECIES_REGIONS||[]).map(r=>[r[0],en?r[2]:r[1]])).forEach(([k,t])=>{
+    bar.append(h('button',{type:'button',class:'chip','aria-pressed':String(spReg===k),text:t,onclick:()=>{ spReg=k; renderSpecies(); }}));
+  });
+  try{ const on=bar.querySelector('[aria-pressed=true]'); if(on) bar.scrollLeft=Math.max(0,on.offsetLeft-12); }catch(e){}
+}
 function renderSpecies(extra){
+  spRegBar();
   if(window.LANG==='en'&&!window.CY100EN&&!renderSpecies._w){ renderSpecies._w=1; loadEN().then(()=>{ renderSpecies._w=0; renderSpecies(extra); }); }
   const q=$('spQ').value.trim(); const L=$('spList'); L.replaceChildren();
   $('spCount').textContent=(q?'':'Τα 100 είδη των κυπριακών θαλασσών (Τμήμα Αλιείας). ')+'Στη βάση: '+DB.length+' είδη, ενδεικτική λίστα.';
   let list;
-  if(!q){
+  if(!q&&spReg!=='cy'){
+    const rg=window.SPECIES_REG||{}, en=window.LANG==='en';
+    list=DB.filter(sp=>spReg==='*'||(rg[(sp.la||'').toLowerCase()]||'m').indexOf(spReg)>=0).sort((a,b)=>strip(shownName(a)).localeCompare(strip(shownName(b)),en?'en':'el')).map(sp=>({el:sp.el,en:sp.en||'',la:sp.la}));
+    const rn=spReg==='*'?(en?'All species':'Όλα τα είδη'):(((window.SPECIES_REGIONS||[]).find(r=>r[0]===spReg)||[])[en?2:1]||'');
+    $('spCount').textContent=rn+' · '+list.length+(en?' species. Regions are indicative; it does not mean fishing the species is allowed there.':' είδη. Οι περιοχές είναι ενδεικτικές· δεν σημαίνει ότι επιτρέπεται η αλιεία του είδους εκεί.');
+  }
+  else if(!q){
     list=CY.slice().sort((x,y)=>x.n.localeCompare(y.n,'el')).map(c=>({el:c.n,en:c.e,la:c.l}));
     SPECIES.forEach(x=>{ if(!CYL[x.l.toLowerCase()]) list.push({el:x.n,en:'',la:x.l}); });
   }
@@ -948,7 +966,7 @@ $('bPrevX').addEventListener('click',()=>{photoBlob=null;$('bPrev').hidden=true;
 function renderChips(){
   const bites=Store.get('bites').slice().sort((a,b)=>biteMs(b)-biteMs(a));
   const uniq=(arr,n)=>[...new Set(arr.map(x=>(x||'').trim()).filter(Boolean))].slice(0,n);
-  const fill=(el,items,input)=>{el.replaceChildren(); items.forEach(x=>el.append(h('button',{type:'button',class:'chip',text:x,onclick:()=>{input.value=x; if(input===$('bSpecies')){const m=DB.find(d=>dispName(d)===x); curLatin=m?m.la:(bites.find(b=>b.species===x)||{}).latin||''; updateLaw();}}})));};
+  const fill=(el,items,input)=>{el.replaceChildren(); items.forEach(x=>{ const lbl=(input===$('bSpecies')&&window.LANG==='en'&&window.spName)?window.spName(x):x; el.append(h('button',{type:'button',class:'chip',text:lbl,onclick:()=>{input.value=lbl; if(input===$('bSpecies')){const m=DB.find(d=>dispName(d)===x); curLatin=m?m.la:(bites.find(b=>b.species===x)||{}).latin||''; updateLaw();}}})); });};
   fill($('bChipsSp'),uniq(bites.map(b=>b.species),6),$('bSpecies'));
   fill($('bChipsBait'),uniq(bites.map(b=>b.bait),6),$('bBait'));
 }
@@ -956,7 +974,7 @@ function renderChips(){
 let sugT=null, sugSeq=0;
 function showSug(items){
   const box=$('bSug'); box.replaceChildren();
-  items.forEach(sp=>box.append(h('button',{type:'button',class:'sugi',onclick:()=>{ $('bSpecies').value=dispName(sp); curLatin=sp.la; box.hidden=true; updateLaw(); }},h('b',{text:dispName(sp)}),h('span',{class:'lat',text:(sp.el&&sp.en?sp.en+' · ':'')+sp.la}))));
+  items.forEach(sp=>box.append(h('button',{type:'button',class:'sugi',onclick:()=>{ $('bSpecies').value=shownName(sp); curLatin=sp.la; box.hidden=true; updateLaw(); }},h('b',{text:shownName(sp)}),h('span',{class:'lat',text:(sp.el&&sp.en?(window.LANG==='en'?sp.el:sp.en)+' · ':'')+sp.la}))));
   box.hidden=!items.length;
 }
 $('bSpecies').addEventListener('input',()=>{
@@ -973,7 +991,7 @@ $('bSpecies').addEventListener('input',()=>{
   }
 });
 $('bSpecies').addEventListener('focus',()=>setTimeout(()=>{ try{ $('bSpecies').scrollIntoView({block:'start',behavior:'smooth'}); }catch(e){} },300));
-$('bSpecies').addEventListener('blur',()=>setTimeout(()=>{$('bSug').hidden=true;},200));
+$('bSpecies').addEventListener('blur',()=>setTimeout(()=>{ $('bSug').hidden=true; const m=matchSp($('bSpecies').value); if(m){ $('bSpecies').value=shownName(m); curLatin=m.la; try{ updateLaw(); }catch(e){} } },200));
 $('biteForm').addEventListener('submit',async e=>{
   e.preventDefault();
   const btn=$('biteForm').querySelector('button[type=submit]'); btn.disabled=true; btn.textContent='Αποθήκευση…';
@@ -992,7 +1010,7 @@ $('biteForm').addEventListener('submit',async e=>{
     else if((mode==='pick'||mode==='coords')&&pickedPt){lat=pickedPt.lat;lon=pickedPt.lon;}
     else if(mode==='keep'&&editing){lat=editing.lat;lon=editing.lon;place=editing.place||'';}
     const num=id=>$(id).value===''?null:+$(id).value;
-    const sName=$('bSpecies').value.trim();
+    let sName=$('bSpecies').value.trim(); { const mm=matchSp(sName); if(mm){ sName=dispName(mm); if(!curLatin) curLatin=mm.la; } }
     let rec={date:date,time:(time||'12:00').slice(0,5),tz:utcOff(),species:sName,latin:curLatin||'',bait:$('bBait').value.trim(),tech:$('bTech').value,
       depth:num('bDepth'),kg:num('bKg'),len:num('bLen'),press:(isNow||pressTouched||editing)?num('bPress'):null,notes:$('bNotes').value.trim(),
       ptrend:isNow?$('dPress').value:null,wind:isNow?+$('dWind').value:null,wave:isNow?+$('dWave').value:null,cloud:isNow?$('dCloud').value:null,
@@ -1031,7 +1049,7 @@ $('biteForm').addEventListener('submit',async e=>{
 function editBite(b){
   resetSheet(); editRec=b; sheetFresh=false;
   $('bWhen').value=(b.date||nicosiaToday())+'T'+(b.time||'12:00');
-  $('bSpecies').value=b.species||''; curLatin=b.latin||'';
+  $('bSpecies').value=(window.LANG==='en'&&window.spName)?window.spName(b.species||''):(b.species||''); curLatin=b.latin||'';
   $('bBait').value=b.bait||''; $('bTech').value=b.tech||'';
   for(const [id,k] of [['bDepth','depth'],['bKg','kg'],['bLen','len'],['bPress','press']]) $(id).value=b[k]==null?'':b[k];
   $('bNotes').value=b.notes||''; $('bRel').checked=!!b.rel; $('bMulti').checked=bc(b)>1; $('bCnt').value=bc(b)>1?bc(b):''; multiSync();
@@ -1330,6 +1348,9 @@ function updateLaw(){
   out.textContent=msgs.join(' ');
 }
 $('biteForm').addEventListener('input',updateLaw);
+/* Το πλήκτρο Enter/«Εντάξει» του πληκτρολογίου δεν υποβάλλει τη φόρμα (πριν αποθήκευε και έκλεινε το φύλλο): κλείνει μόνο το πληκτρολόγιο. */
+$('biteForm').addEventListener('keydown',e=>{ const t=e.target; if(e.key==='Enter'&&t&&t.tagName==='INPUT'&&t.type!=='submit'&&t.type!=='button'){ e.preventDefault(); try{ t.blur(); }catch(x){} } });
+['bKg','bLen','bDepth','bCnt','bPress'].forEach(id=>{ const n=$(id); if(n) n.setAttribute('enterkeyhint','done'); });
 
 /* ---------- AI fish identification (own API key) ---------- */
 const AI_PROMPT='You are helping an angler in Cyprus (eastern Mediterranean). Identify the fish in the photo. Reply with ONLY a JSON array of up to 3 candidates, best first: [{"el":"Greek common name or null","en":"English common name","latin":"Latin name","confidence":0.0-1.0}]. If the photo does not show a fish, reply []. Be honest about uncertainty; do not guess a rare species when a common look-alike fits. Output the JSON array immediately with no explanation, no markdown and no text before or after it.';
@@ -1441,7 +1462,7 @@ $('impFile').addEventListener('change',async e=>{
 });
 
 /* ---------- Tabs and init ---------- */
-(function(){const ls=document.getElementById('langSel'); if(ls){ ls.value=window.LANG||'el'; ls.addEventListener('change',()=>window.setLang(ls.value)); }})();
+(function(){const ls=document.getElementById('langSel'); if(ls){ try{ const t0=ls.parentNode.firstChild; if(t0&&t0.nodeType===3) t0.nodeValue=window.LANG==='en'?'Language':'Γλώσσα / Language'; }catch(e){} ls.value=window.LANG||'el'; ls.addEventListener('change',()=>window.setLang(ls.value)); }})();
 function fitMap(){
   const mb=document.querySelector('.mapbox'); if(!mb||mb.offsetParent===null) return;
   const nav=document.querySelector('nav.tabs'), top=mb.getBoundingClientRect().top, nt=nav.getBoundingClientRect().top;
@@ -1496,5 +1517,5 @@ document.addEventListener('visibilitychange',()=>{
 });
 setInterval(()=>{ if(document.visibilityState==='visible'&&navigator.onLine!==false) refreshConditions(); },10*60*1000);
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
-Object.assign(window.PsaroCore,{reviewTrip:reviewTrip,endReview:endReview,speciesDB:()=>DB,pickSpecies:sp=>{ $('bSpecies').value=dispName(sp); curLatin=sp.la; try{updateLaw();}catch(e){} $('bSpecies').dispatchEvent(new Event('change',{bubbles:true})); }});
+Object.assign(window.PsaroCore,{reviewTrip:reviewTrip,endReview:endReview,speciesDB:()=>DB,pickSpecies:sp=>{ $('bSpecies').value=shownName(sp); curLatin=sp.la; try{updateLaw();}catch(e){} $('bSpecies').dispatchEvent(new Event('change',{bubbles:true})); }});
 })();

@@ -11,6 +11,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>BiteCast</title>
+<script>try{if(sessionStorage.getItem("psaro-restore"))document.documentElement.classList.add("rst");}catch(e){}</script>
 <script>try{if(!localStorage.getItem("psaro-sess"))document.documentElement.classList.add("gated");}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -251,14 +252,17 @@
     <div class="seg tabseg" role="group" aria-label="Καιρός"><button type="button" data-go="today" aria-pressed="false">Σήμερα</button><button type="button" data-go="fc" aria-pressed="true">Πρόγνωση</button></div>
     <div class="seg" id="fcSeg" role="group" aria-label="Είδος πρόγνωσης"><button type="button" data-s="gen" aria-pressed="true">Γενική πρόγνωση</button><button type="button" data-s="mine" aria-pressed="false">Δικά μου δεδομένα</button><button type="button" data-s="adv" aria-pressed="false">Τι να ψαρέψω</button></div>
     <div class="card" id="plCard">
-      <div class="label">Τοποθεσία</div>
+      <div class="label srlbl">Τοποθεσία</div>
       <div class="chips" id="plChips"></div>
-      <div class="plsearch">
-        <input type="search" id="plQ" maxlength="60" placeholder="Αναζήτηση τοποθεσίας (π.χ. Λεμεσός)" autocomplete="off">
-        <button class="btn sm" id="plGo" type="button">Αναζήτηση</button>
+      <div class="plbar">
+        <div class="plsearch">
+          <input type="search" id="plQ" maxlength="60" placeholder="Αναζήτηση π.χ. Λεμεσός" autocomplete="off" aria-label="Αναζήτηση τοποθεσίας">
+          <button class="plgo" id="plGo" type="button" aria-label="Αναζήτηση" title="Αναζήτηση"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button>
+        </div>
+        <button class="plic" id="plSpots" type="button" aria-label="Από τα σημεία μου" title="Από τα σημεία μου"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.6-6-10.2A6 6 0 0 1 18 10.8C18 15.4 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.2"/></svg></button>
+        <button class="plic" id="plMap" type="button" aria-label="Επιλογή στον χάρτη" title="Επιλογή στον χάρτη"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4L3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4z"/><path d="M9 4v14M15 6v14"/></svg></button>
       </div>
       <div class="list" id="plRes"></div>
-      <div class="row" style="margin-top:8px"><button class="btn ghost sm" id="plSpots" type="button">Από τα σημεία μου</button> <button class="btn ghost sm" id="plMap" type="button">🗺 Επιλογή στον χάρτη</button></div>
       <div class="chips" id="plSpotList" hidden></div>
     </div>
     <div id="fcGen">
@@ -423,12 +427,15 @@
     <section class="fsec">
       <div class="f" style="position:relative">
         <label for="bSpecies" class="flab">Είδος ψαριού</label>
-        <input type="text" id="bSpecies" required maxlength="60" placeholder="Γράψε ένα όνομα, π.χ. λαβράκι, tuna, Seriola" autocapitalize="none">
+        <div class="spin">
+          <input type="text" id="bSpecies" required maxlength="60" placeholder="π.χ. λαβράκι, tuna, Seriola" autocapitalize="none">
+          <label class="btn ghost sm icb" aria-label="Κάμερα" title="Κάμερα"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.6-2.2h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.2"/></svg><input type="file" id="bCam" accept="image/*" capture="environment" hidden></label>
+          <label class="btn ghost sm icb" aria-label="Συλλογή" title="Συλλογή"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-4.5 3.5 3 3-2.5L20 17"/></svg><input type="file" id="bFile" accept="image/*" hidden></label>
+        </div>
         <div class="sug" id="bSug" hidden></div>
       </div>
       <div class="chips" id="bChipsSp"></div>
       <div class="row fphoto">
-        <label class="btn ghost sm" style="cursor:pointer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.6-2.2h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.2"/></svg> Κάμερα<input type="file" id="bCam" accept="image/*" capture="environment" hidden></label> <label class="btn ghost sm" style="cursor:pointer"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-4.5 3.5 3 3-2.5L20 17"/></svg> Συλλογή<input type="file" id="bFile" accept="image/*" hidden></label>
         <img id="bPrev" class="thumb" alt="Προεπισκόπηση" hidden>
         <button class="btn ghost sm" type="button" id="bPrevX" hidden>Αφαίρεση</button>
         <button class="btn sm" type="button" id="bAI" hidden>🔍 Αναγνώριση με AI</button>

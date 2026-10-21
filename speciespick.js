@@ -68,15 +68,5 @@ function render(){
 }
 function open(cb){ onPick=cb||null; if(!manual) cur=autoRegion(); query=''; render(); P.hidden=false; }
 
-/* ---------- κουμπί και προτάσεις στη φόρμα τσιμπήματος ---------- */
-(function(){
-  var f=$('bChipsSp'); if(!f) return; var host=el('div','spregrow'); f.parentNode.insertBefore(host,f.nextSibling);
-  var chips=el('div','chips spregchips'); host.append(chips);
-  var b=el('button','btn ghost sm',T('📋 Είδη ανά περιοχή','📋 Species by region')); b.type='button'; b.addEventListener('click',function(){ open(null); }); host.append(b);
-  /* v31z: οι προτάσεις «Συνήθη εδώ» αφαιρέθηκαν (πολύ γεμάτη φόρμα). Μένει το κουμπί «Είδη ανά περιοχή». */
-  function upd(){ chips.replaceChildren(); }
-  var s=$('sheet'); if(s) new MutationObserver(function(){ if(!s.hidden) setTimeout(upd,120); }).observe(s,{attributes:true,attributeFilter:['hidden']});
-  upd();
-})();
 window.PsaroSpecies={open:open,suggestions:suggestions,autoRegion:autoRegion,tagsOf:tagsOf};
 })();

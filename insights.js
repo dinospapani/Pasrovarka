@@ -64,7 +64,7 @@ function stars(n){ return '★★★'.slice(0,n)+'☆☆☆'.slice(0,3-n); }
 /* ---------- κάρτα στην καρτέλα Ψάρεμα ---------- */
 function moonCard(){
   var tab=$('tab-fc'); if(!tab) return; var card=$('moonCard');
-  if(!card){ card=el('div','card mooncard'); card.id='moonCard'; var pl=$('plCard'); if(pl) tab.insertBefore(card,pl.nextSibling); else tab.appendChild(card); }
+  if(!card){ card=el('div','card mooncard'); card.id='moonCard'; var g=$('fcGen'), pl=$('plCard'); if(g) g.insertBefore(card,g.firstChild); else if(pl) tab.insertBefore(card,pl.nextSibling); else tab.appendChild(card); }
   var td=C.nicosiaToday(), i0=dayInfo(td); card.replaceChildren();
   var top=el('div','mcrow'); top.append(el('div','mcem',EMO[i0.ph.idx]));
   var tx=el('div','mctx'); tx.append(el('b','',PHN[i0.ph.idx]+' · '+Math.round(i0.ph.illum*100)+'%'));
