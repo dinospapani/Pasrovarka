@@ -54,7 +54,8 @@ function row(){
     logo=true; b.classList.add('wxrow');
     var W=box.clientWidth, bw=br.offsetWidth||44;
     br.style.setProperty('left','8px','important'); br.style.setProperty('transform','none','important');
-    if(!el.hidden&&8+bw+8+el.offsetWidth<=W-8){ line=true; el.style.setProperty('left',(8+bw+8)+'px','important'); }
+    var ww=el.offsetWidth, lx=Math.max(Math.round((W-ww)/2),8+bw+8);
+    if(!el.hidden&&lx+ww<=W-8){ line=true; el.style.setProperty('left',lx+'px','important'); }
   }
   b.classList.toggle('wxrow',logo); b.classList.toggle('wxline',line);
   if(!line) el.style.removeProperty('left');
