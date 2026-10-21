@@ -1323,3 +1323,10 @@ body.ontrip #dlChips{top:112px}
 #dlChips .dlst:empty{display:none}
 .dlbl span{display:block;text-align:center;font:700 10px/14px system-ui,sans-serif;color:#0a3a6a;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 2px #fff}
 .dlbl.sat span{color:#fff;text-shadow:0 0 3px #000,0 0 3px #000,0 0 2px #000}
+#dlChips .dlq{margin-left:4px}
+/* Navigator popup: κύλιση μέσα στην καρτέλα και πάντα πατήσιμο ✕ */
+.navpopw .leaflet-popup-content{max-width:min(300px,calc(100vw - 100px))!important;margin:12px 6px 12px 14px;padding-right:8px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.navpopw .leaflet-popup-close-button{z-index:5}
+/* τα chips βάθους να μην μπλοκάρουν πατήματα στον υπόλοιπο χάρτη */
+#dlChips{pointer-events:none}
+#dlChips>*{pointer-events:auto}

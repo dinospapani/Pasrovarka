@@ -12,7 +12,7 @@ function showSet(on){ setView(on?'set':'stats'); }
 window.PsaroProfView={get:function(){ return view; },set:setView};
 (function(){ var ph=document.querySelector('#profile .phead'); if(!ph||$('pSeg')) return;
   var sg=document.createElement('div'); sg.className='seg'; sg.id='pSeg'; sg.setAttribute('role','group'); sg.style.margin='8px 0';
-  [['stats',T('Στατιστικά','Stats')],['tackle',T('Εξοπλισμός','Tackle')],['set',T('Ρυθμίσεις','Settings')]].forEach(function(x){ var b=document.createElement('button'); b.type='button'; b.dataset.p=x[0]; b.textContent=x[1]; b.setAttribute('aria-pressed',String(x[0]==='stats')); b.addEventListener('click',function(){ setView(x[0]); if(x[0]==='stats') draw(); }); sg.append(b); });
+  [['stats',T('Στατιστικά','Stats')],['tackle',T('Εξοπλισμός','Tackle')],['guide',T('Οδηγός','Guide')],['set',T('Ρυθμίσεις','Settings')]].forEach(function(x){ var b=document.createElement('button'); b.type='button'; b.dataset.p=x[0]; b.textContent=x[1]; b.setAttribute('aria-pressed',String(x[0]==='stats')); b.addEventListener('click',function(){ if(x[0]==='guide'){ var c=$('pClose'); if(c) c.click(); setTimeout(function(){ C.switchTab('guide'); },60); return; } setView(x[0]); if(x[0]==='stats') draw(); }); sg.append(b); });
   ph.parentNode.insertBefore(sg,ph.nextSibling);
   var tk=document.createElement('div'); tk.id='pTackle'; tk.hidden=true; $('pMain').parentNode.insertBefore(tk,$('pSettings'));
   var bk=$('pBackMain'); if(bk&&bk.parentNode) bk.parentNode.style.display='none';
@@ -51,9 +51,7 @@ gear.addEventListener('click',function(){ showSet(true); }); gear.style.display=
 setTimeout(function(){
   var ps=$('pStats'); if(!ps||$('pActs')) return;
   var row=document.createElement('div'); row.id='pActs'; row.className='pacts'; ps.parentNode.insertBefore(row,ps.nextSibling);
-  var gb=document.createElement('button'); gb.type='button'; gb.className='btn sm'; gb.id='pGuide'; gb.textContent=T('📖 Οδηγός','📖 Guide');
-  gb.addEventListener('click',function(){ var c=$('pClose'); if(c) c.click(); setTimeout(function(){ C.switchTab('guide'); },60); });
-  row.append(gb); var y=document.querySelector('#pMain .yrbtn'); if(y) row.append(y);
+  var y=document.querySelector('#pMain .yrbtn'); if(y) row.append(y);
 },400);
 var gbp=$('gBackProf'); if(gbp) gbp.addEventListener('click',function(){ var pb=$('profBtn'); if(pb) pb.click(); });
 var cl=$('pClose'); cl.parentNode.insertBefore(gear,cl); gear.style.marginLeft='auto'; cl.style.marginLeft='0';

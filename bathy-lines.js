@@ -107,7 +107,26 @@ function covers(g,b){
 }
 function fetchGrid(b,res,sig){
   var url=WCS+'?service=wcs&version=1.0.0&request=getcoverage&coverage=emodnet:mean&crs=EPSG:4326&bbox='+[b.w,b.s,b.e,b.n].join(',')+'&format=image/tiff&interpolation=bilinear&resx='+res+'&resy='+res;
-  return fetch(url,{signal:sig}).then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.arrayBuffer(); }).then(function(buf){ var g=parseTiff(buf); g.res=res; return g; });
+  return ensureSign().then(function(sg){
+    return fetch(url,{signal:sig}).then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.arrayBuffer(); }).then(function(buf){
+      var g=parseTiff(buf); g.res=res;
+      if(sg<0){ for(var i=0;i<g.data.length;i++) g.data[i]=-g.data[i]; }
+      return g;
+    });
+  });
+}
+/* Το WCS μπορεί να δίνει υψόμετρο (θάλασσα αρνητική) ή βάθος (θάλασσα θετική).
+   Ελέγχουμε ένα σημείο που είναι σίγουρα βαθιά θάλασσα (νότια της Κύπρου) και κανονικοποιούμε: θάλασσα = θετικό. */
+var signP=null;
+function ensureSign(){
+  var st=+C.lsGet('psaro-dsign',0); if(st===1||st===-1) return Promise.resolve(st);
+  if(signP) return signP;
+  var u=WCS+'?service=wcs&version=1.0.0&request=getcoverage&coverage=emodnet:mean&crs=EPSG:4326&bbox=33.19,34.19,33.21,34.21&format=image/tiff&interpolation=nearest&resx=0.00104166667&resy=0.00104166667';
+  signP=fetch(u).then(function(r){ if(!r.ok) throw new Error('http'); return r.arrayBuffer(); }).then(function(b){
+    var g=parseTiff(b), sum=0; for(var i=0;i<g.data.length;i++) sum+=g.data[i];
+    var sg=sum<0?-1:1; C.lsSet('psaro-dsign',sg); signP=null; return sg;
+  }).catch(function(e){ signP=null; throw e; });
+  return signP;
 }
 
 /* ---------- σχεδίαση ---------- */
@@ -182,11 +201,27 @@ function buildUi(){
     b.addEventListener('click',function(){ setMode(o[0]); });
     d.appendChild(b); btns[o[0]]=b;
   });
+  var qb=document.createElement('button'); qb.type='button'; qb.className='dlq'; qb.textContent=T('Ποιότητα δεδομένων','Data quality');
+  qb.addEventListener('click',function(){ setQ(!qOn); });
+  d.appendChild(qb);
   var st=document.createElement('span'); st.className='dlst'; d.appendChild(st);
-  box.appendChild(d); ctl={box:d,btns:btns,st:st};
+  box.appendChild(d); ctl={box:d,btns:btns,st:st,qb:qb};
+}
+var qOn=(C.lsGet('psaro-dq',0)===1||C.lsGet('psaro-dq',0)===true), qLayer=null;
+function setQ(on,quiet){
+  qOn=!!on; C.lsSet('psaro-dq',qOn?1:0);
+  if(qOn&&!qLayer){
+    qLayer=L.tileLayer.wms('https://ows.emodnet-bathymetry.eu/wms',{layers:'emodnet:quality_index',styles:'combined',format:'image/png',transparent:true,opacity:.55,version:'1.3.0',attribution:'EMODnet Bathymetry (quality index)'});
+  }
+  if(qLayer){ if(qOn&&dm===2) qLayer.addTo(map); else if(map.hasLayer(qLayer)) map.removeLayer(qLayer); }
+  if(qOn&&dm===2&&!quiet){ try{ C.toast(T('Ποιότητα δεδομένων: χρώματα = πόσο αξιόπιστο είναι το βάθος σε κάθε περιοχή (EMODnet). Κοντά στην ακτή συνήθως καλύτερη.','Data quality: colours show how reliable depth is per area (EMODnet).')); }catch(x){} }
+  sync();
 }
 function sync(){
   if(!ctl) return;
+  if(ctl.qb) ctl.qb.setAttribute('aria-pressed',String(qOn));
+  if(qLayer&&!(qOn&&dm===2)&&map.hasLayer(qLayer)) map.removeLayer(qLayer);
+  else if(qOn&&dm===2){ if(!qLayer) setQ(true,true); else if(!map.hasLayer(qLayer)) qLayer.addTo(map); }
   ctl.box.hidden=(dm!==2);
   Object.keys(ctl.btns).forEach(function(k){ ctl.btns[k].setAttribute('aria-pressed',String(k===mode)); });
 }

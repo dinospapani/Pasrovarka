@@ -134,7 +134,7 @@ window.PsaroNavInfo=function(lat,lon,closeFn){
     var line=el('div','note'); line.style.color=COL[f._s]; line.style.fontWeight='700';
     line.textContent=(f._s===2?'⛔ ':f._s===1?'⚠ ':'ℹ ')+title(f)+(f._s?' · '+T('ψάρεμα: ','fishing: ')+lv(f.rf):'');
     var more=el('button','btn sm ghost',T('Λεπτομέρειες','Details')); more.type='button'; more.style.marginLeft='6px';
-    more.addEventListener('click',function(){ if(closeFn) closeFn(); L.popup({minWidth:200,maxWidth:300}).setLatLng([lat,lon]).setContent(details(f)).openOn(map); });
+    more.addEventListener('click',function(){ if(closeFn) closeFn(); L.popup({minWidth:200,maxWidth:300,maxHeight:Math.max(180,Math.round(window.innerHeight*.48)),className:'navpopw',autoPanPaddingTopLeft:[10,130],autoPanPaddingBottomRight:[84,110]}).setLatLng([lat,lon]).setContent(details(f)).openOn(map); });
     line.appendChild(more); box.appendChild(line);
   });
   return box;
@@ -151,7 +151,7 @@ function say(f){
   var t2=el('div',null,T('Ψάρεμα αναψυχής: ','Recreational fishing: ')+lv(f.rf)+' · '+T('Καλάμι: ','Rod & line: ')+lv(f.hl)+(f.se&&f.se!=='Year-round'?' · '+f.se:'')+'. '+T('Πάτα για λεπτομέρειες.','Tap for details.'));
   t2.style.fontWeight='500'; t2.style.fontSize='12px';
   warn.appendChild(t); warn.appendChild(t2); warn.hidden=false;
-  warn.onclick=function(){ warn.hidden=true; var c=map.getCenter(); L.popup({minWidth:200,maxWidth:300}).setLatLng(f._ll||c).setContent(details(f)).openOn(map); };
+  warn.onclick=function(){ warn.hidden=true; var c=map.getCenter(); L.popup({minWidth:200,maxWidth:300,maxHeight:Math.max(180,Math.round(window.innerHeight*.48)),className:'navpopw',autoPanPaddingTopLeft:[10,130],autoPanPaddingBottomRight:[84,110]}).setLatLng(f._ll||c).setContent(details(f)).openOn(map); };
   hideT=setTimeout(function(){ warn.hidden=true; },25000);
   try{ if(navigator.vibrate) navigator.vibrate(s===2?[250,120,250,120,250]:[150]); }catch(e){}
 }
