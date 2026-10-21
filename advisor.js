@@ -26,7 +26,7 @@ function collect(){
     if(!b.species) return; var e=kbOf(b.species,b.latin), key=e?e.n:norm(b.species).replace(/\s*\(.*$/,'');
     var o=by[key]||(by[key]={key:key,kb:e,name:e?e.n:String(b.species).replace(/\s*\(.*$/,''),n:0,bites:[]});
     var ms=PP.biteMs(b,utc); o.n++; total++;
-    o.bites.push({b:b,hr:b.time?+b.time.slice(0,2):null,moon:ms!=null?PP.moonOf(ms):null,month:b.date?+b.date.slice(5,7)-1:null,pt:PTS.indexOf(b.ptrend),w:windCls(b.wind),sst:b.sst,tech:b.tech||'',bait:b.bait||'',depth:b.depth,lat:b.lat,lon:b.lon,kg:+b.kg||0});
+    o.bites.push({b:b,hr:b.time?+b.time.slice(0,2):null,moon:ms!=null?PP.moonOf(ms):null,month:b.date?+b.date.slice(5,7)-1:null,pt:PTS.indexOf(b.ptrend),w:windCls(b.wind),tide:b.tide||null,sst:b.sst,tech:b.tech||'',bait:b.bait||'',depth:b.depth,lat:b.lat,lon:b.lon,kg:+b.kg||0});
   });
   return {model:model,by:by,total:total,H:model.H||0};
 }
@@ -44,6 +44,10 @@ function dataL(D,o,x){
   lv('moon',x.moon,function(q){ return q.moon; });
   lv('ptrend',PTS.indexOf(x.pt),function(q){ return q.pt; });
   lv('wind',x.wc,function(q){ return q.w; });
+  if(x.tide==='up'||x.tide==='down'){ /* στάθμη: σύγκριση ανεβαίνει/κατεβαίνει, αναμενόμενο 50/50 */
+    var cu=0,cd=0; o.bites.forEach(function(q){ if(q.tide==='up') cu++; else if(q.tide==='down') cd++; });
+    var n2=cu+cd; if(n2>=3){ var cc=x.tide==='up'?cu:cd; L+=Math.log(((cc+K*0.5)/(n2+K))/0.5); }
+  }
   return clamp(L,-2,2);
 }
 function lscore(D,e,o,x){
@@ -75,7 +79,7 @@ function slotX(){
   var d=f.days[Math.min(sel.day,f.days.length-1)], hr=sel.hr;
   var hs=d.hours.filter(function(q){ return q.hr===hr; })[0]||d.hours[0]; if(!hs) return null;
   var wx=d.wx||{};
-  return {d:d,h:hs,x:{hr:hs.hr,month:+d.date.slice(5,7)-1,moon:Math.floor(d.f*4+0.5)%4,pt:hs.ptrend,wc:windCls(hs.wind),sst:wx.sst!=null?wx.sst:null,wind:hs.wind,wave:hs.wave}};
+  return {d:d,h:hs,x:{hr:hs.hr,month:+d.date.slice(5,7)-1,moon:Math.floor(d.f*4+0.5)%4,pt:hs.ptrend,wc:windCls(hs.wind),sst:wx.sst!=null?wx.sst:null,wind:hs.wind,wave:hs.wave,tide:hs.tide||null}};
 }
 function defaultHr(f){
   if(!f||!f.nowLocal) return 17; var n=+f.nowLocal.slice(11,13); return sel.day===0?Math.min(23,n+1):17;

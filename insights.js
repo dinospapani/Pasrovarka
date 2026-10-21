@@ -207,7 +207,7 @@ function dl(name,text,mime){
   var blob=new Blob([text],{type:mime||'text/csv;charset=utf-8'}), url=URL.createObjectURL(blob), a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); },4000);
 }
-var BC=['date','time','species','latin','bait','tech','depth','kg','len','press','ptrend','wind','wave','cloud','temp','sst','place','lat','lon','notes','tripId'];
+var BC=['date','time','species','latin','bait','tech','depth','kg','len','press','ptrend','wind','wave','cloud','temp','sst','tide','place','lat','lon','notes','tripId'];
 function stamp(){ return C.nicosiaToday(); }
 function exportBites(){ var rows=bites().slice().sort(function(a,b){ return ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||'')); }); var cols=BC.map(function(c){ return c==='tripId'?'trip':c; }); dl('bitecast-fish-'+stamp()+'.csv',toCsv(rows,cols)); }
 function exportTrips(){

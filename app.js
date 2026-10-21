@@ -1031,7 +1031,7 @@ $('biteForm').addEventListener('submit',async e=>{
     let rec={date:date,time:(time||'12:00').slice(0,5),tz:utcOff(),species:sName,latin:curLatin||'',bait:$('bBait').value.trim(),tech:$('bTech').value,
       depth:num('bDepth'),kg:num('bKg'),len:num('bLen'),press:(isNow||pressTouched||editing)?num('bPress'):null,notes:$('bNotes').value.trim(),
       ptrend:isNow?$('dPress').value:null,wind:isNow?+$('dWind').value:null,wave:isNow?+$('dWave').value:null,cloud:isNow?$('dCloud').value:null,
-      cur:isNow&&c&&c.cur!=null?c.cur:null,temp:isNow&&c&&c.temp!=null?c.temp:null,sst:isNow&&c&&c.sst!=null?c.sst:null,
+      cur:isNow&&c&&c.cur!=null?c.cur:null,tide:isNow&&c&&c.tide?c.tide.st:null,temp:isNow&&c&&c.temp!=null?c.temp:null,sst:isNow&&c&&c.sst!=null?c.sst:null,
       place:place,lat:lat,lon:lon,photo:!!photoBlob,src:'app'};
     { const tks=(window.PsaroTackle&&$('bTackle'))?PsaroTackle.sel():[]; if(tks.length){ rec.tk=tks; const tw=PsaroTackle.selW(); if(Object.keys(tw).length) rec.tkw=tw; const th=PsaroTackle.selH(); if(Object.keys(th).length) rec.tkh=th; const ts_=PsaroTackle.selS(); if(Object.keys(ts_).length) rec.tks=ts_; } }
     let cntV=0; if($('bMulti').checked){ const cn=Math.floor(+$('bCnt').value); if(!(cn>=2)){ $('bErr').textContent=window.LANG==='en'?'Enter how many fish (2 or more).':'Γράψε πόσα ψάρια έπιασες (2 ή περισσότερα).'; btn.disabled=false; btn.textContent='Αποθήκευση'; return; } cntV=Math.min(9999,cn); }
@@ -1093,7 +1093,7 @@ async function quickRec(miss){
     c=c||cond||{};
     const has=c.lat!=null;
     const rec={date:nicosiaToday(),time:fmt(nicosiaNowMin()),tz:utcOff(),species:'',latin:'',bait:'',tech:'',depth:null,kg:null,len:null,press:c.press!=null?c.press:null,notes:'',
-      ptrend:$('dPress').value,wind:+$('dWind').value,wave:+$('dWave').value,cloud:$('dCloud').value,temp:c.temp!=null?c.temp:null,sst:c.sst!=null?c.sst:null,
+      ptrend:$('dPress').value,wind:+$('dWind').value,wave:+$('dWave').value,cloud:$('dCloud').value,temp:c.temp!=null?c.temp:null,sst:c.sst!=null?c.sst:null,tide:c.tide?c.tide.st:null,
       place:'',lat:has?c.lat:null,lon:has?c.lon:null,photo:false,src:miss?'miss':'quick'};
     if(miss) rec.miss=true;
     try{ if(window.PsaroTackle){ const L=PsaroTackle.last(); if(L.ids.length){ rec.tk=L.ids; if(Object.keys(L.w).length) rec.tkw=L.w; if(Object.keys(L.h).length) rec.tkh=L.h; if(Object.keys(L.s).length) rec.tks=L.s; } } }catch(e){}
@@ -1211,6 +1211,8 @@ function renderStats(){
   B.append(barsCard('Φάση σελήνης',MOON_LBL.map((l,i)=>[l,mm.get(i)||0])));
   const pm=tally(bs,b=>b.ptrend||null);
   if(pm.size) B.append(barsCard('Τάση πίεσης',Object.keys(PT).map(k=>[PT[k],pm.get(k)||0])));
+  const tdl=tally(bs,b=>b.tide||null);
+  if(tdl.size) B.append(barsCard('Στάθμη θάλασσας',[['up',window.LANG==='en'?'Rising ↑':'Ανεβαίνει ↑'],['down',window.LANG==='en'?'Falling ↓':'Κατεβαίνει ↓'],['slack',window.LANG==='en'?'Slack →':'Σταθερή →']].map(x=>[x[1],tdl.get(x[0])||0])));
   const wm=tally(bs,b=>b.wind==null?null:bft(b.wind)<=2?0:bft(b.wind)===3?1:bft(b.wind)===4?2:3);
   if(wm.size) B.append(barsCard('Άνεμος',['Bft 0–2','Bft 3','Bft 4','Bft 5+'].map((l,i)=>[l,wm.get(i)||0])));
 }
@@ -1237,11 +1239,24 @@ async function fetchJson(url){
   try{ const r=await fetch(url,{signal:ac.signal}); if(!r.ok) throw new Error('HTTP '+r.status); return await r.json(); }
   finally{ clearTimeout(t); }
 }
+/* Στάθμη θάλασσας (παλίρροια + μετεωρολογική) από ωριαία δεδομένα Open-Meteo Marine. Στην Κύπρο το εύρος είναι μικρό (περίπου 10–30 cm). */
+function tideFrom(mv){
+  try{
+    const hh=mv&&mv.hourly, tm=hh&&hh.time, lv=hh&&hh.sea_level_height_msl, cur=mv.current&&mv.current.time; if(!tm||!lv||!cur) return null;
+    const i=tm.indexOf(cur.slice(0,13)+':00'); if(i<1||i>=tm.length-1) return null;
+    const a=lv[i-1], b=lv[i], c=lv[i+1]; if(![a,b,c].every(v=>typeof v==='number')) return null;
+    const d=c-a, st=d>0.01?'up':d<-0.01?'down':'slack';
+    let nx=null, mn=b, mx=b;
+    for(let j=i+1;j<Math.min(tm.length,i+25);j++){ const v=lv[j]; if(typeof v!=='number') break; if(v<mn) mn=v; if(v>mx) mx=v; }
+    for(let j=i+1;j<tm.length-1&&j<i+13;j++){ const p=lv[j-1], q=lv[j], r=lv[j+1]; if(![p,q,r].every(v=>typeof v==='number')) break; if(q>p&&q>=r){ nx={type:'high',at:tm[j].slice(11,16)}; break; } if(q<p&&q<=r){ nx={type:'low',at:tm[j].slice(11,16)}; break; } }
+    return {st:st,lvl:Math.round(b*100),range:Math.round((mx-mn)*100),next:nx};
+  }catch(e){ return null; }
+}
 async function fetchConditions(lat,lon){
   const q='latitude='+lat.toFixed(4)+'&longitude='+lon.toFixed(4);
   const [w,m]=await Promise.allSettled([
     fetchJson('https://api.open-meteo.com/v1/forecast?'+q+'&current=temperature_2m,pressure_msl,wind_speed_10m,wind_direction_10m,cloud_cover&hourly=pressure_msl&past_hours=3&forecast_hours=1&wind_speed_unit=kn&timezone=auto'),
-    fetchJson('https://marine-api.open-meteo.com/v1/marine?'+q+'&current=wave_height,wave_direction,wave_period,sea_surface_temperature,ocean_current_velocity,ocean_current_direction&timezone=auto')
+    fetchJson('https://marine-api.open-meteo.com/v1/marine?'+q+'&current=wave_height,wave_direction,wave_period,sea_surface_temperature,ocean_current_velocity,ocean_current_direction&hourly=sea_level_height_msl&past_days=1&forecast_days=2&timezone=auto')
   ]);
   if(w.status!=='fulfilled') throw new Error('weather');
   const c=w.value.current||{}, hp=(w.value.hourly&&w.value.hourly.pressure_msl)||[];
@@ -1251,7 +1266,8 @@ async function fetchConditions(lat,lon){
   const cc=numOrNull(c.cloud_cover), ws=numOrNull(c.wind_speed_10m), wd=numOrNull(c.wind_direction_10m);
   const mc=m.status==='fulfilled'?(m.value.current||{}):{};
   const uo=numOrNull(w.value.utc_offset_seconds);
-  return {lat:lat,lon:lon,utc:uo==null?null:Math.round(uo/60),temp:numOrNull(c.temperature_2m),press:press==null?null:Math.round(press),ptrend:ptrend,
+  const tide=m.status==='fulfilled'?tideFrom(m.value):null;
+  return {tide:tide,lat:lat,lon:lon,utc:uo==null?null:Math.round(uo/60),temp:numOrNull(c.temperature_2m),press:press==null?null:Math.round(press),ptrend:ptrend,
     wind:ws==null?null:Math.round(ws),windDir:wd==null?null:dirName(wd),windDeg:wd,
     cur:numOrNull(mc.ocean_current_velocity)==null?null:Math.round(mc.ocean_current_velocity*0.539957*100)/100,curDir:numOrNull(mc.ocean_current_direction),waveDir:numOrNull(mc.wave_direction),
     cloud:cc==null?null:cc<20?'clear':cc<70?'part':'over',
@@ -1272,9 +1288,14 @@ function applyConditions(c){
   setYou(c.lat,c.lon); renderWx(); checkZoneHere(); document.dispatchEvent(new Event('psaro-cond'));
   renderToday();
 }
+function tideTxt(t){
+  if(!t) return null; const en=window.LANG==='en';
+  const ar=t.st==='up'?'↑':t.st==='down'?'↓':'→';
+  return (en?'sea level ':'στάθμη ')+ar+(t.next?' '+(t.next.type==='high'?(en?'high ':'υψηλή '):(en?'low ':'χαμηλή '))+t.next.at:'')+(t.range!=null?' ('+(en?'range ':'εύρος ')+t.range+' cm)':'');
+}
 function condParts(c){
   return [c.wind!=null?PU.wind(c.wind)+(wdir(c)?' '+wdir(c):''):null,c.wave!=null?'κύμα '+PU.wave(c.wave)+(c.wavePeriod?' · '+Math.round(c.wavePeriod)+' s':''):'κύμα μη διαθέσιμο',
-    c.temp!=null?PU.temp(c.temp)+(window.LANG==='en'?' air':' αέρας'):null,c.sst!=null?PU.temp(c.sst)+(window.LANG==='en'?' sea':' θάλασσα'):null,c.press!=null?PU.press(c.press)+(c.ptrend?' · '+PT[c.ptrend].toLowerCase():''):null].filter(Boolean);
+    c.temp!=null?PU.temp(c.temp)+(window.LANG==='en'?' air':' αέρας'):null,c.sst!=null?PU.temp(c.sst)+(window.LANG==='en'?' sea':' θάλασσα'):null,c.press!=null?PU.press(c.press)+(c.ptrend?' · '+PT[c.ptrend].toLowerCase():''):null,tideTxt(c.tide)].filter(Boolean);
 }
 function applyView(c,name){
   if(!c) return;
@@ -1480,8 +1501,8 @@ function csvDownload(name,head,rows){
 }
 $('csvBites').addEventListener('click',()=>{
   const L=Store.get('bites').filter(b=>PsaroRange.inR('log',b)).sort((a,b)=>biteMs(a)-biteMs(b));
-  csvDownload('bitecast-bites-'+nicosiaToday()+'.csv',(window.LANG==='en'?['Date','Time','Species','Latin','Bait','Technique','Depth m','Count','Weight kg','Length cm','Pressure hPa','Pressure trend','Wind Bft','Wave m','Sea °C','Air °C','Moon','Location','Latitude','Longitude','Notes']:['Ημερομηνία','Ώρα','Είδος','Λατινικό','Δόλωμα','Τεχνική','Βάθος m','Πλήθος','Βάρος kg','Μήκος cm','Πίεση hPa','Τάση πίεσης','Άνεμος Bft','Κύμα m','Θάλασσα °C','Αέρας °C','Σελήνη','Τοποθεσία','Πλάτος','Μήκος','Σημειώσεις']),
-    L.map(b=>[b.date,b.time,b.species,b.latin,b.bait,b.tech,b.depth,bc(b),b.kg,b.len,b.press,b.ptrend?PT[b.ptrend]:'',b.wind==null?'':bft(b.wind),b.wave,b.sst!=null?Math.round(b.sst*10)/10:'',b.temp!=null?Math.round(b.temp*10)/10:'',MOON_LBL[biteMoon(b)],b.place,b.lat,b.lon,b.notes]));
+  csvDownload('bitecast-bites-'+nicosiaToday()+'.csv',(window.LANG==='en'?['Date','Time','Species','Latin','Bait','Technique','Depth m','Count','Weight kg','Length cm','Pressure hPa','Pressure trend','Wind Bft','Wave m','Sea °C','Air °C','Moon','Sea level','Location','Latitude','Longitude','Notes']:['Ημερομηνία','Ώρα','Είδος','Λατινικό','Δόλωμα','Τεχνική','Βάθος m','Πλήθος','Βάρος kg','Μήκος cm','Πίεση hPa','Τάση πίεσης','Άνεμος Bft','Κύμα m','Θάλασσα °C','Αέρας °C','Σελήνη','Στάθμη','Τοποθεσία','Πλάτος','Μήκος','Σημειώσεις']),
+    L.map(b=>[b.date,b.time,b.species,b.latin,b.bait,b.tech,b.depth,bc(b),b.kg,b.len,b.press,b.ptrend?PT[b.ptrend]:'',b.wind==null?'':bft(b.wind),b.wave,b.sst!=null?Math.round(b.sst*10)/10:'',b.temp!=null?Math.round(b.temp*10)/10:'',MOON_LBL[biteMoon(b)],b.tide==='up'?(window.LANG==='en'?'rising':'ανεβαίνει'):b.tide==='down'?(window.LANG==='en'?'falling':'κατεβαίνει'):b.tide==='slack'?(window.LANG==='en'?'slack':'σταθερή'):'',b.place,b.lat,b.lon,b.notes]));
 });
 $('csvTrips').addEventListener('click',()=>{
   const L=Store.get('trips').filter(t=>PsaroRange.inR('log',t)).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
