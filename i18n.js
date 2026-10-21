@@ -88,8 +88,13 @@ window.setLang=function(l){
     var pr=g('profile'), ps=g('pSettings'), st=g('pSettings')&&!g('pSettings').hidden;
     sessionStorage.setItem('psaro-restore',JSON.stringify({tab:tab,prof:!!(pr&&!pr.hidden),set:!!st,y:pr?pr.scrollTop:0,t:Date.now()}));
   }catch(e){}
-  try{ document.documentElement.classList.add('rst'); }catch(e){}
-  location.reload();
+  /* v31z71: κάλυμμα σκούρο με το λογότυπο (όχι λευκή οθόνη) όσο φορτώνει ξανά η εφαρμογή */
+  try{
+    var cv=document.createElement('div'); cv.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#0c2b3a url(icon-192.png) center/84px no-repeat;opacity:0;transition:opacity .15s';
+    document.body.appendChild(cv); void cv.offsetWidth; cv.style.opacity='1';
+    document.documentElement.classList.add('rst');
+  }catch(e){}
+  setTimeout(function(){ location.reload(); },170);
 };
 window.addEventListener('load',function(){
   var root=document.documentElement, show=function(){ root.classList.remove('rst'); };

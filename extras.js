@@ -208,8 +208,16 @@ function back(){
 window.PsaroTrip={back:back,sheet:function(){ openSheet(); },sos:function(){ var en=window.LANG==='en'; window.PsaroAsk(en?'Send an SOS with your location to your safety contact?':'Να σταλεί SOS με τη θέση σου στην επαφή ασφαλείας;',{title:'SOS',ok:en?'Send SOS':'Αποστολή SOS',cancel:en?'Cancel':'Άκυρο',danger:true}).then(function(ok){ if(ok) trackPos().then(function(){ sos(); }); }); },counts:function(){ var s=load(); return s.active?summary(s):{n:0,kg:0,species:'',miss:0}; },endSilent:function(){ var s=load(); if(!s.active) return false; if(window.PsaroTrack) window.PsaroTrack.take(); s.active=false; save(s); pushTrip(); clearInterval(timer); render(); return true; },state:load};
 function ext(){ var s=load(); s.due=Math.max(s.due,Date.now())+30*60000; save(s); render(); pushTrip(); }
 function sos(){
-  var s=load(); s.due=Date.now()-60000; save(s); pushTrip();
-  window.PsaroAsk(window.LANG==='en'?'Send a help message with your last position. Choose how to send it.':'Στείλε μήνυμα βοήθειας με την τελευταία σου θέση. Διάλεξε πώς θα σταλεί.',{title:'SOS',ok:'WhatsApp',cancel:'SMS',danger:false}).then(function(ok){ send(s,'sos',ok?'wa':'sms'); });
+  var s=load(); s.due=Date.now()-60000; save(s);
+  function manual(){
+    window.PsaroAsk(window.LANG==='en'?'Send a help message with your last position. Choose how to send it.':'Στείλε μήνυμα βοήθειας με την τελευταία σου θέση. Διάλεξε πώς θα σταλεί.',{title:'SOS',ok:'WhatsApp',cancel:'SMS',danger:false}).then(function(ok){ send(s,'sos',ok?'wa':'sms'); });
+  }
+  /* v31z70: αν η επαφή είναι συνδεδεμένη στο Telegram, το SOS φεύγει αυτόματα από τον server, χωρίς ερώτηση και χωρίς «Αποστολή». Αλλιώς (ή αν δεν έφτασε στον server) μένει η χειροκίνητη αποστολή SMS/WhatsApp. */
+  Promise.resolve(pushTrip()).then(function(){
+    var d=load();
+    if(d.tgLinked&&d.synced!==false){ toast(T('SOS στάλθηκε. Η επαφή σου ειδοποιείται αυτόματα στο Telegram.','SOS sent. Your contact is being notified on Telegram.')); }
+    else manual();
+  },manual);
 }
 function tick(){
   var s=load(); if(!s.active){ clearInterval(timer); return; }

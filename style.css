@@ -1255,17 +1255,13 @@ body.wxrow.mapfull .mapbrand img{width:40px;height:40px;border-radius:11px}
 .startbig .sbtx b{font-size:14px!important;white-space:nowrap}
 .startbig .sbtx small{font-size:9px!important;white-space:nowrap}
 
-/* v31z69: χωρίς λογότυπο· MOB και SOS δεξιά και αριστερά από τον καιρό */
+/* v31z70: καιρός πάντα στην πάνω γραμμή, κεντραρισμένος· MOB, Τέλος εξόδου και SOS στη γραμμή από κάτω */
 body.mapfull .mapbrand{display:none!important}
-body.mapfull .mapwx{top:calc(54px + env(safe-area-inset-top,0px))!important}
-body.wxline.mapfull .mapwx{top:calc(7px + env(safe-area-inset-top,0px))!important}
-body:not(.ontrip).mapfull .mapwx{top:calc(7px + env(safe-area-inset-top,0px))!important}
-body.mapfull.ontrip .mapwx.edit{top:calc(54px + env(safe-area-inset-top,0px))!important}
-body.mapfull.ontrip #sosBtn:not([hidden]),body.ontrip #bMob{top:calc(7px + env(safe-area-inset-top,0px));bottom:auto;width:52px;min-width:0;height:40px;padding:0!important;font-size:13px;letter-spacing:.03em}
-body.mapfull.ontrip #sosBtn:not([hidden]){right:8px;left:auto}
-body.ontrip #bMob{left:8px;right:auto}
-body.ontrip #bMob b{font-size:13px}
-/* «Τέλος εξόδου»: από κάτω αν ο καιρός είναι στην πάνω γραμμή, αλλιώς στην πάνω γραμμή */
-body.mapfull.ontrip #tripBtn{top:calc(56px + env(safe-area-inset-top,0px))}
-body.mapfull.ontrip:not(.wxline) #tripBtn{top:calc(9px + env(safe-area-inset-top,0px));height:36px}
-body.mapfull.ontrip:not(.wxline) .mapwx{top:calc(54px + env(safe-area-inset-top,0px))!important}
+body.mapfull.mapfull.mapfull .mapwx.mapwx{top:calc(7px + env(safe-area-inset-top,0px))!important}
+body.mapfull.ontrip.ontrip #tripBtn{position:fixed!important;left:50%;transform:translateX(-50%);top:calc(56px + env(safe-area-inset-top,0px))!important;height:40px;padding:0 16px}
+body.mapfull.ontrip.ontrip #sosBtn:not([hidden]),body.ontrip.ontrip.ontrip #bMob{top:calc(56px + env(safe-area-inset-top,0px))!important;bottom:auto!important;width:56px;min-width:0;height:40px;padding:0!important;font-size:13px;letter-spacing:.03em}
+body.mapfull.ontrip.ontrip #sosBtn:not([hidden]){right:8px!important;left:auto!important;position:fixed!important}
+body.ontrip.ontrip.ontrip #bMob{left:8px!important;right:auto!important}
+body.ontrip.ontrip.ontrip #bMob b{font-size:13px}
+
+html.rst{background-color:#0c2b3a!important}

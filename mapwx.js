@@ -51,7 +51,7 @@ function place(){
 function row(){
   var b=document.body, line=false;
   if(b.classList.contains('mapfull')){
-    var W=box.clientWidth, ww=el.offsetWidth, side=b.classList.contains('ontrip')?64:8;
+    var W=box.clientWidth, ww=el.offsetWidth, side=8;
     var lx=Math.max(Math.round((W-ww)/2),8);
     if(!el.hidden){ el.style.setProperty('left',lx+'px','important'); line=(lx>=side&&lx+ww<=W-side); }
   } else el.style.removeProperty('left');
