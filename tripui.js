@@ -21,11 +21,11 @@ wrap.append(bm,bc); box.appendChild(wrap);
 var big=document.createElement('div'); big.id='startBig'; big.className='startbig'; big.setAttribute('role','button'); big.tabIndex=0;
 big.setAttribute('aria-label',T('Σύρε για ψάρεμα: έναρξη εξόδου. Σύρε προς τα δεξιά.','Slide to fish: start trip. Slide to the right.'));
 big.innerHTML='<div class="sbknob"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2.2"/><path d="M12 7.2V21M8 11h8"/><path d="M4 14c0 4 3.6 7 8 7s8-3 8-7"/></svg></div><div class="sbtx"><b></b><small></small></div>';
-big.querySelector('.sbtx b').textContent=T('Σύρε για ψάρεμα','Slide to Fish'); big.querySelector('.sbtx small').textContent=T('Έναρξη εξόδου με ασφάλεια','Start trip · safety monitoring');
+big.querySelector('.sbtx b').textContent=T('Σύρε για ψάρεμα','Slide to Fish'); big.querySelector('.sbtx small').textContent=T('Έναρξη εξόδου με ασφάλεια','Start trip · safety on');
 box.appendChild(big);
 (function(){
   var knob=big.querySelector('.sbknob'), x0=0, dx=0, drag=false, maxX=0, moved=false;
-  function setMx(){ big.style.setProperty('--mx',Math.max(40,big.clientWidth-knob.offsetWidth-8)+'px'); } setMx(); window.addEventListener('resize',setMx); setTimeout(setMx,600); setTimeout(setMx,2500);
+  function setMx(){ big.style.setProperty('--mx',Math.max(40,big.clientWidth-knob.offsetWidth-8)+'px'); } setMx(); window.addEventListener('resize',setMx); if(window.ResizeObserver) new ResizeObserver(setMx).observe(big); setTimeout(setMx,600); setTimeout(setMx,2500);
   function reset(){ dx=0; knob.style.transform=''; big.style.setProperty('--p',0); }
   function go(){ var tbn=$('tripBtn'); if(tbn) tbn.click(); }
   knob.addEventListener('pointerdown',function(e){ drag=true; moved=false; x0=e.clientX; maxX=Math.max(40,big.clientWidth-knob.offsetWidth-12); try{ knob.setPointerCapture(e.pointerId); }catch(x){} big.classList.add('drag'); });

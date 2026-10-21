@@ -49,15 +49,16 @@ function place(){
   el.style.top=(sb&&full&&sb.offsetParent!==null)?Math.round(sb.getBoundingClientRect().bottom+8)+'px':'';
 }
 function row(){
-  var br=document.querySelector('.mapbrand'), b=document.body, ok=false;
-  if(br&&!el.hidden&&b.classList.contains('mapfull')){
-    var W=box.clientWidth, ww=el.offsetWidth;
-    if(44+8+ww<=W-8){ ok=true; b.classList.add('wxrow'); var bw=br.offsetWidth||44, tot=bw+8+ww, l=Math.round((W-tot)/2);
-      br.style.setProperty('left',l+'px','important'); br.style.setProperty('transform','none','important');
-      el.style.setProperty('left',(l+bw+8)+'px','important'); }
+  var br=document.querySelector('.mapbrand'), b=document.body, logo=false, line=false;
+  if(br&&b.classList.contains('mapfull')){
+    logo=true; b.classList.add('wxrow');
+    var W=box.clientWidth, bw=br.offsetWidth||44;
+    br.style.setProperty('left','8px','important'); br.style.setProperty('transform','none','important');
+    if(!el.hidden&&8+bw+8+el.offsetWidth<=W-8){ line=true; el.style.setProperty('left',(8+bw+8)+'px','important'); }
   }
-  b.classList.toggle('wxrow',ok);
-  if(!ok){ if(br){ br.style.removeProperty('left'); br.style.removeProperty('transform'); } el.style.removeProperty('left'); }
+  b.classList.toggle('wxrow',logo); b.classList.toggle('wxline',line);
+  if(!line) el.style.removeProperty('left');
+  if(!logo&&br){ br.style.removeProperty('left'); br.style.removeProperty('transform'); }
 }
 setInterval(function(){ place(); row(); },400);
 setTimeout(draw,800); setTimeout(draw,3500);
