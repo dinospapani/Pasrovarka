@@ -22,12 +22,14 @@ function draw(){
   var on=sel(); el.hidden=false; document.body.classList.add('hasmw'); el.replaceChildren(); el.classList.toggle('edit',editing);
   var row=document.createElement('div'); row.className='mwrow';
   ITEMS.forEach(function(it){
-    if(on.indexOf(it[0])<0) return;
+    if(editing||on.indexOf(it[0])<0) return;
     var v=it[3](c), d=document.createElement('div'); d.className='mw';
     var i=document.createElement('i'); i.innerHTML=it[1]; var b=document.createElement('b'); b.textContent=v?v[0]:'–'; var s=document.createElement('span'); s.textContent=v?v[1]:it[2];
     d.append(i,b,s); row.append(d);
   });
   if(!row.childNodes.length){ var m=document.createElement('span'); m.className='mwempty'; m.textContent=T('Πάτα για να διαλέξεις στοιχεία','Tap to choose items'); row.append(m); }
+  el.dataset.n=editing?'0':String(Math.min(on.length,6)); document.body.classList.toggle('wxedit',editing);
+  if(editing){ var ttl=document.createElement('div'); ttl.className='mwtitle'; ttl.textContent=T('Στοιχεία καιρού','Weather items'); row.append(ttl); }
   var g=document.createElement('button'); g.type='button'; g.className='mwgear'; g.textContent=editing?'✓':'⚙'; g.setAttribute('aria-label',T('Επιλογή στοιχείων καιρού','Choose weather items'));
   row.append(g); el.append(row);
   if(editing){

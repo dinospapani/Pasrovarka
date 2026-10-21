@@ -1146,3 +1146,34 @@ body.mapfull .mapbrand span{font-weight:700;letter-spacing:.14em;font-size:14px}
 .startbig .sbtx b{font-size:18px!important;font-weight:700!important;white-space:nowrap;line-height:1.1}
 .startbig .sbtx small{font-size:10px!important;white-space:nowrap;line-height:1.2;margin-top:2px}
 .mapwx .mwchip,.mapwx .mwchip[aria-pressed=true]{color:#fff!important}
+
+/* v31z58: πιο συμμαζεμένη κάρτα καιρού, χωρίς επικάλυψη με το Start Trip */
+.mapwx[data-n="4"] .mwrow,.mapwx[data-n="5"] .mwrow,.mapwx[data-n="6"] .mwrow{display:grid!important;grid-template-columns:1fr 1fr;gap:0!important}
+.mapwx[data-n="4"] .mw::before,.mapwx[data-n="5"] .mw::before,.mapwx[data-n="6"] .mw::before{display:none}
+.mapwx[data-n="4"] .mw,.mapwx[data-n="5"] .mw,.mapwx[data-n="6"] .mw{min-width:58px;padding:7px 4px}
+.mapwx[data-n="4"] .mw:nth-child(n+3),.mapwx[data-n="5"] .mw:nth-child(n+3),.mapwx[data-n="6"] .mw:nth-child(n+3){border-top:1px solid rgba(255,255,255,.1)}
+.mapwx[data-n="4"] .mwgear,.mapwx[data-n="5"] .mwgear,.mapwx[data-n="6"] .mwgear{grid-column:1/-1}
+.mapwx.edit{width:min(236px,calc(100vw - 96px));max-width:none!important}
+.mapwx.edit .mwrow{align-items:stretch}
+.mapwx .mwtitle{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.75;text-align:center;padding:8px 4px 2px}
+.mapwx.edit .mwchips{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:4px 6px 6px}
+.mapwx.edit .mwchip{justify-content:flex-start;padding:8px 9px;border-radius:12px}
+.mapwx.edit .mwchip span{font-size:11.5px;line-height:1.1}
+.mapwx.edit .mwgear{background:#2e9e5b;color:#fff;margin:6px auto 4px;width:100%;border-radius:12px;height:34px}
+/* όσο ρυθμίζεις κάρτα καιρού ή κουμπιά, η μπάρα εκκίνησης κρύβεται */
+body.wxedit .startbig,body.toolsedit .startbig{display:none!important}
+body.wxedit .mapbtns{opacity:.35;pointer-events:none}
+.mapwx.edit .mwempty{display:none}
+.mapwx.edit{display:flex!important;flex-direction:column}
+.mapwx.edit .mwrow{display:contents!important}
+.mapwx.edit .mwtitle{order:0}.mapwx.edit .mwchips{order:1}.mapwx.edit .mwgear{order:2}
+
+/* v31z59: «Slide to Fish»: λάμψη στο κείμενο και η άγκυρα δείχνει την κίνηση προς τα δεξιά */
+.startbig .sbtx b{background:linear-gradient(90deg,rgba(255,255,255,.6) 0%,rgba(255,255,255,.6) 35%,#fff 50%,rgba(255,255,255,.6) 65%,rgba(255,255,255,.6) 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:sbshine 2.6s linear infinite}
+@keyframes sbshine{0%{background-position:150% 0}100%{background-position:-50% 0}}
+.startbig:not(.drag):not(.nudge) .sbknob{animation:sbhint 2.6s ease-in-out infinite}
+@keyframes sbhint{0%,12%{transform:translateX(0)}42%{transform:translateX(34px)}62%,100%{transform:translateX(0)}}
+.startbig .sbknob svg{animation:sbanchor 2.6s ease-in-out infinite;transform-origin:50% 20%}
+.startbig.drag .sbknob svg{animation:none}
+@keyframes sbanchor{0%,12%{transform:rotate(0)}42%{transform:rotate(-14deg)}52%{transform:rotate(8deg)}62%,100%{transform:rotate(0)}}
+@media (prefers-reduced-motion:reduce){.startbig .sbtx b,.startbig .sbknob,.startbig .sbknob svg{animation:none!important}.startbig .sbtx b{-webkit-text-fill-color:#fff}}

@@ -19,9 +19,9 @@ var bm=mk('fbMiss','fbm',MISS,T('Τσίμπησε αλλά χάθηκε (κρά�
 wrap.append(bm,bc); box.appendChild(wrap);
 /* v31z12: «Ξεκίνα έξοδο»: σύρε προς τα δεξιά για να ανοίξει η φόρμα εξόδου (προστασία από κατά λάθος πάτημα) */
 var big=document.createElement('div'); big.id='startBig'; big.className='startbig'; big.setAttribute('role','button'); big.tabIndex=0;
-big.setAttribute('aria-label',T('Ξεκίνα έξοδο. Σύρε προς τα δεξιά.','Start trip. Slide to the right.'));
+big.setAttribute('aria-label',T('Σύρε για ψάρεμα: έναρξη εξόδου. Σύρε προς τα δεξιά.','Slide to fish: start trip. Slide to the right.'));
 big.innerHTML='<div class="sbknob"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2.2"/><path d="M12 7.2V21M8 11h8"/><path d="M4 14c0 4 3.6 7 8 7s8-3 8-7"/></svg></div><div class="sbtx"><b></b><small></small></div><div class="sbarr" aria-hidden="true">›››</div>';
-big.querySelector('.sbtx b').textContent=T('Έναρξη εξόδου','Start Trip'); big.querySelector('.sbtx small').textContent=T('Με παρακολούθηση ασφαλείας','With safety monitoring');
+big.querySelector('.sbtx b').textContent=T('Σύρε για ψάρεμα','Slide to Fish'); big.querySelector('.sbtx small').textContent=T('Έναρξη εξόδου με ασφάλεια','Start trip with safety monitoring');
 box.appendChild(big);
 (function(){
   var knob=big.querySelector('.sbknob'), x0=0, dx=0, drag=false, maxX=0, moved=false;
