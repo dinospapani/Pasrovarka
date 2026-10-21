@@ -1275,3 +1275,21 @@ html.rst{background-color:#0c2b3a!important}
 .tkchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .tkchips button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 12px;font-size:14px;cursor:pointer}
 .tkchips button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+/* v31z75: Προφίλ — σταθερό ύψος, ✕ δεξιά, «＋ Νέο» στην ευθεία του select */
+#profile .pbox{height:92vh;height:92dvh;max-height:92vh;max-height:92dvh}
+#profile .phead #pClose{margin-left:auto!important}
+#pTackle .sortsel select{margin:0}
+#pTackle #tkNew{height:36px;padding-top:0;padding-bottom:0;margin:0;flex:0 0 auto}
+.tkchips button.tkset{border-style:dashed;font-weight:600}
+#tkForm div.f>span:first-child{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-bottom:2px}
+/* v31z78: βάρη τερματικών και πρόταση */
+#bTkW .tkwrow{margin-top:8px}
+#bTkW .tkwrow .tkchips button{padding:6px 12px}
+#bTkSug{margin:8px 0 0}
+#bTkSug,#bTkW .note{text-transform:none!important;letter-spacing:0!important;font-size:13px;color:var(--ink)}
+#pTackle input[type=search]{border:1px solid var(--line);border-radius:6px;padding:9px 10px;background:var(--surface);color:var(--ink);font-size:16px}
+/* v31z80: φωτογραφίες εξοπλισμού */
+#pTackle img.tkimg,#tkForm img.tkimg{display:block;width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin:6px 0}
+#pTackle .item img.tkimg{max-height:150px;cursor:zoom-in}
+.tkview{position:fixed;inset:0;z-index:6000;background:rgba(0,0,0,.88);display:grid;place-items:center;padding:12px}
+.tkview img{max-width:100%;max-height:100%;border-radius:8px}
