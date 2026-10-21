@@ -1183,6 +1183,8 @@ function renderStats(){
   if(window.PsaroTackle){ const tkm=new Map(), tkt=new Map(), inf=PsaroTackle.info();
     bs.forEach(b=>{ (b.tk||[]).forEach(id=>{ const x=inf[id]; if(!x) return; if(x.type==='lure'||x.type==='hook'||x.type==='other'){ const g=b.tkw&&b.tkw[id], hk=x.type==='lure'&&b.tkh&&b.tkh[id]&&inf[b.tkh[id]], hs=hk&&b.tks&&b.tks[b.tkh[id]], sz=x.type==='hook'&&b.tks&&b.tks[id]; const key=x.name+(g?' · '+g+' g':'')+(hk?' + '+hk.name.replace(/^\S+\s/,'')+(hs?' '+hs:''):'')+(sz?' · '+sz:''); tkt.set(key,(tkt.get(key)||0)+bc(b)); } else tkm.set(x.name,(tkm.get(x.name)||0)+bc(b)); }); });
     if(tkt.size) B.append(barsCard('Ανά τερματικό',sorted(tkt).slice(0,10)));
+    const kdm=new Map(); bs.forEach(b=>(b.tk||[]).forEach(id=>{ const x=inf[id]; if(x&&x.type==='lure'&&x.kind) kdm.set(x.kind,(kdm.get(x.kind)||0)+bc(b)); }));
+    if(kdm.size) B.append(barsCard('Ανά είδος τεχνητού',sorted(kdm).slice(0,10)));
     const kt=(b,f)=>(b.tk||[]).forEach(id=>{ const x=inf[id]; if(x&&(x.type==='lure'||x.type==='hook')) f(x.name); });
     const wm=new Map(); bs.forEach(b=>{ if(b.wave==null) return; const en_=window.LANG==='en', lab=b.wave>=0.6?(en_?'waves ≥0.6 m':'κύμα ≥0.6 m'):(en_?'calm sea':'ήρεμη θάλασσα'); kt(b,n=>wm.set(n+' · '+lab,(wm.get(n+' · '+lab)||0)+bc(b))); });
     if(wm.size) B.append(barsCard('Τερματικό ανά κύμα',sorted(wm).slice(0,10)));
