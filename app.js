@@ -454,6 +454,8 @@ function initMap(){
   });
   spotsG=L.layerGroup().addTo(map); bitesG=L.layerGroup();
   const bitesVis=()=>{ if(!map||!bitesG) return; const on=tripActive()||!!reviewSet||lsGet('psaro-showbites',true)!==false; bitesVisRef=bitesVis; window.PsaroCore.bitesVis=bitesVis; if(on&&!map.hasLayer(bitesG)) bitesG.addTo(map); if(!on&&map.hasLayer(bitesG)){ map.closePopup(); map.removeLayer(bitesG); } };
+  const spotsVis=()=>{ if(!map||!spotsG) return; const on=lsGet('psaro-showspots',true)!==false||!!pick; window.PsaroCore.spotsVis=spotsVis; if(on&&!map.hasLayer(spotsG)) spotsG.addTo(map); if(!on&&map.hasLayer(spotsG)){ map.closePopup(); map.removeLayer(spotsG); } };
+  setTimeout(spotsVis,100); setInterval(spotsVis,2000);
   window.addEventListener('psaro-sess',bitesVis); setTimeout(bitesVis,300); setTimeout(bitesVis,1500); setInterval(bitesVis,3000);
   map.on('moveend',()=>{const p=map.getCenter(); lsSet('psaro-view',{lat:+p.lat.toFixed(4),lon:+p.lng.toFixed(4),z:map.getZoom()});});
   map.on('click',e=>{
@@ -948,8 +950,9 @@ function resetSheet(){
   $('bPrev').hidden=true; $('bPrevX').hidden=true; $('bAI').hidden=true; $('bAIOut').replaceChildren(); $('bAIMsg').textContent=''; $('bLaw').textContent=''; $('bErr').textContent=''; multiSync();
 }
 $('bMulti').addEventListener('change',()=>{ multiSync(); if($('bMulti').checked){ try{ $('bCnt').focus(); }catch(e){} } });
-$('fab').addEventListener('click',openSheet);
-$('bNew').addEventListener('click',openSheet);
+const fabOpen=()=>{ try{ if(window.PsaroGear&&window.PsaroGear.catchIfHauling&&window.PsaroGear.catchIfHauling()) return; }catch(e){} openSheet(); };
+$('fab').addEventListener('click',fabOpen);
+$('bNew').addEventListener('click',fabOpen);
 $('bClose').addEventListener('click',()=>closeSheet());
 $('sheet').addEventListener('click',e=>{ if(e.target===$('sheet')) closeSheet(); });
 $('bLocMode').addEventListener('change',()=>{syncLoc();updateLaw();});
@@ -1098,7 +1101,7 @@ const biteSortGet=sortSel('bites',[['new',T2('Νεότερα πρώτα','Newest
 function renderBites(){
   updateSuggest();
   const L=$('biteList'); L.replaceChildren();
-  const list=Store.get('bites').filter(b=>PsaroRange.inR('log',b)).sort({new:(a,b)=>biteMs(b)-biteMs(a),old:(a,b)=>biteMs(a)-biteMs(b),kg:(a,b)=>(+b.kg||0)-(+a.kg||0)||biteMs(b)-biteMs(a),len:(a,b)=>(+b.len||0)-(+a.len||0)||biteMs(b)-biteMs(a),sp:(a,b)=>(a.species||'￿').localeCompare(b.species||'￿','el')||biteMs(b)-biteMs(a)}[biteSortGet()]);
+  const list=Store.get('bites').filter(b=>!b.gear&&PsaroRange.inR('log',b)).sort({new:(a,b)=>biteMs(b)-biteMs(a),old:(a,b)=>biteMs(a)-biteMs(b),kg:(a,b)=>(+b.kg||0)-(+a.kg||0)||biteMs(b)-biteMs(a),len:(a,b)=>(+b.len||0)-(+a.len||0)||biteMs(b)-biteMs(a),sp:(a,b)=>(a.species||'￿').localeCompare(b.species||'￿','el')||biteMs(b)-biteMs(a)}[biteSortGet()]);
   if(!list.length) L.append(h('div',{class:'empty',text:PsaroRange.active('log')?(window.LANG==='en'?'No bites in this period.':'Κανένα τσίμπημα σε αυτό το διάστημα.'):'Κανένα τσίμπημα ακόμα. Πάτα το + για να καταγράψεις το πρώτο.'}));
   for(const b of list){
     const del=h('button',{class:'btn ghost sm',type:'button',text:'Διαγραφή'});
@@ -1517,5 +1520,5 @@ document.addEventListener('visibilitychange',()=>{
 });
 setInterval(()=>{ if(document.visibilityState==='visible'&&navigator.onLine!==false) refreshConditions(); },10*60*1000);
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
-Object.assign(window.PsaroCore,{reviewTrip:reviewTrip,endReview:endReview,speciesDB:()=>DB,pickSpecies:sp=>{ $('bSpecies').value=shownName(sp); curLatin=sp.la; try{updateLaw();}catch(e){} $('bSpecies').dispatchEvent(new Event('change',{bubbles:true})); }});
+Object.assign(window.PsaroCore,{tripStamp:tripStamp,utcOff:utcOff,matchSp:matchSp,dispName:dispName,shownName:shownName,openRodSheet:()=>openSheet(),reviewTrip:reviewTrip,endReview:endReview,speciesDB:()=>DB,pickSpecies:sp=>{ $('bSpecies').value=shownName(sp); curLatin=sp.la; try{updateLaw();}catch(e){} $('bSpecies').dispatchEvent(new Event('change',{bubbles:true})); }});
 })();

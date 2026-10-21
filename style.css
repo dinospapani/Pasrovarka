@@ -1101,3 +1101,8 @@ body:not(.ontrip) #bGear:not(.on){display:none!important}
 /* v31z53: κατά την αλλαγή γλώσσας η σελίδα κρύβεται μέχρι να επανέλθει στο ίδιο σημείο (χωρίς «άλμα» στον χάρτη) */
 html.rst{background:var(--bg,#fff)}
 html.rst body{visibility:hidden}
+
+/* v31z54: αλιεύματα εργαλείου */
+.gdet .gcrow{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center}
+.gdet .gcl{font-weight:600;overflow-wrap:anywhere}
+.gdet .gci{min-width:36px;height:34px;padding:0 8px}

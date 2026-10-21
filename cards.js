@@ -355,6 +355,13 @@ setTimeout(importShare,1500); window.addEventListener('hashchange',function(){ s
   bt.addEventListener('click',function(){ C.lsSet('psaro-showbites',!on()); bt.textContent=on()?T('Ναι','On'):T('Όχι','Off'); bt.className='spb '+(on()?'acc':''); if(C.bitesVis) C.bitesVis(); });
   r.append(x,bt); return r;
 });
+(window.PsaroSeaRows=window.PsaroSeaRows||[]).push(function(){
+  var r=el('div','sprow'), x=el('div','sptx'); function on(){ return C.lsGet('psaro-showspots',true)!==false; }
+  x.append(el('b','',T('Σημεία (waypoints) στον χάρτη','Spots (waypoints) on the map')),el('span','',T('Εμφάνιση των αποθηκευμένων σημείων σου. Δεν διαγράφονται όταν τα κρύβεις.','Show your saved spots. Hiding them does not delete them.')));
+  var bt=el('button','spb '+(on()?'acc':''),on()?T('Ναι','On'):T('Όχι','Off')); bt.type='button';
+  bt.addEventListener('click',function(){ C.lsSet('psaro-showspots',!on()); bt.textContent=on()?T('Ναι','On'):T('Όχι','Off'); bt.className='spb '+(on()?'acc':''); if(C.spotsVis) C.spotsVis(); });
+  r.append(x,bt); return r;
+});
 window.PsaroCards={fish:function(b){ preview(fishCard(b),'bitecast-fish.png',''); },trip:function(t){ preview(tripCard(t),'bitecast-trip.png',''); },year:function(y){ preview(yearCard(y),'bitecast-'+y+'.png',''); },sum:openSum,parse:parseVoice,yearData:yearData,enc:enc,dec:dec,importShare:importShare};
 window.PsaroVoice={parse:parseVoice};
 })();
