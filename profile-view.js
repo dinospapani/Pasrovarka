@@ -4,7 +4,19 @@
 var C=window.PsaroCore, $=function(i){ return document.getElementById(i); }; if(!C||!$('pMain')) return;
 var EN=window.LANG==='en', T=function(el,en){ return EN?en:el; };
 var range=C.lsGet('psaro-prange','28');
-function showSet(on){ $('pMain').hidden=on; $('pSettings').hidden=!on; try{ $('profile').scrollTop=0; }catch(e){} }
+var view='stats';
+function setView(v){ view=v; $('pMain').hidden=v!=='stats'; $('pSettings').hidden=v!=='set'; var pt=$('pTackle'); if(pt) pt.hidden=v!=='tackle';
+  Array.prototype.forEach.call(document.querySelectorAll('#pSeg button'),function(b){ b.setAttribute('aria-pressed',String(b.dataset.p===v)); });
+  try{ $('profile').scrollTop=0; }catch(e){} try{ window.dispatchEvent(new CustomEvent('psaro-pview',{detail:v})); }catch(e){} }
+function showSet(on){ setView(on?'set':'stats'); }
+window.PsaroProfView={get:function(){ return view; },set:setView};
+(function(){ var ph=document.querySelector('#profile .phead'); if(!ph||$('pSeg')) return;
+  var sg=document.createElement('div'); sg.className='seg'; sg.id='pSeg'; sg.setAttribute('role','group'); sg.style.margin='8px 0';
+  [['stats',T('Στατιστικά','Stats')],['tackle',T('Εξοπλισμός','Tackle')],['set',T('Ρυθμίσεις','Settings')]].forEach(function(x){ var b=document.createElement('button'); b.type='button'; b.dataset.p=x[0]; b.textContent=x[1]; b.setAttribute('aria-pressed',String(x[0]==='stats')); b.addEventListener('click',function(){ setView(x[0]); if(x[0]==='stats') draw(); }); sg.append(b); });
+  ph.parentNode.insertBefore(sg,ph.nextSibling);
+  var tk=document.createElement('div'); tk.id='pTackle'; tk.hidden=true; $('pMain').parentNode.insertBefore(tk,$('pSettings'));
+  var bk=$('pBackMain'); if(bk&&bk.parentNode) bk.parentNode.style.display='none';
+})();
 function hrs(ms){ return Math.round(ms/360000)/10; }
 function draw(){
   var box=$('pStats'); if(!box) return; box.replaceChildren();
@@ -34,7 +46,7 @@ document.querySelectorAll('#pRange button').forEach(function(b){ b.addEventListe
 if(window.PsaroRange){ PsaroRange.ui('prof',$('pRng'),false); window.addEventListener('psaro-range',function(e){ if(e.detail&&e.detail.key==='prof') draw(); }); }
 $('pBackMain').addEventListener('click',function(){ showSet(false); draw(); });
 var gear=document.createElement('button'); gear.type='button'; gear.className='btn ghost sm'; gear.id='pGear'; gear.textContent='⚙'; gear.setAttribute('aria-label',T('Ρυθμίσεις','Settings'));
-gear.addEventListener('click',function(){ showSet(true); });
+gear.addEventListener('click',function(){ showSet(true); }); gear.style.display='none';
 /* Οδηγός: μέσα στο Προφίλ, στην ίδια γραμμή με τη «Χρονιά μου» */
 setTimeout(function(){
   var ps=$('pStats'); if(!ps||$('pActs')) return;
@@ -73,6 +85,6 @@ Object.keys(UL).forEach(function(k){
 sc.insertBefore(uc,gc.nextSibling);
 var wantSet=false;
 $('sfGoProf').addEventListener('click',function(){ wantSet=true; },true);
-$('profBtn').addEventListener('click',function(){ showSet(wantSet); wantSet=false; draw(); });
+$('profBtn').addEventListener('click',function(){ setView(wantSet?'set':'stats'); wantSet=false; draw(); });
 draw();
 })();

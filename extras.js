@@ -95,6 +95,20 @@ async function trackPos(){
   try{ var p=await C.getPosition(); s=load(); s.last={lat:p.lat,lon:p.lon,t:Date.now()}; save(s); render(); pushTrip(); }catch(e){ pushTrip(); }
 }
 function late(s){ return s.active&&Date.now()>s.due; }
+/* v31z72: όσο χρησιμοποιείς το κινητό, η ώρα επιστροφής ανανεώνεται μόνη της (+30′, μέχρι 3 ώρες συνολικά) ώστε να μη σε ρωτάει «είσαι καλά;» και να μη ειδοποιείται η επαφή. Όχι μετά από SOS. */
+var contSince=0, lastAct=0, EXT_MIN=30, EXT_CAP=180;
+function maybeAuto(){
+  var s=load(); if(!late(s)||s.sosAt) return;
+  if(document.visibilityState!=='visible'||Date.now()-lastAct>180000) return;
+  if(contSince>s.due+300000) return;
+  if((s.autoExt||0)>=EXT_CAP) return;
+  s.due=Date.now()+EXT_MIN*60000; s.autoExt=(s.autoExt||0)+EXT_MIN; save(s);
+  toast(T('Η ώρα επιστροφής ανανεώθηκε (+30 λεπτά) γιατί χρησιμοποιείς την εφαρμογή.','Return time extended by 30 minutes because you are using the app.'));
+  render(); pushTrip();
+}
+function onAct(){ var now=Date.now(); if(now-lastAct>180000) contSince=now; lastAct=now; var s=load(); if(late(s)&&contSince<=s.due+300000) maybeAuto(); }
+['pointerdown','touchstart','keydown'].forEach(function(ev){ document.addEventListener(ev,onAct,{passive:true,capture:true}); });
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') onAct(); });
 function bar(){
   var s=load(), b=$('lateBar');
   if(!late(s)){ if(b) b.remove(); return; }
@@ -165,7 +179,7 @@ function snap0(){ var c=C.getCond(); return c?{lat:c.lat,lon:c.lon,press:c.press
 function start(){
   var d=load(), time=$('sfTime').value;
   if(!time){ $('sfMsg').textContent='Βάλε ώρα επιστροφής.'; return; }
-  var s=Object.assign({},d,{active:true,id:'trip-'+Date.now().toString(36),route:$('sfRoute').value.trim(),due:localMinToMs(time),last:null,start:Date.now(),startDate:C.nicosiaToday(),cond0:snap0(),sil:+$('sfSil').value||0,synced:undefined});
+  var s=Object.assign({},d,{active:true,id:'trip-'+Date.now().toString(36),route:$('sfRoute').value.trim(),due:localMinToMs(time),autoExt:0,sosAt:0,last:null,start:Date.now(),startDate:C.nicosiaToday(),cond0:snap0(),sil:+$('sfSil').value||0,synced:undefined});
   save(s); $('sfMsg').textContent=''; render(); closeSheet();
   pushContact().then(function(){ return trackPos(); }).then(function(){ pushTrip(); });
   clearInterval(timer); timer=setInterval(tick,60000);
@@ -208,7 +222,7 @@ function back(){
 window.PsaroTrip={back:back,sheet:function(){ openSheet(); },sos:function(){ var en=window.LANG==='en'; window.PsaroAsk(en?'Send an SOS with your location to your safety contact?':'Να σταλεί SOS με τη θέση σου στην επαφή ασφαλείας;',{title:'SOS',ok:en?'Send SOS':'Αποστολή SOS',cancel:en?'Cancel':'Άκυρο',danger:true}).then(function(ok){ if(ok) trackPos().then(function(){ sos(); }); }); },counts:function(){ var s=load(); return s.active?summary(s):{n:0,kg:0,species:'',miss:0}; },endSilent:function(){ var s=load(); if(!s.active) return false; if(window.PsaroTrack) window.PsaroTrack.take(); s.active=false; save(s); pushTrip(); clearInterval(timer); render(); return true; },state:load};
 function ext(){ var s=load(); s.due=Math.max(s.due,Date.now())+30*60000; save(s); render(); pushTrip(); }
 function sos(){
-  var s=load(); s.due=Date.now()-60000; save(s);
+  var s=load(); s.due=Date.now()-60000; s.sosAt=Date.now(); save(s);
   function manual(){
     window.PsaroAsk(window.LANG==='en'?'Send a help message with your last position. Choose how to send it.':'Στείλε μήνυμα βοήθειας με την τελευταία σου θέση. Διάλεξε πώς θα σταλεί.',{title:'SOS',ok:'WhatsApp',cancel:'SMS',danger:false}).then(function(ok){ send(s,'sos',ok?'wa':'sms'); });
   }
@@ -221,6 +235,7 @@ function sos(){
 }
 function tick(){
   var s=load(); if(!s.active){ clearInterval(timer); return; }
+  maybeAuto(); s=load();
   if(s.synced===false) pushTrip();
   if(Date.now()-lastTrack>=180000) trackPos();
   render();

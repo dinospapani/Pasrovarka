@@ -1265,3 +1265,13 @@ body.ontrip.ontrip.ontrip #bMob{left:8px!important;right:auto!important}
 body.ontrip.ontrip.ontrip #bMob b{font-size:13px}
 
 html.rst{background-color:#0c2b3a!important}
+/* v31z73: Προφίλ — μπάρα Στατιστικά · Εξοπλισμός · Ρυθμίσεις */
+#profile #pSeg{position:sticky;top:0;z-index:6;flex:0 0 auto;margin:0!important;box-shadow:0 6px 0 var(--bg)}
+#profile #pSeg button{padding:10px 4px;font-size:14px}
+#pTackle .seg button{padding:7px 8px;font-size:13px}
+#pTackle .item{margin-bottom:8px}
+#pTackle .card{display:grid;gap:8px}
+/* v31z74: επιλογή εξοπλισμού στο τσίμπημα */
+.tkchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.tkchips button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 12px;font-size:14px;cursor:pointer}
+.tkchips button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}

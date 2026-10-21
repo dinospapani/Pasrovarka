@@ -314,7 +314,7 @@ function drawHours(c){
 
 /* ---------- Store (this device, localStorage) ---------- */
 const Store=(function(){
-  const cache={spots:[],trips:[],bites:[]}, subs={spots:[],trips:[],bites:[]}, hooks=[];
+  const cache={spots:[],trips:[],bites:[],tackle:[]}, subs={spots:[],trips:[],bites:[],tackle:[]}, hooks=[];
   let tombs=[];
   const emit=k=>subs[k].forEach(f=>{ try{ f(cache[k]); }catch(e){ try{ console.error('store subscriber',e); }catch(x){} } });
   const persist=k=>lsSet('psaro-'+k,cache[k]);
@@ -935,6 +935,7 @@ async function recountTrip(sid){
   await Store.save('trips',Object.assign({},t,{count:bs.reduce((s,b)=>s+bc(b),0),kg:kg}));
 }
 function openSheet(){
+  try{ if(window.PsaroTackle) PsaroTackle.mount($('bTackle'),sheetFresh?'last':PsaroTackle.sel()); }catch(e){}
   if(sheetFresh){
     $('bWhen').value=nowLocalInput();
     if(cond&&cond.press!=null) $('bPress').value=cond.press;
@@ -948,6 +949,7 @@ function closeSheet(keep){ $('sheet').hidden=true; $('bSug').hidden=true; if(edi
 function resetSheet(){
   $('biteForm').reset(); photoBlob=null; curLatin=''; pickedPt=null; sheetFresh=true; editRec=null; pressTouched=false;
   $('bPrev').hidden=true; $('bPrevX').hidden=true; $('bAI').hidden=true; $('bAIOut').replaceChildren(); $('bAIMsg').textContent=''; $('bLaw').textContent=''; $('bErr').textContent=''; multiSync();
+  try{ if(window.PsaroTackle) PsaroTackle.mount($('bTackle'),'last'); }catch(e){}
 }
 $('bMulti').addEventListener('change',()=>{ multiSync(); if($('bMulti').checked){ try{ $('bCnt').focus(); }catch(e){} } });
 const fabOpen=()=>{ try{ if(window.PsaroGear&&window.PsaroGear.catchIfHauling&&window.PsaroGear.catchIfHauling()) return; }catch(e){} openSheet(); };
@@ -1019,9 +1021,10 @@ $('biteForm').addEventListener('submit',async e=>{
       ptrend:isNow?$('dPress').value:null,wind:isNow?+$('dWind').value:null,wave:isNow?+$('dWave').value:null,cloud:isNow?$('dCloud').value:null,
       temp:isNow&&c&&c.temp!=null?c.temp:null,sst:isNow&&c&&c.sst!=null?c.sst:null,
       place:place,lat:lat,lon:lon,photo:!!photoBlob,src:'app'};
+    { const tks=(window.PsaroTackle&&$('bTackle'))?PsaroTackle.sel():[]; if(tks.length) rec.tk=tks; }
     let cntV=0; if($('bMulti').checked){ const cn=Math.floor(+$('bCnt').value); if(!(cn>=2)){ $('bErr').textContent=window.LANG==='en'?'Enter how many fish (2 or more).':'Γράψε πόσα ψάρια έπιασες (2 ή περισσότερα).'; btn.disabled=false; btn.textContent='Αποθήκευση'; return; } cntV=Math.min(9999,cn); }
     if($('bRel').checked) rec.rel=true;
-    if(editing){ rec=Object.assign({},editing,{date:rec.date,time:rec.time,species:rec.species,latin:rec.latin,bait:rec.bait,tech:rec.tech,depth:rec.depth,kg:rec.kg,len:rec.len,press:rec.press,notes:rec.notes,photo:!!photoBlob||!!editing.photo,lat:lat,lon:lon,place:place}); if($('bRel').checked) rec.rel=true; else delete rec.rel; }
+    if(editing){ const tks2=rec.tk; rec=Object.assign({},editing,{tk:tks2,date:rec.date,time:rec.time,species:rec.species,latin:rec.latin,bait:rec.bait,tech:rec.tech,depth:rec.depth,kg:rec.kg,len:rec.len,press:rec.press,notes:rec.notes,photo:!!photoBlob||!!editing.photo,lat:lat,lon:lon,place:place}); if($('bRel').checked) rec.rel=true; else delete rec.rel; if(!(rec.tk&&rec.tk.length)) delete rec.tk; }
     if(cntV) rec.cnt=cntV; else delete rec.cnt;
     if(lat!=null&&window.PsaroHist){
       const tms=biteMs({date:date,time:rec.time,tz:rec.tz!=null?rec.tz:utcOff()});
@@ -1053,7 +1056,7 @@ function editBite(b){
   resetSheet(); editRec=b; sheetFresh=false;
   $('bWhen').value=(b.date||nicosiaToday())+'T'+(b.time||'12:00');
   $('bSpecies').value=(window.LANG==='en'&&window.spName)?window.spName(b.species||''):(b.species||''); curLatin=b.latin||'';
-  $('bBait').value=b.bait||''; $('bTech').value=b.tech||'';
+  $('bBait').value=b.bait||''; $('bTech').value=b.tech||''; try{ if(window.PsaroTackle) PsaroTackle.mount($('bTackle'),b.tk||[]); }catch(e){}
   for(const [id,k] of [['bDepth','depth'],['bKg','kg'],['bLen','len'],['bPress','press']]) $(id).value=b[k]==null?'':b[k];
   $('bNotes').value=b.notes||''; $('bRel').checked=!!b.rel; $('bMulti').checked=bc(b)>1; $('bCnt').value=bc(b)>1?bc(b):''; multiSync();
   $('bLocMode').value=(typeof b.lat==='number')?'keep':'none';
@@ -1176,6 +1179,8 @@ function renderStats(){
   B.append(barsCard('Με τι τσίμπησε',baitRows));
   const tm=tally(bs,b=>(b.tech||'').trim()||'—',true);
   B.append(barsCard('Ανά τεχνική',sorted(tm).slice(0,10).map(([k,v])=>[k==='—'?'Χωρίς καταγραφή':k,v])));
+  if(window.PsaroTackle){ const tkm=new Map(), tkn=PsaroTackle.names(); bs.forEach(b=>{ (b.tk||[]).forEach(id=>{ if(tkn[id]) tkm.set(id,(tkm.get(id)||0)+bc(b)); }); });
+    if(tkm.size) B.append(barsCard('Ανά εξοπλισμό',sorted(tkm).slice(0,10).map(([k,v])=>[tkn[k],v]))); }
   const hm=tally(bs,b=>Math.floor(parseInt((b.time||'12:00').slice(0,2),10)/3));
   B.append(barsCard('Ώρα ημέρας',Array.from({length:8},(_,i)=>[pad(i*3)+'–'+pad((i*3+3)%24),hm.get(i)||0])));
   const mm=tally(bs,b=>biteMoon(b));
@@ -1445,7 +1450,7 @@ $('expBtn').addEventListener('click',async()=>{
   try{
     const bites=Store.raw('bites'), photos={};
     for(const b of bites) if(b.photo){ try{const bl=await Photos.get(b.id); if(bl) photos[b.id]=await blobToDataUrl(bl);}catch(e){} }
-    const data={app:'psarovarka',v:2,spots:Store.get('spots'),trips:Store.get('trips'),bites:bites,gear:(window.PsaroGear?window.PsaroGear.state().items:[]),photos:photos};
+    const data={app:'psarovarka',v:2,spots:Store.get('spots'),trips:Store.get('trips'),bites:bites,tackle:Store.raw('tackle'),gear:(window.PsaroGear?window.PsaroGear.state().items:[]),photos:photos};
     const a=h('a',{href:URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'})),download:'psarovarka-'+nicosiaToday()+'.json'});
     document.body.append(a); a.click(); a.remove();
   }catch(e){ $('impMsg').textContent='Η εξαγωγή απέτυχε.'; }
@@ -1455,7 +1460,7 @@ $('impFile').addEventListener('change',async e=>{
   const f=e.target.files[0]; if(!f) return;
   try{
     const d=JSON.parse(await f.text()); let n=0;
-    for(const k of ['spots','trips','bites']) for(const it of (Array.isArray(d[k])?d[k]:[])) if(it&&typeof it==='object'){await Store.save(k,it);n++;}
+    for(const k of ['spots','trips','bites','tackle']) for(const it of (Array.isArray(d[k])?d[k]:[])) if(it&&typeof it==='object'){await Store.save(k,it);n++;}
     if(Array.isArray(d.gear)&&window.PsaroGear) n+=window.PsaroGear.import(d.gear);
     const ph=d.photos&&typeof d.photos==='object'?d.photos:{};
     for(const id in ph){ try{ const bl=await (await fetch(ph[id])).blob(); await Photos.put(id,bl); }catch(err){} }

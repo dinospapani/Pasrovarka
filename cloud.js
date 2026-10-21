@@ -5,7 +5,7 @@ var URL_='https://sgfohmqwdwtkhtrebnix.supabase.co', KEY='sb_publishable_LGuwvrv
 var C=window.PsaroCore; if(!C) return;
 var Store=C.Store, Photos=C.Photos, toast=function(m){ if(C.toast) C.toast(m); };
 var $=function(id){return document.getElementById(id);};
-var KINDS=['spots','trips','bites'];
+var KINDS=['spots','trips','bites','tackle'];
 var sess=null, busy=false, timer=null, again=false;
 function ls(k,v){ try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)); if(v===null) localStorage.removeItem(k); else localStorage.setItem(k,JSON.stringify(v)); }catch(e){ return null; } }
 sess=ls('psaro-sess');
