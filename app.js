@@ -421,7 +421,8 @@ function initMap(){
   });
   const wmsU='https://ows.emodnet-bathymetry.eu/wms', depthC=L.tileLayer.wms(wmsU,{layers:'emodnet:mean_multicolour',format:'image/png',transparent:true,opacity:.6,version:'1.3.0',attribution:'EMODnet Bathymetry'}), depthK=L.tileLayer.wms(wmsU,{layers:'emodnet:contours',format:'image/png',transparent:true,version:'1.3.0',attribution:'EMODnet Bathymetry'});
   let dm=+lsGet('psaro-depth',0)||0;
-  const applyDepth=()=>{ [depthC,depthK].forEach(l=>{ if(map.hasLayer(l)) map.removeLayer(l); }); if(dm===1) depthC.addTo(map); if(dm===2) depthK.addTo(map); if(map.hasLayer(seaL)) seaL.bringToFront(); $('bDepthMap').setAttribute('aria-pressed',String(dm!==0)); $('bDepthMap').title=['Βάθη θάλασσας: κλειστά','Βάθη θάλασσας: χρώματα','Βάθη θάλασσας: γραμμές βάθους'][dm]; };
+  const applyDepth=()=>{ [depthC,depthK].forEach(l=>{ if(map.hasLayer(l)) map.removeLayer(l); }); if(dm===1) depthC.addTo(map); if(dm===2&&!(window.PsaroDense&&window.PsaroDense.on())) depthK.addTo(map); if(map.hasLayer(seaL)) seaL.bringToFront(); $('bDepthMap').setAttribute('aria-pressed',String(dm!==0)); $('bDepthMap').title=['Βάθη θάλασσας: κλειστά','Βάθη θάλασσας: χρώματα','Βάθη θάλασσας: γραμμές βάθους'][dm]; try{ window.dispatchEvent(new CustomEvent('psaro-depthmode',{detail:{dm:dm}})); }catch(e){} };
+  window.PsaroDepthRefresh=applyDepth; window.PsaroDepthMode=()=>dm;
   applyDepth();
   $('bDepthMap').addEventListener('click',()=>{ dm=(dm+1)%3; lsSet('psaro-depth',dm); applyDepth(); toast(['Βάθη: κλειστά','Βάθη: χρώματα','Βάθη: γραμμές βάθους'][dm]); });
   $('bSea').addEventListener('click',()=>{
@@ -467,8 +468,12 @@ function initMap(){
     const act=(cls,d,txt,fn)=>h('button',{class:'pact '+cls,type:'button',onclick:fn},ic(d),h('span',{text:txt}));
     const zin=(zonesG&&map.hasLayer(zonesG))?zonesAt(lat,lon):[];
     const zbox=zin.length?h('div',{class:'note',style:'color:#d33;margin:2px 0 6px',text:'⚠ '+zin.map(zoneText).join(' | ')+' · '+(window.LANG==='en'?'Check Cy-FIS and the law.':'Επιβεβαίωσε στο Cy-FIS και στον νόμο.')}):null;
-    const box=h('div',{class:'pop pmap'},h('div',{class:'pcoord'},ic('M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z M12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z'),h('span',{class:'mono',text:PsaroCoord.fmt(lat,lon)})),
+    const en2=window.LANG==='en', depthEl=h('span',{class:'pdepth',text:(en2?'Depth: …':'Βάθος: …')});
+    depthLookup(lat,lon).then(d=>{ if(!depthEl.isConnected&&!depthEl.parentNode) return; depthEl.textContent=d!=null?((en2?'Depth: ≈ ':'Βάθος: ≈ ')+d+' m'):(en2?'Depth: not available':'Βάθος: δεν βρέθηκε'); if(d==null) depthEl.style.opacity='.6'; });
+    const nbox=window.PsaroNavInfo?window.PsaroNavInfo(lat,lon,()=>map.closePopup()):null;
+    const box=h('div',{class:'pop pmap'},h('div',{class:'pcoord'},ic('M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z M12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z'),h('div',{},h('span',{class:'mono',text:PsaroCoord.fmt(lat,lon)}),depthEl)),
       zbox,
+      nbox,
       act('','M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z M12 7v6 M9 10h6','Νέο σημείο',()=>{map.closePopup();openSpotForm({lat:lat,lon:lon});}),
       act('','M7 18a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17 8.5a4.5 4.5 0 0 1 .5 9.5H7z','Πρόγνωση εδώ',()=>{map.closePopup();switchTab('fc');window.dispatchEvent(new CustomEvent('psaro-fcpick',{detail:{lat:lat,lon:lon}}));}),
       true?act('acc','M3 12c3-5.5 10-6 14-1.5l4-3.5v10l-4-3.5C13 17.5 6 17.5 3 12z','Τσίμπημα εδώ',()=>{map.closePopup();pickedPt={lat:lat,lon:lon};$('bLocMode').value='pick';syncLoc();openSheet();}):null);
@@ -479,6 +484,7 @@ function initMap(){
 }
 function setYou(lat,lon){
   if(!map) return;
+  try{ window.dispatchEvent(new CustomEvent('psaro-pos',{detail:{lat:lat,lon:lon}})); }catch(e){}
   if(youM) youM.setLatLng([lat,lon]); else youM=L.marker([lat,lon],{icon:L.divIcon({className:'',html:'<div class="you"></div>',iconSize:[18,18]}),interactive:false,zIndexOffset:-100}).addTo(map);
 }
 /* Ζωντανή θέση: η μπλε τελεία ακολουθεί το GPS όσο η εφαρμογή είναι ανοιχτή */
@@ -517,16 +523,16 @@ function catchPopup(b){
   const img=h('img',{class:'pimg',alt:'Φωτογραφία ψαριού'}); img.hidden=true;
   const cd=[b.wind!=null?PU.wind(b.wind):null,b.wave!=null?PU.wave(b.wave)+(window.LANG==='en'?' wave':' κύμα'):null,b.press!=null?PU.press(b.press):null,b.sst!=null?PU.temp(b.sst)+(window.LANG==='en'?' sea':' θάλασσα'):null,MOON_LBL[biteMoon(b)],b.hist?(window.LANG==='en'?'estimate':'εκτίμηση'):null].filter(Boolean).join(' · ');
   const size=[b.kg?b.kg+' kg':null,b.len?b.len+' cm':null].filter(Boolean).join(' · ');
-  return h('div',{class:'pop'},img,h('b',{text:(b.n?'#'+b.n+' · ':'')+(b.species||'Άγνωστο')+(nn>1?' ×'+nn:'')}),b.latin?h('div',{class:'meta',text:b.latin}):null,
+  return h('div',{class:'pop fishpop'},img,h('b',{text:(b.n?'#'+b.n+' · ':'')+(b.species||'Άγνωστο')+(nn>1?' ×'+nn:'')}),b.latin?h('div',{class:'meta',text:b.latin}):null,
     h('div',{class:'meta mono',text:(b.date||'')+' '+(b.time||'')}),
     size?h('div',{text:size}):null,
     b.rel?h('div',{class:'meta',style:'color:#2e9e5b;font-weight:700',text:(window.LANG==='en'?'↩ Catch & release':'↩ Αφέθηκε')}):null,
-    b.miss?null:h('div',{class:'row',style:'margin-top:6px'},h('button',{class:'btn sm',type:'button',text:b.rel?(window.LANG==='en'?'Not released':'Δεν αφέθηκε'):(window.LANG==='en'?'↩ I released it':'↩ Το άφησα ελεύθερο'),onclick:()=>toggleRel(b)})),
     (b.bait||b.tech)?h('div',{class:'meta',text:[b.bait,b.tech].filter(Boolean).join(' · ')}):null,
     cd?h('div',{class:'meta',text:cd}):null,b.notes?h('div',{class:'meta',text:b.notes}):null,
     typeof b.lat==='number'?h('div',{class:'meta mono',text:PsaroCoord.fmt(b.lat,b.lon)}):null,
-    typeof b.lat==='number'?h('div',{class:'row',style:'margin-top:6px'},h('button',{class:'btn sm',type:'button',text:window.LANG==='en'?'Send position':'Στείλε θέση',onclick:()=>sharePlace((b.species||'')+(b.kg?' · '+b.kg+' kg':''),b.lat,b.lon)})):null,
-    h('div',{class:'row',style:'margin-top:6px'},h('button',{class:'btn sm ghost',type:'button',text:window.LANG==='en'?'✎ Edit':'✎ Επεξεργασία',onclick:()=>{ if(map) map.closePopup(); editBite(b); }})));
+    h('div',{class:'row pbtns',style:'margin-top:6px'},
+      h('button',{class:'btn sm ghost',type:'button',text:window.LANG==='en'?'✎ Edit':'✎ Επεξεργασία',onclick:()=>{ if(map) map.closePopup(); editBite(b); }}),
+      typeof b.lat==='number'?h('button',{class:'btn sm',type:'button',text:window.LANG==='en'?'Send':'Στείλε',onclick:()=>sharePlace((b.species||'')+(b.kg?' · '+b.kg+' kg':''),b.lat,b.lon)}):null));
 }
 function drawMap(){
   if(!map) return;
@@ -550,8 +556,12 @@ function drawMap(){
     if(typeof b.lat!=='number'||typeof b.lon!=='number') continue;
     if(reviewSet&&!tripActive()&&!reviewSet.has(b.id)) continue;
     const m=L.marker([b.lat,b.lon],{icon:L.divIcon({className:'',html:'<div class="mk-fish'+(b.photo?' ph':'')+(b.rel?' rel':'')+'">🐟</div>',iconSize:[30,30]}),title:b.species||''});
-    m.bindPopup(()=>catchPopup(b),{minWidth:180});
-    m.on('popupopen',e=>{const im=e.popup.getElement().querySelector('img.pimg'); if(im&&b.photo) loadPhoto(b.id,im);});
+    m.bindPopup(()=>catchPopup(b),{minWidth:200,maxWidth:250,className:'fishpopw'});
+    m.on('popupopen',e=>{const pu=e.popup, im=pu.getElement().querySelector('img.pimg');
+      /* το παράθυρο ψαριού μπαίνει στο κέντρο του χάρτη, και ξανά όταν φορτώσει η φωτογραφία */
+      const center=()=>{ const el=pu.getElement(); if(!el||!map||!map.hasLayer(pu)) return; const pr=el.getBoundingClientRect(), cr=map.getContainer().getBoundingClientRect(); const dx=(pr.left+pr.width/2)-(cr.left+cr.width/2), dy=(pr.top+pr.height/2)-(cr.top+cr.height/2); if(Math.abs(dx)>4||Math.abs(dy)>4) map.panBy([dx,dy],{animate:true,duration:.25}); };
+      setTimeout(center,90);
+      if(im){ im.addEventListener('load',()=>setTimeout(center,60)); if(b.photo) loadPhoto(b.id,im); }});
     m.on('add',()=>{
       const el=m.getElement(); if(!el||el.dataset.lp) return; el.dataset.lp='1';
       let t=null,held=false,x0=0,y0=0;
@@ -1558,7 +1568,7 @@ async function emodDepth(lat,lon){
   const num=v=>{ v=+v; return isFinite(v)?v:null; };
   try{
     const r=await fetch('https://rest.emodnet-bathymetry.eu/depth_sample?geom='+encodeURIComponent('POINT('+lon.toFixed(5)+' '+lat.toFixed(5)+')'),{signal:to(9000)});
-    if(r.ok){ let j=await r.json(); if(Array.isArray(j)) j=j[0]; const v=j&&num(j.avg!=null?j.avg:(j.depth!=null?j.depth:j.value)); if(v!=null&&v<0) return Math.round(-v); }
+    if(r.ok){ let j=await r.json(); if(Array.isArray(j)) j=j[0]; const v=j&&num(j.avg!=null?j.avg:(j.depth!=null?j.depth:j.value)); if(v!=null&&v>0) return Math.round(v); } /* η υπηρεσία depth_sample δίνει θετικό βάθος σε μέτρα (δοκιμή: 254 m στη θάλασσα νότια της Κύπρου) */
   }catch(e){}
   try{
     const d=0.004, q='SERVICE=WMS&VERSION=1.3.0&REQUEST=GetFeatureInfo&LAYERS=emodnet:mean&QUERY_LAYERS=emodnet:mean&STYLES=&INFO_FORMAT='+encodeURIComponent('application/json')+'&CRS=EPSG:4326&BBOX='+[lat-d,lon-d,lat+d,lon+d].join(',')+'&WIDTH=101&HEIGHT=101&I=50&J=50';
@@ -1566,6 +1576,12 @@ async function emodDepth(lat,lon){
     if(r.ok){ const j=await r.json(); const p=j&&j.features&&j.features[0]&&j.features[0].properties; if(p){ for(const k in p){ const v=num(p[k]); if(v!=null&&v<0) return Math.round(-v); } } }
   }catch(e){}
   return null;
+}
+const depthCache=new Map();
+function depthLookup(lat,lon){
+  const k=lat.toFixed(4)+','+lon.toFixed(4);
+  if(depthCache.has(k)) return Promise.resolve(depthCache.get(k));
+  return emodDepth(lat,lon).then(d=>{ if(d!=null) depthCache.set(k,d); return d; }).catch(()=>null);
 }
 async function biteLL(){
   const mode=$('bLocMode').value;

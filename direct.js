@@ -72,7 +72,7 @@ map.on('popupopen',function(e){
   var b=document.createElement('button'); b.type='button'; b.className='pact pdirect'+(pop.classList.contains('pmap')?'':' solo');
   b.innerHTML='<svg viewBox="0 0 24 24" class="pi"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg><span></span>'; b.querySelector('span').textContent=T('Πηγαίνω εκεί','Go there');
   b.addEventListener('click',function(){ go(ll.lat,ll.lng,nm); });
-  pop.appendChild(b);
+  (pop.querySelector('.pbtns')||pop).appendChild(b);
 });
 window.PsaroDirect={go:go,clear:clear,target:function(){ return tgt; }};
 if(tgt){ begin(); render(); }
