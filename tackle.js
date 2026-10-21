@@ -55,7 +55,7 @@ function render(){
     var mem=(it.type==='set')?(it.members||[]).filter(function(i){ return nmap[i]; }):[];
     if(it.type==='set') card.append(el('div','meta',mem.length?mem.map(function(i){ return nmap[i]; }).join(' · '):T('Κανένα στοιχείο','No items')));
     var m=[]; if(it.brand) m.push(it.brand); if(it.spec) m.push(it.spec); if(it.qty) m.push('×'+it.qty);
-    if(it.w&&it.w.length) m.push(it.w.join('/')+' g'); if(it.color) m.push(it.color);
+    if(it.w&&it.w.length) m.push(it.w.join('/')+' g'); if(it.color) m.push(it.color); if(it.sz&&it.sz.length) m.push(it.sz.join('/')); if(it.cord) m.push(it.cord);
     if(m.length) card.append(el('div','meta',m.join(' · ')));
     var ub=(S.get('bites')||[]).filter(function(b){ return it.type==='set'?(mem.length&&b.tk&&mem.every(function(i){ return b.tk.indexOf(i)>=0; })):(b.tk&&b.tk.indexOf(it.id)>=0); }), uf=0, ukg=0; ub.forEach(function(b){ uf+=C.bc(b); ukg+=b.rel?0:(+b.kg||0); });
     if(ub.length) card.append(el('div','meta',T('Αλιεύματα: ','Catches: ')+uf+(ukg?' · '+Math.round(ukg*10)/10+' kg':'')));
@@ -87,21 +87,24 @@ function form(it){
       qt=field(T('Ποσότητα','Quantity'),'number',it.qty), nt=field(T('Σημειώσεις','Notes'),'text',it.notes),
       wt=field(T('Διαθέσιμα βάρη (g), χωρισμένα με κόμμα','Available weights (g), comma separated'),'text',(it.w||[]).join(', '),'20, 30, 40, 60'),
       co=field(T('Χρώμα','Colour'),'text',it.color,T('π.χ. ροζ, μπλε/ασημί','e.g. pink, blue/silver')),
+      hs=field(T('Διαθέσιμα μεγέθη, χωρισμένα με κόμμα','Available sizes, comma separated'),'text',(it.sz||[]).join(', '),'1/0, 2/0, 4/0'), hc=field(T('Νήμα assist (προαιρετικό)','Assist cord (optional)'),'text',it.cord,T('π.χ. PE 3 · 4 cm','e.g. PE 3 · 4 cm')),
       sn=field(T('Τελευταία αλλαγή','Last changed'),'date',it.since), sv=field(T('Τελευταία συντήρηση','Last serviced'),'date',it.svc);
   var dl=el('datalist'); dl.id='tkDL'; nm.i.setAttribute('list','tkDL'); nm.l.append(dl);
   var fillDL=function(){ dl.replaceChildren(); (window.TACKLE_LIB||[]).forEach(function(r){ if(r[0]!==ts.value) return; var o=el('option'); o.value=(r[1]+' '+r[2]).trim(); dl.append(o); }); };
   nm.i.addEventListener('change',function(){ var v=nm.i.value.trim().toLowerCase(); (window.TACKLE_LIB||[]).some(function(r){ if(r[0]===ts.value&&(r[1]+' '+r[2]).trim().toLowerCase()===v){ if(!br.i.value) br.i.value=r[1]; return true; } return false; }); });
   ts.addEventListener('change',function(){ sp.i.placeholder=tinfo(ts.value)[4]; vis(); fillDL(); });
   qt.i.min='0'; qt.i.inputMode='numeric'; wt.i.inputMode='decimal';
-  var vis=function(){ var v=ts.value; qt.l.hidden=!(v==='hook'||v==='lure'); wt.l.hidden=v!=='lure'; co.l.hidden=v!=='lure'; sn.l.hidden=!(v==='line'||v==='leader'); sv.l.hidden=v!=='reel'; };
+  var vis=function(){ var v=ts.value; qt.l.hidden=!(v==='hook'||v==='lure'); wt.l.hidden=v!=='lure'; co.l.hidden=v!=='lure'; hs.l.hidden=v!=='hook'; hc.l.hidden=v!=='hook'; sn.l.hidden=!(v==='line'||v==='leader'); sv.l.hidden=v!=='reel'; };
   vis(); fillDL();
-  var memSel=(it.members||[]).slice(), memBox=el('div','tkchips'), memL=el('div','f'); memL.append(el('span',null,T('Περιλαμβάνει','Includes')),memBox);
-  load().filter(function(x){ return x.type!=='set'&&x.id!==it.id; }).forEach(function(x){ var b=el('button','',tinfo(x.type)[3]+' '+(x.name||'—')); b.type='button'; b.setAttribute('aria-pressed',String(memSel.indexOf(x.id)>=0));
-    b.addEventListener('click',function(){ var i=memSel.indexOf(x.id); if(i>=0) memSel.splice(i,1); else memSel.push(x.id); b.setAttribute('aria-pressed',String(i<0)); }); memBox.append(b); });
-  if(!memBox.children.length) memBox.append(el('span','note',T('Πρόσθεσε πρώτα καλάμι, μουλινέ κ.λπ.','Add a rod, reel etc. first')));
-  var setSync=function(){ var s=ts.value==='set'; memL.hidden=!s; br.l.hidden=s; };
+  var memL=el('div','f'), memSel={}, memObj=(it.members||[]).map(function(i){ return load().filter(function(x){ return x.id===i; })[0]; }).filter(Boolean);
+  [['rod',T('Καλάμι','Rod')],['reel',T('Μουλινέ','Reel')],['line',T('Νήμα','Main line')],['leader',T('Πετονιά (leader)','Leader')]].forEach(function(ty){
+    var l=el('label','f'); l.append(document.createTextNode(ty[1])); var s=el('select'); var o0=el('option',null,ty[0]==='rod'?T('— διάλεξε —','— choose —'):T('— κανένα —','— none —')); o0.value=''; s.append(o0);
+    load().filter(function(x){ return x.type===ty[0]; }).sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); }).forEach(function(x){ var o=el('option',null,x.name||'—'); o.value=x.id; s.append(o); });
+    var cur=memObj.filter(function(x){ return x.type===ty[0]; })[0]; if(cur) s.value=cur.id; memSel[ty[0]]=s; l.append(s); memL.append(l); });
+  var hint=el('p','note',T('Το σετ παίρνει το όνομα του καλαμιού. Πρόσθεσε πρώτα καλάμια, μουλινέδες και νήματα στις αντίστοιχες καρτέλες.','The setup is named after the rod. Add rods, reels and lines in their own tabs first.')); memL.append(hint);
+  var setSync=function(){ var s=ts.value==='set'; memL.hidden=!s; br.l.hidden=s; nm.l.hidden=s; sp.l.hidden=s; };
   ts.addEventListener('change',setSync);
-  f.append(nm.l,br.l,sp.l,qt.l,wt.l,co.l,sn.l,sv.l,memL,nt.l); setSync();
+  f.append(nm.l,br.l,sp.l,qt.l,wt.l,co.l,hs.l,hc.l,sn.l,sv.l,memL,nt.l); setSync();
   var newBlob=null, rmPhoto=false, pv=el('img','tkimg'), pl=el('div','f'); pv.alt=''; pv.hidden=true;
   pl.append(el('span',null,T('Φωτογραφία','Photo')),pv);
   var prow=el('div','acts'); prow.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-top:4px';
@@ -115,15 +118,18 @@ function form(it){
   var msg=el('p','note'); msg.setAttribute('role','status'); f.append(msg);
   var acts=el('div','acts');
   acts.append(btn(T('Αποθήκευση','Save'),'',async function(){
-    var name=nm.i.value.trim(); if(!name){ msg.textContent=T('Γράψε ένα όνομα.','Enter a name.'); nm.i.focus(); return; }
+    var isSet=ts.value==='set', name=nm.i.value.trim();
+    if(isSet){ var rid=memSel.rod.value; if(!rid){ msg.textContent=T('Διάλεξε καλάμι για το σετ.','Choose a rod for the setup.'); return; } name=(load().filter(function(x){ return x.id===rid; })[0]||{}).name||T('Σετ','Setup'); }
+    else if(!name){ msg.textContent=T('Γράψε ένα όνομα.','Enter a name.'); nm.i.focus(); return; }
     var o={id:it.id||undefined,type:ts.value,name:name,brand:br.i.value.trim(),spec:sp.i.value.trim(),notes:nt.i.value.trim(),ts:it.ts||Date.now()};
     var q=parseInt(qt.i.value,10); if(!qt.l.hidden&&q>0) o.qty=q;
     if(o.type==='lure'){ var ws=wt.i.value.split(/[,;\s]+/).map(function(x){ return parseFloat(x.replace(',','.')); }).filter(function(x){ return x>0&&x<5000; }); ws=ws.filter(function(x,i){ return ws.indexOf(x)===i; }).sort(function(a,b){ return a-b; }); if(ws.length) o.w=ws; }
     if(o.type==='lure'&&co.i.value.trim()) o.color=co.i.value.trim();
+    if(o.type==='hook'){ var zs=hs.i.value.split(/[,;]+/).map(function(x){ return x.trim(); }).filter(Boolean); zs=zs.filter(function(x,i){ return zs.indexOf(x)===i; }); if(zs.length) o.sz=zs; if(hc.i.value.trim()) o.cord=hc.i.value.trim(); }
     if((o.type==='line'||o.type==='leader')&&sn.i.value) o.since=sn.i.value;
     if(o.type==='reel'&&sv.i.value) o.svc=sv.i.value;
     if(it.lost) o.lost=it.lost;
-    if(o.type==='set'){ o.members=memSel.slice(); o.brand=''; }
+    if(o.type==='set'){ o.members=['rod','reel','line','leader'].map(function(k){ return memSel[k].value; }).filter(Boolean); o.brand=''; o.spec=''; }
     o.id=o.id||('tk'+Date.now().toString(36)+Math.random().toString(36).slice(2,5));
     try{
       if(newBlob){ await C.Photos.put('tk-'+o.id,newBlob); o.photo=true; urls['tk-'+o.id]=null; }
@@ -134,37 +140,52 @@ function form(it){
   }),btn(T('Άκυρο','Cancel'),'ghost',function(){ editing=null; render(); }));
   f.append(acts); return f;
 }
-var picked=[], pw={}, TERM={hook:1,lure:1,other:1}, askedD=false;
-function lastSel(){ var bs=(S.get('bites')||[]).filter(function(b){ return b.tk&&b.tk.length; }); if(!bs.length) return {ids:[],w:{}}; bs.sort(function(a,b){ return (b._u||0)-(a._u||0); }); var ex={}; load().forEach(function(x){ ex[x.id]=1; }); var b0=bs[0], w={}; Object.keys(b0.tkw||{}).forEach(function(k){ if(ex[k]) w[k]=b0.tkw[k]; }); return {ids:b0.tk.filter(function(i){ return ex[i]; }),w:w}; }
-function mount(div,ids,w){
-  if(!div) return; askedD=false; var L=null; if(ids==='last'){ L=lastSel(); picked=L.ids; pw=L.w; } else { picked=(ids||[]).slice(); pw=Object.assign({},w||{}); }
+var picked=[], pw={}, ph={}, ps={}, TERM={hook:1,lure:1,other:1}, askedD=false;
+function union(){ var u=picked.slice(); Object.keys(ph).forEach(function(l){ if(picked.indexOf(l)>=0&&ph[l]&&u.indexOf(ph[l])<0) u.push(ph[l]); }); return u; }
+function lastSel(){ var bs=(S.get('bites')||[]).filter(function(b){ return b.tk&&b.tk.length; }); if(!bs.length) return {ids:[],w:{},h:{},s:{}}; bs.sort(function(a,b){ return (b._u||0)-(a._u||0); }); var ex={}; load().forEach(function(x){ ex[x.id]=1; }); var b0=bs[0], w={}, h={}, s={}; Object.keys(b0.tkw||{}).forEach(function(k){ if(ex[k]) w[k]=b0.tkw[k]; }); Object.keys(b0.tkh||{}).forEach(function(k){ if(ex[k]&&ex[b0.tkh[k]]) h[k]=b0.tkh[k]; }); Object.keys(b0.tks||{}).forEach(function(k){ if(ex[k]) s[k]=b0.tks[k]; }); return {ids:b0.tk.filter(function(i){ return ex[i]; }),w:w,h:h,s:s}; }
+function memHook(lureId){ var bs=(S.get('bites')||[]).filter(function(b){ return b.tkh&&b.tkh[lureId]; }); if(!bs.length) return null; bs.sort(function(a,b){ return (b._u||0)-(a._u||0); }); var hid=bs[0].tkh[lureId]; if(!load().some(function(x){ return x.id===hid; })) return null; return {h:hid,s:(bs[0].tks||{})[hid]}; }
+function mount(div,ids,w,h,s){
+  if(!div) return; askedD=false; var L=null; if(ids==='last'){ L=lastSel(); picked=L.ids; pw=L.w; ph=L.h; ps=L.s; } else { picked=(ids||[]).slice(); pw=Object.assign({},w||{}); ph=Object.assign({},h||{}); ps=Object.assign({},s||{}); }
+  /* τα αγκίστρια που ανήκουν σε τεχνητό δεν μένουν και ως ξεχωριστή επιλογή */
+  var hv={}; Object.keys(ph).forEach(function(l){ hv[ph[l]]=1; }); picked=picked.filter(function(i){ return !hv[i]; });
   var tdiv=document.getElementById('bTerm'), wdiv=document.getElementById('bTkW'), sg=document.getElementById('bTkSug'), wrap=document.getElementById('bTackleWrap');
   div.replaceChildren(); if(tdiv) tdiv.replaceChildren(); if(wdiv) wdiv.replaceChildren();
   var all=load(), order=TYPES.map(function(t){ return t[0]; }), ex={}; all.forEach(function(x){ ex[x.id]=x; });
-  if(wrap){ wrap.hidden=!all.length; var sp=wrap.querySelectorAll(':scope>span'); if(sp[0]) sp[0].textContent=T('Καλάμι / σετ','Rod / setup'); if(sp[1]) sp[1].textContent=T('Τερματικό','Terminal tackle'); }
+  var emp=document.getElementById('bTkEmpty'); if(!emp&&wrap){ emp=el('div','note'); emp.id='bTkEmpty'; wrap.append(emp); }
+  if(emp){ emp.replaceChildren(); emp.hidden=!!all.length; if(!all.length){ emp.append(document.createTextNode(T('Δεν έχεις εξοπλισμό ακόμα. ','No tackle yet. '))); var gb=el('button','btn ghost sm',T('Πρόσθεσε στο Προφίλ → Εξοπλισμός','Add in Profile → Tackle')); gb.type='button'; gb.addEventListener('click',function(){ var pb=document.getElementById('profBtn'); if(pb) pb.click(); setTimeout(function(){ if(window.PsaroProfView) PsaroProfView.set('tackle'); },80); }); emp.append(gb); } }
+  if(wrap){ var sp=wrap.querySelectorAll(':scope>span'); if(sp[0]) sp[0].textContent=T('Καλάμι / σετ','Rod / setup'); if(sp[1]) sp[1].textContent=T('Τερματικό','Terminal tackle'); Array.prototype.forEach.call(sp,function(s2){ s2.hidden=!all.length; }); }
   var rank=function(x){ return x.type==='set'?-1:order.indexOf(x.type); };
   all.sort(function(a,b){ return rank(a)-rank(b)||(a.name||'').localeCompare(b.name||''); });
+  var inSet={}; all.forEach(function(x){ if(x.type==='set') (x.members||[]).forEach(function(i){ inSet[i]=1; }); });
+  var hooks=all.filter(function(x){ return x.type==='hook'; });
   var btns=[];
+  var chipRow=function(label,opts,isOn,onClick){ var row=el('div','tkwrow'); row.append(el('span','note',label)); var cs=el('div','tkchips'); opts.forEach(function(o){ var b=el('button','',o[1]); b.type='button'; b.setAttribute('aria-pressed',String(isOn(o[0]))); b.addEventListener('click',function(){ onClick(o[0]); }); cs.append(b); }); row.append(cs); return row; };
   var refresh=function(){
-    btns.forEach(function(p){ var on=p.it.type==='set'?(p.mem.length>0&&p.mem.every(function(i){ return picked.indexOf(i)>=0; })):picked.indexOf(p.it.id)>=0; p.b.setAttribute('aria-pressed',String(on)); });
-    if(wdiv){ wdiv.replaceChildren(); picked.forEach(function(id){ var it=ex[id]; if(!it||it.type!=='lure'||!it.w||!it.w.length) return;
-      var row=el('div','tkwrow'); row.append(el('span','note',(it.name||'')+' · g'));
-      var cs=el('div','tkchips'); it.w.forEach(function(g){ var b=el('button','',g+' g'); b.type='button'; b.setAttribute('aria-pressed',String(pw[id]===g)); b.addEventListener('click',function(){ if(pw[id]===g) delete pw[id]; else pw[id]=g; refresh(); }); cs.append(b); });
-      row.append(cs); wdiv.append(row); }); }
+    var U=union();
+    btns.forEach(function(p){ var on=p.it.type==='set'?(p.mem.length>0&&p.mem.every(function(i){ return picked.indexOf(i)>=0; })):U.indexOf(p.it.id)>=0; p.b.setAttribute('aria-pressed',String(on)); });
+    if(wdiv){ wdiv.replaceChildren();
+      picked.forEach(function(id){ var it=ex[id]; if(!it||it.type!=='lure') return;
+        if(it.w&&it.w.length) wdiv.append(chipRow((it.name||'')+' · g',it.w.map(function(g){ return [g,g+' g']; }),function(g){ return pw[id]===g; },function(g){ if(pw[id]===g) delete pw[id]; else pw[id]=g; refresh(); }));
+        if(hooks.length) wdiv.append(chipRow((it.name||'')+T(' · αγκίστρι',' · hook'),hooks.map(function(x){ return [x.id,x.name||'—']; }),function(h2){ return ph[id]===h2; },function(h2){ if(ph[id]===h2){ delete ph[id]; } else { ph[id]=h2; if(ex[h2].sz&&ex[h2].sz.length&&!ps[h2]){ var mm=memHook(id); if(mm&&mm.h===h2&&mm.s) ps[h2]=mm.s; } } refresh(); })); });
+      union().forEach(function(id){ var it=ex[id]; if(!it||it.type!=='hook'||!it.sz||!it.sz.length) return; wdiv.append(chipRow((it.name||'')+T(' · μέγεθος',' · size'),it.sz.map(function(z){ return [z,z]; }),function(z){ return ps[id]===z; },function(z){ if(ps[id]===z) delete ps[id]; else ps[id]=z; refresh(); })); }); }
     suggest();
   };
   all.forEach(function(it){ var isSet=it.type==='set', mem=isSet?(it.members||[]).filter(function(i){ return ex[i]; }):[];
     if(isSet&&!mem.length) return;
+    if(!isSet&&!TERM[it.type]&&inSet[it.id]) return;
     var term=!!TERM[it.type]; var host=term?tdiv:div; if(!host) return;
     var b=el('button','',tinfo(it.type)[3]+' '+(it.name||'—')); b.type='button'; if(isSet) b.className='tkset';
     b.addEventListener('click',function(){
       if(isSet){ var allOn=mem.every(function(i){ return picked.indexOf(i)>=0; });
         if(!allOn) picked=picked.filter(function(i){ return !ex[i]||TERM[ex[i].type]; });
         mem.forEach(function(i){ var k=picked.indexOf(i); if(allOn){ if(k>=0) picked.splice(k,1); } else if(k<0) picked.push(i); }); }
-      else { var k2=picked.indexOf(it.id); if(k2>=0){ picked.splice(k2,1); delete pw[it.id]; } else picked.push(it.id); }
+      else if(it.type==='hook'&&Object.keys(ph).some(function(l){ return ph[l]===it.id&&picked.indexOf(l)>=0; })){ Object.keys(ph).forEach(function(l){ if(ph[l]===it.id) delete ph[l]; }); }
+      else { var k2=picked.indexOf(it.id);
+        if(k2>=0){ picked.splice(k2,1); delete pw[it.id]; if(it.type==='lure') delete ph[it.id]; }
+        else { picked.push(it.id); if(it.type==='lure'&&!ph[it.id]){ var mm2=memHook(it.id); if(mm2){ ph[it.id]=mm2.h; if(mm2.s) ps[mm2.h]=mm2.s; } } } }
       refresh(); });
     btns.push({it:it,b:b,mem:mem}); host.append(b); });
-  if(tdiv&&!tdiv.children.length){ var h=tdiv.previousElementSibling; if(h&&h.tagName==='SPAN') h.hidden=true; } else if(tdiv){ var h2=tdiv.previousElementSibling; if(h2&&h2.tagName==='SPAN') h2.hidden=false; }
+  if(tdiv){ var h2=tdiv.previousElementSibling; if(h2&&h2.tagName==='SPAN') h2.hidden=!tdiv.children.length||!all.length; }
   refresh();
 }
 /* Πρόταση βάρους: ενδεικτικός κανόνας από βάθος, κύμα και άνεμο + τα δικά σου αλιεύματα με κάθε βάρος */
@@ -187,7 +208,7 @@ function suggest(){
 ['bDepth','dWave','dWind'].forEach(function(i){ var e=i==='bDepth'?document.querySelector('input#bDepth'):document.getElementById(i); if(e) e.addEventListener('input',suggest); });
 function names(){ var m={}; load().forEach(function(x){ m[x.id]=tinfo(x.type)[3]+' '+(x.name||'—'); }); return m; }
 function info(){ var m={}; load().forEach(function(x){ m[x.id]={type:x.type,name:tinfo(x.type)[3]+' '+(x.name||'—')}; }); return m; }
-window.PsaroTackle={all:load,last:lastSel,mount:mount,sel:function(){ return picked.slice(); },selW:function(){ var o={}; picked.forEach(function(i){ if(pw[i]) o[i]=pw[i]; }); return o; },names:names,info:info};
+window.PsaroTackle={all:load,last:lastSel,mount:mount,sel:function(){ return union(); },selW:function(){ var o={}; picked.forEach(function(i){ if(pw[i]) o[i]=pw[i]; }); return o; },selH:function(){ var o={}; picked.forEach(function(i){ if(ph[i]) o[i]=ph[i]; }); return o; },selS:function(){ var o={}; union().forEach(function(i){ if(ps[i]) o[i]=ps[i]; }); return o; },names:names,info:info};
 window.addEventListener('psaro-pview',function(e){ if(e.detail==='tackle'){ editing=null; render(); } });
 S.on('tackle',function(){ if(!box.hidden&&!editing) render(); });
 render();

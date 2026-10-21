@@ -935,7 +935,7 @@ async function recountTrip(sid){
   await Store.save('trips',Object.assign({},t,{count:bs.reduce((s,b)=>s+bc(b),0),kg:kg}));
 }
 function openSheet(){
-  try{ if(window.PsaroTackle) PsaroTackle.mount($('bTackle'),sheetFresh?'last':PsaroTackle.sel(),PsaroTackle.selW()); }catch(e){}
+  try{ if(window.PsaroTackle) PsaroTackle.mount($('bTackle'),sheetFresh?'last':PsaroTackle.sel(),PsaroTackle.selW(),PsaroTackle.selH(),PsaroTackle.selS()); }catch(e){}
   if(sheetFresh){
     $('bWhen').value=nowLocalInput();
     if(cond&&cond.press!=null) $('bPress').value=cond.press;
@@ -1021,10 +1021,10 @@ $('biteForm').addEventListener('submit',async e=>{
       ptrend:isNow?$('dPress').value:null,wind:isNow?+$('dWind').value:null,wave:isNow?+$('dWave').value:null,cloud:isNow?$('dCloud').value:null,
       cur:isNow&&c&&c.cur!=null?c.cur:null,temp:isNow&&c&&c.temp!=null?c.temp:null,sst:isNow&&c&&c.sst!=null?c.sst:null,
       place:place,lat:lat,lon:lon,photo:!!photoBlob,src:'app'};
-    { const tks=(window.PsaroTackle&&$('bTackle'))?PsaroTackle.sel():[]; if(tks.length){ rec.tk=tks; const tw=PsaroTackle.selW(); if(Object.keys(tw).length) rec.tkw=tw; } }
+    { const tks=(window.PsaroTackle&&$('bTackle'))?PsaroTackle.sel():[]; if(tks.length){ rec.tk=tks; const tw=PsaroTackle.selW(); if(Object.keys(tw).length) rec.tkw=tw; const th=PsaroTackle.selH(); if(Object.keys(th).length) rec.tkh=th; const ts_=PsaroTackle.selS(); if(Object.keys(ts_).length) rec.tks=ts_; } }
     let cntV=0; if($('bMulti').checked){ const cn=Math.floor(+$('bCnt').value); if(!(cn>=2)){ $('bErr').textContent=window.LANG==='en'?'Enter how many fish (2 or more).':'Γράψε πόσα ψάρια έπιασες (2 ή περισσότερα).'; btn.disabled=false; btn.textContent='Αποθήκευση'; return; } cntV=Math.min(9999,cn); }
     if($('bRel').checked) rec.rel=true;
-    if(editing){ const tks2=rec.tk, tkw2=rec.tkw; rec=Object.assign({},editing,{tk:tks2,tkw:tkw2,date:rec.date,time:rec.time,species:rec.species,latin:rec.latin,bait:rec.bait,tech:rec.tech,depth:rec.depth,kg:rec.kg,len:rec.len,press:rec.press,notes:rec.notes,photo:!!photoBlob||!!editing.photo,lat:lat,lon:lon,place:place}); if($('bRel').checked) rec.rel=true; else delete rec.rel; if(!(rec.tk&&rec.tk.length)) delete rec.tk; if(!rec.tkw) delete rec.tkw; }
+    if(editing){ const tks2=rec.tk, tkw2=rec.tkw, tkh2=rec.tkh, tks3=rec.tks; rec=Object.assign({},editing,{tk:tks2,tkw:tkw2,tkh:tkh2,tks:tks3,date:rec.date,time:rec.time,species:rec.species,latin:rec.latin,bait:rec.bait,tech:rec.tech,depth:rec.depth,kg:rec.kg,len:rec.len,press:rec.press,notes:rec.notes,photo:!!photoBlob||!!editing.photo,lat:lat,lon:lon,place:place}); if($('bRel').checked) rec.rel=true; else delete rec.rel; if(!(rec.tk&&rec.tk.length)) delete rec.tk; if(!rec.tkw) delete rec.tkw; if(!rec.tkh) delete rec.tkh; if(!rec.tks) delete rec.tks; }
     if(cntV) rec.cnt=cntV; else delete rec.cnt;
     if(lat!=null&&window.PsaroHist){
       const tms=biteMs({date:date,time:rec.time,tz:rec.tz!=null?rec.tz:utcOff()});
@@ -1056,7 +1056,7 @@ function editBite(b){
   resetSheet(); editRec=b; sheetFresh=false;
   $('bWhen').value=(b.date||nicosiaToday())+'T'+(b.time||'12:00');
   $('bSpecies').value=(window.LANG==='en'&&window.spName)?window.spName(b.species||''):(b.species||''); curLatin=b.latin||'';
-  $('bBait').value=b.bait||''; $('bTech').value=b.tech||''; try{ if(window.PsaroTackle) PsaroTackle.mount($('bTackle'),b.tk||[],b.tkw||{}); }catch(e){}
+  $('bBait').value=b.bait||''; $('bTech').value=b.tech||''; try{ if(window.PsaroTackle) PsaroTackle.mount($('bTackle'),b.tk||[],b.tkw||{},b.tkh||{},b.tks||{}); }catch(e){}
   for(const [id,k] of [['bDepth','depth'],['bKg','kg'],['bLen','len'],['bPress','press']]) $(id).value=b[k]==null?'':b[k];
   $('bNotes').value=b.notes||''; $('bRel').checked=!!b.rel; $('bMulti').checked=bc(b)>1; $('bCnt').value=bc(b)>1?bc(b):''; multiSync();
   $('bLocMode').value=(typeof b.lat==='number')?'keep':'none';
@@ -1084,7 +1084,7 @@ async function quickRec(miss){
       ptrend:$('dPress').value,wind:+$('dWind').value,wave:+$('dWave').value,cloud:$('dCloud').value,temp:c.temp!=null?c.temp:null,sst:c.sst!=null?c.sst:null,
       place:'',lat:has?c.lat:null,lon:has?c.lon:null,photo:false,src:miss?'miss':'quick'};
     if(miss) rec.miss=true;
-    try{ if(window.PsaroTackle){ const L=PsaroTackle.last(); if(L.ids.length){ rec.tk=L.ids; if(Object.keys(L.w).length) rec.tkw=L.w; } } }catch(e){}
+    try{ if(window.PsaroTackle){ const L=PsaroTackle.last(); if(L.ids.length){ rec.tk=L.ids; if(Object.keys(L.w).length) rec.tkw=L.w; if(Object.keys(L.h).length) rec.tkh=L.h; if(Object.keys(L.s).length) rec.tks=L.s; } } }catch(e){}
     tripStamp(rec,!!miss);
     const id=await Store.save('bites',rec);
     const live=document.body.classList.contains('ontrip');
@@ -1181,7 +1181,7 @@ function renderStats(){
   const tm=tally(bs,b=>(b.tech||'').trim()||'—',true);
   B.append(barsCard('Ανά τεχνική',sorted(tm).slice(0,10).map(([k,v])=>[k==='—'?'Χωρίς καταγραφή':k,v])));
   if(window.PsaroTackle){ const tkm=new Map(), tkt=new Map(), inf=PsaroTackle.info();
-    bs.forEach(b=>{ (b.tk||[]).forEach(id=>{ const x=inf[id]; if(!x) return; if(x.type==='lure'||x.type==='hook'||x.type==='other'){ const g=b.tkw&&b.tkw[id]; const key=x.name+(g?' · '+g+' g':''); tkt.set(key,(tkt.get(key)||0)+bc(b)); } else tkm.set(x.name,(tkm.get(x.name)||0)+bc(b)); }); });
+    bs.forEach(b=>{ (b.tk||[]).forEach(id=>{ const x=inf[id]; if(!x) return; if(x.type==='lure'||x.type==='hook'||x.type==='other'){ const g=b.tkw&&b.tkw[id], hk=x.type==='lure'&&b.tkh&&b.tkh[id]&&inf[b.tkh[id]], hs=hk&&b.tks&&b.tks[b.tkh[id]], sz=x.type==='hook'&&b.tks&&b.tks[id]; const key=x.name+(g?' · '+g+' g':'')+(hk?' + '+hk.name.replace(/^\S+\s/,'')+(hs?' '+hs:''):'')+(sz?' · '+sz:''); tkt.set(key,(tkt.get(key)||0)+bc(b)); } else tkm.set(x.name,(tkm.get(x.name)||0)+bc(b)); }); });
     if(tkt.size) B.append(barsCard('Ανά τερματικό',sorted(tkt).slice(0,10)));
     const kt=(b,f)=>(b.tk||[]).forEach(id=>{ const x=inf[id]; if(x&&(x.type==='lure'||x.type==='hook')) f(x.name); });
     const wm=new Map(); bs.forEach(b=>{ if(b.wave==null) return; const en_=window.LANG==='en', lab=b.wave>=0.6?(en_?'waves ≥0.6 m':'κύμα ≥0.6 m'):(en_?'calm sea':'ήρεμη θάλασσα'); kt(b,n=>wm.set(n+' · '+lab,(wm.get(n+' · '+lab)||0)+bc(b))); });
