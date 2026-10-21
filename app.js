@@ -513,6 +513,7 @@ async function toggleRel(b){
   catch(e){ toast(en?'Not saved. Try again.':'Δεν αποθηκεύτηκε. Δοκίμασε ξανά.'); }
 }
 function catchPopup(b){
+  const nn=bc(b);
   const img=h('img',{class:'pimg',alt:'Φωτογραφία ψαριού'}); img.hidden=true;
   const cd=[b.wind!=null?PU.wind(b.wind):null,b.wave!=null?PU.wave(b.wave)+(window.LANG==='en'?' wave':' κύμα'):null,b.press!=null?PU.press(b.press):null,b.sst!=null?PU.temp(b.sst)+(window.LANG==='en'?' sea':' θάλασσα'):null,MOON_LBL[biteMoon(b)],b.hist?(window.LANG==='en'?'estimate':'εκτίμηση'):null].filter(Boolean).join(' · ');
   const size=[b.kg?b.kg+' kg':null,b.len?b.len+' cm':null].filter(Boolean).join(' · ');
@@ -524,7 +525,8 @@ function catchPopup(b){
     (b.bait||b.tech)?h('div',{class:'meta',text:[b.bait,b.tech].filter(Boolean).join(' · ')}):null,
     cd?h('div',{class:'meta',text:cd}):null,b.notes?h('div',{class:'meta',text:b.notes}):null,
     typeof b.lat==='number'?h('div',{class:'meta mono',text:PsaroCoord.fmt(b.lat,b.lon)}):null,
-    typeof b.lat==='number'?h('div',{class:'row',style:'margin-top:6px'},h('button',{class:'btn sm',type:'button',text:window.LANG==='en'?'Send position':'Στείλε θέση',onclick:()=>sharePlace((b.species||'')+(b.kg?' · '+b.kg+' kg':''),b.lat,b.lon)})):null);
+    typeof b.lat==='number'?h('div',{class:'row',style:'margin-top:6px'},h('button',{class:'btn sm',type:'button',text:window.LANG==='en'?'Send position':'Στείλε θέση',onclick:()=>sharePlace((b.species||'')+(b.kg?' · '+b.kg+' kg':''),b.lat,b.lon)})):null,
+    h('div',{class:'row',style:'margin-top:6px'},h('button',{class:'btn sm ghost',type:'button',text:window.LANG==='en'?'✎ Edit':'✎ Επεξεργασία',onclick:()=>{ if(map) map.closePopup(); editBite(b); }})));
 }
 function drawMap(){
   if(!map) return;
@@ -1254,13 +1256,34 @@ function applyConditions(c){
   if(c.ptrend&&PT[c.ptrend]) $('dPress').value=c.ptrend;
   if(c.press!=null) $('bPress').value=c.press;
   const near=nearestRef(c.lat,c.lon);
-  const parts=[c.wind!=null?PU.wind(c.wind)+(wdir(c)?' '+wdir(c):''):null,c.wave!=null?'κύμα '+PU.wave(c.wave)+(c.wavePeriod?' · '+Math.round(c.wavePeriod)+' s':''):'κύμα μη διαθέσιμο',
-    c.temp!=null?PU.temp(c.temp)+(window.LANG==='en'?' air':' αέρας'):null,c.sst!=null?PU.temp(c.sst)+(window.LANG==='en'?' sea':' θάλασσα'):null,c.press!=null?PU.press(c.press)+(c.ptrend?' · '+PT[c.ptrend].toLowerCase():''):null].filter(Boolean);
+  const parts=condParts(c);
   $('liveMain').textContent=parts.join(' · ');
   setLive('Ενημερώθηκε '+(c.date?c.date.split('-').reverse().join('/')+' ':'')+(c.at||'')+' · θέση '+PsaroCoord.fmt(c.lat,c.lon)+(near?' · κοντά σε '+near:''));
   setYou(c.lat,c.lon); renderWx(); checkZoneHere(); document.dispatchEvent(new Event('psaro-cond'));
   renderToday();
 }
+function condParts(c){
+  return [c.wind!=null?PU.wind(c.wind)+(wdir(c)?' '+wdir(c):''):null,c.wave!=null?'κύμα '+PU.wave(c.wave)+(c.wavePeriod?' · '+Math.round(c.wavePeriod)+' s':''):'κύμα μη διαθέσιμο',
+    c.temp!=null?PU.temp(c.temp)+(window.LANG==='en'?' air':' αέρας'):null,c.sst!=null?PU.temp(c.sst)+(window.LANG==='en'?' sea':' θάλασσα'):null,c.press!=null?PU.press(c.press)+(c.ptrend?' · '+PT[c.ptrend].toLowerCase():''):null].filter(Boolean);
+}
+function applyView(c,name){
+  if(!c) return;
+  if(c.wind!=null) $('dWind').value=clamp(c.wind,0,40);
+  if(c.wave!=null) $('dWave').value=clamp(Math.round(c.wave*10)/10,0,3);
+  if(c.cloud) $('dCloud').value=c.cloud;
+  if(c.ptrend&&PT[c.ptrend]) $('dPress').value=c.ptrend;
+  $('liveMain').textContent=condParts(c).join(' · ');
+  setLive((window.LANG==='en'?'Weather for ':'Καιρός για ')+name+' · '+fmt(nicosiaNowMin())+' · '+PsaroCoord.fmt(c.lat,c.lon));
+  renderToday();
+}
+let viewing=null;
+window.PsaroCore.viewPlace=async function(p){
+  if(!p||p.gps){ viewing=null; await refreshConditions(); return; }
+  viewing=p; setLive(window.LANG==='en'?'Loading weather…':'Ανανέωση καιρού…');
+  try{ const c=await fetchConditions(p.lat,p.lon); if(viewing===p) applyView(c,p.name); }
+  catch(e){ setLive(window.LANG==='en'?'Weather did not load. Check your connection.':'Ο καιρός δεν φορτώθηκε. Έλεγξε τη σύνδεση και δοκίμασε ξανά.'); }
+};
+window.PsaroCore.viewRefresh=function(){ if(!viewing) return false; window.PsaroCore.viewPlace(viewing); return true; };
 function renderWx(){
   const el=$('wx'); if(!el) return; el.replaceChildren();
   const sm=sunMoon(nicosiaToday());
@@ -1286,7 +1309,7 @@ function refreshConditions(){
   })();
   return refreshing;
 }
-$('liveRefresh').addEventListener('click',()=>{refreshConditions();});
+$('liveRefresh').addEventListener('click',()=>{ if(window.PsaroCore.viewRefresh&&window.PsaroCore.viewRefresh()) return; refreshConditions(); });
 
 /* ---------- Law (Cyprus) ---------- */
 const MIN=window.MIN_SIZES||{};

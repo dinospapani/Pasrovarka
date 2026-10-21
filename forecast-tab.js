@@ -35,6 +35,7 @@ function addPlace(name,lat,lon){
   if(!ex){ places.unshift({id:id,name:name,lat:+lat.toFixed(4),lon:+lon.toFixed(4),watch:true}); places=places.slice(0,10); }
   sel=id; save(); renderPlaces(); load(); syncNotify();
 }
+window.PsaroPlaces={list:function(){ return places.slice(); },add:function(name,lat,lon){ var id=pid(lat,lon), ex=places.filter(function(p){ return p.id===id; })[0]; if(!ex){ places.unshift({id:id,name:name,lat:+lat.toFixed(4),lon:+lon.toFixed(4),watch:true}); places=places.slice(0,10); save(); renderPlaces(); ex=places[0]; } return ex; }};
 function renderPlaces(){
   var box=$('plChips'); box.replaceChildren();
   var list=allPlaces();

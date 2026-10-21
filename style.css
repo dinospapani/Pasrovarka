@@ -1293,3 +1293,5 @@ html.rst{background-color:#0c2b3a!important}
 #pTackle .item img.tkimg{max-height:150px;cursor:zoom-in}
 .tkview{position:fixed;inset:0;z-index:6000;background:rgba(0,0,0,.88);display:grid;place-items:center;padding:12px}
 .tkview img{max-width:100%;max-height:100%;border-radius:8px}
+/* v31z86: η δεξιά στήλη να μη κρύβεται από το SOS */
+body.mapfull.ontrip.ontrip .mapbtns.mapbtns{top:calc(108px + env(safe-area-inset-top,0px))!important;transform:none!important;max-height:calc(100% - 120px - env(safe-area-inset-top,0px))!important}
