@@ -4,6 +4,7 @@
 var C=window.PsaroCore; if(!C||!document.getElementById('safeCard')) return;
 var $=C.$, h=C.h, toast=C.toast;
 var KEY='psaro-safe';
+var EN=window.LANG==='en', T=function(el,en){ return EN?en:el; };
 var BOT='BiteCastMaydaybot';   /* όνομα του Telegram bot, χωρίς @ */
 var Cl=function(){ return window.PsaroCloud&&window.PsaroCloud.logged()?window.PsaroCloud:null; };
 function load(){ return C.lsGet(KEY,null)||{}; }
@@ -49,7 +50,7 @@ async function pollTg(){
   catch(err){ try{ var r2=await cl.rest('safety_contacts?select=tg_chat_id,tg_name'); j=await r2.json(); }catch(e2){ return; } }
   var c=j&&j[0], d=load(); d.tgLinked=!!(c&&c.tg_chat_id); d.selfLinked=!!(c&&c.self_chat_id); save(d);
   var st=$('sfTgState'), ss=$('selfTgState');
-  if(st){ if(d.tgLinked) st.textContent='Συνδέθηκε στο Telegram: '+(c.tg_name||'επαφή')+' ✓'; else if(d.tgCode) st.textContent='Περιμένουμε να πατήσει η επαφή τον σύνδεσμο και Start. Η σύνδεση ολοκληρώνεται μέσα σε λίγα λεπτά.'; }
+  if(st){ if(d.tgLinked) st.textContent=T('Συνδέθηκε στο Telegram: ','Connected on Telegram: ')+(c.tg_name||T('επαφή','contact'))+' ✓'; else if(d.tgCode) st.textContent=T('Περιμένουμε να πατήσει η επαφή τον σύνδεσμο και Start. Η σύνδεση ολοκληρώνεται μέσα σε λίγα λεπτά.','Waiting for the contact to tap the link and Start. Linking completes within a few minutes.'); }
   if(ss){ if(d.selfLinked) ss.textContent='Το Telegram σου είναι συνδεδεμένο ✓'; else if(d.selfCode) ss.textContent='Πάτα Start στο Telegram. Η σύνδεση ολοκληρώνεται μέσα σε λίγα λεπτά.'; }
   render();
 }
@@ -73,9 +74,9 @@ async function pushTrip(){
 /* ---------- μηνύματα ---------- */
 function plan(s,kind){
   var link=mapLink(s.last), t;
-  if(kind==='sos') t='ΒΟΗΘΕΙΑ (BiteCast): δεν έχω επιστρέψει ακόμα και είχα δηλώσει επιστροφή στις '+hm(s.due)+(s.route?' (διαδρομή: '+s.route+')':'')+'.';
-  else t='Σχέδιο εξόδου (BiteCast): ψαρεύω με το σκάφος'+(s.route?' – '+s.route:'')+'. Επιστροφή στις '+hm(s.due)+'.';
-  if(link) t+=' Τελευταία θέση'+(s.last&&s.last.t?' ('+hm(s.last.t)+')':'')+': '+link;
+  if(kind==='sos') t=T('ΒΟΗΘΕΙΑ (BiteCast): δεν έχω επιστρέψει ακόμα και είχα δηλώσει επιστροφή στις ','HELP (BiteCast): I have not returned yet and I had declared my return at ')+hm(s.due)+(s.route?T(' (διαδρομή: ',' (route: ')+s.route+')':'')+'.';
+  else t=T('Σχέδιο εξόδου (BiteCast): ψαρεύω με το σκάφος','Trip plan (BiteCast): fishing by boat')+(s.route?' – '+s.route:'')+T('. Επιστροφή στις ','. Return at ')+hm(s.due)+'.';
+  if(link) t+=T(' Τελευταία θέση',' Last position')+(s.last&&s.last.t?' ('+hm(s.last.t)+')':'')+': '+link;
   return t;
 }
 function send(s,kind,via){
@@ -105,7 +106,7 @@ function bar(){
     document.body.prepend(b);
     $('lbBack').addEventListener('click',back); $('lbExt').addEventListener('click',ext); $('lbSos').addEventListener('click',function(){ trackPos().then(function(){ sos(); }); });
   }
-  $('lateTxt').textContent='Πέρασε η ώρα επιστροφής ('+hm(s.due)+'). Είσαι καλά;';
+  $('lateTxt').textContent=T('Πέρασε η ώρα επιστροφής (','Your return time has passed (')+hm(s.due)+T('). Είσαι καλά;','). Are you OK?');
 }
 function sessBar(s){
   var b=$('sessBar');
@@ -124,7 +125,7 @@ function wxWarn(s){
   var el=$('sfWx'), c=C.getCond()||{}, msg='';
   if(s.active){
     var w=c.wind, v=c.wave;
-    if((w!=null&&w>=27)||(v!=null&&v>=2.5)) msg='Επικίνδυνες συνθήκες ('+(w!=null?window.PsaroUnits.wind(w)+' άνεμος':'')+(v!=null?(w!=null?', ':'')+window.PsaroUnits.wave(v)+' κύμα':'')+'). Σκέψου να γυρίσεις.';
+    if((w!=null&&w>=27)||(v!=null&&v>=2.5)) msg=T('Επικίνδυνες συνθήκες (','Dangerous conditions (')+(w!=null?window.PsaroUnits.wind(w)+T(' άνεμος',' wind'):'')+(v!=null?(w!=null?', ':'')+window.PsaroUnits.wave(v)+T(' κύμα',' waves'):'')+T('). Σκέψου να γυρίσεις.','). Consider heading back.');
     else if((w!=null&&w>=20)||(v!=null&&v>=1.5)) msg='Προσοχή: δυναμώνει ο καιρός ('+(w!=null?window.PsaroUnits.wind(w)+' άνεμος':'')+(v!=null?(w!=null?', ':'')+window.PsaroUnits.wave(v)+' κύμα':'')+').';
   }
   el.textContent=msg; el.hidden=!msg;
@@ -223,7 +224,7 @@ $('sfTgLink').addEventListener('click',async function(){
   var d=readContact(); if(!d.tgCode){ d.tgCode=newCode(); save(d); }
   await pushContact();
   var link='https://t.me/'+BOT+'?start='+d.tgCode;
-  var txt='Θέλω να σε έχω επαφή ασφαλείας όταν βγαίνω για ψάρεμα. Πάτα τον σύνδεσμο και μετά Start στο Telegram: '+link;
+  var txt=T('Θέλω να σε έχω επαφή ασφαλείας όταν βγαίνω για ψάρεμα. Πάτα τον σύνδεσμο και μετά Start στο Telegram: ','I would like you to be my safety contact when I go fishing. Tap the link and then Start in Telegram: ')+link;
   if(navigator.share){ navigator.share({text:txt}).catch(function(){}); } else { try{ navigator.clipboard.writeText(txt); toast('Αντιγράφηκε ο σύνδεσμος.'); }catch(err){} }
   $('sfTgState').textContent='Περιμένουμε να πατήσει η επαφή τον σύνδεσμο και Start.'; setTimeout(pollTg,20000); setTimeout(pollTg,90000);
 });

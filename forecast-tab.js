@@ -2,6 +2,7 @@
 (function(){
 'use strict';
 var PU=window.PsaroUnits;
+var EN=window.LANG==='en', T=function(el,en){ return EN?en:el; };
 var C=window.PsaroCore, PF=window.PF; if(!C||!PF||!document.getElementById('tab-fc')) return;
 var $=C.$, h=C.h, pad=C.pad, lsGet=C.lsGet, lsSet=C.lsSet, toast=C.toast;
 var Cl=function(){ return window.PsaroCloud&&window.PsaroCloud.logged()?window.PsaroCloud:null; };
@@ -93,7 +94,7 @@ function reason(d){
   if(w.windMax!=null&&w.windMax>14) r.push((EN?'wind up to ':'άνεμος έως ')+PU.wind(w.windMax));
   if(w.waveMax!=null&&w.waveMax>0.9) r.push((EN?'waves up to ':'κύμα έως ')+PU.wave(w.waveMax));
   if(w.gustMax!=null&&w.gustMax>24) r.push((EN?'gusts up to ':'ριπές έως ')+PU.wind(w.gustMax));
-  if(w.code!=null&&w.code>=95) r.push('καταιγίδα');
+  if(w.code!=null&&w.code>=95) r.push(T('καταιγίδα','thunderstorm'));
   return 'Δεν υπάρχει ασφαλές παράθυρο'+(r.length?': '+r.join(', '):'')+'.';
 }
 function renderFc(p,f,note,t){
@@ -223,7 +224,7 @@ $('ntTest').addEventListener('click',async function(){
   if(p!=='granted'){ ntStatus('Δεν δόθηκε άδεια ειδοποιήσεων.'); return; }
   await showNote('Δοκιμή ειδοποίησης','Οι ειδοποιήσεις του BiteCast δουλεύουν.'); ntStatus('Στάλθηκε δοκιμαστική ειδοποίηση.');
 });
-if(nt.on) ntStatus(nt.server?'Ενεργό (server).':'Ενεργό.');
+if(nt.on) ntStatus(nt.server?T('Ενεργό (server).','Active (server).'):T('Ενεργό.','Active.'));
 
 /* ---------- events ---------- */
 $('plGo').addEventListener('click',geocode);

@@ -18,16 +18,16 @@ function draw(){
   var bites=(C.Store.act?C.Store.act():(C.Store.get('bites')||[])).filter(inR), pbites=(C.Store.pas?C.Store.pas():[]).filter(inR), trips=(C.Store.get('trips')||[]).filter(inR);
   var days={}; bites.forEach(function(b){ if(b.date) days[b.date]=1; }); trips.forEach(function(t){ if(t.date) days[t.date]=1; });
   var ms=0; trips.forEach(function(t){ if(t.startMs&&t.endMs) ms+=Math.max(0,t.endMs-t.startMs-(t.pauseMs||0)); });
-  var kg=0, big=0, bigS='', sp={}; bites.forEach(function(b){ var w=+b.kg||0; kg+=b.rel?0:w; if(w>big){ big=w; bigS=b.species||''; } if(b.species) sp[b.species]=1; });
+  var kg=0, big=0, bigS='', sp={}, nf=0; bites.forEach(function(b){ var w=+b.kg||0; nf+=C.bc(b); kg+=b.rel?0:w; if(w>big&&C.bc(b)===1){ big=w; bigS=b.species||''; } if(b.species) sp[b.species]=1; });
   var miss=(C.Store.misses?C.Store.misses():[]).filter(inR).length, km=0; trips.forEach(function(t){ km+=+t.km||0; });
   var succ=(bites.length+miss)?Math.round(bites.length/(bites.length+miss)*100)+'%':'–';
   var tiles=[
-    ['🐟',bites.length,T('Ψάρια που έπιασα','Fish caught')],['✕',miss,T('Τσίμπησαν και χάθηκαν','Bites lost')],['🎯',succ,T('Ποσοστό επιτυχίας','Catch rate')],
+    ['🐟',nf,T('Ψάρια που έπιασα','Fish caught')],['✕',miss,T('Τσίμπησαν και χάθηκαν','Bites lost')],['🎯',succ,T('Ποσοστό επιτυχίας','Catch rate')],
     ['🎣',trips.length,T('Έξοδοι','Trips')],['📅',Object.keys(days).length,T('Μέρες ψαρέματος','Days fishing')],['⏱',ms?hrs(ms)+' h':'–',T('Ώρες στη θάλασσα','Hours at sea')],
     ['↔',km?PsaroUnits.dist(km):'–',T('Απόσταση','Distance')],['⚖',Math.round(kg*10)/10+' kg',T('Συνολικό βάρος','Total weight')]
   ];
   tiles.forEach(function(t){ var d=document.createElement('div'); d.className='pst'; var i=document.createElement('i'); i.textContent=t[0]; var b=document.createElement('b'); b.textContent=String(t[1]); var s=document.createElement('span'); s.textContent=t[2]; d.append(i,b,s); box.append(d); });
-  if(pbites.length){ var pk=0; pbites.forEach(function(b){ pk+=b.rel?0:(+b.kg||0); }); var g=document.createElement('div'); g.className='pst pwide'; g.textContent='🪢 '+T('Εργαλεία (δίχτυ, παραγάδι): ','Gear (net, longline): ')+pbites.length+T(pbites.length===1?' ψάρι · ':' ψάρια · ',' fish · ')+Math.round(pk*10)/10+' kg'; box.append(g); }
+  if(pbites.length){ var pk=0, pn=0; pbites.forEach(function(b){ pn+=C.bc(b); pk+=b.rel?0:(+b.kg||0); }); var g=document.createElement('div'); g.className='pst pwide'; g.textContent='🪢 '+T('Εργαλεία (δίχτυ, παραγάδι): ','Gear (net, longline): ')+pn+T(pn===1?' ψάρι · ':' ψάρια · ',' fish · ')+Math.round(pk*10)/10+' kg'; box.append(g); }
   if(big>0){ var r=document.createElement('div'); r.className='pst pwide'; r.textContent='🏆 '+T('Μεγαλύτερο ψάρι: ','Biggest fish: ')+big+' kg'+(bigS?' · '+bigS:'')+' · '+Object.keys(sp).length+T(' είδη',' species'); box.append(r); }
 }
 document.querySelectorAll('#pRange button').forEach(function(b){ b.addEventListener('click',function(){ range=b.dataset.r; C.lsSet('psaro-prange',range); if(window.PsaroRange&&PsaroRange.active('prof')) PsaroRange.set('prof','',''); else draw(); }); });

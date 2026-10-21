@@ -14,7 +14,8 @@ function distM(a,b,c,d){ var dl=(c-a)*R, dn=(d-b)*R, x=Math.sin(dl/2)*Math.sin(d
 function bites(){ return (C.Store.act?C.Store.act():C.Store.get('bites'))||[]; }
 function trips(){ return C.Store.get('trips')||[]; }
 function spots(){ return C.Store.get('spots')||[]; }
-function loc(){ var c=C.getCond&&C.getCond(); if(c&&c.lat!=null) return {lat:c.lat,lon:c.lon}; return {lat:34.75,lon:32.42}; }
+var fcLoc=null;
+function loc(){ if(fcLoc) return fcLoc; var c=C.getCond&&C.getCond(); if(c&&c.lat!=null) return {lat:c.lat,lon:c.lon}; return {lat:34.75,lon:32.42}; }
 
 /* ---------- αστρονομία (χαμηλής ακρίβειας) ---------- */
 function jd(ms){ return ms/86400000+2440587.5; }
@@ -63,7 +64,7 @@ function stars(n){ return '★★★'.slice(0,n)+'☆☆☆'.slice(0,3-n); }
 /* ---------- κάρτα στην καρτέλα Ψάρεμα ---------- */
 function moonCard(){
   var tab=$('tab-fc'); if(!tab) return; var card=$('moonCard');
-  if(!card){ card=el('div','card mooncard'); card.id='moonCard'; var pl=$('plCard'); if(pl) tab.insertBefore(card,pl); else tab.appendChild(card); }
+  if(!card){ card=el('div','card mooncard'); card.id='moonCard'; var pl=$('plCard'); if(pl) tab.insertBefore(card,pl.nextSibling); else tab.appendChild(card); }
   var td=C.nicosiaToday(), i0=dayInfo(td); card.replaceChildren();
   var top=el('div','mcrow'); top.append(el('div','mcem',EMO[i0.ph.idx]));
   var tx=el('div','mctx'); tx.append(el('b','',PHN[i0.ph.idx]+' · '+Math.round(i0.ph.illum*100)+'%'));
@@ -208,12 +209,12 @@ function dl(name,text,mime){
 }
 var BC=['date','time','species','latin','bait','tech','depth','kg','len','press','ptrend','wind','wave','cloud','temp','sst','place','lat','lon','notes','tripId'];
 function stamp(){ return C.nicosiaToday(); }
-function exportBites(){ var rows=bites().slice().sort(function(a,b){ return ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||'')); }); var cols=BC.map(function(c){ return c==='tripId'?'trip':c; }); dl('bitecast-ψάρια-'+stamp()+'.csv',toCsv(rows,cols)); }
+function exportBites(){ var rows=bites().slice().sort(function(a,b){ return ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||'')); }); var cols=BC.map(function(c){ return c==='tripId'?'trip':c; }); dl('bitecast-fish-'+stamp()+'.csv',toCsv(rows,cols)); }
 function exportTrips(){
   var cols=['date','spot',function(t){ return t.startMs?new Date(t.startMs).toISOString():''; },function(t){ return t.endMs?new Date(t.endMs).toISOString():''; },function(t){ return t.startMs&&t.endMs?Math.round(Math.max(0,t.endMs-t.startMs-(t.pauseMs||0))/360000)/10:''; },'km','count','kg','miss',function(t){ return t.cost?t.cost.fuel:''; },function(t){ return t.cost?t.cost.bait:''; },function(t){ return t.cost?t.cost.other:''; },function(t){ return costOf(t)||''; }];
   var head=['date','route','start','end','hours','km','fish','kg','missed','fuel_eur','bait_eur','other_eur','total_eur'];
   var rows=trips().slice().sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
-  dl('bitecast-έξοδοι-'+stamp()+'.csv','﻿'+[head.join(',')].concat(rows.map(function(r){ return cols.map(function(c){ return csvCell(typeof c==='function'?c(r):r[c]); }).join(','); })).join('\r\n'));
+  dl('bitecast-trips-'+stamp()+'.csv','﻿'+[head.join(',')].concat(rows.map(function(r){ return cols.map(function(c){ return csvCell(typeof c==='function'?c(r):r[c]); }).join(','); })).join('\r\n'));
 }
 function exportGear(){
   var it=(window.PsaroGear?window.PsaroGear.state().items:[]).slice(), bs=bites();
@@ -222,12 +223,12 @@ function exportGear(){
   var cols=['name','type','state',function(g){ return iso(g.set&&g.set.ta); },function(g){ return iso(g.set&&g.set.tb); },function(g){ return g.set&&g.set.a?g.set.a[0]:''; },function(g){ return g.set&&g.set.a?g.set.a[1]:''; },function(g){ return g.set&&g.set.b?g.set.b[0]:''; },function(g){ return g.set&&g.set.b?g.set.b[1]:''; },function(g){ return km(g.set&&g.set.pts); },
     function(g){ return iso(g.haul&&g.haul.ta); },function(g){ return iso(g.haul&&g.haul.tb); },function(g){ return km(g.haul&&g.haul.pts); },function(g){ return bs.filter(function(b){ return b.gear===g.id; }).length; },function(g){ return Math.round(bs.filter(function(b){ return b.gear===g.id; }).reduce(function(s,b){ return s+(+b.kg||0); },0)*10)/10; }];
   var head=['name','type','state','set_start','set_end','set_start_lat','set_start_lon','set_end_lat','set_end_lon','set_km','haul_start','haul_end','haul_km','fish','kg'];
-  dl('bitecast-εργαλεία-'+stamp()+'.csv','﻿'+[head.join(',')].concat(it.map(function(r){ return cols.map(function(c){ return csvCell(typeof c==='function'?c(r):r[c]); }).join(','); })).join('\r\n'));
+  dl('bitecast-gear-'+stamp()+'.csv','﻿'+[head.join(',')].concat(it.map(function(r){ return cols.map(function(c){ return csvCell(typeof c==='function'?c(r):r[c]); }).join(','); })).join('\r\n'));
 }
-function exportSpots(){ dl('bitecast-σημεία-'+stamp()+'.csv',toCsv(spots(),['name','type','lat','lon','depth','notes','tips'])); }
+function exportSpots(){ dl('bitecast-spots-'+stamp()+'.csv',toCsv(spots(),['name','type','lat','lon','depth','notes','tips'])); }
 function exportAll(){
   var o={app:'BiteCast',exported:new Date().toISOString(),bites:bites(),trips:trips().map(function(t){ return t; }),spots:spots(),gear:(window.PsaroGear?window.PsaroGear.state().items:[]),smart:C.lsGet('psaro-smart',null),maintenance:M};
-  dl('bitecast-αντίγραφο-'+stamp()+'.json',JSON.stringify(o),'application/json');
+  dl('bitecast-backup-'+stamp()+'.json',JSON.stringify(o),'application/json');
   C.lsSet('psaro-lastbackup',Date.now());
 }
 function exportUI(box){
@@ -242,11 +243,12 @@ var P=el('div'); P.id='inPanel'; P.hidden=true; P.innerHTML='<div class="spcard"
 P.querySelector('b').textContent=T('Αναλύσεις και αρχείο','Insights and archive'); document.body.appendChild(P);
 var body=P.querySelector('.spbody'), card0=P.querySelector('.spcard');
 P.querySelector('.spx').addEventListener('click',function(){ P.hidden=true; }); P.addEventListener('click',function(e){ if(e.target===P) P.hidden=true; });
-var focus=null;
-function render(){ body.replaceChildren(); var sec={}; ['moon','cost','maint','export'].forEach(function(k){ sec[k]=el('div'); sec[k].dataset.k=k; body.append(sec[k]); });
-  moonStats(sec.moon); costUI(sec.cost); maintUI(sec.maint); exportUI(sec.export);
-  if(focus&&sec[focus]){ var f=focus; focus=null; setTimeout(function(){ try{ sec[f].scrollIntoView({block:'start'}); }catch(e){} },30); } }
-function openPanel(k){ focus=k||null; render(); P.hidden=false; }
+var focus=null, view=null;
+function render(showAll){ if(showAll===true) view=null; body.replaceChildren(); var sec={}, only=view; ['moon','cost','maint','export'].forEach(function(k){ if(only&&k!==only) return; sec[k]=el('div'); sec[k].dataset.k=k; body.append(sec[k]); });
+  if(sec.moon) moonStats(sec.moon); if(sec.cost) costUI(sec.cost); if(sec.maint) maintUI(sec.maint); if(sec.export) exportUI(sec.export);
+  if(only){ body.append(btn(T('Όλες οι αναλύσεις (κόστος, συντήρηση, εξαγωγή)','All insights (cost, maintenance, export)'),'',function(){ render(true); })); }
+  focus=null; }
+function openPanel(k){ focus=k||null; view=k||null; render(); P.hidden=false; }
 (window.PsaroSeaRows=window.PsaroSeaRows||[]).push(function(){
   var r=el('div','sprow'), x=el('div','sptx'); x.append(el('b','',T('Αναλύσεις και αρχείο','Insights and archive')),el('span','',T('Σελήνη, κόστος ανά κιλό, συντήρηση, εξαγωγή δεδομένων','Moon, cost per kg, maintenance, data export')));
   r.append(x,btn(T('Άνοιγμα','Open'),'acc',function(){ var sp=$('seaPanel'); if(sp) sp.hidden=true; openPanel(); })); return r;
@@ -255,6 +257,7 @@ function openPanel(k){ focus=k||null; render(); P.hidden=false; }
 /* ---------- εκκίνηση ---------- */
 function refresh(){ try{ moonCard(); }catch(e){} try{ simCard(); }catch(e){} }
 refresh(); setTimeout(refresh,2500);
+window.addEventListener('psaro-fcloaded',function(e){ var p=e.detail&&e.detail.place; if(p&&p.lat!=null&&p.lon!=null){ fcLoc={lat:+p.lat,lon:+p.lon}; refresh(); } });
 document.addEventListener('psaro-cond',function(){ setTimeout(refresh,300); });
 window.addEventListener('psaro-tripend',function(){ setTimeout(function(){ refresh(); maintCheck(); },1500); });
 var tabs=document.querySelector('nav[role=tablist],[role=tablist]'); if(tabs) tabs.addEventListener('click',function(){ setTimeout(refresh,200); });

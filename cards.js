@@ -83,11 +83,11 @@ function tripCard(t){
 function yearData(y){
   var inY=function(x){ return (x.date||'').slice(0,4)===String(y); };
   var bites=(C.Store.act?C.Store.act():(C.Store.get('bites')||[])).filter(inY), trips=(C.Store.get('trips')||[]).filter(inY), miss=(C.Store.misses?C.Store.misses():[]).filter(inY).length;
-  var ms=0,km=0,cost=0,days={},sp={},mo={},big=null,kg=0; trips.forEach(function(t){ if(t.startMs&&t.endMs) ms+=Math.max(0,t.endMs-t.startMs-(t.pauseMs||0)); km+=+t.km||0; cost+=costOf(t); if(t.date) days[t.date]=1; });
-  bites.forEach(function(b){ if(b.date) days[b.date]=1; var w=+b.kg||0; kg+=b.rel?0:w; if(b.species) sp[b.species]=(sp[b.species]||0)+1; var m=b.date.slice(5,7); mo[m]=(mo[m]||0)+1; if(w&&(!big||w>+big.kg)) big=b; });
+  var ms=0,km=0,cost=0,days={},sp={},mo={},big=null,kg=0,nf=0; trips.forEach(function(t){ if(t.startMs&&t.endMs) ms+=Math.max(0,t.endMs-t.startMs-(t.pauseMs||0)); km+=+t.km||0; cost+=costOf(t); if(t.date) days[t.date]=1; });
+  bites.forEach(function(b){ if(b.date) days[b.date]=1; var w=+b.kg||0; kg+=b.rel?0:w; nf+=C.bc(b); if(b.species) sp[b.species]=(sp[b.species]||0)+C.bc(b); var m=b.date.slice(5,7); mo[m]=(mo[m]||0)+C.bc(b); if(w&&C.bc(b)===1&&(!big||w>+big.kg)) big=b; });
   var top=Object.keys(sp).sort(function(a,b){ return sp[b]-sp[a]; }).slice(0,3).map(function(k){ return [k,sp[k]]; });
   var bm=Object.keys(mo).sort(function(a,b){ return mo[b]-mo[a]; })[0]||'';
-  return {y:y,fish:bites.length,miss:miss,trips:trips.length,days:Object.keys(days).length,ms:ms,km:km,kg:Math.round(kg*10)/10,cost:cost,top:top,big:big,month:bm,species:Object.keys(sp).length};
+  return {y:y,fish:nf,miss:miss,trips:trips.length,days:Object.keys(days).length,ms:ms,km:km,kg:Math.round(kg*10)/10,cost:cost,top:top,big:big,month:bm,species:Object.keys(sp).length};
 }
 var MON=EN?['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']:['Ιανουάριος','Φεβρουάριος','Μάρτιος','Απρίλιος','Μάιος','Ιούνιος','Ιούλιος','Αύγουστος','Σεπτέμβριος','Οκτώβριος','Νοέμβριος','Δεκέμβριος'];
 function yearCard(y){
