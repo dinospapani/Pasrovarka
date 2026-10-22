@@ -118,18 +118,83 @@ function unitsPanel(){
   d.append(el('p','note',T('Αλλάζουν οι κάρτες, τα πεδία της φόρμας και οι προτάσεις. Τα δεδομένα αποθηκεύονται πάντα σε g, kg και m, οπότε μπορείς να αλλάζεις όποτε θες. Το πεδίο «Χαρακτηριστικά» είναι ελεύθερο κείμενο και δεν μετατρέπεται.','Cards, form fields and suggestions change. Data is always stored in g, kg and m, so you can switch at any time. The “Specs” field is free text and is not converted.')));
   return d;
 }
+
+/* ---- Υπενθυμίσεις, λίστα αγορών, αντίγραφο ασφαλείας ---- */
+var SHOPK='psaro-tk-shop';
+function daysBetween(a,b){ return Math.round((Date.parse(b)-Date.parse(a))/86400000); }
+function reminders(){
+  var out={low:[],svc:[],nodate:[]}, today=C.nicosiaToday(), trips=S.get('trips')||[];
+  load().forEach(function(it){
+    if((it.type==='hook'||it.type==='lure'||it.type==='acc')&&it.qty!=null&&it.qty<=2) out.low.push(it);
+    if(it.type==='reel'){ if(it.svc){ var sd=daysBetween(it.svc,today); if(sd>90) out.svc.push({it:it,txt:T('Συντηρήθηκε πριν ','Serviced ')+sd+T(' ημέρες',' days ago'),act:'svc'}); } else out.nodate.push({it:it,txt:T('Δεν έχεις βάλει ημερομηνία συντήρησης','No service date set')}); }
+    if((it.type==='line'||it.type==='leader')&&it.since){ var nd=daysBetween(it.since,today), nt=trips.filter(function(x){ return (x.date||'')>=it.since; }).length;
+      var old=it.type==='leader'?(nd>60||nt>15):(nd>180); if(old) out.svc.push({it:it,txt:T('Από την αλλαγή: ','Since change: ')+nd+T(' ημέρες · ',' days · ')+nt+T(' έξοδοι',' trips'),act:'chg'}); }
+  });
+  return out;
+}
+function remCount(){ try{ var r=reminders(); return r.low.length+r.svc.length; }catch(e){ return 0; } }
+function shopLoad(){ var a=C.lsGet(SHOPK,[]); return Array.isArray(a)?a.filter(function(x){ return x&&typeof x.t==='string'; }):[]; }
+function shopSave(a){ C.lsSet(SHOPK,a.slice(0,200)); }
+function blobUrl(b){ return new Promise(function(res,rej){ var r=new FileReader(); r.onload=function(){ res(r.result); }; r.onerror=rej; r.readAsDataURL(b); }); }
+function listPanel(){
+  var d=el('div','card'); d.style.margin='8px 0'; d.append(el('h3',null,T('🔔 Υπενθυμίσεις και λίστα','🔔 Reminders and list')));
+  var R=reminders(), today=C.nicosiaToday();
+  var sec=function(title){ var h=el('b',null,title); h.style.cssText='display:block;margin:10px 0 4px'; d.append(h); };
+  var row=function(txt,sub,actBtn){ var r=el('div','meta'); r.style.cssText='display:flex;gap:8px;align-items:center;justify-content:space-between;padding:3px 0'; var x=el('span',null,txt+(sub?' · '+sub:'')); x.style.flex='1'; r.append(x); if(actBtn) r.append(actBtn); d.append(r); };
+  sec(T('⚠ Σου τελειώνουν','⚠ Running low'));
+  if(!R.low.length) d.append(el('div','note',T('Τίποτα (δείχνει είδη με ποσότητα 2 ή λιγότερο).','Nothing (shows items with quantity 2 or less).')));
+  R.low.forEach(function(it){ row(tinfo(it.type)[3]+' '+(it.name||'—'),'×'+it.qty); });
+  if(R.low.length) d.append(btn(T('＋ Πρόσθεσε στη λίστα αγορών','＋ Add to shopping list'),'ghost',function(){ var a=shopLoad(); R.low.forEach(function(it){ var t=(it.name||'—')+(it.brand?' ('+it.brand+')':''); if(!a.some(function(x){ return x.t===t; })) a.push({t:t,d:false}); }); shopSave(a); render(); }));
+  sec(T('🔧 Συντήρηση / αλλαγή','🔧 Service / change'));
+  if(!R.svc.length) d.append(el('div','note',T('Όλα εντάξει με βάση τις ημερομηνίες που έχεις βάλει.','All fine based on the dates you entered.')));
+  R.svc.forEach(function(o){ var it=o.it; row(tinfo(it.type)[3]+' '+(it.name||'—'),o.txt,btn(o.act==='svc'?T('✔ Συντηρήθηκε','✔ Serviced'):T('✔ Άλλαξα','✔ Changed'),'ghost',function(){ var c=JSON.parse(JSON.stringify(it)); if(o.act==='svc') c.svc=today; else c.since=today; put(c); render(); })); });
+  if(R.nodate.length){ var nb=el('div','note',T('Χωρίς ημερομηνία συντήρησης: ','No service date: ')+R.nodate.map(function(o){ return o.it.name||'—'; }).join(', ')+T(' (πάτα «✔ Συντηρήθηκε» στην κάρτα όταν τα λιπάνεις).',' (tap “✔ Serviced” on the card when you service them).')); d.append(nb); }
+  d.append(el('p','note',T('Ενδεικτικά όρια: μουλινέ 90 ημέρες · πετονιά (leader) 60 ημέρες ή 15 έξοδοι · νήμα 180 ημέρες.','Rough limits: reel 90 days · leader 60 days or 15 trips · main line 180 days.')));
+  sec(T('🛒 Λίστα αγορών','🛒 Shopping list'));
+  var a=shopLoad(), ad=el('div'); ad.style.cssText='display:flex;gap:6px;margin:4px 0';
+  var inp=el('input'); inp.type='text'; inp.maxLength=80; inp.placeholder=T('π.χ. αγκίστρια 4/0','e.g. 4/0 hooks'); inp.style.flex='1';
+  var addIt=function(){ var t=inp.value.trim(); if(!t) return; var l=shopLoad(); l.push({t:t.slice(0,80),d:false}); shopSave(l); render(); };
+  inp.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); addIt(); } });
+  ad.append(inp,btn(T('Πρόσθεσε','Add'),'',addIt)); d.append(ad);
+  if(!a.length) d.append(el('div','note',T('Η λίστα είναι άδεια.','The list is empty.')));
+  a.forEach(function(x,i){ var tb=btn(x.d?'☑':'☐','ghost',function(){ var l=shopLoad(); if(l[i]){ l[i].d=!l[i].d; shopSave(l); render(); } }); tb.setAttribute('aria-label',T('Σημείωση ως αγορασμένο','Mark as bought'));
+    var rm=btn('✕','ghost',function(){ var l=shopLoad(); l.splice(i,1); shopSave(l); render(); }); rm.setAttribute('aria-label',T('Διαγραφή','Delete'));
+    var r=el('div','meta'); r.style.cssText='display:flex;gap:6px;align-items:center;padding:2px 0'; var tx=el('span',null,x.t); tx.style.cssText='flex:1;'+(x.d?'text-decoration:line-through;opacity:.6':''); r.append(tb,tx,rm); d.append(r); });
+  if(a.some(function(x){ return x.d; })) d.append(btn(T('Καθάρισε τα αγορασμένα','Clear bought items'),'ghost',function(){ shopSave(shopLoad().filter(function(x){ return !x.d; })); render(); }));
+  d.append(el('p','note',T('Η λίστα αγορών αποθηκεύεται μόνο σε αυτή τη συσκευή.','The shopping list is stored on this device only.')));
+  sec(T('💾 Αντίγραφο ασφαλείας εξοπλισμού','💾 Tackle backup'));
+  var msg=el('p','note'); msg.setAttribute('role','status');
+  var ex=btn(T('Αποθήκευση σε αρχείο','Save to file'),'ghost',async function(){
+    try{ var items=load(), photos={}; for(var i=0;i<items.length;i++){ var tk=items[i]; if(tk.photo){ try{ var bl=await C.Photos.get('tk-'+tk.id); if(bl) photos['tk-'+tk.id]=await blobUrl(bl); }catch(e){} } }
+      var data={app:'psarovarka',v:2,tackle:items,photos:photos};
+      var an=document.createElement('a'); an.href=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'})); an.download='bitecast-tackle-'+C.nicosiaToday()+'.json'; document.body.append(an); an.click(); an.remove();
+      msg.textContent=T('Αποθηκεύτηκαν ','Saved ')+items.length+T(' είδη.',' items.');
+    }catch(e){ msg.textContent=T('Η εξαγωγή απέτυχε.','Export failed.'); } });
+  var imL=el('label','btn ghost sm',T('Επαναφορά από αρχείο','Restore from file')); imL.style.cursor='pointer'; var imI=el('input'); imI.type='file'; imI.accept='application/json,.json'; imI.hidden=true;
+  imI.addEventListener('change',async function(){ var f=imI.files&&imI.files[0]; if(!f) return;
+    try{ var j=JSON.parse(await f.text()), arr=Array.isArray(j.tackle)?j.tackle:null; if(!arr) throw new Error('x'); var n=0, known={}; TYPES.forEach(function(t){ known[t[0]]=1; });
+      for(var i=0;i<arr.length;i++){ var it=arr[i]; if(it&&typeof it==='object'&&typeof it.id==='string'&&known[it.type]){ await put(it); n++; } }
+      var ph=j.photos&&typeof j.photos==='object'?j.photos:{}; for(var k in ph){ if(k.indexOf('tk-')===0&&typeof ph[k]==='string'){ try{ var bb=await (await fetch(ph[k])).blob(); await C.Photos.put(k,bb); urls[k]=null; }catch(e){} } }
+      msg.textContent=n+T(' είδη επαναφέρθηκαν.',' items restored.'); setTimeout(render,600);
+    }catch(e){ msg.textContent=T('Το αρχείο δεν διαβάστηκε.','The file could not be read.'); }
+    imI.value=''; });
+  imL.append(imI); var br2=el('div','acts'); br2.style.cssText='display:flex;gap:6px;flex-wrap:wrap'; br2.append(ex,imL); d.append(br2,msg);
+  d.append(el('p','note',T('Ο εξοπλισμός περιλαμβάνεται και στο γενικό αντίγραφο (Ρυθμίσεις) και συγχρονίζεται στο λογαριασμό σου όταν είσαι συνδεδεμένος.','Tackle is also part of the general backup (Settings) and syncs to your account when you are signed in.')));
+  return d;
+}
 function render(){
   box.replaceChildren();
   var all=load();
   if(all.length&&!editing) box.append(advisor());
   var chips=el('div','seg'); chips.style.cssText='flex-wrap:wrap;margin:8px 0';
-  [['all',T('Όλα','All')]].concat(TYPES.map(function(t){ return [t[0],t[1]]; })).concat([['units',T('📏 Μονάδες','📏 Units')]]).forEach(function(c){
-    var n=c[0]==='all'?all.length:all.filter(function(x){ return x.type===c[0]; }).length;
+  [['all',T('Όλα','All')]].concat(TYPES.map(function(t){ return [t[0],t[1]]; })).concat([['lst',T('🔔 Λίστα','🔔 List')],['units',T('📏 Μονάδες','📏 Units')]]).forEach(function(c){
+    var n=c[0]==='all'?all.length:c[0]==='lst'?remCount():all.filter(function(x){ return x.type===c[0]; }).length;
     var b=el('button','',c[1]+(n?' '+n:'')); b.type='button'; b.style.flex='1 0 auto'; b.setAttribute('aria-pressed',String(fType===c[0]));
     b.addEventListener('click',function(){ fType=c[0]; editing=null; render(); }); chips.append(b);
   });
   box.append(chips);
   if(fType==='units'){ box.append(unitsPanel()); return; }
+  if(fType==='lst'){ try{ box.append(listPanel()); }catch(e){ box.append(el('p','note',T('Η λίστα δεν φορτώθηκε.','The list could not be loaded.'))); } return; }
   var bar=el('div','row'); bar.style.cssText='display:flex;gap:8px;align-items:flex-end;margin:6px 0';
   var lab=el('label','f sortsel'); lab.style.cssText='margin:0;flex:1'; lab.append(document.createTextNode(T('Ταξινόμηση','Sort by')));
   var sel=el('select'); [['new',T('Πιο πρόσφατα','Newest')],['name',T('Όνομα','Name')],['type',T('Είδος','Type')]].forEach(function(o){ var op=el('option',null,o[1]); op.value=o[0]; sel.append(op); });
