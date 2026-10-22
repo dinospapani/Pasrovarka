@@ -41,18 +41,29 @@ function render(){
     var sb=el('button','plic'); sb.type='button'; sb.setAttribute('aria-label',T('Από τα σημεία μου','From my spots')); sb.title=T('Από τα σημεία μου','From my spots'); sb.appendChild(svg('<path d="M12 21s-6-5.6-6-10.2A6 6 0 0 1 18 10.8C18 15.4 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.2"/>')); sb.addEventListener('click',function(){ sp.hidden=!sp.hidden; }); bar.append(sb);
     spots.forEach(function(x){ var b=el('button','chip',x.name||T('Σημείο','Spot')); b.type='button'; b.addEventListener('click',function(){ choose(x.name||T('Σημείο','Spot'),x.lat,x.lon); }); sp.append(b); });
   }
-  var mb=el('button','plic'); mb.type='button'; mb.setAttribute('aria-label',T('Επιλογή στον χάρτη','Pick on map')); mb.title=T('Επιλογή στον χάρτη','Pick on map'); mb.appendChild(svg('<path d="M9 4L3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4z"/><path d="M9 4v14M15 6v14"/>')); mb.addEventListener('click',function(){ window.dispatchEvent(new Event('psaro-pickfc')); }); bar.append(mb);
+  var mb=el('button','plic'); mb.type='button'; mb.setAttribute('aria-label',T('Επιλογή στον χάρτη','Pick on map')); mb.title=T('Επιλογή στον χάρτη','Pick on map'); mb.appendChild(svg('<path d="M9 4L3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4z"/><path d="M9 4v14M15 6v14"/>')); mb.addEventListener('click',function(){ window.dispatchEvent(new Event('psaro-picktoday')); }); bar.append(mb);
   wrap.append(bar,res,sp);
   var doSearch=function(){
-    var q=inp.value.trim(); res.replaceChildren(); if(q.length<2) return; res.append(el('div','note',T('Αναζήτηση…','Searching…')));
+    var q=inp.value.trim(); res.replaceChildren(); if(q.length<2) return; try{ inp.blur(); }catch(x){} /* κλείνει το πληκτρολόγιο ώστε να φαίνονται τα αποτελέσματα */ res.append(el('div','note',T('Αναζήτηση…','Searching…')));
     fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=6&format=json&language='+(EN?'en':'el')).then(function(r){ return r.json(); }).then(function(j){
-      res.replaceChildren(); var rs=(j&&j.results)||[]; if(!rs.length){ res.append(el('div','note',T('Δεν βρέθηκε τοποθεσία.','No location found.'))); return; }
+      res.replaceChildren(); var rs=(j&&j.results)||[]; if(!rs.length){ res.append(el('div','note',T('Δεν βρέθηκε τοποθεσία.','No location found.'))); setTimeout(function(){ try{ res.scrollIntoView({behavior:'smooth',block:'center'}); }catch(x){} },150); return; }
+      setTimeout(function(){ try{ res.scrollIntoView({behavior:'smooth',block:'center'}); }catch(x){} },250);
       rs.forEach(function(x){ var label=[x.name,x.admin1,x.country].filter(Boolean).filter(function(v,i,a){ return a.indexOf(v)===i; }).join(', ');
         var it=el('button','item plres'); it.type='button'; it.append(el('b',null,x.name),el('span','meta',label)); it.addEventListener('click',function(){ choose(x.name,x.latitude,x.longitude); }); res.append(it); });
     }).catch(function(){ res.replaceChildren(el('div','note',T('Η αναζήτηση δεν δούλεψε. Έλεγξε τη σύνδεση.','Search failed. Check your connection.'))); });
   };
   go.addEventListener('click',doSearch); inp.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); doSearch(); } });
 }
+window.addEventListener('psaro-todaypick',function(e){
+  var d=e.detail; if(!d) return; var nm=(EN?'Point ':'Σημείο ')+(window.PsaroCoord?PsaroCoord.fmt(d.lat,d.lon):d.lat.toFixed(3)+', '+d.lon.toFixed(3));
+  var p=null; try{ p=window.PsaroPlaces?PsaroPlaces.add(nm,d.lat,d.lon):null; }catch(x){}
+  if(!p) p={id:'t'+Math.round(d.lat*100)+'_'+Math.round(d.lon*100),name:nm,lat:d.lat,lon:d.lon};
+  pick(p);
+  fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14&accept-language='+(EN?'en':'el')+'&lat='+d.lat+'&lon='+d.lon).then(function(r){ return r.ok?r.json():null; }).then(function(j){
+    var a=(j&&j.address)||{}, n=a.suburb||a.village||a.town||a.city||a.hamlet||a.neighbourhood||a.municipality||(j&&j.name)||''; if(!n||!window.PsaroPlaces||!PsaroPlaces.rename) return;
+    PsaroPlaces.rename(p.id,n); p.name=n; if(sel===p.id){ if(lab) lab.textContent=T('Καιρός για: ','Weather for: ')+n; render(); }
+  }).catch(function(){});
+});
 function choose(name,lat,lon){
   var p=null; try{ p=window.PsaroPlaces?PsaroPlaces.add(name,lat,lon):null; }catch(e){}
   if(!p) p={id:'t'+Math.round(lat*100)+'_'+Math.round(lon*100),name:name,lat:lat,lon:lon};

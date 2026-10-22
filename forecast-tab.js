@@ -35,7 +35,7 @@ function addPlace(name,lat,lon){
   if(!ex){ places.unshift({id:id,name:name,lat:+lat.toFixed(4),lon:+lon.toFixed(4),watch:true}); places=places.slice(0,10); }
   sel=id; save(); renderPlaces(); load(); syncNotify();
 }
-window.PsaroPlaces={remove:function(id){ var was=sel===id; places=places.filter(function(p){ return p.id!==id; }); if(was) sel='gps'; save(); renderPlaces(); if(was&&!document.getElementById('tab-fc').hidden) load(); syncNotify(); },list:function(){ return places.slice(); },add:function(name,lat,lon){ var id=pid(lat,lon), ex=places.filter(function(p){ return p.id===id; })[0]; if(!ex){ places.unshift({id:id,name:name,lat:+lat.toFixed(4),lon:+lon.toFixed(4),watch:true}); places=places.slice(0,10); save(); renderPlaces(); ex=places[0]; } return ex; }};
+window.PsaroPlaces={rename:function(id,n){ var q=places.filter(function(x){ return x.id===id; })[0]; if(q){ q.name=n; q.auto=false; save(); renderPlaces(); } },remove:function(id){ var was=sel===id; places=places.filter(function(p){ return p.id!==id; }); if(was) sel='gps'; save(); renderPlaces(); if(was&&!document.getElementById('tab-fc').hidden) load(); syncNotify(); },list:function(){ return places.slice(); },add:function(name,lat,lon){ var id=pid(lat,lon), ex=places.filter(function(p){ return p.id===id; })[0]; if(!ex){ places.unshift({id:id,name:name,lat:+lat.toFixed(4),lon:+lon.toFixed(4),watch:true}); places=places.slice(0,10); save(); renderPlaces(); ex=places[0]; } return ex; }};
 function lpress(b,fn,tap){ /* παρατεταμένο πάτημα = διαγραφή, κανονικό = επιλογή */
   var tm=null, fired=false; function cancel(){ if(tm){ clearTimeout(tm); tm=null; } }
   b.addEventListener('pointerdown',function(){ fired=false; cancel(); tm=setTimeout(function(){ tm=null; fired=true; try{ if(navigator.vibrate) navigator.vibrate(30); }catch(e){} fn(); },650); });
@@ -61,11 +61,11 @@ function renderPlaces(){
   });
 }
 async function geocode(){
-  var q=$('plQ').value.trim(), R=$('plRes'); R.replaceChildren(); if(q.length<2) return;
+  var q=$('plQ').value.trim(), R=$('plRes'); R.replaceChildren(); if(q.length<2) return; try{ $('plQ').blur(); }catch(e){}
   R.append(h('div',{class:'note',text:'Αναζήτηση…'}));
   try{
     var r=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=6&format=json&language='+(window.LANG==='en'?'en':'el'));
-    var j=await r.json(); R.replaceChildren();
+    var j=await r.json(); R.replaceChildren(); setTimeout(function(){ try{ R.scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){} },250);
     var res=(j&&j.results)||[];
     if(!res.length){ R.append(h('div',{class:'note',text:'Δεν βρέθηκε τοποθεσία.'})); return; }
     res.forEach(function(x){

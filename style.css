@@ -679,7 +679,7 @@ body.toolsedit .mbtn.tool-off{display:grid;opacity:.4;filter:grayscale(1)}
 body.toolsedit #bMob{display:grid!important}
 body.toolsedit .mbtn:not(.tool-off):not(#bToolsCfg)::after{content:"✓";position:absolute;top:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:#2e9e5b;color:#fff;font:700 11px/18px system-ui;text-align:center}
 #bToolsCfg.on{background:var(--accent);color:var(--accent-ink)}
-.rvbar{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:900;display:flex;align-items:center;gap:10px;max-width:calc(100% - 130px);background:rgba(9,30,44,.9);color:#fff;border-radius:99px;padding:8px 8px 8px 16px;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+.rvbar{position:absolute;left:50%;bottom:104px;transform:translateX(-50%);z-index:900;display:flex;align-items:center;gap:10px;max-width:calc(100% - 130px);background:rgba(9,30,44,.9);color:#fff;border-radius:99px;padding:8px 8px 8px 16px;box-shadow:0 6px 18px rgba(0,0,0,.4)}
 .rvbar[hidden]{display:none}
 .rvtx{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rvx{width:32px;height:32px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:15px;flex-shrink:0}

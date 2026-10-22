@@ -29,7 +29,7 @@ function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 
 /* ---------- Time and astronomy ---------- */
 const TZ='Asia/Nicosia';
-let cond=lsGet('psaro-cond',null), refreshing=null; window.PsaroCond=()=>cond;
+let viewing=null, viewCond=null, cond=lsGet('psaro-cond',null), refreshing=null; window.PsaroCond=()=>cond;
 const utcOff=()=>cond&&typeof cond.utc==='number'?cond.utc:-new Date().getTimezoneOffset();
 const shifted=()=>new Date(Date.now()+utcOff()*60000);
 const nicosiaToday=()=>shifted().toISOString().slice(0,10);
@@ -138,7 +138,7 @@ function tile(ico,label,val,sub,rot){
 const PT_ARROW={slow:'↘',stable:'→',rise:'↗',fast:'↓'};
 function renderTiles(c){
   const box=$('tiles'); if(!box) return; box.replaceChildren();
-  const k=cond||{}, dash='–';
+  const k=(viewCond||cond)||{}, dash='–';
   box.append(
     tile('arrow','Άνεμος',k.wind!=null?PU.wind(k.wind):dash,wdir(k),k.windDeg!=null?k.windDeg+180:0),
     tile('wave','Κύμα',k.wave!=null?PU.wave(k.wave):dash,k.wavePeriod?Math.round(k.wavePeriod)+' s':''),
@@ -149,7 +149,7 @@ function renderTiles(c){
 }
 function renderSea(){
   const box=$('seaTiles'); if(!box) return; box.replaceChildren();
-  const k=cond||{}, dash='–';
+  const k=(viewCond||cond)||{}, dash='–';
   box.append(
     tile('drop','Θερμοκρασία',k.sst!=null?PU.temp(k.sst,1):dash,''),
     tile('arrow','Ρεύμα',k.cur!=null?k.cur.toFixed(2)+' kn':dash,k.curDir!=null?dirName(k.curDir):'',k.curDir!=null?k.curDir:0),
@@ -164,7 +164,7 @@ function renderSea(){
 }
 function renderStrip(c){
   const box=$('hdrStrip'); if(!box) return; box.replaceChildren();
-  const k=cond||{}, sm=c.sm, dash='–';
+  const k=(viewCond||cond)||{}, sm=c.sm, dash='–';
   const ph=['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘'][Math.floor(sm.f*8+0.5)%8];
   const chip=(l,v)=>h('span',{class:'sc'},h('i',{text:l}),h('b',{text:v}));
   const rf=h('button',{type:'button',class:'sc rf',id:'hdrRef','aria-label':'Ανανέωση συνθηκών'},h('i',{text:'Τώρα'}),h('b',{text:'↻ '+(k.at||dash)}));
@@ -197,7 +197,7 @@ function bestSpots(c){
   const bs=Store.get('bites').filter(b=>typeof b.lat==='number'&&typeof b.lon==='number');
   const cands=[]; Store.get('spots').forEach(s=>{ if(typeof s.lat==='number') cands.push({name:s.name||'Σημείο',lat:s.lat,lon:s.lon}); });
   bs.forEach(b=>{ if(!cands.some(x=>haversine(x.lat,x.lon,b.lat,b.lon)<0.6)) cands.push({name:b.place||PsaroCoord.fmt(b.lat,b.lon),lat:b.lat,lon:b.lon}); });
-  const k=cond||{}, hrNow=Math.floor(nicosiaNowMin()/60), wb=w=>w==null?null:w<8?0:w<=14?1:2;
+  const k=(viewCond||cond)||{}, hrNow=Math.floor(nicosiaNowMin()/60), wb=w=>w==null?null:w<8?0:w<=14?1:2;
   const out=[];
   for(const x of cands){
     const near=bs.filter(b=>haversine(x.lat,x.lon,b.lat,b.lon)<=0.6); if(!near.length) continue;
@@ -354,6 +354,7 @@ const Photos=(function(){
 })();
 window.PsaroCore={Store:Store,Photos:Photos,toast:null,bc:function(b){ return Math.max(1,Math.floor(+b.cnt)||1); }};
 window.addEventListener('psaro-pickfc',()=>startPick('fc'));
+window.addEventListener('psaro-picktoday',()=>startPick('today'));
 async function resizeImage(file){
   let bmp;
   try{ bmp=await createImageBitmap(file,{imageOrientation:'from-image'}); }
@@ -443,7 +444,7 @@ function initMap(){
       done();
     },()=>{ done(); toast(en?'Could not get your position. Turn on location.':'Δεν πήρα θέση. Άνοιξε την τοποθεσία (GPS).'); },{enableHighAccuracy:true,timeout:10000,maximumAge:3000});
   });
-  $('mapHintX').addEventListener('click',()=>{const was=pick; endPick(); if(was==='bite') openSheet(); if(was==='fc') switchTab('fc');});
+  $('mapHintX').addEventListener('click',()=>{const was=pick; endPick(); if(was==='bite') openSheet(); if(was==='fc') switchTab('fc'); if(was==='today') switchTab('today');});
   zonesG=L.layerGroup();
   for(const z of ZONES){
     L.polygon(z.p,{color:'#e02020',weight:2,fillColor:'#e02020',fillOpacity:.22,interactive:false}).addTo(zonesG); /* οι ζώνες δεν «κλέβουν» το πάτημα: οι πληροφορίες τους εμφανίζονται στο μενού του σημείου */
@@ -462,6 +463,7 @@ function initMap(){
   map.on('click',e=>{
     const ll=e.latlng.wrap(), lat=+ll.lat.toFixed(5), lon=+ll.lng.toFixed(5);
     if(pick==='fc'){ endPick(); switchTab('fc'); window.dispatchEvent(new CustomEvent('psaro-fcpick',{detail:{lat:lat,lon:lon}})); return; }
+    if(pick==='today'){ endPick(); switchTab('today'); window.dispatchEvent(new CustomEvent('psaro-todaypick',{detail:{lat:lat,lon:lon}})); return; }
     if(pick==='spot'){ endPick(); openSpotForm({lat:lat,lon:lon}); return; }
     if(pick==='bite'){ endPick(); pickedPt={lat:lat,lon:lon}; $('bLocMode').value='pick'; syncLoc(); openSheet(); return; }
     const ic=d=>{const n='http://www.w3.org/2000/svg',s=document.createElementNS(n,'svg');s.setAttribute('viewBox','0 0 24 24');s.setAttribute('class','pi');const p=document.createElementNS(n,'path');p.setAttribute('d',d);s.append(p);return s;};
@@ -498,7 +500,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden) youStop()
 setTimeout(youStart,1500);
 function startPick(mode){
   pick=mode; $('mapHint').hidden=false; document.body.classList.add('picking');
-  $('mapHintTxt').textContent=mode==='fc'?'Πάτα στον χάρτη για πρόγνωση σε αυτό το σημείο':mode==='spot'?'Πάτα στον χάρτη για το νέο σημείο':'Πάτα στον χάρτη εκεί που έπιασες';
+  $('mapHintTxt').textContent=mode==='fc'?'Πάτα στον χάρτη για πρόγνωση σε αυτό το σημείο':mode==='today'?'Πάτα στον χάρτη για τον καιρό σε αυτό το σημείο':mode==='spot'?'Πάτα στον χάρτη για το νέο σημείο':'Πάτα στον χάρτη εκεί που έπιασες';
   switchTab('map');
 }
 function endPick(){ pick=null; $('mapHint').hidden=true; document.body.classList.remove('picking'); }
@@ -1276,15 +1278,17 @@ async function fetchConditions(lat,lon){
 function setLive(msg){ $('liveSub').textContent=msg; }
 function applyConditions(c){
   if(!c) return;
+  if(c.press!=null) $('bPress').value=c.press;
+  if(!viewing){ /* αν βλέπεις καιρό άλλης τοποθεσίας, δεν τον αντικαθιστούμε με τον GPS */
   if(c.wind!=null) $('dWind').value=clamp(c.wind,0,40);
   if(c.wave!=null) $('dWave').value=clamp(Math.round(c.wave*10)/10,0,3);
   if(c.cloud) $('dCloud').value=c.cloud;
   if(c.ptrend&&PT[c.ptrend]) $('dPress').value=c.ptrend;
-  if(c.press!=null) $('bPress').value=c.press;
   const near=nearestRef(c.lat,c.lon);
   const parts=condParts(c);
   $('liveMain').textContent=parts.join(' · ');
   setLive('Ενημερώθηκε '+(c.date?c.date.split('-').reverse().join('/')+' ':'')+(c.at||'')+' · θέση '+PsaroCoord.fmt(c.lat,c.lon)+(near?' · κοντά σε '+near:''));
+  }
   setYou(c.lat,c.lon); renderWx(); checkZoneHere(); document.dispatchEvent(new Event('psaro-cond'));
   renderToday();
 }
@@ -1298,7 +1302,7 @@ function condParts(c){
     c.temp!=null?PU.temp(c.temp)+(window.LANG==='en'?' air':' αέρας'):null,c.sst!=null?PU.temp(c.sst)+(window.LANG==='en'?' sea':' θάλασσα'):null,c.press!=null?PU.press(c.press)+(c.ptrend?' · '+PT[c.ptrend].toLowerCase():''):null,tideTxt(c.tide)].filter(Boolean);
 }
 function applyView(c,name){
-  if(!c) return;
+  if(!c) return; viewCond=c;
   if(c.wind!=null) $('dWind').value=clamp(c.wind,0,40);
   if(c.wave!=null) $('dWave').value=clamp(Math.round(c.wave*10)/10,0,3);
   if(c.cloud) $('dCloud').value=c.cloud;
@@ -1307,10 +1311,9 @@ function applyView(c,name){
   setLive((window.LANG==='en'?'Weather for ':'Καιρός για ')+name+' · '+fmt(nicosiaNowMin())+' · '+PsaroCoord.fmt(c.lat,c.lon));
   renderToday();
 }
-let viewing=null;
 window.PsaroCore.viewPlace=async function(p){
-  if(!p||p.gps){ viewing=null; await refreshConditions(); return; }
-  viewing=p; setLive(window.LANG==='en'?'Loading weather…':'Ανανέωση καιρού…');
+  if(!p||p.gps){ viewing=null; viewCond=null; await refreshConditions(); renderToday(); return; }
+  viewing=p; viewCond=null; renderToday(); setLive(window.LANG==='en'?'Loading weather…':'Ανανέωση καιρού…');
   try{ const c=await fetchConditions(p.lat,p.lon); if(viewing===p) applyView(c,p.name); }
   catch(e){ setLive(window.LANG==='en'?'Weather did not load. Check your connection.':'Ο καιρός δεν φορτώθηκε. Έλεγξε τη σύνδεση και δοκίμασε ξανά.'); }
 };
@@ -1319,7 +1322,7 @@ function renderWx(){
   const el=$('wx'); if(!el) return; el.replaceChildren();
   const sm=sunMoon(nicosiaToday());
   const cell=(l,v)=>h('div',{},h('span',{class:'wl',text:l}),h('b',{text:v}));
-  const c=cond||{};
+  const c=(viewCond||cond)||{};
   const dash='–';
   el.append(h('div',{class:'wxg'},
     cell('Σελήνη',Math.round(sm.illum*100)+'%'),cell('Πίεση',c.press!=null?PU.press(c.press):dash),cell('Αέρας',c.temp!=null?PU.temp(c.temp):dash),
