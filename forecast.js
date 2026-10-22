@@ -131,7 +131,8 @@ function pressureEvent(fc){
   }
   return best?{dir:best.d<0?'fall':'rise',delta:Math.round(Math.abs(best.d)*10)/10,from:Math.round(best.from),to:Math.round(best.to),t:best.t,hours:best.hours}:null;
 }
-const DN=['Κυρ','Δευ','Τρί','Τετ','Πέμ','Παρ','Σάβ'];
+const DNG=['Κυρ','Δευ','Τρί','Τετ','Πέμ','Παρ','Σάβ'], DNE=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+let DN=(typeof self!=='undefined'&&self.LANG==='en')?DNE:DNG; /* η γλώσσα ορίζεται από το cfg.lang (και ο service worker την παίρνει από εκεί) */
 function dayLabel(date){ const dt=new Date(date+'T12:00:00Z'); return DN[dt.getUTCDay()]+' '+date.slice(8)+'/'+date.slice(5,7); }
 function goodDays(fc,thr){ return fc.days.filter(d=>d.safe&&d.win&&d.best>=thr).map(d=>({date:d.date,best:d.best,win:d.win,wind:d.avgWind,wave:d.avgWave})); }
 /* cfg: {places,threshold,notified,pressure}. Επιστρέφει πάντα {items,notified,title,body}. */
@@ -152,12 +153,14 @@ async function checkPlaces(cfg,fetchFn){
   }
   goods.sort((a,b)=>b.best-a.best);
   const top=goods.slice(0,4).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:b.best-a.best);
-  const lines=top.map(i=>i.place.name+': '+dayLabel(i.date)+' · δείκτης '+i.best+' · '+pad(i.win.s)+':00–'+pad((i.win.e+1)%24)+':00');
-  if(goods.length>top.length) lines.push('+'+(goods.length-top.length)+' ακόμα');
-  const pl=press.slice(0,2).map(i=>i.place.name+': η πίεση '+(i.dir==='fall'?'πέφτει':'ανεβαίνει')+' '+i.delta+' hPa σε '+i.hours+' ώρες ('+i.from+'→'+i.to+'). '+(i.dir==='fall'?'Πριν αλλάξει ο καιρός τα ψάρια συχνά τσιμπούν πιο έντονα.':'Μετά από μεταβολή τα ψάρια συνήθως χρειάζονται λίγο να ξαναπιάσουν δουλειά.'));
+  const en=cfg.lang==='en'||(typeof self!=='undefined'&&self.LANG==='en'), t=(el,e)=>en?e:el;
+  DN=en?DNE:DNG;
+  const lines=top.map(i=>i.place.name+': '+dayLabel(i.date)+' · '+t('δείκτης ','score ')+i.best+' · '+pad(i.win.s)+':00–'+pad((i.win.e+1)%24)+':00');
+  if(goods.length>top.length) lines.push('+'+(goods.length-top.length)+t(' ακόμα',' more'));
+  const pl=press.slice(0,2).map(i=>i.place.name+': '+t('η πίεση ','pressure ')+(i.dir==='fall'?t('πέφτει','falling'):t('ανεβαίνει','rising'))+' '+i.delta+' hPa '+t('σε ','in ')+i.hours+t(' ώρες (',' h (')+i.from+'→'+i.to+'). '+(i.dir==='fall'?t('Πριν αλλάξει ο καιρός τα ψάρια συχνά τσιμπούν πιο έντονα.','Before the weather changes, fish often bite harder.'):t('Μετά από μεταβολή τα ψάρια συνήθως χρειάζονται λίγο να ξαναπιάσουν δουλειά.','After a change, fish usually need a little time to start feeding again.')));
   const items=goods.concat(press);
   items.forEach(i=>{notified[i.key]=1;});
-  const title=goods.length&&press.length?'Ενημέρωση ψαρέματος':goods.length>1?'Καλές μέρες για ψάρεμα':goods.length?'Καλή μέρα για ψάρεμα':'Αλλαγή πίεσης';
+  const title=goods.length&&press.length?t('Ενημέρωση ψαρέματος','Fishing update'):goods.length>1?t('Καλές μέρες για ψάρεμα','Good days for fishing'):goods.length?t('Καλή μέρα για ψάρεμα','Good day for fishing'):t('Αλλαγή πίεσης','Pressure change');
   return {items,notified,title,body:lines.concat(pl).join('\n')};
 }
 g.PF={sunMoon,hourScore,getForecast,findIdeal,message,check,goodDays,checkPlaces,dayLabel,bft,pressureEvent};

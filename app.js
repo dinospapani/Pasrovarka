@@ -364,7 +364,7 @@ async function resizeImage(file){
   cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
   return new Promise((res,rej)=>cv.toBlob(b=>b?res(b):rej(new Error('blob')),'image/jpeg',0.78));
 }
-const toast=(m)=>{const e=$('toast');e.textContent=m;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,3500);};
+const toast=(m)=>{const e=$('toast');m=String(m==null?'':m); m=m.charAt(0).toUpperCase()+m.slice(1); e.textContent=m;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,3500);};
 window.PsaroCore.toast=toast; window.PsaroCore.Photos=Photos;
 
 /* ---------- Map (Leaflet, world) ---------- */
@@ -425,7 +425,7 @@ function initMap(){
   const applyDepth=()=>{ [depthC,depthK].forEach(l=>{ if(map.hasLayer(l)) map.removeLayer(l); }); if(dm===1) depthC.addTo(map); if(dm===2&&!(window.PsaroDense&&window.PsaroDense.on())) depthK.addTo(map); if(map.hasLayer(seaL)) seaL.bringToFront(); $('bDepthMap').setAttribute('aria-pressed',String(dm!==0)); $('bDepthMap').title=['Βάθη θάλασσας: κλειστά','Βάθη θάλασσας: χρώματα','Βάθη θάλασσας: γραμμές βάθους'][dm]; try{ window.dispatchEvent(new CustomEvent('psaro-depthmode',{detail:{dm:dm}})); }catch(e){} };
   window.PsaroDepthRefresh=applyDepth; window.PsaroDepthMode=()=>dm;
   applyDepth();
-  const DSTEP=['std','5','10','20'], DNAME=['Βάθη: κλειστά','Βάθη: χρώματα','Βάθη: γραμμές στάνταρ','Βάθη: γραμμές κάθε 5 m','Βάθη: γραμμές κάθε 10 m','Βάθη: γραμμές κάθε 20 m'];
+  const DSTEP=['std','5','10','20'], DNAME=(window.LANG==='en')?['Depth: off','Depth: colour shading','Depth: contour lines (standard)','Depth: contour lines every 5 m','Depth: contour lines every 10 m','Depth: contour lines every 20 m']:['Βάθη: κλειστά','Βάθη: χρώματα','Βάθη: γραμμές (στάνταρ)','Βάθη: γραμμές κάθε 5 m','Βάθη: γραμμές κάθε 10 m','Βάθη: γραμμές κάθε 20 m'];
   $('bDepthMap').addEventListener('click',()=>{
     const D=window.PsaroDense, cur=dm===0?0:dm===1?1:2+Math.max(0,DSTEP.indexOf(D?D.mode():'std')), s=(cur+1)%6;
     dm=s===0?0:s===1?1:2; lsSet('psaro-depth',dm);
@@ -501,7 +501,7 @@ function initMap(){
       wxBox.replaceChildren(h('div',{class:'pwxg'},
         cell(en2?'Wind':'Άνεμος',c.wind!=null?PU.wind(c.wind)+(wdir(c)?' '+wdir(c):''):dash),cell(en2?'Waves':'Κύμα',c.wave!=null?PU.wave(c.wave):dash),
         cell(en2?'Air':'Αέρας',c.temp!=null?PU.temp(c.temp):dash),cell(en2?'Sea':'Θάλασσα',c.sst!=null?PU.temp(c.sst):dash),
-        cell(en2?'Pressure':'Πίεση',c.press!=null?PU.press(c.press):dash),cell(en2?'Clouds':'Σύννεφα',c.cloud?({clear:en2?'clear':'καθαρός',part:en2?'partly':'μερικά',over:en2?'overcast':'συννεφιά'})[c.cloud]:dash)));
+        cell(en2?'Pressure':'Πίεση',c.press!=null?PU.press(c.press):dash),cell(en2?'Clouds':'Σύννεφα',c.cloud?({clear:en2?'Clear':'Καθαρός',part:en2?'Partly cloudy':'Μερικά',over:en2?'Overcast':'Συννεφιά'})[c.cloud]:dash)));
       pop.update(); setTimeout(fit,60);
     }).catch(()=>{ if(tapPop===pop) wxBox.textContent=en2?'Weather did not load':'Ο καιρός δεν φορτώθηκε'; });
   });

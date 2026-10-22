@@ -140,7 +140,7 @@ function wxWarn(s){
   if(s.active){
     var w=c.wind, v=c.wave;
     if((w!=null&&w>=27)||(v!=null&&v>=2.5)) msg=T('Επικίνδυνες συνθήκες (','Dangerous conditions (')+(w!=null?window.PsaroUnits.wind(w)+T(' άνεμος',' wind'):'')+(v!=null?(w!=null?', ':'')+window.PsaroUnits.wave(v)+T(' κύμα',' waves'):'')+T('). Σκέψου να γυρίσεις.','). Consider heading back.');
-    else if((w!=null&&w>=20)||(v!=null&&v>=1.5)) msg='Προσοχή: δυναμώνει ο καιρός ('+(w!=null?window.PsaroUnits.wind(w)+' άνεμος':'')+(v!=null?(w!=null?', ':'')+window.PsaroUnits.wave(v)+' κύμα':'')+').';
+    else if((w!=null&&w>=20)||(v!=null&&v>=1.5)) msg=T('Προσοχή: δυναμώνει ο καιρός (','Caution: weather is getting rougher (')+(w!=null?window.PsaroUnits.wind(w)+T(' άνεμος',' wind'):'')+(v!=null?(w!=null?', ':'')+window.PsaroUnits.wave(v)+T(' κύμα',' waves'):'')+').';
   }
   el.textContent=msg; el.hidden=!msg;
 }

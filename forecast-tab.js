@@ -168,7 +168,7 @@ function renderFc(p,f,note,t){
 /* ---------- ειδοποιήσεις ---------- */
 function cfgPlaces(){ return allPlaces().map(function(p){ return {id:p.id,name:p.name,lat:+p.lat.toFixed(3),lon:+p.lon.toFixed(3),watch:p.watch!==false}; }); }
 async function writeCfg(){
-  var cfg={on:nt.on,threshold:nt.threshold,pressure:nt.pressure!==false,notified:nt.notified,server:!!nt.server,places:cfgPlaces()};
+  var cfg={lang:window.LANG||'el',on:nt.on,threshold:nt.threshold,pressure:nt.pressure!==false,notified:nt.notified,server:!!nt.server,places:cfgPlaces()};
   try{ var c=await caches.open('psaro-cfg'); await c.put(new URL('__cfg',location.href).href,new Response(JSON.stringify(cfg))); }catch(e){}
 }
 var b64u=function(s){ var p='='.repeat((4-s.length%4)%4), r=atob((s+p).replace(/-/g,'+').replace(/_/g,'/')); return Uint8Array.from(r,function(c){ return c.charCodeAt(0); }); };
@@ -216,7 +216,7 @@ async function showNote(title,body){
 async function localCheck(){
   if(!nt.on||nt.server||!('Notification' in window)||Notification.permission!=='granted') return;
   try{
-    var r=await PF.checkPlaces({places:cfgPlaces(),threshold:nt.threshold,pressure:nt.pressure!==false,notified:nt.notified});
+    var r=await PF.checkPlaces({lang:window.LANG||'el',places:cfgPlaces(),threshold:nt.threshold,pressure:nt.pressure!==false,notified:nt.notified});
     nt.notified=r.notified; save(); await writeCfg();
     if(r.items.length) showNote(r.title,r.body);
   }catch(e){}
