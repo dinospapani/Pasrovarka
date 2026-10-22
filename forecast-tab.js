@@ -36,6 +36,18 @@ function addPlace(name,lat,lon){
   sel=id; save(); renderPlaces(); load(); syncNotify();
 }
 window.PsaroPlaces={remove:function(id){ var was=sel===id; places=places.filter(function(p){ return p.id!==id; }); if(was) sel='gps'; save(); renderPlaces(); if(was&&!document.getElementById('tab-fc').hidden) load(); syncNotify(); },list:function(){ return places.slice(); },add:function(name,lat,lon){ var id=pid(lat,lon), ex=places.filter(function(p){ return p.id===id; })[0]; if(!ex){ places.unshift({id:id,name:name,lat:+lat.toFixed(4),lon:+lon.toFixed(4),watch:true}); places=places.slice(0,10); save(); renderPlaces(); ex=places[0]; } return ex; }};
+function lpress(b,fn,tap){ /* παρατεταμένο πάτημα = διαγραφή, κανονικό = επιλογή */
+  var tm=null, fired=false; function cancel(){ if(tm){ clearTimeout(tm); tm=null; } }
+  b.addEventListener('pointerdown',function(){ fired=false; cancel(); tm=setTimeout(function(){ tm=null; fired=true; try{ if(navigator.vibrate) navigator.vibrate(30); }catch(e){} fn(); },650); });
+  ['pointerup','pointerleave','pointercancel'].forEach(function(ev){ b.addEventListener(ev,cancel); });
+  b.addEventListener('contextmenu',function(e){ e.preventDefault(); });
+  b.addEventListener('click',function(e){ if(fired){ fired=false; e.preventDefault(); return; } tap(); });
+}
+async function delPlace(p){
+  if(!p||p.gps) return;
+  if(!(await window.PsaroAsk((EN?'Delete ':'Διαγραφή ')+'«'+p.name+'»;',{title:EN?'Delete location':'Διαγραφή τοποθεσίας',ok:EN?'Delete':'Διαγραφή',danger:true}))) return;
+  var was=sel===p.id; places=places.filter(function(x){ return x.id!==p.id; }); if(was) sel='gps'; save(); renderPlaces(); if(was) load(); syncNotify();
+}
 function renderPlaces(){
   var box=$('plChips'); box.replaceChildren();
   var list=allPlaces();
@@ -43,7 +55,8 @@ function renderPlaces(){
   list.forEach(function(p){
     var b=h('button',{type:'button',class:'chip','aria-pressed':String(p.id===sel),text:p.name});
     if(p.gps) b.classList.add('gpschip');
-    b.addEventListener('click',function(){ sel=p.id; save(); renderPlaces(); load(); });
+    if(p.gps) b.addEventListener('click',function(){ sel=p.id; save(); renderPlaces(); load(); });
+    else lpress(b,function(){ delPlace(p); },function(){ sel=p.id; save(); renderPlaces(); load(); });
     box.append(b);
   });
 }
@@ -107,10 +120,16 @@ function renderFc(p,f,note,t){
   var wb=$('fcWatch'), delBtn=$('plDel');
   wb.hidden=!p; delBtn.hidden=!p||!!(p&&p.gps); $('plRen').hidden=delBtn.hidden;
   if(p){ var on=p.watch!==false; wb.setAttribute('aria-pressed',String(on)); wb.textContent=on?'🔔 Ειδοποιήσεις: ναι':'🔕 Ειδοποιήσεις: όχι'; }
-  if(!f){ $('fcBest').textContent=''; if(note) D.append(h('div',{class:'empty',text:note})); $('fcNote').textContent=''; return; }
+  if(!f){ $('fcBest').replaceChildren(); if(note) D.append(h('div',{class:'empty',text:note})); $('fcNote').textContent=''; return; }
   var today=f.nowLocal.slice(0,10), bestD=null;
   f.days.forEach(function(d){ if(d.safe&&(!bestD||d.best>bestD.best)) bestD=d; });
-  $('fcBest').textContent=bestD?('Καλύτερη μέρα: '+dl(bestD.date)+' · '+(EN?'score ':'δείκτης ')+bestD.best+(bestD.win?' · '+pad(bestD.win.s)+':00–'+pad((bestD.win.e+1)%24)+':00':'')):'Καμία ασφαλής μέρα στο εύρος της πρόγνωσης.';
+  (function(){ var bx=$('fcBest'); bx.replaceChildren();
+    if(!bestD){ bx.classList.add('none'); bx.append(h('span',{class:'fcbn',text:'Καμία ασφαλής μέρα στο εύρος της πρόγνωσης.'})); return; }
+    bx.classList.remove('none');
+    var tone=bestD.best>=75?'good':bestD.best>=60?'warn':'bad';
+    bx.append(h('div',{class:'fcbtx'},h('span',{class:'fcbl',text:'Καλύτερη μέρα'}),h('b',{class:'fcbd',text:dl(bestD.date)}),bestD.win?h('span',{class:'fcbw',text:pad(bestD.win.s)+':00–'+pad((bestD.win.e+1)%24)+':00'}):null),
+      h('div',{class:'fcbs '+tone},h('b',{text:String(bestD.best)}),h('span',{text:'Δείκτης'})));
+  })();
   f.days.forEach(function(d){
     var dt=new Date(d.date+'T12:00:00Z'), w=d.wx||{};
     var good=d.safe&&d.best>=75, mid=d.safe&&d.best>=60, cls=!d.safe?'none':good?'good':mid?'mid':'bad';
