@@ -201,34 +201,11 @@ function buildUi(){
     b.addEventListener('click',function(){ setMode(o[0]); });
     d.appendChild(b); btns[o[0]]=b;
   });
-  var qb=document.createElement('button'); qb.type='button'; qb.className='dlq'; qb.textContent=T('Ποιότητα δεδομένων','Data quality');
-  qb.addEventListener('click',function(){ setQ(!qOn); });
-  d.appendChild(qb);
   var st=document.createElement('span'); st.className='dlst'; d.appendChild(st);
-  box.appendChild(d); ctl={box:d,btns:btns,st:st,qb:qb};
-}
-var qOn=(C.lsGet('psaro-dq',0)===1||C.lsGet('psaro-dq',0)===true), qLayer=null;
-var qLeg=null;
-function legend(on){
-  var box=document.querySelector('.mapbox'); if(!box) return;
-  if(!qLeg){ qLeg=document.createElement('div'); qLeg.id='dqLegend'; var i=document.createElement('img'); i.alt=T('Υπόμνημα ποιότητας δεδομένων','Data quality legend'); i.src='https://ows.emodnet-bathymetry.eu/ows?service=WMS&version=1.3.0&request=GetLegendGraphic&format=image%2Fpng&width=20&height=20&layer=emodnet%3Aquality_index&style=quality_index_combined'; qLeg.appendChild(i); box.appendChild(qLeg); }
-  qLeg.hidden=!on;
-}
-function setQ(on,quiet){
-  qOn=!!on; C.lsSet('psaro-dq',qOn?1:0);
-  if(qOn&&!qLayer){
-    qLayer=L.tileLayer.wms('https://ows.emodnet-bathymetry.eu/wms',{layers:'emodnet:quality_index',styles:'quality_index_combined',format:'image/png',transparent:true,opacity:.55,version:'1.3.0',attribution:'EMODnet Bathymetry (quality index)'});
-  }
-  if(qLayer){ if(qOn&&dm===2) qLayer.addTo(map); else if(map.hasLayer(qLayer)) map.removeLayer(qLayer); }
-  if(qOn&&dm===2&&!quiet){ try{ C.toast(T('Ποιότητα δεδομένων: χρώματα = πόσο αξιόπιστο είναι το βάθος σε κάθε περιοχή (EMODnet). Κοντά στην ακτή συνήθως καλύτερη.','Data quality: colours show how reliable depth is per area (EMODnet).')); }catch(x){} }
-  legend(qOn&&dm===2); sync();
+  box.appendChild(d); ctl={box:d,btns:btns,st:st};
 }
 function sync(){
   if(!ctl) return;
-  if(ctl.qb) ctl.qb.setAttribute('aria-pressed',String(qOn));
-  if(qLeg) qLeg.hidden=!(qOn&&dm===2);
-  if(qLayer&&!(qOn&&dm===2)&&map.hasLayer(qLayer)) map.removeLayer(qLayer);
-  else if(qOn&&dm===2){ if(!qLayer) setQ(true,true); else if(!map.hasLayer(qLayer)) qLayer.addTo(map); }
   ctl.box.hidden=(dm!==2);
   Object.keys(ctl.btns).forEach(function(k){ ctl.btns[k].setAttribute('aria-pressed',String(k===mode)); });
 }
