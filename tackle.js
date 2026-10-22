@@ -22,6 +22,24 @@ function el(tag,cls,txt){ var e=document.createElement(tag); if(cls) e.className
 function btn(t,cls,fn){ var b=el('button','btn '+(cls||'')+' sm',t); b.type='button'; b.addEventListener('click',fn); return b; }
 var KINDS=[['jig',T('Μεταλλική ζόκα (jig)','Metal jig')],['slow',T('Slow pitch jig','Slow pitch jig')],['micro',T('Casting / micro jig','Casting / micro jig')],['minnow',T('Minnow','Minnow')],['popper',T('Popper (επιφάνειας)','Popper (surface)')],['pencil',T('Stickbait / pencil','Stickbait / pencil')],['crank',T('Crankbait / diving','Crankbait / diving')],['jerk',T('Jerkbait','Jerkbait')],['soft',T('Σιλικόνη (soft plastic)','Soft plastic')],['head',T('Jig head (κεφαλή)','Jig head')],['spoon',T('Κουτάλι (spoon)','Spoon')],['egi',T('Καλαμαριέρα (egi)','Squid jig (egi)')],['tai',T('Tai rubber / tenya','Tai rubber / tenya')],['inch',T('Inchiku','Inchiku')],['troll',T('Πλάνο / συρτής','Trolling lure')],['spin',T('Spinner / spinnerbait','Spinner / spinnerbait')],['vib',T('Vibration / blade','Vibration / blade')],['sabiki',T('Σαβίκι','Sabiki')],['other',T('Άλλο','Other')]];
 var kname=function(k){ for(var i=0;i<KINDS.length;i++) if(KINDS[i][0]===k) return KINDS[i][1]; return ''; };
+/* Τεχνική καλαμιού → ποια είδη τεχνητού ταιριάζουν */
+var TECH=[['slow',T('Slow pitch jigging','Slow pitch jigging'),['slow']],['jig',T('Jigging (μεταλλικές ζόκες)','Jigging (metal jigs)'),['jig','slow','inch','micro']],['cast',T('Casting / spinning','Casting / spinning'),['jig','micro','minnow','popper','pencil','crank','jerk','soft','head','spoon','spin','vib']],['pop',T('Popping / επιφάνεια','Popping / surface'),['popper','pencil']],['egi',T('Καλαμαριά (eging)','Squid (eging)'),['egi']],['bottom',T('Βυθός / tai rubber','Bottom / tai rubber'),['tai','inch','sabiki','soft','head']],['troll',T('Συρτή (trolling)','Trolling'),['troll','minnow','crank']],['any',T('Γενικό','General'),[]]];
+var tech=function(k){ for(var i=0;i<TECH.length;i++) if(TECH[i][0]===k) return TECH[i]; return null; };
+var num=function(s){ var v=parseFloat(String(s).replace(',','.')); return isFinite(v)?v:null; };
+/* «150-250» ή «2» → [min,max] */
+function rng(s){ var m=String(s||'').replace(/[–—]/g,'-').match(/(\d+(?:[.,]\d+)?)\s*(?:-\s*(\d+(?:[.,]\d+)?))?/); if(!m) return null; var a=num(m[1]), b=m[2]!=null?num(m[2]):a; if(a==null||b==null) return null; return a<=b?[a,b]:[b,a]; }
+function fr(r){ return r?(r[0]===r[1]?''+r[0]:r[0]+'–'+r[1]):''; }
+/* «3-400, 4-300» → [[3,400],[4,300]] (PE – μέτρα) */
+function pairs(s){ return String(s||'').split(/[,;]+/).map(function(x){ var m=x.replace(/[–—]/g,'-').match(/(\d+(?:[.,]\d+)?)\s*[-/@x×]\s*(\d+(?:[.,]\d+)?)/i); return m?[num(m[1]),num(m[2])]:null; }).filter(function(p){ return p&&p[0]>0&&p[1]>0; }); }
+function pairStr(p){ return (p||[]).map(function(x){ return x[0]+'-'+x[1]; }).join(', '); }
+function lpe(it){ var m=((it.spec||'')+' '+(it.name||'')+' '+(it.brand||'')).match(/PE\s*(\d+(?:[.,]\d+)?)/i); return m?num(m[1]):null; }
+/* έλεγχος καλάμι / μουλινέ / νήμα */
+function compat(rod,reel,line){ var w=[], n=0, p=line?lpe(line):null;
+  if(rod&&rod.pe&&p!=null){ if(p<rod.pe[0]-0.001||p>rod.pe[1]+0.001) w.push(T('⚠ Το νήμα PE ','⚠ Line PE ')+p+T(' είναι εκτός ορίων του καλαμιού (PE ',' is outside the rod range (PE ')+fr(rod.pe)+')'); else n++; }
+  if(reel&&reel.cap&&reel.cap.length&&p!=null&&line&&line.qty>0){ var hit=reel.cap.filter(function(c){ return Math.abs(c[0]-p)<0.01; })[0], est=!hit, cm=hit?hit[1]:Math.round(reel.cap[0][1]*reel.cap[0][0]/p);
+    if(line.qty>cm*1.05) w.push(T('⚠ Στο μουλινέ χωράνε ','⚠ The reel holds ')+(est?'~':'')+cm+' m PE '+p+T(', το νήμα έχει ',', the line has ')+line.qty+' m'); else n++; }
+  return {w:w,ok:n}; }
+function rodW(rod,g){ return rod&&rod.lw&&g>0&&(g<rod.lw[0]-0.001||g>rod.lw[1]+0.001); }
 var fType='all', editing=null, query='', urls={};
 function thumbUrl(id){ var k='tk-'+id; if(urls[k]) return Promise.resolve(urls[k]); return C.Photos.get(k).then(function(bl){ if(!bl) return null; urls[k]=URL.createObjectURL(bl); return urls[k]; }).catch(function(){ return null; }); }
 function viewer(u){ var o=el('div','tkview'); var i=el('img'); i.src=u; o.append(i); o.addEventListener('click',function(){ o.remove(); }); document.body.append(o); }
@@ -107,7 +125,11 @@ function render(){
     if(it.photo){ var im=el('img','tkimg'); im.alt=''; im.hidden=true; card.append(im); thumbUrl(it.id).then(function(u){ if(u){ im.src=u; im.hidden=false; im.addEventListener('click',function(){ viewer(u); }); } }); }
     var mem=(it.type==='set')?(it.members||[]).filter(function(i){ return nmap[i]; }):[];
     if(it.type==='set') card.append(el('div','meta',mem.length?mem.map(function(i){ return nmap[i]; }).join(' · '):T('Κανένα στοιχείο','No items')));
+    if(it.type==='set'){ var lk={}; load().forEach(function(x){ lk[x.id]=x; }); var bt={}; mem.forEach(function(i){ var x=lk[i]; if(x&&!bt[x.type]) bt[x.type]=x; }); var cp=compat(bt.rod,bt.reel,bt.line);
+      if(cp.w.length||cp.ok){ var ce=el('div','meta',cp.w.length?cp.w.join('\n'):T('✔ Καλάμι, μουλινέ και νήμα ταιριάζουν','✔ Rod, reel and line match')); ce.style.whiteSpace='pre-line'; card.append(ce); } }
     var m=[]; if(it.brand) m.push(it.brand); if(it.spec) m.push(it.spec); if(it.qty) m.push((it.type==='line'||it.type==='leader')?it.qty+' m':'×'+it.qty);
+    if(it.type==='rod'){ if(it.lw) m.push(fr(it.lw)+' g'); if(it.pe) m.push('PE '+fr(it.pe)); if(it.tech&&tech(it.tech)) m.push(tech(it.tech)[1]); }
+    if(it.type==='reel'){ if(it.hand) m.push(it.hand==='L'?T('Αριστερό χέρι','Left-hand'):T('Δεξί χέρι','Right-hand')); if(it.drag) m.push('drag '+it.drag+' kg'); if(it.cap&&it.cap.length) m.push(it.cap.map(function(c){ return 'PE '+c[0]+' – '+c[1]+' m'; }).join(' · ')); }
     if(it.w&&it.w.length) m.push(it.w.join('/')+' g'); if(it.kind) m.push(kname(it.kind)); if(it.color) m.push(it.color); if(it.sz&&it.sz.length) m.push(it.sz.join('/')); if(it.cord) m.push(it.cord);
     if(m.length) card.append(el('div','meta',m.join(' · ')));
     var ub=(S.get('bites')||[]).filter(function(b){ return it.type==='set'?(mem.length&&b.tk&&mem.every(function(i){ return b.tk.indexOf(i)>=0; })):(b.tk&&b.tk.indexOf(it.id)>=0); }), uf=0, ukg=0; ub.forEach(function(b){ uf+=C.bc(b); ukg+=b.rel?0:(+b.kg||0); });
@@ -143,12 +165,23 @@ function form(it){
       hs=field(T('Διαθέσιμα μεγέθη, χωρισμένα με κόμμα','Available sizes, comma separated'),'text',(it.sz||[]).join(', '),'1/0, 2/0, 4/0'), hc=field(T('Νήμα assist (προαιρετικό)','Assist cord (optional)'),'text',it.cord,T('π.χ. PE 3 · 4 cm','e.g. PE 3 · 4 cm')),
       sn=field(T('Τελευταία αλλαγή','Last changed'),'date',it.since),
       kd=(function(){ var l=el('label','f'); l.append(document.createTextNode(T('Είδος τεχνητού','Lure kind'))); var s=el('select'); var o0=el('option',null,T('— δεν ορίζω —','— not set —')); o0.value=''; s.append(o0); KINDS.forEach(function(k){ var o=el('option',null,k[1]); o.value=k[0]; s.append(o); }); s.value=it.kind||''; l.append(s); return {l:l,i:s}; })(), sv=field(T('Τελευταία συντήρηση','Last serviced'),'date',it.svc);
+  var rw=field(T('Βάρος δολώματος καλαμιού (g)','Rod lure weight (g)'),'text',fr(it.lw),T('π.χ. 150-250','e.g. 150-250')), rp=field(T('PE καλαμιού','Rod PE rating'),'text',fr(it.pe),T('π.χ. 2-3','e.g. 2-3')),
+      rt=(function(){ var l=el('label','f'); l.append(document.createTextNode(T('Τεχνική καλαμιού','Rod technique'))); var s=el('select'); var o0=el('option',null,T('— δεν ορίζω —','— not set —')); o0.value=''; s.append(o0); TECH.forEach(function(k){ var o=el('option',null,k[1]); o.value=k[0]; s.append(o); }); s.value=it.tech||''; l.append(s); return {l:l,i:s}; })(),
+      ha=(function(){ var l=el('label','f'); l.append(document.createTextNode(T('Χέρι μουλινέ','Reel handle'))); var s=el('select'); [['',T('— δεν ορίζω —','— not set —')],['L',T('Αριστερό','Left-hand')],['R',T('Δεξί','Right-hand')]].forEach(function(k){ var o=el('option',null,k[1]); o.value=k[0]; s.append(o); }); s.value=it.hand||''; l.append(s); return {l:l,i:s}; })(),
+      dr=field(T('Drag max (kg)','Max drag (kg)'),'text',it.drag,T('π.χ. 10','e.g. 10')), cp=field(T('Χωρητικότητα νήματος: PE-μέτρα','Line capacity: PE-metres'),'text',pairStr(it.cap),T('π.χ. 3-400, 4-300, 5-220','e.g. 3-400, 4-300, 5-220'));
+  rw.i.inputMode=rp.i.inputMode=dr.i.inputMode='decimal';
   var dl=el('datalist'); dl.id='tkDL'; nm.i.setAttribute('list','tkDL'); nm.l.append(dl);
   var fillDL=function(){ dl.replaceChildren(); (window.TACKLE_LIB||[]).forEach(function(r){ if(r[0]!==ts.value) return; var o=el('option'); o.value=(r[1]+' '+r[2]).trim(); dl.append(o); }); };
-  nm.i.addEventListener('change',function(){ var v=nm.i.value.trim().toLowerCase(); (window.TACKLE_LIB||[]).some(function(r){ if(r[0]===ts.value&&(r[1]+' '+r[2]).trim().toLowerCase()===v){ if(!br.i.value) br.i.value=r[1]; return true; } return false; }); });
+  nm.i.addEventListener('change',function(){ var v=nm.i.value.trim().toLowerCase(); (window.TACKLE_LIB||[]).some(function(r){ if(r[0]===ts.value&&(r[1]+' '+r[2]).trim().toLowerCase()===v){ var d=r[3]||null; if(!br.i.value) br.i.value=(d&&d.model)||r[1];
+      if(d){ var did=false, set=function(inp,val){ if(val!=null&&val!==''&&!inp.value){ inp.value=val; did=true; } };
+        set(sp.i,d.spec);
+        if(r[0]==='rod'){ set(rw.i,fr(d.lw)); set(rp.i,fr(d.pe)); set(rt.i,d.tech); }
+        if(r[0]==='reel'){ set(ha.i,d.hand); set(dr.i,d.drag); set(cp.i,pairStr(d.cap)); }
+        if(did) msg.textContent=T('Συμπληρώθηκαν αυτόματα τα στοιχεία του μοντέλου. Έλεγξέ τα πριν την αποθήκευση.','Model details filled in automatically. Check them before saving.'); }
+      return true; } return false; }); });
   ts.addEventListener('change',function(){ sp.i.placeholder=tinfo(ts.value)[4]; vis(); fillDL(); });
   qt.i.min='0'; qt.i.inputMode='numeric'; wt.i.inputMode='decimal';
-  var vis=function(){ var v=ts.value; qt.l.hidden=v==='set'; qt.l.firstChild.textContent=(v==='line'||v==='leader')?T('Μέτρα (m)','Metres (m)'):T('Ποσότητα','Quantity'); wt.l.hidden=v!=='lure'; co.l.hidden=v!=='lure'; hs.l.hidden=v!=='hook'; kd.l.hidden=v!=='lure'; hc.l.hidden=v!=='hook'; sn.l.hidden=!(v==='line'||v==='leader'); sv.l.hidden=v!=='reel'; };
+  var vis=function(){ var v=ts.value; qt.l.hidden=v==='set'; qt.l.firstChild.textContent=(v==='line'||v==='leader')?T('Μέτρα (m)','Metres (m)'):T('Ποσότητα','Quantity'); wt.l.hidden=v!=='lure'; co.l.hidden=v!=='lure'; hs.l.hidden=v!=='hook'; kd.l.hidden=v!=='lure'; hc.l.hidden=v!=='hook'; sn.l.hidden=!(v==='line'||v==='leader'); sv.l.hidden=v!=='reel'; rw.l.hidden=rp.l.hidden=rt.l.hidden=v!=='rod'; ha.l.hidden=dr.l.hidden=cp.l.hidden=v!=='reel'; };
   vis(); fillDL();
   var memL=el('div','f'), memSel={}, memObj=(it.members||[]).map(function(i){ return load().filter(function(x){ return x.id===i; })[0]; }).filter(Boolean);
   [['rod',T('Καλάμι','Rod')],['reel',T('Μουλινέ','Reel')],['line',T('Νήμα','Main line')],['leader',T('Πετονιά (leader)','Leader')]].forEach(function(ty){
@@ -158,7 +191,7 @@ function form(it){
   var hint=el('p','note',T('Το σετ παίρνει το όνομα του καλαμιού. Πρόσθεσε πρώτα καλάμια, μουλινέδες και νήματα στις αντίστοιχες καρτέλες.','The setup is named after the rod. Add rods, reels and lines in their own tabs first.')); memL.append(hint);
   var setSync=function(){ var s=ts.value==='set'; memL.hidden=!s; br.l.hidden=s; nm.l.hidden=s; sp.l.hidden=s; };
   ts.addEventListener('change',setSync);
-  f.append(nm.l,br.l,sp.l,qt.l,kd.l,wt.l,co.l,hs.l,hc.l,sn.l,sv.l,memL,nt.l); setSync();
+  f.append(nm.l,br.l,sp.l,rw.l,rp.l,rt.l,ha.l,dr.l,cp.l,qt.l,kd.l,wt.l,co.l,hs.l,hc.l,sn.l,sv.l,memL,nt.l); setSync();
   var newBlob=null, rmPhoto=false, pv=el('img','tkimg'), pl=el('div','f'); pv.alt=''; pv.hidden=true;
   pl.append(el('span',null,T('Φωτογραφία','Photo')),pv);
   var prow=el('div','acts'); prow.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-top:4px';
@@ -183,6 +216,8 @@ function form(it){
     if(o.type==='hook'){ var zs=hs.i.value.split(/[,;]+/).map(function(x){ return x.trim(); }).filter(Boolean); zs=zs.filter(function(x,i){ return zs.indexOf(x)===i; }); if(zs.length) o.sz=zs; if(hc.i.value.trim()) o.cord=hc.i.value.trim(); }
     if((o.type==='line'||o.type==='leader')&&sn.i.value) o.since=sn.i.value;
     if(o.type==='reel'&&sv.i.value) o.svc=sv.i.value;
+    if(o.type==='rod'){ var r1=rng(rw.i.value), r2=rng(rp.i.value); if(r1) o.lw=r1; if(r2) o.pe=r2; if(rt.i.value) o.tech=rt.i.value; }
+    if(o.type==='reel'){ if(ha.i.value) o.hand=ha.i.value; var dv=num(dr.i.value); if(dv>0) o.drag=dv; var cc=pairs(cp.i.value); if(cc.length) o.cap=cc; }
     if(it.lost) o.lost=it.lost;
     if(o.type==='set'){ o.members=['rod','reel','line','leader'].map(function(k){ return memSel[k].value; }).filter(Boolean); o.brand=''; o.spec=''; }
     o.id=o.id||('tk'+Date.now().toString(36)+Math.random().toString(36).slice(2,5));
@@ -249,10 +284,16 @@ function suggest(){
   var dEl=document.querySelector('input#bDepth'), depth=dEl&&dEl.value!==''?+dEl.value:null, wv=document.getElementById('dWave'), wd=document.getElementById('dWind'), wave=wv?+wv.value:0, wind=wd?+wd.value:0, cd=window.PsaroCond&&PsaroCond(), cur=cd&&cd.cur!=null?+cd.cur:null, dsrc='';
   if(cd&&cd.wave!=null) wave=+cd.wave; if(cd&&cd.wind!=null) wind=+cd.wind;
   if(!(depth>0)){ var lm=document.getElementById('bLocMode'), bs_=document.getElementById('bSpot'); if(lm&&lm.value==='spot'&&bs_){ var sp0=(S.get('spots')||[]).filter(function(x){ return x.id===bs_.value; })[0]; if(sp0&&+sp0.depth>0){ depth=+sp0.depth; dsrc=T(' (από το σημείο)',' (from spot)'); } } }
-  picked.forEach(function(id){ var it=ex[id]; if(!it||it.type!=='lure'||!it.w||it.w.length<2) return;
-    var line='';
-    if(depth>0){ var f=1+(wave>=0.6?0.25:0)+(wind>=15?0.2:0)+(cur>=1?0.4:(cur>=0.5?0.2:0)), want=depth*1.2*f, best=it.w.reduce(function(a,g){ return Math.abs(g-want)<Math.abs(a-want)?g:a; },it.w[0]);
-      line=T('💡 «','💡 “')+it.name+T('»: δοκίμασε ~','”: try ~')+best+' g ('+T('βάθος ','depth ')+depth+' m'+dsrc+(cur>=0.5?T(', ρεύμα ',', current ')+cur+' kn':'')+(wave>=0.6?T(', κύμα ',', waves ')+wave+' m':'')+(wind>=15?T(', άνεμος ',', wind ')+wind:'')+'). '+T('Ενδεικτικός κανόνας.','Rule of thumb only.'); }
+  var pk=function(t){ return picked.map(function(i){ return ex[i]; }).filter(function(x){ return x&&x.type===t; })[0]; }, rod=pk('rod'), rn=rod?(rod.name||''):'';
+  if(rod||pk('reel')){ var cpk=compat(rod,pk('reel'),pk('line')); cpk.w.forEach(function(s){ msg.push(s); }); }
+  picked.forEach(function(id){ var it=ex[id]; if(!it||it.type!=='lure') return;
+    var tc=rod&&rod.tech&&tech(rod.tech), tk=tc&&tc[2].length&&it.kind&&tc[2].indexOf(it.kind)<0;
+    if(tk) msg.push(T('⚠ «','⚠ “')+it.name+T('» (','” (')+kname(it.kind)+T(') δεν ταιριάζει με το καλάμι «',') does not suit the rod “')+rn+T('» (','” (')+tc[1]+')');
+    var sel=pw[id]; if(sel&&rodW(rod,sel)) msg.push(T('⚠ Τα ','⚠ ')+sel+T(' g είναι εκτός ορίων του καλαμιού «',' g is outside the rod range “')+rn+T('» (','” (')+fr(rod.lw)+' g)');
+    if(!it.w||it.w.length<2) { if(it.w&&it.w.length===1&&rodW(rod,it.w[0])&&!sel) msg.push(T('⚠ Τα ','⚠ ')+it.w[0]+T(' g είναι εκτός ορίων του καλαμιού «',' g is outside the rod range “')+rn+T('» (','” (')+fr(rod.lw)+' g)'); return; }
+    var line='', pool=it.w, inR=rod&&rod.lw?it.w.filter(function(g){ return !rodW(rod,g); }):it.w, lim=false; if(inR.length&&inR.length<it.w.length){ pool=inR; lim=true; } else if(rod&&rod.lw&&!inR.length) msg.push(T('⚠ Κανένα βάρος της «','⚠ None of the weights of “')+it.name+T('» δεν είναι εντός ορίων του καλαμιού (','” fit the rod range (')+fr(rod.lw)+' g)');
+    if(depth>0){ var f=1+(wave>=0.6?0.25:0)+(wind>=15?0.2:0)+(cur>=1?0.4:(cur>=0.5?0.2:0)), want=depth*1.2*f, best=pool.reduce(function(a,g){ return Math.abs(g-want)<Math.abs(a-want)?g:a; },pool[0]);
+      line=T('💡 «','💡 “')+it.name+T('»: δοκίμασε ~','”: try ~')+best+' g ('+T('βάθος ','depth ')+depth+' m'+dsrc+(cur>=0.5?T(', ρεύμα ',', current ')+cur+' kn':'')+(wave>=0.6?T(', κύμα ',', waves ')+wave+' m':'')+(wind>=15?T(', άνεμος ',', wind ')+wind:'')+(lim?T(', εντός ορίων καλαμιού ',', within rod range ')+fr(rod.lw)+' g':'')+'). '+T('Ενδεικτικός κανόνας.','Rule of thumb only.'); }
     else { line=T('💡 «','💡 “')+it.name+T('»: βάλε βάθος ή πάτα «Βάθος από χάρτη» για πρόταση βάρους.','”: enter depth or tap “Depth from chart” for a weight suggestion.'); needD=true; }
     var cnt={}; (S.get('bites')||[]).forEach(function(b){ if(b.tkw&&b.tkw[id]) cnt[b.tkw[id]]=(cnt[b.tkw[id]]||0)+C.bc(b); });
     var ks=Object.keys(cnt).sort(function(a,b){ return cnt[b]-cnt[a]; }); if(ks.length&&cnt[ks[0]]>=3) line+=' '+T('Στα δικά σου: ','Yours: ')+ks[0]+' g ('+cnt[ks[0]]+T(' ψάρια).',' fish).');
