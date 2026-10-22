@@ -460,6 +460,7 @@ function initMap(){
   setTimeout(spotsVis,100); setInterval(spotsVis,2000);
   window.addEventListener('psaro-sess',bitesVis); setTimeout(bitesVis,300); setTimeout(bitesVis,1500); setInterval(bitesVis,3000);
   map.on('moveend',()=>{const p=map.getCenter(); lsSet('psaro-view',{lat:+p.lat.toFixed(4),lon:+p.lng.toFixed(4),z:map.getZoom()});});
+  let tapM=null, tapPop=null;
   map.on('click',e=>{
     const ll=e.latlng.wrap(), lat=+ll.lat.toFixed(5), lon=+ll.lng.toFixed(5);
     if(pick==='fc'){ endPick(); switchTab('fc'); window.dispatchEvent(new CustomEvent('psaro-fcpick',{detail:{lat:lat,lon:lon}})); return; }
@@ -473,14 +474,30 @@ function initMap(){
     const en2=window.LANG==='en', depthEl=h('span',{class:'pdepth',text:(en2?'Depth: …':'Βάθος: …')});
     depthLookup(lat,lon).then(d=>{ if(!depthEl.isConnected&&!depthEl.parentNode) return; depthEl.textContent=d!=null?((en2?'Depth: ≈ ':'Βάθος: ≈ ')+d+' m'):(en2?'Depth: not available':'Βάθος: δεν βρέθηκε'); if(d==null) depthEl.style.opacity='.6'; });
     const nbox=window.PsaroNavInfo?window.PsaroNavInfo(lat,lon,()=>map.closePopup()):null;
+    const wxBox=h('div',{class:'pwx',text:en2?'Weather: …':'Καιρός: …'});
     const box=h('div',{class:'pop pmap'},h('div',{class:'pcoord'},ic('M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z M12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z'),h('div',{},h('span',{class:'mono',text:PsaroCoord.fmt(lat,lon)}),depthEl)),
+      wxBox,
+      act('','M3 12c3-5.5 10-6 14-1.5l4-3.5v10l-4-3.5C13 17.5 6 17.5 3 12z','Ψάρεμα σήμερα',()=>{map.closePopup();switchTab('today');window.dispatchEvent(new CustomEvent('psaro-todaypick',{detail:{lat:lat,lon:lon}}));}),
       zbox,
       nbox,
       act('','M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z M12 7v6 M9 10h6','Νέο σημείο',()=>{map.closePopup();openSpotForm({lat:lat,lon:lon});}),
       act('','M7 18a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17 8.5a4.5 4.5 0 0 1 .5 9.5H7z','Πρόγνωση εδώ',()=>{map.closePopup();switchTab('fc');window.dispatchEvent(new CustomEvent('psaro-fcpick',{detail:{lat:lat,lon:lon}}));}),
       true?act('acc','M3 12c3-5.5 10-6 14-1.5l4-3.5v10l-4-3.5C13 17.5 6 17.5 3 12z','Τσίμπημα εδώ',()=>{map.closePopup();pickedPt={lat:lat,lon:lon};$('bLocMode').value='pick';syncLoc();openSheet();}):null);
-    L.popup({minWidth:176,maxWidth:216}).setLatLng(ll).setContent(box).openOn(map);
+    if(tapM){ map.removeLayer(tapM); tapM=null; }
+    const pop=L.popup({minWidth:200,maxWidth:240}).setLatLng(ll).setContent(box); tapPop=pop; pop.openOn(map);
+    tapM=L.marker(ll,{icon:L.divIcon({className:'',html:'<div class="tapdot"></div>',iconSize:[22,22]}),interactive:false,keyboard:false,zIndexOffset:1500}).addTo(map);
+    fetchConditions(lat,lon).then(c=>{
+      if(tapPop!==pop||!map.hasLayer(tapM)) return;
+      const cell=(l,v)=>h('div',{},h('span',{class:'wl',text:l}),h('b',{text:v}));
+      const dash='–';
+      wxBox.replaceChildren(h('div',{class:'pwxg'},
+        cell(en2?'Wind':'Άνεμος',c.wind!=null?PU.wind(c.wind)+(wdir(c)?' '+wdir(c):''):dash),cell(en2?'Waves':'Κύμα',c.wave!=null?PU.wave(c.wave):dash),
+        cell(en2?'Air':'Αέρας',c.temp!=null?PU.temp(c.temp):dash),cell(en2?'Sea':'Θάλασσα',c.sst!=null?PU.temp(c.sst):dash),
+        cell(en2?'Pressure':'Πίεση',c.press!=null?PU.press(c.press):dash),cell(en2?'Clouds':'Σύννεφα',c.cloud?({clear:en2?'clear':'καθαρός',part:en2?'partly':'μερικά',over:en2?'overcast':'συννεφιά'})[c.cloud]:dash)));
+      pop.update();
+    }).catch(()=>{ if(tapPop===pop) wxBox.textContent=en2?'Weather did not load':'Ο καιρός δεν φορτώθηκε'; });
   });
+  map.on('popupclose',e=>{ if(e.popup===tapPop&&tapM){ map.removeLayer(tapM); tapM=null; } });
   if(cond&&cond.lat!=null) setYou(cond.lat,cond.lon);
   checkZoneHere();
 }
