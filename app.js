@@ -545,6 +545,7 @@ async function toggleRel(b){
   try{ const nb=Object.assign({},b); if(nb.rel) delete nb.rel; else nb.rel=true; await Store.save('bites',nb); if(b.trip) await recountTrip(b.trip); map&&map.closePopup(); toast(nb.rel?(en?'Marked as catch & release.':'Σημειώθηκε ως catch & release.'):(en?'Release mark removed.':'Αφαιρέθηκε η ένδειξη catch & release.')); }
   catch(e){ toast(en?'Not saved. Try again.':'Δεν αποθηκεύτηκε. Δοκίμασε ξανά.'); }
 }
+function tkLine(b){ try{ if(!b||!b.tk||!b.tk.length||!window.PsaroTackle) return ''; const nm=PsaroTackle.names(); const parts=b.tk.map(id=>{ const n=nm[id]; if(!n) return null; const w=b.tkw&&b.tkw[id]; return n+(w?' '+w+' g':''); }).filter(Boolean); return parts.length?'🧰 '+parts.join(' · '):''; }catch(e){ return ''; } }
 function catchPopup(b){
   const nn=bc(b);
   const img=h('img',{class:'pimg',alt:'Φωτογραφία ψαριού'}); img.hidden=true;
@@ -555,6 +556,7 @@ function catchPopup(b){
     size?h('div',{text:size}):null,
     b.rel?h('div',{class:'meta',style:'color:#2e9e5b;font-weight:700',text:(window.LANG==='en'?'↩ Catch & release':'↩ Αφέθηκε')}):null,
     (b.bait||b.tech)?h('div',{class:'meta',text:[b.bait,b.tech].filter(Boolean).join(' · ')}):null,
+    tkLine(b)?h('div',{class:'meta',text:tkLine(b)}):null,
     cd?h('div',{class:'meta',text:cd}):null,b.notes?h('div',{class:'meta',text:b.notes}):null,
     typeof b.lat==='number'?h('div',{class:'meta mono',text:PsaroCoord.fmt(b.lat,b.lon)}):null,
     h('div',{class:'row pbtns',style:'margin-top:6px'},
@@ -1167,6 +1169,7 @@ function renderBites(){
       h('div',{class:'ihead'},h('b',{class:'ititle',text:(b.n?'#'+b.n+' · ':'')+(b.species||'Άγνωστο')+(nn>1?' ×'+nn:'')}),h('span',{class:'when mono',text:when})),
       sz?h('div',{class:'isz',text:sz+(b.rel?(window.LANG==='en'?' · ↩ Catch & release':' · ↩ Αφέθηκε'):'')}):(b.rel?h('div',{class:'isz',text:(window.LANG==='en'?'↩ Catch & release':'↩ Αφέθηκε')}):null),
       h('div',{class:'meta',text:[b.gearName,b.bait,b.tech,b.depth!=null?b.depth+' m βάθος':null,where].filter(Boolean).join(' · ')}),
+      tkLine(b)?h('div',{class:'meta',text:tkLine(b)}):null,
       h('div',{class:'meta',text:cd}),img,
       h('div',{class:'acts'},acts)));
   }
@@ -1575,6 +1578,7 @@ function fitMap(){
 }
 window.fitMap=fitMap;
 function switchTab(t2){
+  if(t2!=='guide') window.__lastTab=t2;
   const navT=(t2==='today')?'fc':t2;
   document.querySelectorAll('nav.tabs button[data-tab]').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.tab===navT)));
   document.querySelectorAll('.tabseg button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.go===t2)));
@@ -1598,6 +1602,8 @@ setTimeout(fitMap,100); setTimeout(fitMap,1500);
 renderToday(); renderSpecies(); renderTech(); renderChecks(); renderLaw(); renderSpots(); renderTrips(); renderWx();
 Store.on('spots',()=>{drawMap();renderSpots();});
 Store.on('trips',renderTrips);
+window.addEventListener('psaro-tackle-ready',()=>{ try{ renderBites(); }catch(e){} });
+Store.on('tackle',()=>{ try{ renderBites(); }catch(e){} });
 Store.on('bites',()=>{renderBites();renderStats();renderTrips();});
 window.addEventListener('psaro-range',e=>{ if(e.detail&&e.detail.key==='log'){ renderBites();renderStats();renderTrips(); } });
 PsaroRange.ui('log',$('logRange'),true);

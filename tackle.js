@@ -400,6 +400,7 @@ function suggest(){
 function names(){ var m={}; load().forEach(function(x){ m[x.id]=tinfo(x.type)[3]+' '+(x.name||'—'); }); return m; }
 function info(){ var m={}; load().forEach(function(x){ m[x.id]={type:x.type,name:tinfo(x.type)[3]+' '+(x.name||'—'),kind:kname(x.kind)}; }); return m; }
 window.PsaroTackle={all:load,last:lastSel,mount:mount,sel:function(){ return union(); },selW:function(){ var o={}; picked.forEach(function(i){ if(pw[i]) o[i]=pw[i]; }); return o; },selH:function(){ var o={}; picked.forEach(function(i){ if(ph[i]) o[i]=ph[i]; }); return o; },selS:function(){ var o={}; union().forEach(function(i){ if(ps[i]) o[i]=ps[i]; }); return o; },names:names,info:info};
+try{ window.dispatchEvent(new Event('psaro-tackle-ready')); }catch(e){}
 window.addEventListener('psaro-pview',function(e){ if(e.detail==='tackle'){ editing=null; render(); } });
 S.on('tackle',function(){ if(!box.hidden&&!editing) render(); });
 render();

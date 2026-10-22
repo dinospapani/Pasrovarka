@@ -28,10 +28,16 @@ function txt(cv,s,px,py,size,weight,color,align,maxW){
 }
 function rr(x,a,b,w,h,r){ x.beginPath(); x.moveTo(a+r,b); x.arcTo(a+w,b,a+w,b+h,r); x.arcTo(a+w,b+h,a,b+h,r); x.arcTo(a,b+h,a,b,r); x.arcTo(a,b,a+w,b,r); x.closePath(); }
 function brand(cv,sub){ txt(cv,'BiteCast',70,110,48,'800','#fff'); if(sub) txt(cv,sub,cv.w-70,108,30,'600','rgba(255,255,255,.78)','right',560); }
-function foot(cv){ txt(cv,'BiteCast · '+URLS,cv.w/2,cv.h-48,26,'500','rgba(255,255,255,.7)','center'); }
+function foot(cv){ /* μόνο το όνομα της εφαρμογής στην κεφαλίδα, χωρίς διεύθυνση */ }
 function stat(cv,a,b,w,h,val,lab){ var x=cv.x; x.fillStyle='rgba(255,255,255,.13)'; rr(x,a,b,w,h,26); x.fill(); txt(cv,val,a+w/2,b+h*0.56,Math.round(h*0.4),'800','#fff','center',w-28); txt(cv,lab,a+w/2,b+h*0.86,Math.round(h*0.19),'600','rgba(255,255,255,.72)','center',w-28); }
 function fish(cv,cx,cy,s,color){ var x=cv.x; x.save(); x.translate(cx-16*s,cy-12*s); x.scale(s,s); x.fillStyle=color; x.fill(new Path2D('M3 12C8 4.5 17 4 22 12c-5 8-14 7.5-19 0z M22 12l7-6.5v13z')); x.restore(); }
 function cover(cv,img,a,b,w,h,r){ var x=cv.x; x.save(); rr(x,a,b,w,h,r); x.clip(); var s=Math.max(w/img.width,h/img.height); x.drawImage(img,a+(w-img.width*s)/2,b+(h-img.height*s)/2,img.width*s,img.height*s); x.restore(); }
+function fit(cv,img,a,b,w,h,r){ var x=cv.x; x.save(); rr(x,a,b,w,h,r); x.clip();
+  var sc=Math.max(w/img.width,h/img.height);
+  try{ x.filter='blur(28px)'; x.drawImage(img,a+(w-img.width*sc)/2-20,b+(h-img.height*sc)/2-20,img.width*sc+40,img.height*sc+40); x.filter='none'; }catch(e){ x.filter='none'; }
+  x.fillStyle='rgba(0,0,0,.28)'; x.fillRect(a,b,w,h);
+  var s2=Math.min(w/img.width,h/img.height); x.drawImage(img,a+(w-img.width*s2)/2,b+(h-img.height*s2)/2,img.width*s2,img.height*s2); x.restore(); }
+function tackleLines(b){ try{ if(!b||!b.tk||!b.tk.length||!window.PsaroTackle) return []; var nm=PsaroTackle.names(), parts=[]; b.tk.forEach(function(id){ var n=nm[id]; if(!n) return; n=n.replace(/^[^\p{L}\p{N}]+/u,''); var w=b.tkw&&b.tkw[id]; parts.push(n+(w?' '+w+' g':'')); }); var lines=[], cur=''; parts.forEach(function(p){ var t=cur?cur+'  ·  '+p:p; if(t.length>46&&cur){ lines.push(cur); cur=p; } else cur=t; }); if(cur) lines.push(cur); return lines.slice(0,2); }catch(e){ return []; } }
 function route(cv,tr,a,b,w,h){
   var x=cv.x; x.fillStyle='rgba(0,0,0,.22)'; rr(x,a,b,w,h,30); x.fill();
   if(!tr||tr.length<2){ fish(cv,a+w/2,b+h/2,9,'rgba(255,255,255,.35)'); return; }
@@ -51,7 +57,7 @@ function photoOf(b){
 function fishCard(b){
   return photoOf(b).then(function(img){
     var cv=mk(1080,1350), x=cv.x; brand(cv,T('Ψάρι της εξόδου','Catch of the day'));
-    if(img) cover(cv,img,70,150,940,640,36); else { x.fillStyle='rgba(0,0,0,.2)'; rr(x,70,150,940,640,36); x.fill(); fish(cv,540,470,17,'rgba(255,255,255,.38)'); }
+    if(img) fit(cv,img,70,150,940,640,36); else { x.fillStyle='rgba(0,0,0,.2)'; rr(x,70,150,940,640,36); x.fill(); fish(cv,540,470,17,'rgba(255,255,255,.38)'); }
     txt(cv,SN(b.species)||T('Ψάρι','Fish'),70,885,84,'800','#fff','left',940);
     var sz=[b.kg?b.kg+' kg':null,b.len?b.len+' cm':null].filter(Boolean).join('  ·  ');
     if(sz) txt(cv,sz,70,965,60,'700','#ffb27a','left',940);
@@ -60,6 +66,7 @@ function fishCard(b){
     var cd=[b.wind!=null&&U?U.wind(b.wind):null,b.wave!=null&&U?U.wave(b.wave):null,b.press!=null&&U?U.press(b.press):null,b.temp!=null&&U?U.temp(b.temp):null].filter(Boolean);
     if(cd.length) txt(cv,cd.join('  ·  '),70,1085,32,'500','rgba(255,255,255,.7)','left',940);
     var by=[b.bait,b.tech].filter(Boolean).join('  ·  '); if(by) txt(cv,by,70,1140,32,'500','rgba(255,255,255,.7)','left',940);
+    tackleLines(b).forEach(function(l,i){ txt(cv,'🎣 '+l,70,1195+i*48,30,'500','rgba(255,255,255,.7)','left',940); });
     foot(cv); return cv;
   });
 }

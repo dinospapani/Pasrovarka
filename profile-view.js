@@ -54,6 +54,10 @@ setTimeout(function(){
   var y=document.querySelector('#pMain .yrbtn'); if(y) row.append(y);
 },400);
 var gbp=$('gBackProf'); if(gbp) gbp.addEventListener('click',function(){ var pb=$('profBtn'); if(pb) pb.click(); });
+/* Αν ο Οδηγός είναι ανοιχτός πίσω από το Προφίλ, το ✕ γυρνάει στην καρτέλα που ήσουν πριν */
+function leaveGuide(){ var g=$('tab-guide'); if(g&&!g.hidden) C.switchTab(window.__lastTab||'map'); }
+$('pClose').addEventListener('click',leaveGuide);
+$('profile').addEventListener('click',function(e){ if(e.target===this) leaveGuide(); });
 var cl=$('pClose'); cl.parentNode.insertBefore(gear,cl); gear.style.marginLeft='auto'; cl.style.marginLeft='0';
 /* επαγγελματικά εικονίδια: γρανάζι και ✕ σε στρογγυλά κουμπιά */
 gear.className='pibtn'; gear.textContent=''; gear.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
