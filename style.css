@@ -1373,3 +1373,15 @@ body.ontrip /* Προφίλ: 4 ίσες καρτέλες που χωράνε σ�
 .pwxg .wl{font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:#6b7c86}
 .pwxg b{font-size:13px;color:#10232d}
 .tapdot{width:22px;height:22px;border-radius:50%;background:#e0541f;border:3px solid #fff;box-shadow:0 0 0 2px rgba(224,84,31,.45),0 2px 6px rgba(0,0,0,.4);box-sizing:border-box}
+/* z109: πιο μικρό παράθυρο χάρτη */
+.pmapw .leaflet-popup-content{width:min(236px,calc(100vw - 150px))!important;max-width:none!important;min-width:0;margin:10px 12px}
+.pmapw .pmap .pact{margin-top:4px;padding:6px 10px;gap:8px;font-size:13px;border-radius:10px;line-height:1.15}
+.pmapw .pmap .pact .pi{width:17px;height:17px}
+.pmap .pcoord{margin-bottom:4px}
+.pwx{margin:0 0 4px}
+.pwxg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 6px}
+.pwxg div{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.pwxg .wl{font-size:9px;letter-spacing:.03em;text-transform:uppercase;color:#6b7c86}
+.pwxg b{font-size:12px;color:#10232d;display:block;margin:0;padding:0;white-space:nowrap}
+.tapdot{width:22px;height:22px;border-radius:50%;background:#e0541f;border:3px solid #fff;box-shadow:0 0 0 2px rgba(224,84,31,.45),0 2px 6px rgba(0,0,0,.4);box-sizing:border-box}
+.pmapw .pmap .pcoord{padding-right:22px}

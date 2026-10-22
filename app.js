@@ -425,7 +425,13 @@ function initMap(){
   const applyDepth=()=>{ [depthC,depthK].forEach(l=>{ if(map.hasLayer(l)) map.removeLayer(l); }); if(dm===1) depthC.addTo(map); if(dm===2&&!(window.PsaroDense&&window.PsaroDense.on())) depthK.addTo(map); if(map.hasLayer(seaL)) seaL.bringToFront(); $('bDepthMap').setAttribute('aria-pressed',String(dm!==0)); $('bDepthMap').title=['Βάθη θάλασσας: κλειστά','Βάθη θάλασσας: χρώματα','Βάθη θάλασσας: γραμμές βάθους'][dm]; try{ window.dispatchEvent(new CustomEvent('psaro-depthmode',{detail:{dm:dm}})); }catch(e){} };
   window.PsaroDepthRefresh=applyDepth; window.PsaroDepthMode=()=>dm;
   applyDepth();
-  $('bDepthMap').addEventListener('click',()=>{ dm=(dm+1)%3; lsSet('psaro-depth',dm); applyDepth(); toast(['Βάθη: κλειστά','Βάθη: χρώματα','Βάθη: γραμμές βάθους'][dm]); });
+  const DSTEP=['std','5','10','20'], DNAME=['Βάθη: κλειστά','Βάθη: χρώματα','Βάθη: γραμμές στάνταρ','Βάθη: γραμμές κάθε 5 m','Βάθη: γραμμές κάθε 10 m','Βάθη: γραμμές κάθε 20 m'];
+  $('bDepthMap').addEventListener('click',()=>{
+    const D=window.PsaroDense, cur=dm===0?0:dm===1?1:2+Math.max(0,DSTEP.indexOf(D?D.mode():'std')), s=(cur+1)%6;
+    dm=s===0?0:s===1?1:2; lsSet('psaro-depth',dm);
+    if(s>=2&&D&&D.setMode) D.setMode(DSTEP[s-2]); else applyDepth();
+    toast(DNAME[s]);
+  });
   $('bSea').addEventListener('click',()=>{
     const on=!map.hasLayer(seaL); if(on) seaL.addTo(map); else map.removeLayer(seaL);
     $('bSea').setAttribute('aria-pressed',String(on));
@@ -484,7 +490,9 @@ function initMap(){
       act('','M7 18a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17 8.5a4.5 4.5 0 0 1 .5 9.5H7z','Πρόγνωση εδώ',()=>{map.closePopup();switchTab('fc');window.dispatchEvent(new CustomEvent('psaro-fcpick',{detail:{lat:lat,lon:lon}}));}),
       true?act('acc','M3 12c3-5.5 10-6 14-1.5l4-3.5v10l-4-3.5C13 17.5 6 17.5 3 12z','Τσίμπημα εδώ',()=>{map.closePopup();pickedPt={lat:lat,lon:lon};$('bLocMode').value='pick';syncLoc();openSheet();}):null);
     if(tapM){ map.removeLayer(tapM); tapM=null; }
-    const pop=L.popup({minWidth:200,maxWidth:240}).setLatLng(ll).setContent(box); tapPop=pop; pop.openOn(map);
+    const pop=L.popup({className:'pmapw',minWidth:200,maxWidth:260,maxHeight:Math.max(220,Math.min(440,window.innerHeight-210)),autoPan:false}).setLatLng(ll).setContent(box); tapPop=pop; pop.openOn(map);
+    const fit=()=>{ try{ const el=pop.getElement(); if(!el||!map.hasLayer(pop)) return; const w=el.querySelector('.leaflet-popup-content-wrapper').getBoundingClientRect(), m=map.getContainer().getBoundingClientRect(); let dx=0,dy=0; if(w.right>m.right-84) dx=(m.right-84)-w.right; if(w.left+dx<m.left+8) dx=m.left+8-w.left; if(w.top<m.top+84) dy=m.top+84-w.top; else if(w.bottom+24>m.bottom-112) dy=(m.bottom-112)-(w.bottom+24); if(dx||dy) map.panBy([-dx,-dy],{duration:.3}); }catch(e){} };
+    setTimeout(fit,60);
     tapM=L.marker(ll,{icon:L.divIcon({className:'',html:'<div class="tapdot"></div>',iconSize:[22,22]}),interactive:false,keyboard:false,zIndexOffset:1500}).addTo(map);
     fetchConditions(lat,lon).then(c=>{
       if(tapPop!==pop||!map.hasLayer(tapM)) return;
@@ -494,7 +502,7 @@ function initMap(){
         cell(en2?'Wind':'Άνεμος',c.wind!=null?PU.wind(c.wind)+(wdir(c)?' '+wdir(c):''):dash),cell(en2?'Waves':'Κύμα',c.wave!=null?PU.wave(c.wave):dash),
         cell(en2?'Air':'Αέρας',c.temp!=null?PU.temp(c.temp):dash),cell(en2?'Sea':'Θάλασσα',c.sst!=null?PU.temp(c.sst):dash),
         cell(en2?'Pressure':'Πίεση',c.press!=null?PU.press(c.press):dash),cell(en2?'Clouds':'Σύννεφα',c.cloud?({clear:en2?'clear':'καθαρός',part:en2?'partly':'μερικά',over:en2?'overcast':'συννεφιά'})[c.cloud]:dash)));
-      pop.update();
+      pop.update(); setTimeout(fit,60);
     }).catch(()=>{ if(tapPop===pop) wxBox.textContent=en2?'Weather did not load':'Ο καιρός δεν φορτώθηκε'; });
   });
   map.on('popupclose',e=>{ if(e.popup===tapPop&&tapM){ map.removeLayer(tapM); tapM=null; } });

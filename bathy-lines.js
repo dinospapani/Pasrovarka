@@ -156,7 +156,8 @@ function draw(g,step){
   return nlines;
 }
 function active(){ return dm===2&&mode!=='std'; }
-function status(t){ if(ctl&&ctl.st) ctl.st.textContent=t||''; }
+var lastSt='';
+function status(t){ if(!t){ lastSt=''; return; } if(t===lastSt) return; lastSt=t; if(/Ζουμάρισε|Zoom in|Δεν υπάρχουν βάθη|No depths|Δεν φορτώθηκαν|not loaded/.test(t)){ try{ C.toast(t); }catch(e){} } }
 function refresh(){
   clearTimeout(timer); timer=setTimeout(update,380);
 }
@@ -216,8 +217,7 @@ function setMode(m){
 window.addEventListener('psaro-depthmode',function(e){ dm=e&&e.detail?e.detail.dm:0; sync(); update(); });
 map.on('moveend',function(){ if(active()) refresh(); });
 var bl=document.getElementById('bLayer'); if(bl) bl.addEventListener('click',function(){ setTimeout(function(){ if(active()&&cache.length) update(); },200); });
-buildUi();
-window.PsaroDense={on:active,parse:parseTiff,contour:contour,mode:function(){ return mode; },update:update};
+window.PsaroDense={setMode:setMode,on:active,parse:parseTiff,contour:contour,mode:function(){ return mode; },update:update};
 dm=window.PsaroDepthMode?window.PsaroDepthMode():(+C.lsGet('psaro-depth',0)||0);
 sync();
 if(dm===2&&mode!=='std'&&window.PsaroDepthRefresh) window.PsaroDepthRefresh();
