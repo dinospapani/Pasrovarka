@@ -1001,6 +1001,7 @@ body:not(.ontrip) #bGear:not(.on){display:none!important}
 
 /* v31z26 catch & release */
 .mk-fish.rel{border-color:#2e9e5b;border-style:dashed}
+.mk-fish.mk-miss{width:26px;height:26px;border-color:#d8431c;color:#d8431c;font-weight:800;font-size:15px;margin:2px}
 
 /* v31z28 περίοδος Από–Έως */
 .rngbar{padding:10px 12px!important}

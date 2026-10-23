@@ -506,6 +506,7 @@ function initMap(){
     }).catch(()=>{ if(tapPop===pop) wxBox.textContent=en2?'Weather did not load':'Ο καιρός δεν φορτώθηκε'; });
   });
   map.on('popupclose',e=>{ if(e.popup===tapPop&&tapM){ map.removeLayer(tapM); tapM=null; } });
+  try{ map.getContainer().addEventListener('pointerdown',()=>{ followPause=Date.now()+20000; },{passive:true,capture:true}); }catch(e){}
   if(cond&&cond.lat!=null) setYou(cond.lat,cond.lon);
   checkZoneHere();
 }
@@ -516,9 +517,12 @@ function setYou(lat,lon){
 }
 /* Ζωντανή θέση: η μπλε τελεία ακολουθεί το GPS όσο η εφαρμογή είναι ανοιχτή */
 let youW=null;
+/* Όσο είσαι σε έξοδο, ο χάρτης κρατά τη θέση σου στο κέντρο. Αν τον σύρεις ή τον πατήσεις, η παρακολούθηση σταματά για 20 δευτερόλεπτα και μετά συνεχίζει. */
+let followPause=0;
+function followMe(lat,lon){ try{ if(!map||!document.body.classList.contains('ontrip')||$('tab-map').hidden||Date.now()<followPause) return; map.panTo([lat,lon],{animate:true,duration:.6}); }catch(e){} }
 function youStart(){
   if(youW!=null||!navigator.geolocation) return;
-  try{ youW=navigator.geolocation.watchPosition(p=>{ const c=p.coords; if(c.accuracy&&c.accuracy>150) return; setYou(c.latitude,c.longitude); },()=>{},{enableHighAccuracy:true,maximumAge:2000,timeout:30000}); }catch(e){ youW=null; }
+  try{ youW=navigator.geolocation.watchPosition(p=>{ const c=p.coords; if(c.accuracy&&c.accuracy>150) return; setYou(c.latitude,c.longitude); followMe(c.latitude,c.longitude); },()=>{},{enableHighAccuracy:true,maximumAge:2000,timeout:30000}); }catch(e){ youW=null; }
 }
 function youStop(){ if(youW!=null){ try{ navigator.geolocation.clearWatch(youW); }catch(e){} youW=null; } }
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) youStop(); else youStart(); });
@@ -604,6 +608,15 @@ function drawMap(){
       el.addEventListener('click',e=>{ if(held){ held=false; e.stopPropagation(); e.preventDefault(); } },true);
     });
     m.addTo(bitesG); markerById[b.id]=m;
+  }
+  /* Χαμένα ψάρια (αστοχίες): μικρό ✕ στη θέση που τσίμπησαν */
+  for(const b of (Store.misses?Store.misses():[])){
+    if(typeof b.lat!=='number'||typeof b.lon!=='number') continue;
+    if(reviewSet&&!tripActive()) continue;
+    const en=window.LANG==='en';
+    const mm=L.marker([b.lat,b.lon],{icon:L.divIcon({className:'',html:'<div class="mk-fish mk-miss">✕</div>',iconSize:[26,26]}),title:en?'Lost bite':'Χάθηκε'});
+    mm.bindPopup(()=>h('div',{class:'pop'},h('b',{text:en?'Lost bite ✕':'Χάθηκε ✕'}),h('div',{class:'meta mono',text:(b.date||'')+' '+(b.time||'')}),(b.bait||b.tech)?h('div',{class:'meta',text:[b.bait,b.tech].filter(Boolean).join(' · ')}):null,tkLine(b)?h('div',{class:'meta',text:tkLine(b)}):null,h('div',{class:'meta mono',text:PsaroCoord.fmt(b.lat,b.lon)})),{minWidth:150,maxWidth:230});
+    mm.addTo(bitesG);
   }
   if(pendM){map.removeLayer(pendM);pendM=null;}
   if(pending) pendM=L.circleMarker([pending.lat,pending.lon],{radius:10,color:'#d8431c',weight:3,fillOpacity:.15}).addTo(map);
@@ -1434,6 +1447,11 @@ function latinForName(name){
 function updateLaw(){
   const out=$('bLaw'); const msgs=[];
   const lat=latinForName($('bSpecies').value), len=+$('bLen').value||0, mn=lat&&MIN[lat];
+  { const nt=$('bMinNote'); if(nt){ const en=window.LANG==='en'; let t='', warn=false;
+    if(lat==='Thunnus thynnus'||lat==='Xiphias gladius'){ t=en?'Not allowed to keep (recreational).':'Απαγορεύεται η κράτηση (ερασιτεχνική αλιεία).'; warn=true; }
+    else if(mn){ t=(en?'Minimum legal size: ':'Ελάχιστο επιτρεπόμενο μέγεθος: ')+mn+' cm'; if(len&&len<mn){ t='⚠ '+t+(en?' – under the limit, release it.':' – κάτω από το όριο, ελευθέρωσέ το.'); warn=true; } }
+    else if(lat){ t=en?'No minimum size on file for this species.':'Δεν υπάρχει καταχωρημένο ελάχιστο όριο για αυτό το είδος.'; }
+    nt.textContent=t; nt.hidden=!t; nt.style.color=warn?'#e5533d':''; nt.style.fontWeight=warn?'700':''; } }
   if(mn&&len&&len<mn) msgs.push('⚠ Κάτω από το ελάχιστο μέγεθος ('+mn+' cm). Ελευθέρωσέ το.');
   else if(mn) msgs.push('Ελάχιστο μέγεθος: '+mn+' cm.');
   if(lat==='Thunnus thynnus') msgs.push('⚠ Ο κόκκινος τόνος απαγορεύεται να κρατηθεί. Ελευθέρωσέ τον (δευτερογενής πηγή).');
