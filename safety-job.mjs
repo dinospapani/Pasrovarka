@@ -20,7 +20,7 @@ export async function run({ env, fetch: F = fetch, sendMail, log = console.log, 
     const r = await F(`https://api.telegram.org/bot${TG}/${method}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({})); if (!j.ok) throw new Error('Telegram ' + (j.description || r.status)); return j.result;
   };
-  const stats = { linked: 0, start: 0, alert: 0, clear: 0, ping: 0, silence: 0, lowbat: 0, ok: 0, fc: 0 };
+  const stats = { linked: 0, start: 0, alert: 0, clear: 0, ping: 0, silence: 0, lowbat: 0, ok: 0, fc: 0, pa: 0 };
   const PING_WAIT_MIN = 15, LOWBAT = 10;
   const patch = (id, o) => sb(`safety_trips?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(o) });
   const contactOf = async uid => { const r = await sb(`safety_contacts?user_id=eq.${uid}&select=*`); return r && r[0]; };
@@ -168,6 +168,33 @@ export async function run({ env, fetch: F = fetch, sendMail, log = console.log, 
       } catch (e) { log('Forecast job: ' + e.message); }
     }
   }
+  // 7) Πτώση πίεσης κατά τη διάρκεια έξοδου: push και/ή Telegram στον ίδιο τον ψαρά (ενδεικτικό, από μοντέλο Open-Meteo)
+  try {
+    const PA_DROP = 3.0, PA_COOL = 3 * 3600e3;
+    const act = (await sb('safety_trips?status=eq.active&last_lat=not.is.null&select=*')) || [];
+    if (act.length && !('pa_at' in act[0])) log('Πίεση: λείπει η στήλη pa_at (τρέξε το safety-upgrade.sql).');
+    else for (const t of act) {
+      if (t.pa_at && Date.now() - Date.parse(t.pa_at) < PA_COOL) continue;
+      let drop = null, now_ = null;
+      try {
+        const r = await F(`https://api.open-meteo.com/v1/forecast?latitude=${(+t.last_lat).toFixed(3)}&longitude=${(+t.last_lon).toFixed(3)}&hourly=pressure_msl&past_hours=4&forecast_hours=1&timezone=UTC`);
+        const j = await r.json(), ts = (j.hourly && j.hourly.time) || [], ps = (j.hourly && j.hourly.pressure_msl) || [];
+        let i = -1; for (let k = 0; k < ts.length; k++) if (Date.parse(ts[k] + 'Z') <= Date.now() && typeof ps[k] === 'number') i = k;
+        if (i >= 3 && typeof ps[i - 3] === 'number') { now_ = ps[i]; drop = ps[i] - ps[i - 3]; }
+      } catch (e) { log('Πίεση (Open-Meteo): ' + e.message); continue; }
+      if (drop == null || drop > -PA_DROP) continue;
+      const body = `Η πίεση πέφτει γρήγορα: ${drop.toFixed(1)} hPa σε 3 ώρες (τώρα ${Math.round(now_)} hPa). Συχνά σημαίνει αλλαγή καιρού. Κοίταξε τον ορίζοντα και την πρόγνωση. Ενδεικτικό, από μοντέλο.`;
+      const c = await contactOf(t.user_id).catch(() => null);
+      let sent = 0;
+      if (c && c.self_chat_id != null && TG) { try { await tg('sendMessage', { chat_id: c.self_chat_id, text: '⚠ BiteCast: ' + body }); sent++; } catch (e) { log('Πίεση Telegram: ' + e.message); } }
+      if (webpush) {
+        const subs = await sb(`push_subs?user_id=eq.${t.user_id}&select=*`).catch(() => []);
+        for (const r of subs || []) { try { await webpush.sendNotification(r.sub, JSON.stringify({ title: 'BiteCast: πτώση πίεσης', body }), { TTL: 3600 }); sent++; } catch (e) { if (e.statusCode === 404 || e.statusCode === 410) await sb(`push_subs?id=eq.${encodeURIComponent(r.id)}`, { method: 'DELETE' }).catch(() => {}); } }
+      }
+      await patch(t.id, { pa_at: new Date().toISOString() });
+      if (sent) stats.pa++;
+    }
+  } catch (e) { log('Πίεση: ' + e.message); }
   log('Safety job: ' + JSON.stringify(stats));
   return { ok: true, stats };
 }

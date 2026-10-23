@@ -11,3 +11,5 @@ alter table public.push_subs enable row level security;
 drop policy if exists "own push" on public.push_subs;
 create policy "own push" on public.push_subs for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 alter table public.push_subs add column if not exists pressure boolean not null default true;
+
+alter table public.safety_trips add column if not exists pa_at timestamptz;

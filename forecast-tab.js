@@ -117,6 +117,7 @@ function renderFc(p,f,note,t){
   $('fcName').textContent=p?p.name:'';
   $('fcSub').textContent=p&&f?('Ενημερώθηκε '+new Date(t||Date.now()).toLocaleTimeString(EN?'en-GB':'el-GR',{hour:'2-digit',minute:'2-digit'})+' · '+PsaroCoord.fmt(p.lat,p.lon)):'';
   $('fcNote').textContent=note||'';
+  try{ pressCard(p&&f?p:null); }catch(e){}
   var wb=$('fcWatch'), delBtn=$('plDel');
   wb.hidden=!p; delBtn.hidden=!p||!!(p&&p.gps); $('plRen').hidden=delBtn.hidden;
   if(p){ var on=p.watch!==false; wb.setAttribute('aria-pressed',String(on)); wb.textContent=on?'🔔 Ειδοποιήσεις: ναι':'🔕 Ειδοποιήσεις: όχι'; }
@@ -165,6 +166,44 @@ function renderFc(p,f,note,t){
   $('fcNote').textContent=note||(EN?'Index 0–100 from wind, gusts, waves, pressure, clouds, storms, light and moon. Only hours with wind up to 4 Bft, gusts up to 6 Bft and waves up to 0.9 m count. Local times.':'Δείκτης 0–100 από άνεμο, ριπές, κύμα, πίεση, σύννεφα, καταιγίδες, φως και σελήνη. Μετράνε μόνο ώρες με άνεμο ως 4 Bft, ριπές ως 6 Bft και κύμα ως 0,9 m. Ώρες τοπικές.')
 }
 
+/* ---------- γράφημα πίεσης 24 ωρών (ενδεικτικό, μοντέλο Open-Meteo) ---------- */
+function pressSeries(p){
+  var key='psaro-fcpress', c=lsGet(key,null);
+  if(c&&c.id===p.id&&Date.now()-c.t<30*60000&&c.v) return Promise.resolve(c.v);
+  var url='https://api.open-meteo.com/v1/forecast?latitude='+(+p.lat).toFixed(3)+'&longitude='+(+p.lon).toFixed(3)+'&hourly=pressure_msl&past_hours=24&forecast_hours=25&timezone=UTC';
+  var ac=new AbortController(), tm=setTimeout(function(){ ac.abort(); },10000);
+  return fetch(url,{signal:ac.signal}).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(j){
+    clearTimeout(tm); var ts=(j.hourly&&j.hourly.time)||[], ps=(j.hourly&&j.hourly.pressure_msl)||[], now=-1, out=[];
+    for(var i=0;i<ts.length;i++){ if(typeof ps[i]!=='number') continue; var ms=Date.parse(ts[i]+'Z'); out.push([ms,ps[i]]); if(ms<=Date.now()) now=out.length-1; }
+    var v={pts:out,now:now}; lsSet(key,{id:p.id,t:Date.now(),v:v}); return v;
+  }).catch(function(e){ clearTimeout(tm); if(c&&c.id===p.id&&c.v) return c.v; throw e; });
+}
+function pressCard(p){
+  var box=$('fcPress'); if(!box){ var D=$('fcDays'); if(!D) return; box=h('div',{id:'fcPress',class:'card',style:'margin:10px 0'}); D.parentNode.insertBefore(box,D); }
+  box.replaceChildren(); if(!p) { box.hidden=true; return; } box.hidden=false;
+  box.append(h('h3',{text:T('Πίεση 24 ωρών','Pressure, 24 h')}),h('p',{class:'note',text:T('Φόρτωση…','Loading…')}));
+  pressSeries(p).then(function(v){
+    var pts=v.pts, n=v.now; if(!pts.length||n<3){ throw new Error('nodata'); }
+    var ns='http://www.w3.org/2000/svg', W=320, H=120, L=6, R=6, TP=10, BT=16;
+    var vals=pts.map(function(x){ return x[1]; }), mn=Math.min.apply(null,vals), mx=Math.max.apply(null,vals); if(mx-mn<4){ var m=(mx+mn)/2; mn=m-2; mx=m+2; }
+    var X=function(i){ return L+(W-L-R)*i/(pts.length-1); }, Y=function(pv){ return TP+(H-TP-BT)*(1-(pv-mn)/(mx-mn)); };
+    var svg=document.createElementNS(ns,'svg'); svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.setAttribute('role','img'); svg.setAttribute('aria-label',T('Γράφημα πίεσης','Pressure chart')); svg.style.cssText='width:100%;height:auto;display:block';
+    var mk=function(tag,attrs){ var e=document.createElementNS(ns,tag); Object.keys(attrs).forEach(function(k){ e.setAttribute(k,attrs[k]); }); return e; };
+    var cs=getComputedStyle(document.documentElement), line=(cs.getPropertyValue('--sea')||'#2b7a8c').trim()||'#2b7a8c', mut=(cs.getPropertyValue('--muted')||'#6b7c86').trim()||'#6b7c86', ink=(cs.getPropertyValue('--ink')||'#0c2b3a').trim()||'#0c2b3a';
+    [mn,(mn+mx)/2,mx].forEach(function(g){ svg.append(mk('line',{x1:L,x2:W-R,y1:Y(g),y2:Y(g),stroke:mut,'stroke-opacity':.25,'stroke-width':1})); var t=mk('text',{x:W-R,y:Y(g)-2,'text-anchor':'end','font-size':8,fill:mut}); t.textContent=Math.round(g); svg.append(t); });
+    var d1=pts.slice(0,n+1).map(function(x,i){ return (i?'L':'M')+X(i).toFixed(1)+' '+Y(x[1]).toFixed(1); }).join(' '), d2=pts.slice(n).map(function(x,i){ return (i?'L':'M')+X(n+i).toFixed(1)+' '+Y(x[1]).toFixed(1); }).join(' ');
+    svg.append(mk('path',{d:d1,fill:'none',stroke:line,'stroke-width':2.2,'stroke-linejoin':'round'}),mk('path',{d:d2,fill:'none',stroke:line,'stroke-width':2.2,'stroke-dasharray':'4 3','stroke-linejoin':'round'}));
+    svg.append(mk('line',{x1:X(n),x2:X(n),y1:TP-4,y2:H-BT,stroke:ink,'stroke-width':1,'stroke-dasharray':'2 2'}),mk('circle',{cx:X(n),cy:Y(pts[n][1]),r:3.2,fill:ink}));
+    var lab=function(x,txt,anc){ var t=mk('text',{x:x,y:H-3,'text-anchor':anc,'font-size':8,fill:mut}); t.textContent=txt; svg.append(t); };
+    lab(L,T('−24 ω','−24 h'),'start'); lab(X(n),T('τώρα','now'),'middle'); lab(W-R,T('+24 ω','+24 h'),'end');
+    var dlt=function(a,b){ return pts[b][1]-pts[a][1]; }, fmt=function(d){ return (d>0?'+':d<0?'−':'')+Math.abs(d).toFixed(1)+' hPa'; };
+    var back=dlt(Math.max(0,n-3),n), f3=n+3<pts.length?dlt(n,n+3):null, f6=n+6<pts.length?dlt(n,n+6):null;
+    var verdict=function(d){ return d<=-3.6?T('πέφτει πολύ γρήγορα','falling very fast'):d<=-2?T('πέφτει γρήγορα','falling fast'):d<=-0.8?T('πέφτει','falling'):d>=2?T('ανεβαίνει γρήγορα','rising fast'):d>=0.8?T('ανεβαίνει','rising'):T('σταθερή','steady'); };
+    box.replaceChildren(h('h3',{text:T('Πίεση 24 ωρών','Pressure, 24 h')}),svg,
+      h('div',{class:'meta',style:'margin-top:6px',text:T('Τελευταίες 3 ώρες: ','Last 3 h: ')+fmt(back)+' ('+verdict(back)+')'+(f3!=null?' · '+T('επόμενες 3 ώρες: ','next 3 h: ')+fmt(f3):'')+(f6!=null?' · '+T('επόμενες 6 ώρες: ','next 6 h: ')+fmt(f6):'')}),
+      h('p',{class:'note',text:T('Συνεχής γραμμή = παρελθόν, διακεκομμένη = πρόγνωση. Ενδεικτικό, από μοντέλο και όχι από βαρόμετρο.','Solid = past, dashed = forecast. Indicative, from a model, not a barometer.')}));
+  }).catch(function(){ box.replaceChildren(h('h3',{text:T('Πίεση 24 ωρών','Pressure, 24 h')}),h('p',{class:'note',text:T('Δεν φορτώθηκαν δεδομένα πίεσης.','Pressure data did not load.')})); });
+}
 /* ---------- ειδοποιήσεις ---------- */
 function cfgPlaces(){ return allPlaces().map(function(p){ return {id:p.id,name:p.name,lat:+p.lat.toFixed(3),lon:+p.lon.toFixed(3),watch:p.watch!==false}; }); }
 async function writeCfg(){
