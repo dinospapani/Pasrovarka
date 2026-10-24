@@ -6,43 +6,61 @@
 var C=window.PsaroCore, mb=document.querySelector('.mapbtns'); if(!C||!mb||typeof L==='undefined') return;
 var map=C.map&&C.map(); if(!map) return;
 var EN=window.LANG==='en', T=function(el,en){ return EN?en:el; };
-var KEY='psaro-ports-on', TK='psaro-ports-tiles', ZMIN=10, TILE=0.2, DAYS=30;
+var KEY='psaro-ports-on', TK='psaro-ports-tiles', ZMIN=8, TILE=0.5, DAYS=30;
 var OVP=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass.openstreetmap.fr/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
 var on=C.lsGet(KEY,true)!==false;
+var KM='psaro-ports-mine', mine=C.lsGet(KM,[]); if(!Array.isArray(mine)) mine=[];
 var layer=L.layerGroup(), tiles=C.lsGet(TK,{}), mem={}, shown={}, tm=null, warned=0;
 if(!tiles||typeof tiles!=='object') tiles={};
 var st=document.createElement('style');
 st.textContent='.mk-port{width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #0b5a7a;color:#0b5a7a;display:grid;place-items:center;box-shadow:0 2px 8px rgba(0,0,0,.35)}.mk-port.ramp{border-color:#d9441b;color:#d9441b}.mk-port svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.portpop .pbtns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.portpop .pb{border:0;border-radius:10px;padding:8px 10px;font:inherit;font-size:13px;font-weight:700;background:var(--accent,#d9441b);color:var(--accent-ink,#fff);cursor:pointer;text-decoration:none}.portpop .pb.g{background:var(--line,#dde);color:var(--ink,#123)}.portpop .pk{font-size:12px;opacity:.75;margin-top:2px}';
+st.textContent+='.leaflet-container.zlow .mk-port.ramp{display:none}.leaflet-container.zlow .mk-port{width:24px;height:24px}.leaflet-container.zlow .mk-port svg{width:14px;height:14px}';
 document.head.appendChild(st);
 var ICO={port:'<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.2"/><path d="M12 7.2V21M8 11h8"/><path d="M4 14c0 4 3.6 7 8 7s8-3 8-7"/></svg>',ramp:'<svg viewBox="0 0 24 24"><path d="M3 18c4 0 6-6 9-6s5 3 9 3"/><path d="M5 8h9l3 4"/><path d="M3 21c2-1 3.500-1 5.500 0s3.500 1 5.500 0 3.500-1 5.500 0"/></svg>'};
 var KIND={marina:T('Μαρίνα','Marina'),port:T('Λιμάνι','Harbour'),ramp:T('Ράμπα καθέλκυσης','Boat ramp')};
 function dist(a,b,c,d){ var R=6371,r=Math.PI/180,dl=(c-a)*r,dn=(d-b)*r,x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a*r)*Math.cos(c*r)*Math.sin(dn/2)*Math.sin(dn/2); return 2*R*Math.asin(Math.sqrt(x)); }
-function key(i,j){ return i+'_'+j; }
-function ask(q,i){
-  if(i>=OVP.length) return Promise.reject(new Error('net'));
-  var ctl=window.AbortController?new AbortController():null, t=setTimeout(function(){ if(ctl) ctl.abort(); },9000);
-  return fetch(OVP[i],{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:ctl?ctl.signal:undefined})
-    .then(function(r){ clearTimeout(t); if(!r.ok) throw new Error('http'); return r.json(); }).catch(function(){ clearTimeout(t); return ask(q,i+1); });
-}
-function load(i,j){
-  var k=key(i,j), c=tiles[k]; if(mem[k]) return mem[k];
-  if(c&&Date.now()-c.t<DAYS*86400000) return Promise.resolve(c.list);
-  var s=(i*TILE).toFixed(3), w=(j*TILE).toFixed(3), n=((i+1)*TILE).toFixed(3), e=((j+1)*TILE).toFixed(3), bb='('+s+','+w+','+n+','+e+')';
-  var q='[out:json][timeout:20];(nwr["leisure"="marina"]'+bb+';nwr["harbour"="yes"]'+bb+';nwr["leisure"="slipway"]'+bb+';nwr["seamark:type"~"^(harbour|harbour_basin)$"]'+bb+';);out center tags 200;';
-  mem[k]=ask(q,0).then(function(j2){
-    var out=[], seen={};
-    (j2.elements||[]).forEach(function(x){
-      var la=x.lat!=null?x.lat:(x.center&&x.center.lat), lo=x.lon!=null?x.lon:(x.center&&x.center.lon); if(la==null||lo==null) return;
-      var tg=x.tags||{}, nm=tg['name:el']||tg.name||tg['name:en']||tg['seamark:name']||'';
-      var kind=tg.leisure==='slipway'?'ramp':tg.leisure==='marina'?'marina':'port';
-      var dk=(nm||kind)+'|'+la.toFixed(3)+'|'+lo.toFixed(3); if(seen[dk]) return; seen[dk]=1;
-      out.push({n:nm,la:+la.toFixed(5),lo:+lo.toFixed(5),k:kind});
+function key(i,j,t){ return (t||TILE)+':'+i+'_'+j; }
+/* ρωτά όλους τους servers ταυτόχρονα και κρατά τον πρώτο που απαντά */
+function race(q,ms){
+  return new Promise(function(res,rej){
+    var left=OVP.length, done=false;
+    OVP.forEach(function(u){
+      var ctl=window.AbortController?new AbortController():null, t=setTimeout(function(){ if(ctl) ctl.abort(); },ms||20000);
+      fetch(u,{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:ctl?ctl.signal:undefined})
+        .then(function(r){ clearTimeout(t); if(!r.ok) throw new Error('http'); return r.json(); })
+        .then(function(j){ if(!done&&j&&j.elements){ done=true; res(j); } else if(--left<=0&&!done) rej(new Error('net')); })
+        .catch(function(){ clearTimeout(t); if(--left<=0&&!done) rej(new Error('net')); });
     });
-    tiles[k]={t:Date.now(),list:out};
-    var ks=Object.keys(tiles); if(ks.length>60){ ks.sort(function(a,b){ return tiles[a].t-tiles[b].t; }); ks.slice(0,ks.length-60).forEach(function(x){ delete tiles[x]; }); }
+  });
+}
+var TAGS='["leisure"="marina"]|["harbour"="yes"]|["leisure"="slipway"]|["seamark:type"~"^(harbour|harbour_basin|slipway|small_craft_facility)$"]'.split('|');
+function parse(j2){
+  var out=[], seen={};
+  (j2.elements||[]).forEach(function(x){
+    var la=x.lat!=null?x.lat:(x.center&&x.center.lat), lo=x.lon!=null?x.lon:(x.center&&x.center.lon); if(la==null||lo==null) return;
+    var tg=x.tags||{}, nm=tg['name:el']||tg.name||tg['name:en']||tg['seamark:name']||'';
+    var kind=tg.leisure==='slipway'||tg['seamark:type']==='slipway'?'ramp':tg.leisure==='marina'?'marina':'port';
+    var dk=(nm||kind)+'|'+la.toFixed(3)+'|'+lo.toFixed(3); if(seen[dk]) return; seen[dk]=1;
+    out.push({n:nm,la:+la.toFixed(5),lo:+lo.toFixed(5),k:kind});
+  });
+  return out;
+}
+function loadBox(k,bb,limit,ms){
+  var c=tiles[k]; if(mem[k]) return mem[k];
+  if(c&&Date.now()-c.t<DAYS*86400000) return Promise.resolve(c.list);
+  var q='[out:json][timeout:40];('+TAGS.map(function(t){ return 'nwr'+t+bb+';'; }).join('')+');out center tags '+limit+';';
+  mem[k]=race(q,ms).then(function(j2){
+    var out=parse(j2); tiles[k]={t:Date.now(),list:out};
+    var ks=Object.keys(tiles).filter(function(x){ return x!=='CY'; }); if(ks.length>80){ ks.sort(function(a,b){ return tiles[a].t-tiles[b].t; }); ks.slice(0,ks.length-80).forEach(function(x){ delete tiles[x]; }); }
     C.lsSet(TK,tiles); delete mem[k]; return out;
   },function(err){ delete mem[k]; if(c) return c.list; throw err; });
   return mem[k];
+}
+var CYB={s:34.45,w:32.2,n:35.8,e:34.75};
+function loadCY(){ return loadBox('CY','('+CYB.s+','+CYB.w+','+CYB.n+','+CYB.e+')',2000,30000); }
+function load(i,j,t){
+  var s=(i*t).toFixed(3), w=(j*t).toFixed(3), n=((i+1)*t).toFixed(3), e=((j+1)*t).toFixed(3);
+  return loadBox(key(i,j,t),'('+s+','+w+','+n+','+e+')',800,25000);
 }
 function pop(p){
   var w=document.createElement('div'); w.className='pop portpop';
@@ -53,27 +71,57 @@ function pop(p){
   var a=document.createElement('button'); a.type='button'; a.className='pb'; a.textContent=T('Λιμάνι αναχώρησης','Departure port');
   a.addEventListener('click',function(){ var sm=window.PsaroSmart; if(sm&&sm.setHome){ sm.setHome({lat:p.la,lon:p.lo,name:p.n||KIND[p.k]}); map.closePopup(); C.toast(T('Λιμάνι: ','Port: ')+(p.n||KIND[p.k])); } });
   var d=document.createElement('a'); d.className='pb g'; d.target='_blank'; d.rel='noopener'; d.textContent=T('Οδηγίες','Directions'); d.href='https://www.google.com/maps/dir/?api=1&destination='+p.la+','+p.lo;
-  r.append(a,d); w.appendChild(r); return w;
+  r.append(a,d);
+  if(p.mine){ k.textContent+=' · '+T('δικό σου','yours'); var x=document.createElement('button'); x.type='button'; x.className='pb g'; x.textContent=T('Διαγραφή','Delete');
+    x.addEventListener('click',function(){ mine=mine.filter(function(q){ return !(q.la===p.la&&q.lo===p.lo); }); C.lsSet(KM,mine); var id=p.la+','+p.lo+(p.n||''); if(shown[id]){ layer.removeLayer(shown[id]); delete shown[id]; } map.closePopup(); C.toast(T('Διαγράφηκε.','Deleted.')); }); r.append(x); }
+  w.appendChild(r); return w;
 }
 function add(p){
-  var id=p.la+','+p.lo+(p.n||''); if(shown[id]) return; shown[id]=1;
+  var id=p.la+','+p.lo+(p.n||''); if(shown[id]) return;
   var m=L.marker([p.la,p.lo],{icon:L.divIcon({className:'',html:'<div class="mk-port'+(p.k==='ramp'?' ramp':'')+'">'+(p.k==='ramp'?ICO.ramp:ICO.port)+'</div>',iconSize:[30,30]}),title:p.n||KIND[p.k]});
   if(p.n) m.bindTooltip(p.n,{direction:'right',offset:[14,0],className:'lbl'});
-  m.bindPopup(function(){ return pop(p); }); m.addTo(layer);
+  m.bindPopup(function(){ return pop(p); }); m.addTo(layer); shown[id]=m;
 }
+function note(nIn,bad){
+  var now=Date.now();
+  if(bad&&nIn===0){ if(now-warned>60000){ warned=now; C.toast(T('Δεν φορτώθηκαν λιμάνια. Χρειάζεται σύνδεση.','Ports did not load. Needs a connection.')); } }
+  else if(!bad&&nIn===0){ if(now-warned>60000){ warned=now; C.toast(T('Δεν υπάρχουν καταχωρισμένα λιμάνια ή ράμπες εδώ στο OpenStreetMap.','No ports or ramps are recorded here in OpenStreetMap.')); } }
+  else if(!bad&&!note.said){ note.said=1; C.toast(T('Λιμάνια και ράμπες στην περιοχή: ','Ports and ramps here: ')+nIn); }
+}
+function inCY(b){ var c=b.getCenter(); return c.lat>=CYB.s&&c.lat<=CYB.n&&c.lng>=CYB.w&&c.lng<=CYB.e; }
 function refresh(){
   if(!on||!map.hasLayer(layer)) return;
+  var b=map.getBounds();
+  if(inCY(b)){
+    /* όλη η Κύπρος με ένα αίτημα, αποθηκεύεται στη συσκευή */
+    loadCY().then(function(l){ var n=0; l.forEach(function(p){ add(p); if(b.contains([p.la,p.lo])) n++; }); note(n,false); },function(){ note(0,true); });
+    return;
+  }
   if(map.getZoom()<ZMIN) return;
-  var b=map.getBounds(), i0=Math.floor(b.getSouth()/TILE), i1=Math.floor(b.getNorth()/TILE), j0=Math.floor(b.getWest()/TILE), j1=Math.floor(b.getEast()/TILE);
+  var t=map.getZoom()<10?1:TILE, i0=Math.floor(b.getSouth()/t), i1=Math.floor(b.getNorth()/t), j0=Math.floor(b.getWest()/t), j1=Math.floor(b.getEast()/t);
   if((i1-i0+1)*(j1-j0+1)>12) return;
-  var jobs=[], nIn=0, b2=b; for(var i=i0;i<=i1;i++) for(var j=j0;j<=j1;j++) jobs.push(load(i,j).then(function(l){ l.forEach(function(p){ add(p); if(b2.contains([p.la,p.lo])) nIn++; }); return 'ok'; },function(){ return 'x'; }));
-  Promise.all(jobs).then(function(r){
-    var bad=r.indexOf('x')>=0, now=Date.now();
-    if(bad&&nIn===0){ if(now-warned>60000){ warned=now; C.toast(T('Δεν φορτώθηκαν λιμάνια. Χρειάζεται σύνδεση.','Ports did not load. Needs a connection.')); } }
-    else if(!bad&&nIn===0){ if(now-warned>60000){ warned=now; C.toast(T('Δεν υπάρχουν καταχωρισμένα λιμάνια ή ράμπες εδώ στο OpenStreetMap.','No ports or ramps are recorded here in OpenStreetMap.')); } }
-    else if(!bad&&!refresh.said){ refresh.said=1; C.toast(T('Λιμάνια και ράμπες στην περιοχή: ','Ports and ramps here: ')+nIn); }
-  });
+  var jobs=[], nIn=0; for(var i=i0;i<=i1;i++) for(var j=j0;j<=j1;j++) jobs.push(load(i,j,t).then(function(l){ l.forEach(function(p){ add(p); if(b.contains([p.la,p.lo])) nIn++; }); return 'ok'; },function(){ return 'x'; }));
+  Promise.all(jobs).then(function(r){ note(nIn,r.indexOf('x')>=0); });
 }
+function lowZoom(){ var el=map.getContainer(); el.classList.toggle('zlow',map.getZoom()<11); }
+mine.forEach(function(q){ add({n:q.n,la:q.la,lo:q.lo,k:q.k,mine:1}); });
+function openForm(ll){
+  var w=document.createElement('div'); w.className='pop portpop';
+  var b=document.createElement('b'); b.textContent=T('Νέο σημείο','New point'); w.appendChild(b);
+  var inp=document.createElement('input'); inp.type='text'; inp.maxLength=60; inp.placeholder=T('Όνομα (π.χ. Ράμπα Λατσί)','Name (e.g. Latchi ramp)'); inp.style.cssText='width:100%;box-sizing:border-box;margin-top:8px;padding:9px;border:1px solid var(--line,#ccd);border-radius:10px;font:inherit';
+  w.appendChild(inp);
+  var r=document.createElement('div'); r.className='pbtns';
+  function save(kind){ var q={n:inp.value.trim(),la:+ll.lat.toFixed(5),lo:+ll.lng.toFixed(5),k:kind}; mine.push(q); C.lsSet(KM,mine); add({n:q.n,la:q.la,lo:q.lo,k:q.k,mine:1}); map.closePopup(); C.toast(T('Αποθηκεύτηκε.','Saved.')); }
+  [[T('Ράμπα','Ramp'),'ramp'],[T('Λιμάνι','Port'),'port']].forEach(function(x){ var a=document.createElement('button'); a.type='button'; a.className='pb'; a.textContent=x[0]; a.addEventListener('click',function(){ save(x[1]); }); r.appendChild(a); });
+  var c=document.createElement('button'); c.type='button'; c.className='pb g'; c.textContent=T('Άκυρο','Cancel'); c.addEventListener('click',function(){ map.closePopup(); }); r.appendChild(c);
+  w.appendChild(r); L.popup({minWidth:230}).setLatLng(ll).setContent(w).openOn(map); setTimeout(function(){ try{ inp.focus(); }catch(e){} },100);
+}
+function startAdd(){
+  if(!map.hasLayer(layer)){ on=true; layer.addTo(map); C.lsSet(KEY,true); var bb=document.getElementById('bPorts'); if(bb) bb.setAttribute('aria-pressed','true'); }
+  C.toast(T('Πάτα στον χάρτη στη θέση της ράμπας ή του λιμανιού.','Tap the map where the ramp or port is.'));
+  map.once('click',function(e){ openForm(e.latlng); });
+}
+window.PsaroPorts={startAdd:startAdd,mine:function(){ return mine.map(function(q){ return {name:q.n||(q.k==='ramp'?T('Ράμπα','Ramp'):T('Λιμάνι','Port')),lat:q.la,lon:q.lo}; }); }};
 var btn=document.createElement('button'); btn.type='button'; btn.id='bPorts'; btn.className='mbtn'; btn.setAttribute('aria-pressed',String(on));
 btn.setAttribute('aria-label',T('Λιμάνια και ράμπες','Ports and ramps')); btn.title=T('Λιμάνια, μαρίνες και ράμπες καθέλκυσης','Ports, marinas and boat ramps');
 btn.innerHTML=ICO.port; mb.appendChild(btn);
@@ -82,6 +130,9 @@ btn.addEventListener('click',function(){
   on=!map.hasLayer(layer); if(on){ layer.addTo(map); refresh(); if(map.getZoom()<ZMIN) C.toast(T('Κάνε ζουμ πιο κοντά για να φανούν τα λιμάνια.','Zoom in to see ports.')); } else { map.closePopup(); map.removeLayer(layer); }
   btn.setAttribute('aria-pressed',String(on)); C.lsSet(KEY,on);
 });
-map.on('moveend zoomend',function(){ clearTimeout(tm); tm=setTimeout(refresh,700); });
-setTimeout(refresh,1500);
+map.on('zoomend',lowZoom); lowZoom();
+map.on('moveend zoomend',function(){ clearTimeout(tm); tm=setTimeout(refresh,350); });
+setTimeout(refresh,600);
+/* φόρτωση Κύπρου στο παρασκήνιο από την αρχή, ώστε να είναι έτοιμα όταν τα χρειαστείς */
+setTimeout(function(){ if(!on||!inCY(map.getBounds())) return; if(on&&!(tiles.CY&&Date.now()-tiles.CY.t<DAYS*86400000)){ C.toast(T('Φορτώνω λιμάνια και ράμπες Κύπρου (μία φορά)…','Loading Cyprus ports and ramps (once)…')); } loadCY().then(function(l){ if(on) l.forEach(add); },function(){}); },900);
 })();

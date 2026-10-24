@@ -45,7 +45,7 @@ function groupOf(id){ for(var k in G) if(G[k].indexOf(id)>=0) return k; return '
 
 var sheet=el('div','ndsheet'); sheet.id='ndSheet'; sheet.hidden=true;
 var back=el('div','ndback'), panel=el('div','ndpanel'); panel.setAttribute('role','dialog'); panel.setAttribute('aria-modal','true');
-var hand=el('span','ndhand'), head=el('div','ndhead'), ttl=el('h2',null,''), done=el('button','btn ghost sm',T('Τέλος','Done')); done.type='button';
+var hand=el('span','ndhand'), head=el('div','ndhead'), ttl=el('h2',null,''), done=el('button','btn ghost sm','✕'); done.type='button'; done.setAttribute('aria-label',T('Τέλος','Done'));
 var sub=el('p','note ndsub','');
 head.append(ttl,done); panel.append(hand,head,sub);
 var lists={};
@@ -58,9 +58,9 @@ function open(g){
   sheet.dataset.g=g; ed.hidden=(g==='safety'); sheet.hidden=false; try{ done.focus({preventScroll:true}); }catch(e){}
 }
 function close(){ sheet.hidden=true; if(typeof setEdit==='function') setEdit(false); }
-var ed=el('button','btn ghost sm ndedit',T('Προσαρμογή','Customize')); ed.type='button'; ed.setAttribute('aria-pressed','false');
+var ed=el('button','btn ghost sm ndedit','⚙'); ed.type='button'; ed.setAttribute('aria-pressed','false'); ed.setAttribute('aria-label',T('Προσαρμογή: διάλεξε ποια εργαλεία φαίνονται','Customize: choose which tools show'));
 var editing=false, TKEY='psaro-toolsoff';
-function setEdit(v){ editing=v; sheet.classList.toggle('ndediting',v); ed.setAttribute('aria-pressed',String(v)); ed.textContent=v?T('Έτοιμο','Finish'):T('Προσαρμογή','Customize'); sub.textContent=v?T('Πάτα ένα εργαλείο για να το κρύψεις ή να το εμφανίσεις.',''):SUB[sheet.dataset.g]||''; sub.style.display=v?'block':''; }
+function setEdit(v){ editing=v; sheet.classList.toggle('ndediting',v); ed.setAttribute('aria-pressed',String(v)); ed.textContent=v?'✓':'⚙'; sub.textContent=v?T('Πάτα ένα εργαλείο για να το κρύψεις ή να το εμφανίσεις.',''):SUB[sheet.dataset.g]||''; sub.style.display=v?'block':''; }
 ed.addEventListener('click',function(){ setEdit(!editing); });
 head.insertBefore(ed,done);
 panel.addEventListener('click',function(e){
@@ -85,6 +85,8 @@ if(C.quickMiss) proxy('actions',T('Έχασα ψάρι','Lost a fish'),IC.miss,f
 
 var SHOP='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9l1.5-5h13L20 9"/><path d="M4 9a2.7 2.7 0 005.3 0 2.7 2.7 0 005.4 0A2.7 2.7 0 0020 9"/><path d="M5.5 12v8h13v-8"/></svg>';
 proxy('actions',T('Κοντινά μαγαζιά ψαρικής','Nearby fishing stores'),SHOP,function(){ var b=$('sShops'); if(b) b.click(); },false);
+
+proxy('actions',T('Πρόσθεσε ράμπα ή λιμάνι','Add a ramp or port'),SVG+'<path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11Z"/><path d="M12 7.500v5M9.500 10h5"/></svg>',function(){ if(window.PsaroPorts) PsaroPorts.startAdd(); },false);
 
 var KEEP={bLoc:1,bToolsCfg:1};
 function adopt(b){
@@ -231,7 +233,7 @@ box.insertBefore(bar,mb.nextSibling);
     });
     var logb=nav.querySelector('[data-tab="log"]'); nav.insertBefore(cb,logb||null);
   }
-  setInterval(function(){ var tb=$('tripBtn'), on=document.body.classList.contains('ontrip'); if(on&&tb&&tb.offsetParent){ var br=box.getBoundingClientRect(), r2=tb.getBoundingClientRect(); card.style.setProperty('--ndtop',Math.max(70,Math.round(r2.bottom-br.top+10))+'px'); } else card.style.removeProperty('--ndtop'); },500);
+  setInterval(function(){ var on=document.body.classList.contains('ontrip')&&!card.hidden; document.documentElement.style.setProperty('--ndwx',on?Math.max(0,card.offsetHeight-34)+'px':'0px'); },400);
   setInterval(function(){ box.style.setProperty('--ndch',(card.hidden||document.body.classList.contains('ontrip')?0:card.offsetHeight)+'px'); },400);
   setInterval(function(){ var m=box.querySelector('.mapwx'); if(m){ m.style.removeProperty('left'); m.style.removeProperty('top'); } },500);
 })();

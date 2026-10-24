@@ -300,22 +300,22 @@ function suggest(input,getItems,onPick,remote){
   pl.append(pin); ps.append(pl); sec0.parentNode.insertBefore(ps,sec0);
   var hint=el('div','sfhint'); pl.append(hint);
   var list=[], remoteList=[], nearList=[], fixP=null;
-  function base(){ var a=[]; if(S.home) a.push({name:S.home.name||T('Λιμάνι','Port'),lat:S.home.lat,lon:S.home.lon,sub:T('το λιμάνι σου','your port')}); (C.Store.get('spots')||[]).forEach(function(x){ if(typeof x.lat==='number'&&x.name) a.push({name:x.name,lat:x.lat,lon:x.lon,sub:T('σημείο σου','your spot')}); }); return a; }
+  function base(){ var a=[]; if(S.home) a.push({name:S.home.name||T('Λιμάνι','Port'),lat:S.home.lat,lon:S.home.lon,sub:T('το λιμάνι σου','your port')}); (C.Store.get('spots')||[]).forEach(function(x){ if(typeof x.lat==='number'&&x.name) a.push({name:x.name,lat:x.lat,lon:x.lon,sub:T('σημείο σου','your spot')}); }); ((window.PsaroPorts&&PsaroPorts.mine())||[]).forEach(function(x){ a.push({name:x.name,lat:x.lat,lon:x.lon,sub:T('δικό σου','yours')}); }); return a; }
   function all(){ var seen={}, out=[]; base().concat(nearList,remoteList).forEach(function(x){ var k=norm(x.name)+x.lat.toFixed(3); if(!seen[k]){ seen[k]=1; out.push(x); } }); list=out; return out; }
   function fmt(x){ return x.d!=null?Object.assign({},x,{sub:Math.round(x.d*10)/10+' km'}):x; }
   var sg=suggest(pin,function(){ return all().map(fmt); },null,function(q,cb){ var p=fixP; nomi(q,p?p.lat:null,p?p.lon:null,0.6).then(function(r){ remoteList=r; cb(r.map(fmt)); }).catch(function(e){ cb([],T('Δεν υπάρχει ίντερνετ για αναζήτηση.','No internet for search.')); }); });
   function prefill(){ pin.value=S.home?(S.home.name||T('Λιμάνι','Port')):''; hint.textContent=''; delete pin.dataset.touched; delete pin.dataset.auto; }
   /* αυτόματη συμπλήρωση: το πλησιέστερο ονομασμένο λιμάνι/ράμπα σε 800 μ. από τη θέση σου, αν δεν έχεις γράψει εσύ κάτι */
   function autoFill(){
-    if(!fixP||pin.dataset.touched==='1'||!nearList.length) return;
-    var best=null; nearList.forEach(function(x){ if(typeof x.lat!=='number') return; var d=distKm(fixP.lat,fixP.lon,x.lat,x.lon); if(!best||d<best.d) best={x:x,d:d}; });
+    if(!fixP||pin.dataset.touched==='1') return;
+    var best=null; nearList.concat(((window.PsaroPorts&&PsaroPorts.mine())||[]).map(function(x){ return {name:x.name,lat:x.lat,lon:x.lon}; })).forEach(function(x){ if(typeof x.lat!=='number') return; var d=distKm(fixP.lat,fixP.lon,x.lat,x.lon); if(!best||d<best.d) best={x:x,d:d}; });
     if(best&&best.d<=0.8){ pin.value=best.x.name; pin.dataset.auto='1'; hint.textContent=T('Αυτόματα, ','Auto, ')+Math.round(best.d*1000)+T(' μ. από εσένα',' m from you'); try{ if(document.activeElement===pin) pin.blur(); }catch(e){} }
   }
   pin.addEventListener('input',function(){ pin.dataset.touched='1'; delete pin.dataset.auto; });
   var loaded=0;
   function load(force){
     if(!force&&Date.now()-loaded<120000) return; loaded=Date.now(); hint.textContent=T('Αναζήτηση λιμανιών…','Looking for ports…'); sg.busy(true);
-    fixNow(function(p){ fixP=p; portsNearSafe(p.lat,p.lon,8000).then(function(l){ sg.busy(false); nearList=l.filter(function(x){ return x.named; }); hint.textContent=nearList.length?'':T('Δεν βρέθηκαν λιμάνια κοντά.','No ports found nearby.'); autoFill(); sg.refresh(); if(pin.dataset.auto==='1'&&document.activeElement!==pin){ var bx=pin.parentNode.querySelector('.sgbox'); if(bx) bx.hidden=true; } }).catch(function(e){ sg.busy(false); hint.textContent=T('Δεν φορτώθηκαν λιμάνια (','Ports did not load (')+((e&&e.message)||'net')+T('). Γράψε το όνομα.','). Type the name.'); loaded=0; }); },function(){ hint.textContent=T('Δεν βρέθηκε θέση GPS.','No GPS fix.'); loaded=0; });
+    fixNow(function(p){ fixP=p; portsNearSafe(p.lat,p.lon,8000).then(function(l){ sg.busy(false); nearList=l.filter(function(x){ return x.named; }); hint.textContent=nearList.length?'':T('Δεν βρέθηκαν λιμάνια κοντά.','No ports found nearby.'); autoFill(); sg.refresh(); if(pin.dataset.auto==='1'&&document.activeElement!==pin){ var bx=pin.parentNode.querySelector('.sgbox'); if(bx) bx.hidden=true; } }).catch(function(e){ sg.busy(false); hint.textContent=T('Δεν φορτώθηκαν λιμάνια (','Ports did not load (')+((e&&e.message)||'net')+T('). Γράψε το όνομα.','). Type the name.'); loaded=0; autoFill(); }); },function(){ hint.textContent=T('Δεν βρέθηκε θέση GPS.','No GPS fix.'); loaded=0; });
   }
   pin.addEventListener('focus',load);
   var tb=$('tripBtn'); if(tb) tb.addEventListener('click',function(){ setTimeout(prefill,50); setTimeout(function(){ load(true); },300); });
