@@ -30,23 +30,25 @@ function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 /* ---------- Time and astronomy ---------- */
 const TZ='Asia/Nicosia';
 let viewing=null, viewCond=null, cond=lsGet('psaro-cond',null), refreshing=null; window.PsaroCond=()=>cond;
-const utcOff=()=>cond&&typeof cond.utc==='number'?cond.utc:-new Date().getTimezoneOffset();
+/* Κύπρος: το ωράριο (θερινή/χειμερινή) υπολογίζεται ζωντανά από το Intl, ώστε η αλλαγή ώρας να μην περιμένει νέα λήψη καιρού. Αλλού μένει το offset της τοποθεσίας. */
+const utcOff=()=>{ const u=cond&&typeof cond.utc==='number'?cond.utc:null; if(u==null) return -new Date().getTimezoneOffset(); if(cond.tzn){ const z=tzOffsetMin(new Date(),cond.tzn); if(z!=null) return z; } if(u===120||u===180){ try{ return tzOffsetMin(new Date()); }catch(e){} } return u; };
 const shifted=()=>new Date(Date.now()+utcOff()*60000);
 const nicosiaToday=()=>shifted().toISOString().slice(0,10);
 const nicosiaNowMin=()=>{const d=shifted();return d.getUTCHours()*60+d.getUTCMinutes();};
-function tzOffsetMin(d){
+function tzOffsetMin(d,zone){
   try{
-    const p=new Intl.DateTimeFormat('en-US',{timeZone:TZ,timeZoneName:'shortOffset'}).formatToParts(d).find(x=>x.type==='timeZoneName').value;
+    const p=new Intl.DateTimeFormat('en-US',{timeZone:zone||TZ,timeZoneName:'shortOffset'}).formatToParts(d).find(x=>x.type==='timeZoneName').value;
     const m=/GMT([+-])(\d+)(?::(\d+))?/.exec(p);
     if(m) return (m[1]==='-'?-1:1)*(parseInt(m[2],10)*60+(m[3]?parseInt(m[3],10):0));
+    if(p==='GMT'||p==='UTC') return 0;
   }catch(e){}
-  return 120;
+  return zone?null:120;
 }
 const SYN=29.530588853, REF=Date.UTC(2000,0,6,18,14);
 function sunMoon(dateStr){
   const [y,m,d]=dateStr.split('-').map(Number);
   const noonUtc=Date.UTC(y,m-1,d,12);
-  const tz=utcOff();
+  const tz0=utcOff(), tz=(cond&&cond.tzn&&tzOffsetMin(new Date(noonUtc),cond.tzn)!=null)?tzOffsetMin(new Date(noonUtc),cond.tzn):(tz0===120||tz0===180)?tzOffsetMin(new Date(noonUtc)):tz0; /* ωράριο της συγκεκριμένης μέρας */
   const n=Math.floor((noonUtc-Date.UTC(y,0,0))/86400000);
   const lat=cond&&cond.lat!=null?cond.lat:34.9, lon=cond&&cond.lon!=null?cond.lon:33.2, la=lat*Math.PI/180;
   const g=2*Math.PI/365*(n-1);
@@ -1402,7 +1404,7 @@ async function fetchConditions(lat,lon){
   const mc=m.status==='fulfilled'?(m.value.current||{}):{};
   const uo=numOrNull(w.value.utc_offset_seconds);
   const tide=m.status==='fulfilled'?tideFrom(m.value):null;
-  return {tide:tide,lat:lat,lon:lon,utc:uo==null?null:Math.round(uo/60),temp:numOrNull(c.temperature_2m),press:press==null?null:Math.round(press),ptrend:ptrend,
+  return {tide:tide,lat:lat,lon:lon,utc:uo==null?null:Math.round(uo/60),tzn:(typeof w.value.timezone==='string'&&/^[A-Za-z_]+\/[A-Za-z_\/+-]+$/.test(w.value.timezone))?w.value.timezone:null,temp:numOrNull(c.temperature_2m),press:press==null?null:Math.round(press),ptrend:ptrend,
     wind:ws==null?null:Math.round(ws),windDir:wd==null?null:dirName(wd),windDeg:wd,
     cur:numOrNull(mc.ocean_current_velocity)==null?null:Math.round(mc.ocean_current_velocity*0.539957*100)/100,curDir:numOrNull(mc.ocean_current_direction),waveDir:numOrNull(mc.wave_direction),
     cloud:cc==null?null:cc<20?'clear':cc<70?'part':'over',

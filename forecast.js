@@ -6,6 +6,8 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const pad=n=>String(n).padStart(2,'0');
 const SYN=29.530588853, REF=Date.UTC(2000,0,6,18,14);
 const circDist=(a,b)=>{const d=Math.abs(a-b)%1440;return Math.min(d,1440-d);};
+/* offset (λεπτά) της Κύπρου για μια συγκεκριμένη μέρα, ώστε να μετράει η αλλαγή ώρας μέσα στην πρόγνωση */
+function nicOffAt(date,fallback,zone){ try{ var p=new Intl.DateTimeFormat('en-US',{timeZone:zone||'Asia/Nicosia',timeZoneName:'shortOffset'}).formatToParts(new Date(date+'T12:00:00Z')).find(function(x){ return x.type==='timeZoneName'; }).value, m=/GMT([+-])(\d+)(?::(\d+))?/.exec(p); if(m) return (m[1]==='-'?-1:1)*(parseInt(m[2],10)*60+(m[3]?parseInt(m[3],10):0)); if(p==='GMT'||p==='UTC') return 0; }catch(e){} return fallback; }
 function sunMoon(dateStr,lat,lon,tz){
   const [y,m,d]=dateStr.split('-').map(Number);
   const noonUtc=Date.UTC(y,m-1,d,12);
@@ -72,7 +74,7 @@ async function getForecast(lat,lon,fetchFn,opt){
   const num=a=>a.filter(v=>typeof v==='number'), av=a=>{a=num(a);return a.length?a.reduce((x,y)=>x+y,0)/a.length:null;}, mx=a=>{a=num(a);return a.length?Math.max(...a):null;}, mn=a=>{a=num(a);return a.length?Math.min(...a):null;};
   const days=[];
   for(const date of Object.keys(byDay).sort().slice(0,nd)){
-    const sm=sunMoon(date,lat,lon,tz), rows=byDay[date];
+    const zn=(typeof w.value.timezone==='string')?w.value.timezone:null, tzd=zn?nicOffAt(date,tz,zn):(tz===120||tz===180)?nicOffAt(date,tz):tz, sm=sunMoon(date,lat,lon,tzd), rows=byDay[date];
     const hours=rows.map(h=>({t:h.t,hr:h.hr,p:h.p,wind:h.wind,wave:h.wave,gust:h.gust,code:h.code,ptrend:h.ptrend,tide:h.tide,score:hourScore(sm,h.hr,h),safe:safeHour(h)}));
     const day=h=>{const t=h.hr*60+30;return t>=sm.rise-60&&t<=sm.set+60;};
     const cand=hours.filter(h=>h.safe&&day(h)&&(date>today||h.t>=nowLocal.slice(0,13)+':00'));
