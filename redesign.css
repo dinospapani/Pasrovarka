@@ -20,3 +20,11 @@ body.nd .ndlist .mbtn[aria-pressed=true]{background:var(--accent);color:var(--ac
 body.nd .ndlist .mbtn svg,body.nd .ndrow svg{width:24px;height:24px;flex:none}
 body.nd .ndlist .mbtn::before{display:none}
 body.nd .ndlist .mbtn#bQuick{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+/* κάτω μενού: ενεργή καρτέλα με στρογγυλή «κάψουλα» αντί για γραμμή από πάνω */
+body.nd nav.tabs{border-top:0;box-shadow:0 -1px 0 var(--line),0 -8px 24px rgba(0,0,0,.12)}
+body.nd nav.tabs button{position:relative;font-weight:700}
+body.nd nav.tabs button[aria-selected=true]{box-shadow:none;color:var(--accent)}
+body.nd nav.tabs button[aria-selected=true]::before{content:"";position:absolute;top:5px;left:50%;width:54px;height:30px;margin-left:-27px;border-radius:15px;background:color-mix(in srgb,var(--accent) 16%,transparent);z-index:-1}
+body.nd nav.tabs button[aria-selected=true] svg{stroke-width:2.1}
+body.nd .ndrow:active,body.nd .ndlist .mbtn:active{transform:scale(.985)}

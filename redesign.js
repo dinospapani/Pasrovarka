@@ -72,6 +72,9 @@ function proxy(g,label,icon,fn,first){
 proxy('actions',T('Νέο ψάρι (φόρμα)','New fish (form)'),IC.fish,function(){ var f=$('fab'); if(f) f.click(); },false);
 if(C.quickMiss) proxy('actions',T('Έχασα ψάρι','Lost a fish'),IC.miss,function(){ C.quickMiss(); },false);
 
+var SHOP='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9l1.5-5h13L20 9"/><path d="M4 9a2.7 2.7 0 005.3 0 2.7 2.7 0 005.4 0A2.7 2.7 0 0020 9"/><path d="M5.5 12v8h13v-8"/></svg>';
+proxy('actions',T('Κοντινά μαγαζιά ψαρικής','Nearby fishing stores'),SHOP,function(){ var b=$('sShops'); if(b) b.click(); },false);
+
 var KEEP={bLoc:1,bToolsCfg:1};
 function adopt(b){
   if(!b||!b.classList||!b.classList.contains('mbtn')||KEEP[b.id]) return;
