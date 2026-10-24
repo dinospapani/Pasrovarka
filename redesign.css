@@ -182,3 +182,7 @@ body.ontrip.nd .ndrow.ndnotrip{display:none!important}
 body.nd:not(.ontrip) #tripBtn{display:none!important}
 body.nd.hasdt.hasland .ndbar{bottom:calc(var(--navh,64px) + var(--ndch,0px) + 150px)}
 body.ontrip.nd.hasdt.hasland .ndbar{bottom:calc(var(--navh,64px) + 255px)}
+body.nd .spfilt{display:none!important}
+body.nd .ndspec{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;border-radius:16px;background:color-mix(in srgb,var(--surface) 70%,transparent);border:1px solid var(--line);font-weight:600;font-size:14px}
+body.nd .ndspec select{max-width:55%;height:38px;border-radius:12px;border:1px solid var(--line);padding:0 8px;font:inherit;background:var(--surface);color:var(--ink)}
+body.nd .ndspec[hidden]{display:none}

@@ -52,7 +52,16 @@ var lists={};
 Object.keys(G).forEach(function(g){ var l=el('div','ndlist'); l.dataset.g=g; l.hidden=true; lists[g]=l; panel.append(l); });
 sheet.append(back,panel); document.body.append(sheet);
 
+var spRow=el('label','ndspec'); var spLab=el('span','',T('Είδος ψαριού στον χάρτη','Fish species on the map')); var spSel=el('select',''); spRow.append(spLab,spSel); lists.layers.append(spRow);
+function fillSp(){
+  var sm=window.PsaroSmart&&window.PsaroSmart.state&&window.PsaroSmart.state(); if(!sm) return; var cur=(sm.hot&&sm.hot.sp)||'', n={};
+  (C.Store.get('bites')||[]).forEach(function(b){ if(b.species&&typeof b.lat==='number') n[b.species]=(n[b.species]||0)+1; });
+  spSel.replaceChildren(new Option(T('Όλα τα είδη','All species'),'')); Object.keys(n).sort().forEach(function(k){ spSel.append(new Option(k+' ('+n[k]+')',k)); });
+  if(cur&&!n[cur]) spSel.append(new Option(cur,cur)); spSel.value=cur; spRow.hidden=!Object.keys(n).length;
+}
+spSel.addEventListener('change',function(){ var sm=window.PsaroSmart.state(); sm.hot=sm.hot||{}; sm.hot.sp=spSel.value; C.lsSet('psaro-smart',sm); document.dispatchEvent(new Event('psaro-spfilter')); });
 function open(g){
+  if(g==='layers'){ lists.layers.append(spRow); fillSp(); }
   Object.keys(lists).forEach(function(k){ lists[k].hidden=(k!==g); });
   ttl.textContent=TITLE[g]; sub.textContent=SUB[g]; panel.setAttribute('aria-label',TITLE[g]);
   sheet.dataset.g=g; ed.hidden=(g==='safety'); sheet.hidden=false; try{ done.focus({preventScroll:true}); }catch(e){}
@@ -80,8 +89,6 @@ function proxy(g,label,icon,fn,first,tripHide){
   var b=el('button','ndrow'); if(tripHide) b.classList.add('ndnotrip'); b.type='button'; b.innerHTML=icon+'<span></span>'; b.lastChild.textContent=label; b.addEventListener('click',fn);
   if(first&&lists[g].firstChild) lists[g].insertBefore(b,lists[g].firstChild); else lists[g].append(b);
 }
-proxy('actions',T('Νέο ψάρι (φόρμα)','New fish (form)'),IC.fish,function(){ var f=$('fab'); if(f) f.click(); },false,true);
-if(C.quickMiss) proxy('actions',T('Έχασα ψάρι','Lost a fish'),IC.miss,function(){ C.quickMiss(); },false,true);
 
 var SHOP='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9l1.5-5h13L20 9"/><path d="M4 9a2.7 2.7 0 005.3 0 2.7 2.7 0 005.4 0A2.7 2.7 0 0020 9"/><path d="M5.5 12v8h13v-8"/></svg>';
 proxy('actions',T('Κοντινά μαγαζιά ψαρικής','Nearby fishing stores'),SHOP,function(){ var b=$('sShops'); if(b) b.click(); },false);
