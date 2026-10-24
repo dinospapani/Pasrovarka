@@ -616,7 +616,7 @@ function drawMap(){
   }
   /* Χαμένα ψάρια (αστοχίες): μικρό ✕ στη θέση που τσίμπησαν */
   for(const b of (Store.misses?Store.misses():[])){
-    if(spFilt()) continue;
+    if(spFilt()||lsGet('psaro-showmiss',true)===false) continue;
     if(typeof b.lat!=='number'||typeof b.lon!=='number') continue;
     if(reviewSet&&!tripActive()) continue;
     const en=window.LANG==='en';

@@ -186,3 +186,44 @@ body.nd .spfilt{display:none!important}
 body.nd .ndspec{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;border-radius:16px;background:color-mix(in srgb,var(--surface) 70%,transparent);border:1px solid var(--line);font-weight:600;font-size:14px}
 body.nd .ndspec select{max-width:55%;height:38px;border-radius:12px;border:1px solid var(--line);padding:0 8px;font:inherit;background:var(--surface);color:var(--ink)}
 body.nd .ndspec[hidden]{display:none}
+body.nd .ndtogs{grid-column:1/-1;display:flex;gap:8px}
+body.nd .ndtog{flex:1;min-height:44px;border-radius:14px;border:1px solid var(--line);background:color-mix(in srgb,var(--surface) 70%,transparent);color:var(--muted,var(--ink));font:700 13.5px system-ui;padding:6px 4px}
+body.nd .ndtog[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+/* ---------- Επαγγελματικό ύφος: κάρτες, φόρμες, κουμπιά, καρτέλες (μόνο στη νέα εμφάνιση) ---------- */
+body.nd{--nd-r:18px;--nd-r2:12px;--nd-sh:0 1px 2px rgba(10,40,55,.06),0 8px 22px rgba(10,40,55,.06)}
+body.nd .card{border-radius:var(--nd-r);border-color:color-mix(in srgb,var(--line) 65%,transparent);box-shadow:var(--nd-sh);padding:16px}
+body.nd .card h3{font-size:16px;margin:0 0 10px;letter-spacing:.005em}
+body.nd .card .label,body.nd .smsec{font-size:11.5px;letter-spacing:.09em;font-weight:700;opacity:.7}
+body.nd label.f{font-size:12.5px;font-weight:600;gap:6px;color:var(--muted)}
+body.nd input[type=text],body.nd input[type=number],body.nd input[type=date],body.nd input[type=tel],body.nd input[type=email],body.nd input[type=time],body.nd input[type=password],body.nd select{height:46px;border-radius:var(--nd-r2);padding:0 13px;background:var(--surface);border:1px solid var(--line);font-size:15px;transition:border-color .15s,box-shadow .15s}
+body.nd textarea{border-radius:var(--nd-r2);padding:11px 13px;background:var(--surface);border:1px solid var(--line);font-size:15px;min-height:84px}
+body.nd select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23587481' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:16px;padding-right:38px}
+body.nd input:focus-visible,body.nd select:focus-visible,body.nd textarea:focus-visible{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+body.nd input::placeholder,body.nd textarea::placeholder{color:color-mix(in srgb,var(--muted) 75%,transparent)}
+body.nd .btn{border-radius:var(--nd-r2);min-height:46px;padding:10px 18px;font-weight:700;letter-spacing:.01em;transition:transform .08s,box-shadow .15s}
+body.nd .btn:active{transform:scale(.98)}
+body.nd .btn.sm{min-height:38px;padding:7px 14px;border-radius:10px;font-size:13.5px}
+body.nd .btn.acc{box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 34%,transparent)}
+body.nd .btn.ghost{background:var(--surface);border-color:var(--line)}
+body.nd .btn.danger{box-shadow:none}
+body.nd .seg{border:0;border-radius:15px;padding:4px;gap:4px;background:color-mix(in srgb,var(--ink) 7%,var(--surface))}
+body.nd .seg button{border-radius:11px;background:transparent;padding:10px 6px;font-size:14px;min-height:42px;transition:background .15s,color .15s}
+body.nd .seg button[aria-pressed=true]{background:var(--ink);color:var(--bg);box-shadow:0 2px 8px rgba(0,0,0,.22)}
+body.nd .seg[style*="wrap"]{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+body.nd .seg[style*="wrap"]::-webkit-scrollbar{display:none}
+body.nd .seg[style*="wrap"] button{flex:none;padding:10px 14px;white-space:nowrap}
+body.nd .chip{border-radius:99px;padding:7px 14px;min-height:36px;background:var(--surface);font-weight:600}
+body.nd .chip[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+body.nd .stats b{font-size:32px}
+body.nd .sprow{padding:14px 0;border-top-color:color-mix(in srgb,var(--line) 70%,transparent)}
+body.nd .cdcard,body.nd .spcard{border-radius:24px;box-shadow:0 18px 50px rgba(0,0,0,.35);padding:18px}
+body.nd .cdov{background:rgba(6,20,28,.62);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+body.nd details>summary{min-height:44px;display:flex;align-items:center}
+body.nd .list>.card{padding:14px 16px}
+body.nd details.sp{border-radius:14px;border-color:color-mix(in srgb,var(--line) 65%,transparent);background:var(--surface);box-shadow:0 1px 2px rgba(10,40,55,.05)}
+body.nd details.sp>summary{padding-top:12px;padding-bottom:12px;font-weight:600}
+body.nd .spregs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 0}
+body.nd .spregs::-webkit-scrollbar{display:none}
+body.nd .spregs button{flex:none;border-radius:99px;min-height:38px;padding:8px 16px;font-weight:600}
+body.nd .fieldlang select,body.nd #langSel{background-image:inherit}

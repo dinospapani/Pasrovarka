@@ -52,6 +52,11 @@ var lists={};
 Object.keys(G).forEach(function(g){ var l=el('div','ndlist'); l.dataset.g=g; l.hidden=true; lists[g]=l; panel.append(l); });
 sheet.append(back,panel); document.body.append(sheet);
 
+var tgRow=el('div','ndtogs'); lists.layers.append(tgRow);
+var TG=[['psaro-showbites',T('Ψάρια','Fish'),function(){ if(C.bitesVis) C.bitesVis(); }],['psaro-showmiss',T('Χαμένα ψάρια','Lost fish'),function(){ document.dispatchEvent(new Event('psaro-spfilter')); }],['psaro-showspots',T('Σημεία μου','My spots'),function(){ if(C.spotsVis) C.spotsVis(); }]];
+TG.forEach(function(t){ var b=el('button','ndtog',t[1]); b.type='button'; function sync(){ b.setAttribute('aria-pressed',String(C.lsGet(t[0],true)!==false)); } sync();
+  b.addEventListener('click',function(){ C.lsSet(t[0],C.lsGet(t[0],true)===false); sync(); t[2](); }); b.dataset.k=t[0]; tgRow.append(b); });
+function syncTg(){ Array.prototype.forEach.call(tgRow.children,function(b){ b.setAttribute('aria-pressed',String(C.lsGet(b.dataset.k,true)!==false)); }); }
 var spRow=el('label','ndspec'); var spLab=el('span','',T('Είδος ψαριού στον χάρτη','Fish species on the map')); var spSel=el('select',''); spRow.append(spLab,spSel); lists.layers.append(spRow);
 function fillSp(){
   var sm=window.PsaroSmart&&window.PsaroSmart.state&&window.PsaroSmart.state(); if(!sm) return; var cur=(sm.hot&&sm.hot.sp)||'', n={};
@@ -61,7 +66,7 @@ function fillSp(){
 }
 spSel.addEventListener('change',function(){ var sm=window.PsaroSmart.state(); sm.hot=sm.hot||{}; sm.hot.sp=spSel.value; C.lsSet('psaro-smart',sm); document.dispatchEvent(new Event('psaro-spfilter')); });
 function open(g){
-  if(g==='layers'){ lists.layers.append(spRow); fillSp(); }
+  if(g==='layers'){ lists.layers.append(tgRow); lists.layers.append(spRow); fillSp(); syncTg(); }
   Object.keys(lists).forEach(function(k){ lists[k].hidden=(k!==g); });
   ttl.textContent=TITLE[g]; sub.textContent=SUB[g]; panel.setAttribute('aria-label',TITLE[g]);
   sheet.dataset.g=g; ed.hidden=(g==='safety'); sheet.hidden=false; try{ done.focus({preventScroll:true}); }catch(e){}
