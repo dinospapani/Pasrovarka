@@ -108,15 +108,15 @@ function openForm(ll){
   /* πάνελ στο πάνω μέρος της οθόνης: το πληκτρολόγιο και οι κάρτες δεν το καλύπτουν */
   var old=document.getElementById('portForm'); if(old) old.remove();
   var w=document.createElement('div'); w.id='portForm'; w.setAttribute('role','dialog');
-  w.style.cssText='position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:100000;background:var(--card,#fff);color:var(--ink,#0E2A36);border:1px solid var(--line,#ccd);border-radius:16px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.35);font-family:inherit';
-  var b=document.createElement('b'); b.textContent=T('Νέο σημείο','New point'); b.style.cssText='font-size:16px'; w.appendChild(b);
+  w.style.cssText='position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:100000;background:#fff;color:#0E2A36;border:1px solid #9FB4BC;border-radius:16px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.35);font-family:inherit';
+  var b=document.createElement('b'); b.textContent=T('Νέο σημείο','New point'); b.style.cssText='font-size:16px;color:#0E2A36'; w.appendChild(b);
   var inp=document.createElement('input'); inp.type='text'; inp.maxLength=60; inp.placeholder=T('Όνομα (π.χ. Ράμπα Λατσί)','Name (e.g. Latchi ramp)'); inp.setAttribute('aria-label',T('Όνομα','Name'));
-  inp.style.cssText='width:100%;box-sizing:border-box;margin-top:10px;padding:12px;border:1px solid var(--line,#ccd);border-radius:12px;font:inherit;font-size:16px;background:var(--bg,#fff);color:inherit';
+  inp.style.cssText='width:100%;box-sizing:border-box;margin-top:10px;padding:12px;border:1px solid #9FB4BC;border-radius:12px;font:inherit;font-size:16px;background:#fff;color:#0E2A36';
   w.appendChild(inp);
   var r=document.createElement('div'); r.style.cssText='display:flex;gap:8px;margin-top:10px';
   function done(){ w.remove(); document.body.classList.remove('ndopen'); }
   function save(kind){ var q={n:inp.value.trim(),la:+ll.lat.toFixed(5),lo:+ll.lng.toFixed(5),k:kind}; mine.push(q); C.lsSet(KM,mine); add({n:q.n,la:q.la,lo:q.lo,k:q.k,mine:1}); done(); C.toast(T('Αποθηκεύτηκε.','Saved.')); }
-  function mk(txt,fn,solid){ var a=document.createElement('button'); a.type='button'; a.textContent=txt; a.style.cssText='flex:1;min-height:44px;border-radius:12px;font:inherit;font-weight:700;border:1px solid var(--line,#ccd);'+(solid?'background:var(--accent,#0B6572);color:#fff;border-color:transparent':'background:transparent;color:inherit'); a.addEventListener('click',fn); r.appendChild(a); }
+  function mk(txt,fn,solid){ var a=document.createElement('button'); a.type='button'; a.textContent=txt; a.style.cssText='flex:1;min-height:44px;border-radius:12px;font:inherit;font-weight:700;border:1px solid #9FB4BC;'+(solid?'background:#E8743B;color:#fff;border-color:transparent':'background:#fff;color:#0E2A36'); a.addEventListener('click',fn); r.appendChild(a); }
   mk(T('Ράμπα','Ramp'),function(){ save('ramp'); },true);
   mk(T('Λιμάνι','Port'),function(){ save('port'); },true);
   mk(T('Άκυρο','Cancel'),done,false);
@@ -128,7 +128,7 @@ function openForm(ll){
 function startAdd(){
   if(!map.hasLayer(layer)){ on=true; layer.addTo(map); C.lsSet(KEY,true); var bb=document.getElementById('bPorts'); if(bb) bb.setAttribute('aria-pressed','true'); }
   C.toast(T('Πάτα στον χάρτη στη θέση της ράμπας ή του λιμανιού.','Tap the map where the ramp or port is.'));
-  map.once('click',function(e){ openForm(e.latlng); });
+  map.once('click',function(e){ map.closePopup(); setTimeout(function(){ map.closePopup(); },0); openForm(e.latlng); });
 }
 window.PsaroPorts={startAdd:startAdd,mine:function(){ return mine.map(function(q){ return {name:q.n||(q.k==='ramp'?T('Ράμπα','Ramp'):T('Λιμάνι','Port')),lat:q.la,lon:q.lo}; }); }};
 var btn=document.createElement('button'); btn.type='button'; btn.id='bPorts'; btn.className='mbtn'; btn.setAttribute('aria-pressed',String(on));
