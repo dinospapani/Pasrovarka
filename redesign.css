@@ -182,7 +182,6 @@ body.ontrip.nd .ndrow.ndnotrip{display:none!important}
 body.nd:not(.ontrip) #tripBtn{display:none!important}
 body.nd.hasdt.hasland .ndbar{bottom:calc(var(--navh,64px) + var(--ndch,0px) + 150px)}
 body.ontrip.nd.hasdt.hasland .ndbar{bottom:calc(var(--navh,64px) + 255px)}
-body.nd .spfilt{display:none!important}
 body.nd .ndspec{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;border-radius:16px;background:color-mix(in srgb,var(--surface) 70%,transparent);border:1px solid var(--line);font-weight:600;font-size:14px}
 body.nd .ndspec select{max-width:55%;height:38px;border-radius:12px;border:1px solid var(--line);padding:0 8px;font:inherit;background:var(--surface);color:var(--ink)}
 body.nd .ndspec[hidden]{display:none}
@@ -227,3 +226,106 @@ body.nd .spregs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;paddin
 body.nd .spregs::-webkit-scrollbar{display:none}
 body.nd .spregs button{flex:none;border-radius:99px;min-height:38px;padding:8px 16px;font-weight:600}
 body.nd .fieldlang select,body.nd #langSel{background-image:inherit}
+
+/* Στρώματα: ήρεμη, επαγγελματική εμφάνιση. Ενεργό = απαλή απόχρωση + περίγραμμα, όχι γεμάτο πορτοκαλί */
+body.nd .ndlist[data-g=layers]{gap:8px}
+body.nd .ndsec{grid-column:1/-1;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:6px 4px 0}
+body.nd .ndlist .mbtn{font-size:13.5px;font-weight:600;min-height:64px;box-shadow:none}
+body.nd .ndlist .mbtn[aria-pressed=true]:not(#bQuick){background:color-mix(in srgb,var(--accent) 13%,var(--surface));color:var(--ink);border-color:color-mix(in srgb,var(--accent) 70%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent)}
+body.nd .ndlist .mbtn[aria-pressed=true]:not(#bQuick) svg{color:var(--accent);stroke:var(--accent)}
+body.nd .ndtogs{gap:8px}
+body.nd .ndtog{display:flex;align-items:center;justify-content:center;gap:8px;min-height:42px;border-radius:12px;font-weight:600;font-size:13.5px;color:var(--ink);background:color-mix(in srgb,var(--surface) 75%,transparent);border:1px solid var(--line);box-shadow:none}
+body.nd .ndtog i{width:10px;height:10px;border-radius:50%;border:2px solid var(--muted);flex:none;box-sizing:border-box}
+body.nd .ndtog[aria-pressed=true]{background:color-mix(in srgb,var(--accent) 13%,var(--surface));color:var(--ink);border-color:color-mix(in srgb,var(--accent) 70%,transparent)}
+body.nd .ndtog[aria-pressed=true] i{background:var(--accent);border-color:var(--accent)}
+body.nd .ndspec{padding:6px 8px 6px 14px;font-size:13.5px;font-weight:600}
+body.nd .ndspec select{height:40px;max-width:58%}
+
+/* ---------- Φίλτρα περιόδου: μία λεπτή γραμμή ---------- */
+body.nd .rngbar,body.nd .rngbar.card{display:flex;flex-direction:column;gap:10px;background:transparent;border:0;box-shadow:none;padding:2px 0}
+body.nd .rngbar .rngchips{order:-1;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0;padding:2px 1px}
+body.nd .rngbar .rngchips::-webkit-scrollbar{display:none}
+body.nd .rngbar .rngchips .btn{flex:none;border-radius:99px;min-height:36px;padding:6px 16px;font-size:13.5px;background:var(--surface)}
+body.nd .rngbar .rngrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+body.nd .rngbar .rngf{font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+body.nd .rngbar .rngf input{height:42px;font-size:14px;padding:0 10px;letter-spacing:0;text-transform:none;font-weight:500}
+body.nd .rngbar.on .rngchips .btn{opacity:.9}
+
+/* ---------- Κάρτες λιστών: ήρεμες ενέργειες ---------- */
+body.nd .list>.card{padding:16px;gap:4px}
+body.nd .list>.card .row{gap:8px;margin-top:12px}
+body.nd .list>.card .row .btn,body.nd .card .row>.btn.sm{min-height:36px;padding:6px 13px;font-size:13px;font-weight:600;border-radius:10px;background:var(--surface);color:var(--ink);box-shadow:none}
+body.nd .card .btn.ndel{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,var(--line));background:transparent}
+
+/* ---------- Φόρμα ψαριού ---------- */
+body.nd #biteForm .f input,body.nd #biteForm .f select,body.nd #biteForm .f textarea{background:var(--surface);height:46px;border-radius:12px;border:1px solid var(--line);font-size:15px}
+body.nd #biteForm .f textarea{height:auto;min-height:84px;padding:11px 13px}
+body.nd #biteForm input[type=datetime-local]{font-size:14px;padding:0 8px}
+body.nd #biteForm .f{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;gap:6px}
+body.nd #biteForm .btn.acc[type=submit],body.nd #biteForm #bSave{min-height:52px;border-radius:14px;font-size:16px}
+body.nd #pSettings input[type=text],body.nd #pSettings input[type=password],body.nd #pSettings input[type=email],body.nd #pSettings input[type=tel],body.nd #pSettings select{height:46px;border-radius:12px;background:var(--surface)}
+
+/* Στοιχεία λιστών (ψάρια, έξοδοι, εξοπλισμός) */
+body.nd .item{border-radius:18px;border:1px solid color-mix(in srgb,var(--line) 65%,transparent);background:var(--surface);box-shadow:var(--nd-sh);padding:16px}
+body.nd .item>b,body.nd .item>.title{font-size:17px}
+body.nd .item .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+body.nd .item .acts .btn,body.nd .acts .btn{flex:0 0 auto;width:auto;min-height:34px;padding:6px 14px;font-size:13px;font-weight:600;border-radius:99px;border:0;background:color-mix(in srgb,var(--ink) 7%,var(--surface));color:var(--ink);box-shadow:none}
+body.nd .acts .btn.ndel{color:var(--bad);background:color-mix(in srgb,var(--bad) 9%,var(--surface))}
+body.nd .item .thumb{border-radius:12px}
+body.nd #biteForm input[type=datetime-local]{font-size:13px;padding:0 6px 0 10px;letter-spacing:0}
+
+/* Στατιστικά προφίλ: ενιαία εικονίδια */
+body.nd #profile .pst{border-radius:16px;padding:14px;display:grid;grid-template-columns:44px 1fr;grid-template-rows:auto auto;column-gap:12px;align-items:center;background:var(--surface);box-shadow:var(--nd-sh);border:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+body.nd #profile .pst i{grid-row:1/3;width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--accent) 11%,var(--surface));color:var(--accent);font-style:normal}
+body.nd #profile .pst b{font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums}
+body.nd #profile .pst span{font-size:12px;color:var(--muted);line-height:1.2}
+body.nd #profile .pst.pwide{display:flex;gap:12px;font-weight:600;font-size:14px}
+
+/* ---------- Ημερολόγιο: ιεραρχία ---------- */
+body.nd #tab-log>div:first-child h2{font-size:26px;margin:4px 0 12px}
+body.nd #stats.card{padding:18px 8px;display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+body.nd #stats.card>*{text-align:center;padding:2px 6px;border-left:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+body.nd #stats.card>*:first-child{border-left:0}
+body.nd #stats.card b{font-size:34px;color:var(--ink)}
+body.nd #stats.card .label,body.nd #stats.card small,body.nd #stats.card span{display:block;margin-top:6px;font-size:11px;letter-spacing:.09em;color:var(--muted);font-weight:700}
+body.nd #tNew,body.nd #bNew{background:color-mix(in srgb,var(--accent) 10%,var(--surface));color:var(--accent);border:1.5px solid color-mix(in srgb,var(--accent) 60%,transparent);box-shadow:none;min-height:48px}
+body.nd #tNew:active,body.nd #bNew:active{background:color-mix(in srgb,var(--accent) 18%,var(--surface))}
+body.nd .bestnote{margin:2px 0;padding:10px 14px;border-radius:14px;background:color-mix(in srgb,var(--sea) 10%,var(--surface));border-left:3px solid var(--sea);color:var(--ink);font-size:13.5px}
+body.nd .empty{border:1.5px dashed color-mix(in srgb,var(--muted) 45%,transparent);border-radius:var(--nd-r);padding:30px 22px;text-align:center;color:var(--muted);line-height:1.5;background:color-mix(in srgb,var(--surface) 55%,transparent)}
+body.nd #logSpWrap{display:flex;flex-direction:column;gap:6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;margin:0}
+body.nd #logSpWrap select{font-size:15px;text-transform:none;letter-spacing:0;font-weight:500}
+body.nd #logSpWrap.on select{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
+body.nd .sortsel{font-weight:600}
+
+body.nd #tNew,body.nd #bNew{background:var(--surface)}
+body.nd .rngmore>summary{list-style:none;cursor:pointer;font-size:12.5px;font-weight:700;color:var(--muted);padding:6px 4px;min-height:32px}
+body.nd .rngmore>summary::-webkit-details-marker{display:none}
+body.nd .rngmore>summary::after{content:' ▾'}
+body.nd .rngmore[open]>summary::after{content:' ▴'}
+body.nd .rngmore[open]>summary{margin-bottom:6px}
+
+/* ---------- Πρόγνωση και κάρτες δεδομένων: ενιαία τυπογραφία ---------- */
+body.nd .tile b,body.nd .factors .v,body.nd .wxg b,body.nd .sc b,body.nd .ft b,body.nd .cmpc b,body.nd .wkv,body.nd .bar .n{font-family:var(--font-body);font-variant-numeric:tabular-nums;font-weight:700}
+body.nd .tile{border-radius:16px;border:1px solid color-mix(in srgb,var(--line) 60%,transparent);background:var(--surface);box-shadow:0 1px 2px rgba(10,40,55,.05)}
+body.nd .tile b{font-size:19px}
+body.nd .win span{border-radius:99px;padding:6px 14px;font-family:var(--font-body);font-weight:700;font-size:14px;background:color-mix(in srgb,var(--sea) 8%,var(--surface));border-color:color-mix(in srgb,var(--sea) 55%,transparent)}
+body.nd .factors>*{padding:12px 0}
+body.nd .chart text{font-family:var(--font-body)}
+body.nd #tab-fc .seg{margin-bottom:6px}
+body.nd details>summary{font-weight:600}
+body.nd .sub{font-family:var(--font-body);font-variant-numeric:tabular-nums}
+
+/* Tackle list: SVG type icons */
+body.nd .ititle{display:flex;align-items:center;gap:10px}
+body.nd .ititle .tkico{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;flex:none;border-radius:10px;background:rgba(255,122,61,.14);color:var(--acc,#ff7a3d)}
+/* round 2 polish */
+body.nd .rngmore>summary{display:inline-flex;align-items:center;border:1px dashed var(--line);border-radius:99px;padding:5px 14px;min-height:34px;color:var(--muted)}
+body.nd #tripForm:not([hidden])~.rngbar,body.nd #tripForm:not([hidden])~.sortrow{display:none}
+body.nd .linkbtn,body.nd a.more{color:var(--accent);font-weight:700}
+body.nd .fxd>summary{color:var(--accent);font-weight:700;cursor:pointer;padding:6px 0;min-height:36px}
+body.nd #unitsCard .unseg button{min-height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:600}
+body.nd #unitsCard .unseg button[aria-pressed=true]{background:color-mix(in srgb,var(--accent) 16%,var(--surface));border-color:var(--accent);color:var(--ink)}
+body.nd #profile select,body.nd #profile .setcard select{color:var(--ink)!important;opacity:1!important}
+body.nd #logRange.card,body.nd #pRng.card{padding:0;background:transparent;border:0;box-shadow:none}
+body.nd #logRange.rngbar,body.nd #pRng.rngbar{padding:2px 0!important}
+body.nd .rngbar .rngchips{justify-content:flex-start!important}

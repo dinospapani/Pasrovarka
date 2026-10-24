@@ -144,19 +144,16 @@ bH.addEventListener('click',function(){ S.hot.on=!S.hot.on; save(); heat(); if(S
 map.on('zoomend moveend',function(){ if(S.hot.on) heat(); }); C.Store.on('bites',function(){ if(S.hot.on) heat(); });
 heat();
 
-/* γρήγορο φίλτρο είδους πάνω στον χάρτη */
+/* ένδειξη ενεργού φίλτρου είδους πάνω στον χάρτη (το φίλτρο ορίζεται στο Ημερολόγιο) */
 (function(){
   var Ctl=L.Control.extend({options:{position:'topleft'},onAdd:function(){
-    var d=L.DomUtil.create('div','leaflet-bar spfilt'); L.DomEvent.disableClickPropagation(d);
-    var sel=el('select','spsel'); sel.setAttribute('aria-label',T('Είδος ψαριού στον χάρτη','Fish species on the map')); d.append(sel);
-    function fill(){ var spn={}; (C.Store.get('bites')||[]).forEach(function(b){ if(b.species&&typeof b.lat==='number') spn[b.species]=(spn[b.species]||0)+1; });
-      sel.replaceChildren(new Option('🐟 '+T('Όλα τα είδη','All species'),'')); Object.keys(spn).sort().forEach(function(k){ sel.append(new Option('🐟 '+k+' ('+spn[k]+')',k)); });
-      if(S.hot.sp&&!spn[S.hot.sp]) sel.append(new Option('🐟 '+S.hot.sp,S.hot.sp)); sel.value=S.hot.sp||''; d.classList.toggle('on',!!S.hot.sp); d.hidden=!Object.keys(spn).length; }
-    sel.addEventListener('change',function(){ S.hot.sp=sel.value; save(); heat(); document.dispatchEvent(new Event('psaro-spfilter')); d.classList.toggle('on',!!sel.value);
-      if(sel.value&&!hotL.getLayers().length) C.toast(T('Δεν έχεις καταγεγραμμένα ψάρια με θέση για αυτό το είδος.','No located catches of this species.')); });
-    C.Store.on('bites',fill); fill(); return d; }});
+    var d=L.DomUtil.create('div','spfilt'); L.DomEvent.disableClickPropagation(d);
+    var bt=el('button','spchip'); bt.type='button'; d.append(bt);
+    function fill(){ var v=C.lsGet('psaro-spf','')||''; d.hidden=!v; bt.replaceChildren(); if(!v) return; bt.append(el('span','',T('Φίλτρο: ','Filter: ')+v),el('b','','✕')); bt.setAttribute('aria-label',T('Αφαίρεση φίλτρου είδους ','Clear species filter ')+v); }
+    bt.addEventListener('click',function(){ if(window.PsaroSpf) window.PsaroSpf.set(''); });
+    document.addEventListener('psaro-spfilter',fill); fill(); return d; }});
   map.addControl(new Ctl());
-  var st=document.createElement('style'); st.textContent='.spfilt{border:0!important;box-shadow:0 2px 10px rgba(0,0,0,.25)!important;border-radius:18px;overflow:hidden}.spsel{height:36px;max-width:190px;border:0;padding:0 10px;font:600 14px system-ui;background:#fff;color:#123}.spfilt.on .spsel{background:#ffd54a}';
+  var st=document.createElement('style'); st.textContent='.spfilt[hidden]{display:none}.spchip{display:flex;align-items:center;gap:8px;height:34px;padding:0 12px;border:0;border-radius:17px;background:#123;color:#fff;font:600 13px system-ui;box-shadow:0 2px 10px rgba(0,0,0,.3);cursor:pointer;max-width:70vw}.spchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.spchip b{opacity:.75;font-size:12px}';
   document.head.appendChild(st);
 })();
 

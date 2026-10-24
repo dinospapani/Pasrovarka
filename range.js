@@ -18,7 +18,7 @@ function ui(k,box,presets){
   var row=document.createElement('div'); row.className='rngrow';
   function mk(lab){ var l=document.createElement('label'); l.className='f rngf'; l.append(document.createTextNode(lab)); var i=document.createElement('input'); i.type='date'; l.append(i); row.append(l); return i; }
   var a=mk(T('Από','From')), b=mk(T('Έως','To'));
-  box.append(row);
+  var more=document.createElement('details'); more.className='rngmore'; var sm=document.createElement('summary'); sm.textContent=T('Άλλες ημερομηνίες','Custom dates'); more.append(sm,row); box.append(more);
   var chips=null;
   if(presets){
     chips=document.createElement('div'); chips.className='rngchips';
@@ -29,7 +29,7 @@ function ui(k,box,presets){
     });
     box.append(chips);
   }
-  function sync(){ var r=load(k); a.value=r.f; b.value=r.t; box.classList.toggle('on',!!(r.f||r.t)); }
+  function sync(){ var r=load(k); a.value=r.f; b.value=r.t; box.classList.toggle('on',!!(r.f||r.t)); if(r.f||r.t) more.open=true; }
   a.addEventListener('change',function(){ set(k,a.value,b.value); });
   b.addEventListener('change',function(){ set(k,a.value,b.value); });
   window.addEventListener('psaro-range',function(e){ if(e.detail&&e.detail.key===k) sync(); });
