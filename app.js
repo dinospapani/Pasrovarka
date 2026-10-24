@@ -1428,10 +1428,10 @@ function applyView(c,name){
   if(c.ptrend&&PT[c.ptrend]) $('dPress').value=c.ptrend;
   $('liveMain').textContent=condParts(c).join(' · ');
   setLive((window.LANG==='en'?'Weather for ':'Καιρός για ')+name+' · '+fmt(nicosiaNowMin())+' · '+PsaroCoord.fmt(c.lat,c.lon));
-  renderToday();
+  renderToday(); document.dispatchEvent(new Event('psaro-view'));
 }
 window.PsaroCore.viewPlace=async function(p){
-  if(!p||p.gps){ viewing=null; viewCond=null; await refreshConditions(); renderToday(); return; }
+  if(!p||p.gps){ viewing=null; viewCond=null; await refreshConditions(); renderToday(); document.dispatchEvent(new Event('psaro-view')); return; }
   viewing=p; viewCond=null; renderToday(); setLive(window.LANG==='en'?'Loading weather…':'Ανανέωση καιρού…');
   try{ const c=await fetchConditions(p.lat,p.lon); if(viewing===p) applyView(c,p.name); }
   catch(e){ setLive(window.LANG==='en'?'Weather did not load. Check your connection.':'Ο καιρός δεν φορτώθηκε. Έλεγξε τη σύνδεση και δοκίμασε ξανά.'); }
@@ -1802,7 +1802,7 @@ async function autoDepth(silent){
   window.addEventListener('psaro-needdepth',()=>{ if(inp.value==='') autoDepth(true); });
 })();
 
-Object.assign(window.PsaroCore,{resizeImage:resizeImage,biteMs:biteMs,quick:()=>quickRec(false),quickMiss:()=>quickRec(true),map:()=>map,h:h,$:$,fmt:fmt,pad:pad,nicosiaToday:nicosiaToday,nicosiaNowMin:nicosiaNowMin,getPosition:getPosition,getCond:()=>cond,compute:()=>compute(),showOnMap:showOnMap,lsGet:lsGet,lsSet:lsSet,switchTab:switchTab,utcMin:()=>utcOff()});
+Object.assign(window.PsaroCore,{resizeImage:resizeImage,biteMs:biteMs,quick:()=>quickRec(false),quickMiss:()=>quickRec(true),map:()=>map,h:h,$:$,fmt:fmt,pad:pad,nicosiaToday:nicosiaToday,nicosiaNowMin:nicosiaNowMin,getPosition:getPosition,getCond:()=>cond,getViewCond:()=>viewCond||cond,compute:()=>compute(),showOnMap:showOnMap,lsGet:lsGet,lsSet:lsSet,switchTab:switchTab,utcMin:()=>utcOff()});
 Store.init();
 if(cond){ applyConditions(cond); } else { $('liveMain').textContent='Δεν υπάρχουν δεδομένα καιρού ακόμα.'; }
 refreshConditions();

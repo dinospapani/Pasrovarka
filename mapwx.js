@@ -18,7 +18,7 @@ var el=document.createElement('div'); el.className='mapwx'; el.hidden=true; box.
 var editing=false;
 function sel(){ var v=C.lsGet(KEY,null); return Array.isArray(v)?v:DEF.slice(); }
 function draw(){
-  var c=C.getCond(); if(!c){ el.hidden=true; document.body.classList.remove('hasmw'); return; }
+  var c=(C.getViewCond||C.getCond)(); if(!c){ el.hidden=true; document.body.classList.remove('hasmw'); return; }
   var on=sel(); el.hidden=false; document.body.classList.add('hasmw'); el.replaceChildren(); el.classList.toggle('edit',editing);
   var row=document.createElement('div'); row.className='mwrow';
   ITEMS.forEach(function(it){
@@ -44,6 +44,7 @@ function draw(){
 }
 el.addEventListener('click',function(){ editing=!editing; draw(); });
 document.addEventListener('psaro-cond',function(){ setTimeout(draw,50); });
+document.addEventListener('psaro-view',function(){ setTimeout(draw,50); });
 function place(){
   var sb=document.getElementById('sessBar'), full=document.body.classList.contains('mapfull');
   el.style.top=(sb&&full&&sb.offsetParent!==null)?Math.round(sb.getBoundingClientRect().bottom+8)+'px':'';

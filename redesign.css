@@ -39,7 +39,7 @@ body.nd .ndsearch img{width:40px;height:40px;border-radius:12px;flex:none}
 body.nd .ndsearch span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 body.nd .ndsearch svg{width:22px;height:22px;flex:none}
 body.nd .ndcard{position:absolute;left:12px;right:12px;bottom:calc(var(--navh,64px) + 26px);z-index:805;border-radius:26px;padding:14px 16px 12px;background:color-mix(in srgb,var(--surface) 94%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);color:var(--ink);box-shadow:0 8px 28px rgba(0,0,0,.32);border:1px solid var(--line)}
-body.nd .ndcard[hidden],body.ontrip.nd .ndcard,body.picking.nd .ndcard,body.wxedit.nd .ndcard.x{display:none!important}
+body.nd .ndcard[hidden],body.picking.nd .ndcard{display:none!important}
 body.nd .ndtop{display:flex;align-items:center;gap:12px}
 body.nd .ndringw{position:relative;width:56px;height:56px;flex:none}
 body.nd .ndring{width:56px;height:56px;display:block}
@@ -81,3 +81,17 @@ body.nd nav.tabs button.navprof{padding:6px 2px}
 body.nd nav.tabs .ndfish{flex:none;width:68px;height:68px;margin:-26px 6px 0;border-radius:50%;background:var(--accent);color:var(--accent-ink);padding:0;justify-content:center;box-shadow:0 8px 20px rgba(0,0,0,.4),0 0 0 5px var(--surface)}
 body.nd nav.tabs .ndfish svg{width:34px;height:34px;stroke-width:2.1}
 body.nd section.tab{padding-bottom:calc(var(--navh,64px) + 28px)}
+
+/* έξοδος σε εξέλιξη: φεύγει η αναζήτηση, μένει ο καιρός, τα κουμπιά ψαριού πάνω από το μενού */
+body.ontrip.nd .ndsearch{display:none!important}
+body.ontrip.nd .ndcard{top:var(--ndtop,112px);bottom:auto;padding:8px 12px}
+body.ontrip.nd .ndcard .ndtop,body.ontrip.nd .ndcard .ndbars,body.ontrip.nd .ndcard .ndlab,body.ontrip.nd .ndcard .ndshop{display:none}
+body.ontrip.nd .ndcard .ndfoot{margin:0;padding:0;border:0}
+body.ontrip.nd .ndbar{top:calc(50% + 20px)}
+body.ontrip.nd .leaflet-top.leaflet-left{top:150px}
+body.nd .fishbtns{bottom:calc(var(--navh,64px) + 40px)!important;z-index:820}
+body.nd .ndsearch.ndset{color:var(--ink)}
+body.nd .ndfind:not([hidden]){display:block;position:fixed;inset:0;z-index:3100}
+body.nd .ndfind .ndpanel{top:0;bottom:auto;border-radius:0 0 28px 28px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 18px;max-height:80dvh}
+body.nd .ndq{width:100%;box-sizing:border-box;height:52px;border:1px solid var(--line);border-radius:26px;padding:0 20px;font:inherit;font-size:17px;background:var(--bg2,var(--surface));color:var(--ink);margin-bottom:10px}
+body.nd .ndres{display:grid;gap:8px}

@@ -107,7 +107,49 @@ box.insertBefore(bar,mb.nextSibling);
   var mg=svgEl('svg',{viewBox:'0 0 24 24','aria-hidden':'true'}); mg.setAttribute('fill','none'); mg.setAttribute('stroke','currentColor'); mg.setAttribute('stroke-width','2'); mg.setAttribute('stroke-linecap','round');
   mg.append(svgEl('circle',{cx:'11',cy:'11',r:'7'}),svgEl('path',{d:'m20 20-3.5-3.5'}));
   sb.append(lg,st,mg); sb.setAttribute('aria-label',T('Αναζήτηση τοποθεσίας','Search a place'));
-  sb.addEventListener('click',function(){ tab('fc'); setTimeout(function(){ var q=$('plQ'); if(q){ try{ q.focus(); }catch(e){} } },250); });
+  /* φύλλο αναζήτησης: βρίσκει τόπο και αλλάζει τον καιρό (κάρτα και Πρόγνωση). Η θέση μου είναι η προεπιλογή. */
+  var fd=el('div','ndsheet ndfind'); fd.hidden=true;
+  var fb=el('div','ndback'), fp=el('div','ndpanel'); fp.setAttribute('role','dialog'); fp.setAttribute('aria-modal','true'); fp.setAttribute('aria-label',T('Αναζήτηση τοποθεσίας','Search a place'));
+  var fi=document.createElement('input'); fi.type='search'; fi.className='ndq'; fi.placeholder=T('Πού θα ψαρέψεις;','Where will you fish?'); fi.setAttribute('autocomplete','off'); fi.setAttribute('enterkeyhint','search');
+  var fr=el('div','ndres'); fp.append(fi,fr); fd.append(fb,fp); document.body.append(fd);
+  var label=null, tmr=null, seq=0;
+  function setLabel(n){ label=n||null; st.textContent=label||T('Πού θα ψαρέψεις;','Where will you fish?'); sb.classList.toggle('ndset',!!label); }
+  function row(txt,sub,fn,icon){ var b=el('button','ndrow'); b.type='button'; b.innerHTML=(icon||'')+'<span></span>'; b.lastChild.textContent=txt+(sub?' · '+sub:''); b.addEventListener('click',fn); fr.append(b); }
+  var PIN=SVG+'<path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>';
+  function showBase(){
+    fr.replaceChildren();
+    row(T('Η θέση μου','My location'),label?T('προεπιλογή','default'):'',function(){
+      setLabel(null); closeF();
+      if(window.PsaroPlaces&&PsaroPlaces.selectGps) PsaroPlaces.selectGps();
+      if(C.viewPlace) C.viewPlace({gps:true});
+    },IC.me);
+  }
+  function openF(){ fd.hidden=false; fi.value=''; showBase(); setTimeout(function(){ try{ fi.focus(); }catch(e){} },80); }
+  function closeF(){ fd.hidden=true; try{ fi.blur(); }catch(e){} }
+  fb.addEventListener('click',closeF);
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&!fd.hidden) closeF(); });
+  function find(){
+    var q=fi.value.trim(), my=++seq; showBase(); if(q.length<2) return;
+    var note=el('div','note',T('Αναζήτηση…','Searching…')); fr.append(note);
+    fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=6&format=json&language='+(EN?'en':'el'))
+      .then(function(r){ return r.json(); }).then(function(j){
+        if(my!==seq) return; note.remove(); var res=(j&&j.results)||[];
+        if(!res.length){ fr.append(el('div','note',T('Δεν βρέθηκε τοποθεσία.','No place found.'))); return; }
+        res.forEach(function(x){
+          var sub=[x.admin1,x.country].filter(Boolean).filter(function(v,i,a){ return a.indexOf(v)===i; }).join(', ');
+          row(x.name,sub,function(){
+            setLabel(x.name); closeF();
+            if(window.PsaroPlaces&&PsaroPlaces.pick) PsaroPlaces.pick(x.name,x.latitude,x.longitude);
+            else if(C.viewPlace) C.viewPlace({id:'s'+x.latitude+','+x.longitude,name:x.name,lat:x.latitude,lon:x.longitude});
+            try{ var m=C.map&&C.map(); if(m) m.setView([x.latitude,x.longitude],Math.max(m.getZoom(),11)); }catch(e){}
+          },PIN);
+        });
+      }).catch(function(){ if(my!==seq) return; note.textContent=T('Η αναζήτηση δεν δούλεψε. Έλεγξε τη σύνδεση.','Search failed. Check your connection.'); });
+  }
+  fi.addEventListener('input',function(){ clearTimeout(tmr); tmr=setTimeout(find,400); });
+  fi.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); clearTimeout(tmr); find(); } });
+  sb.addEventListener('click',openF);
+  if(window.PsaroPlaces&&PsaroPlaces.selectGps) PsaroPlaces.selectGps();
   box.append(sb);
 
   /* 2. κάρτα «Σήμερα» */
@@ -141,6 +183,7 @@ box.insertBefore(bar,mb.nextSibling);
     Array.prototype.forEach.call(bars.children,function(b){ var v=c.hours[+b.dataset.h]||0; b.style.height=Math.max(8,Math.round(v/Math.max(mx,1)*100))+'%'; b.className=v>=thr?'hi':''; });
   }
   document.addEventListener('psaro-cond',function(){ setTimeout(draw,80); });
+  document.addEventListener('psaro-view',function(){ setTimeout(draw,80); });
   setTimeout(draw,900); setTimeout(draw,3600); setInterval(draw,30000);
 
   /* τα στοιχεία καιρού που έχεις διαλέξει (⚙) μπαίνουν μέσα στην κάρτα, με την ίδια λογική */
@@ -162,6 +205,7 @@ box.insertBefore(bar,mb.nextSibling);
     });
     var logb=nav.querySelector('[data-tab="log"]'); nav.insertBefore(cb,logb||null);
   }
+  setInterval(function(){ var tb=$('tripBtn'), on=document.body.classList.contains('ontrip'); if(on&&tb&&tb.offsetParent){ var br=box.getBoundingClientRect(), r2=tb.getBoundingClientRect(); card.style.setProperty('--ndtop',Math.max(70,Math.round(r2.bottom-br.top+10))+'px'); } else card.style.removeProperty('--ndtop'); },500);
   setInterval(function(){ var m=box.querySelector('.mapwx'); if(m){ m.style.removeProperty('left'); m.style.removeProperty('top'); } },500);
 })();
 })();
