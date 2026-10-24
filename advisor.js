@@ -28,7 +28,9 @@ function collect(){
     var ms=PP.biteMs(b,utc); o.n++; total++;
     o.bites.push({b:b,hr:b.time?+b.time.slice(0,2):null,moon:ms!=null?PP.moonOf(ms):null,month:b.date?+b.date.slice(5,7)-1:null,pt:PTS.indexOf(b.ptrend),w:windCls(b.wind),tide:b.tide||null,sst:b.sst,tech:b.tech||'',bait:b.bait||'',depth:b.depth,lat:b.lat,lon:b.lon,kg:+b.kg||0});
   });
-  return {model:model,by:by,total:total,H:model.H||0};
+  /* Δεδομένα φίλου: ξεχωριστά, χωρίς χρόνο προσπάθειας, μόνο ως εποχιακή ένδειξη. */
+  var ext={}; try{ ((window.PsaroExt&&window.PsaroExt.use())||[]).forEach(function(r){ if(!r.sp) return; var e=kbOf(r.sp,''), key=e?e.n:norm(r.sp).replace(/\s*\(.*$/,''); var o=ext[key]||(ext[key]={n:0,m:[0,0,0,0,0,0,0,0,0,0,0,0]}); o.n++; if(r.month!=null) o.m[r.month]++; }); }catch(e){}
+  return {model:model,by:by,ext:ext,total:total,H:model.H||0};
 }
 /* ---------- μοντέλο ---------- */
 function lnTod(e,hr){ var w=e.tod[Math.floor(hr/3)]; return Math.log(0.4+1.2*w); }
@@ -54,15 +56,23 @@ function lscore(D,e,o,x){
   var n=o?o.n:0, a=D.H>=2?n/(n+NEED_A):0, Lp=e?prior(e,x):0, Ld=dataL(D,o,x);
   return (1-a)*Lp+a*Ld;
 }
+/* Εποχιακή ένδειξη από τα ψάρια του φίλου: ο μήνας και οι διπλανοί του, με ομαλοποίηση και μικρό βάρος (ελάχιστο 3 ψάρια). */
+function extL(xo,mo){
+  if(!xo||xo.n<3||mo==null) return 0;
+  var m=xo.m, cm=m[mo]+0.5*(m[(mo+11)%12]+m[(mo+1)%12]), share=2/12, N=xo.n;
+  var ratio=((cm/2+K*share/2)/(N+K))/(share/2);
+  return clamp(Math.log(ratio),-1,1)*N/(N+NEED_A);
+}
 function candidates(D){
   var out=[], seen={};
-  KB.forEach(function(e){ var o=D.by[e.n]; seen[e.n]=1; out.push({e:e,o:o,name:e.n,common:e.c}); });
-  Object.keys(D.by).forEach(function(k){ if(!seen[k]) out.push({e:null,o:D.by[k],name:D.by[k].name,common:1}); });
+  KB.forEach(function(e){ var o=D.by[e.n]; seen[e.n]=1; out.push({e:e,o:o,x:D.ext[e.n],name:e.n,common:e.c}); });
+  Object.keys(D.by).forEach(function(k){ if(!seen[k]){ seen[k]=1; out.push({e:null,o:D.by[k],x:D.ext[k],name:D.by[k].name,common:1}); } });
+  Object.keys(D.ext).forEach(function(k){ if(!seen[k]) out.push({e:null,o:null,x:D.ext[k],name:k,common:0.5}); });
   return out;
 }
 function rank(D,x){
   var cs=candidates(D), tot=0;
-  cs.forEach(function(c){ var n=c.o?c.o.n:0; c.L=lscore(D,c.e,c.o,x); c.s=(n+0.6*c.common)*Math.exp(clamp(c.L,-2,2)); tot+=c.s; });
+  cs.forEach(function(c){ var n=c.o?c.o.n:0, ne=c.x?c.x.n:0; c.L=lscore(D,c.e,c.o,x)+extL(c.x,x.month); c.s=(n+0.6*c.common+0.15*Math.min(ne,12))*Math.exp(clamp(c.L,-2,2)); tot+=c.s; });
   cs.forEach(function(c){ c.p=c.s/tot; });
   return cs.sort(function(a,b){ return b.s-a.s; });
 }
@@ -104,7 +114,7 @@ function condLine(S){
 }
 var KTR={'Βυθού':'Bottom fishing','Ζωντανό δόλωμα':'Live bait','Τρόλινγκ':'Trolling','Άλλο':'Other','γαρίδα':'shrimp','ζωντανή γαρίδα':'live shrimp','ζωντανή σαρδέλα':'live sardine','ζωντανό καλαμάρι':'live squid','ζωντανό σκαθάρι':'live beetle','ζωντανό ψαράκι':'live small fish','κάβουρας':'crab','καλαμάρι':'squid','καλαμαριέρα':'squid jig','καλαμαριέρα (ζαλάκι)':'squid jig (zalaki)','κολιός':'chub mackerel','μικρό ψάρι':'small fish','μπουκιά':'chum ball','μύδι':'mussel','πάστα':'paste','πράσινα φύκια':'green algae','σαμπίκι':'sabiki','σαρδέλα':'sardine','σκουλήκι':'worm','σουπιά':'cuttlefish','τεχνητό':'artificial lure','ψωμί':'bread'};
 function kt(a){ return EN?a.map(function(x){ return KTR[x]||x; }):a; }
-function confText(c){ var n=c.o?c.o.n:0; return n===0?T('γενική γνώση','general knowledge'):n<8?T('αρχικά δεδομένα · ','early data · ')+n+T(' ψάρια',' fish'):T('από τα ψάρια σου · ','from your fish · ')+n; }
+function confText(c){ var n=c.o?c.o.n:0, ne=c.x?c.x.n:0; var t=n===0?T('γενική γνώση','general knowledge'):n<8?T('αρχικά δεδομένα · ','early data · ')+n+T(' ψάρια',' fish'):T('από τα ψάρια σου · ','from your fish · ')+n; if(ne) t+=' · '+T('φίλος: ','friend: ')+ne+T(' ψάρια',' fish'); return t; }
 
 /* ---------- κάρτα 1: τι να ψαρέψω ---------- */
 function whatCard(D){
@@ -206,7 +216,7 @@ function statusCard(D){
 }
 function render(){
   root.replaceChildren(); var D=collect();
-  root.append(whatCard(D),whenWhere(D),statusCard(D));
+  root.append(whatCard(D),whenWhere(D),statusCard(D)); try{ if(window.PsaroExt) root.append(window.PsaroExt.card(render)); }catch(e){}
 }
 window.PsaroAdv={render:function(){ if(!root.hidden) render(); }};
 window.addEventListener('psaro-fcloaded',function(e){ last=e.detail||last; if(!root.hidden&&!document.activeElement.closest('#fcAdv')) render(); });

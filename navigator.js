@@ -15,10 +15,17 @@ function load(){
   if(DATA) return Promise.resolve(DATA);
   if(loading) return loading;
   loading=fetch(FILE).then(function(r){ if(!r.ok) throw new Error('http'); return r.json(); }).then(function(j){
-    DATA=(j&&j.f)||[]; DATA.forEach(function(f){ f._s=sev(f); }); return DATA;
+    DATA=((j&&j.f)||[]).filter(relevant); DATA.forEach(function(f){ f._s=sev(f); }); return DATA;
   }).catch(function(e){ loading=null; throw e; });
   return loading;
 }
+/* Κρατάμε μόνο ό,τι αφορά ψάρεμα ή άγκυρα: αν όλα τα στοιχεία ψαρέματος είναι άγνωστα (π.χ. περιοχές μόνο για πουλιά ή δάση), η περιοχή δεν χρειάζεται. */
+function relevant(f){
+  var k=['rf','hl','tr','sp'];
+  for(var i=0;i<k.length;i++){ var v=f[k[i]]; if(v===0||v===1||v===2) return true; }
+  return f.an===1||f.an===2;
+}
+var FISHTXT=/\b(fish\w*|angl\w*|rod|hook\w*|line|nets?|trawl\w*|troll\w*|spear\w*|anchor\w*|vessels?|boats?|div(e|es|ing))\b|ψάρ|αλιε|δίχτ|άγκυρ|σκάφ|κατάδυ/i;
 /* 0 = χωρίς γνωστό περιορισμό για καλάμι, 1 = περιορισμοί, 2 = απαγορεύεται (ψάρεμα αναψυχής ή καλάμι) */
 function sev(f){
   if(f.rf===1||f.hl===1) return 2;
@@ -26,6 +33,8 @@ function sev(f){
   return 0;
 }
 var COL=['#4f86b5','#e8861e','#d33'];
+/* Χρώματα Navigator ανά LFP: 5 κόκκινο, 4 κίτρινο, 3 γαλάζιο, 2 σκούρο γκρι (Less), 1 ανοιχτό γκρι (Least). Οι αποχρώσεις είναι προσεγγιστικές, από screenshots. */
+var LFPCOL={5:{f:'#f06a6a',o:'#c04646'},4:{f:'#f5d33f',o:'#b8962a'},3:{f:'#8fc1d6',o:'#4f86b5'},2:{f:'#7f7f7f',o:'#5f5f5f'},1:{f:'#bcc2c3',o:'#939a9b'}};
 
 /* ---------- έλεγχος θέσης ---------- */
 function inPoly(lat,lon,poly){
@@ -71,16 +80,17 @@ function details(f){
   var d=el('div','pop');
   var h=el('b',null,title(f)); d.appendChild(h);
   d.appendChild(el('div','meta',[f.c,f.d,'LFP '+f.l+'/5'].filter(Boolean).join(' · ')));
-  d.appendChild(row(T('Ψάρεμα αναψυχής','Recreational fishing'),lv(f.rf),lvCol(f.rf)));
-  d.appendChild(row(T('Καλάμι / πετονιά','Rod & line'),lv(f.hl),lvCol(f.hl)));
-  d.appendChild(row(T('Συρτή','Trolling'),lv(f.tr),lvCol(f.tr)));
-  d.appendChild(row(T('Υποβρύχιο ψάρεμα','Spearfishing'),lv(f.sp),lvCol(f.sp)));
+  function known(n){ return n===0||n===1||n===2; }
+  if(known(f.rf)) d.appendChild(row(T('Ψάρεμα αναψυχής','Recreational fishing'),lv(f.rf),lvCol(f.rf)));
+  if(known(f.hl)) d.appendChild(row(T('Καλάμι / πετονιά','Rod & line'),lv(f.hl),lvCol(f.hl)));
+  if(known(f.tr)) d.appendChild(row(T('Συρτή','Trolling'),lv(f.tr),lvCol(f.tr)));
+  if(known(f.sp)) d.appendChild(row(T('Υποβρύχιο ψάρεμα','Spearfishing'),lv(f.sp),lvCol(f.sp)));
   if(f.an===1||f.an===2) d.appendChild(row(T('Άγκυρα','Anchoring'),lv(f.an),lvCol(f.an)));
   if(f.en===1||f.en===2) d.appendChild(row(T('Είσοδος','Entry'),lv(f.en),lvCol(f.en)));
   if(f.dv===1||f.dv===2) d.appendChild(row(T('Κατάδυση','Diving'),lv(f.dv),lvCol(f.dv)));
   if(f.se&&f.se!=='Year-round') d.appendChild(row(T('Περίοδος','Season'),f.se));
-  if(f.re) d.appendChild(el('div','meta',f.re));
-  else if(f.pu) d.appendChild(el('div','meta',f.pu));
+  if(f.re&&FISHTXT.test(f.re)) d.appendChild(el('div','meta',f.re));
+  else if(f.pu&&FISHTXT.test(f.pu)) d.appendChild(el('div','meta',f.pu));
   if(f.ma) d.appendChild(el('div','meta',T('Αρχή: ','Authority: ')+f.ma));
   if(f.rn||f.rs){
     var r=el('div','meta',(f.rn||'')+' ');
@@ -100,7 +110,8 @@ function build(){
   rend=L.canvas({padding:.3});
   group=L.layerGroup();
   DATA.forEach(function(f){
-    var c=COL[f._s], p=L.polygon(f.g,{renderer:rend,color:c,weight:f._s?1.8:1,opacity:f._s?.9:.5,fillColor:c,fillOpacity:f._s===2?.22:f._s===1?.18:.08,interactive:false});
+    /* Γέμισμα = επίπεδο προστασίας (LFP) με τα χρώματα του Navigator. Περίγραμμα = τι ισχύει για καλάμι: κόκκινο απαγορεύεται, πορτοκαλί περιορισμοί. */
+    var fc=LFPCOL[f.l]||LFPCOL[1], c=f._s?COL[f._s]:fc.o, p=L.polygon(f.g,{renderer:rend,color:c,weight:f._s?2.2:1,opacity:f._s?.95:.6,fillColor:fc.f,fillOpacity:.32,interactive:false});
     p.addTo(group);
   });
 }
@@ -119,7 +130,7 @@ b.innerHTML='<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-
 var anchor=document.getElementById('bMpa')||bz; anchor.parentNode.insertBefore(b,anchor.nextSibling);
 b.addEventListener('click',function(){
   var willOn=!on; set(willOn);
-  if(willOn) try{ C.toast(T('Πάτα στον χάρτη για λεπτομέρειες. Κόκκινο: απαγορεύεται, πορτοκαλί: περιορισμοί.','Tap the map for details. Red: prohibited, orange: restricted.')); }catch(e){}
+  if(willOn) try{ C.toast(T('Πάτα στον χάρτη για λεπτομέρειες. Γέμισμα: προστασία (κόκκινο πολύ αυστηρή, κίτρινο αυστηρή, γαλάζιο μέτρια). Περίγραμμα: κόκκινο απαγορεύεται το ψάρεμα, πορτοκαλί περιορισμοί.','Tap the map for details. Fill: protection level (red very strict, yellow strict, blue moderate). Outline: red fishing prohibited, orange restricted.')); }catch(e){}
 });
 b.setAttribute('aria-pressed',String(on));
 if(on) set(true);

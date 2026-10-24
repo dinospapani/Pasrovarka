@@ -637,6 +637,13 @@ function openSpotForm(p,sp){
 }
 function closeSpotForm(){ editSpot=null; pending=null; $('spotForm').hidden=true; $('spotForm').reset(); drawMap(); }
 $('sNew').addEventListener('click',()=>openSpotForm({}));
+/* Κοντινά μαγαζιά ψαρικής: ανοίγει αναζήτηση Google Maps γύρω από τη θέση (χωρίς κλειδί API, τίποτα δεν αποθηκεύεται) */
+$('sShops').addEventListener('click',()=>{
+  const go=(la,lo,z)=>{ const q='fishing+tackle+store'; window.open('https://www.google.com/maps/search/'+q+(la!=null?'/@'+la.toFixed(5)+','+lo.toFixed(5)+','+z+'z':''),'_blank','noopener'); };
+  const fallback=()=>{ try{ const c=map.getCenter(); go(c.lat,c.lng,13); }catch(e){ go(null,null,0); } };
+  if(!navigator.geolocation){ fallback(); return; }
+  navigator.geolocation.getCurrentPosition(p=>go(p.coords.latitude,p.coords.longitude,14),fallback,{enableHighAccuracy:false,timeout:8000,maximumAge:300000});
+});
 $('sCancel').addEventListener('click',closeSpotForm);
 PsaroCoord.bind($('sLat'),$('sLon'),(la,lo)=>{ pending=(la!=null&&lo!=null)?{lat:la,lon:lo}:null; drawMap(); });
 $('spotForm').addEventListener('submit',async e=>{
@@ -942,7 +949,7 @@ function renderChecks(){
 }
 document.querySelectorAll('#tab-guide .seg button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('#tab-guide .seg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
-  for(const g of ['species','tech','law','safety']) $('g-'+g).hidden=(g!==b.dataset.g);
+  for(const g of ['species','tech','law','safety','shops']) $('g-'+g).hidden=(g!==b.dataset.g);
 }));
 
 /* ---------- Bites and statistics ---------- */
@@ -1102,7 +1109,7 @@ $('biteForm').addEventListener('submit',async e=>{
     try{ if(editing&&(editing.trip||'')!==(rec.trip||'')){ await recountTrip(editing.trip); await recountTrip(rec.trip); } else if(!editing&&tsel) await recountTrip(tsel); else if(editing&&rec.trip&&(!!editing.rel!==!!rec.rel||editing.kg!==rec.kg)) await recountTrip(rec.trip); }catch(e){}
     if(photoBlob){ try{await Photos.put(id,photoBlob);}catch(err){ rec.photo=false; await Store.save('bites',Object.assign({},rec,{id:id})); toast('Η φωτογραφία δεν αποθηκεύτηκε.'); } }
     resetSheet(); closeSheet();
-    try{ const lw=latinForName(rec.species), mn=lw&&MIN[lw]; if(mn&&rec.len&&rec.len<mn) setTimeout(()=>toast('⚠ '+(window.LANG==='en'?'Under the minimum size (':'Κάτω από το ελάχιστο μέγεθος (')+mn+' cm)'),600); if(lw==='Lagocephalus sceleratus') setTimeout(()=>toast('⚠ '+(window.LANG==='en'?'Toxic species. Do not eat it.':'Τοξικό είδος. Μην το φας.')),600); }catch(e){}
+    try{ const lw=latinForName(rec.species), mn=lw&&minOf(lw); if(mn&&rec.len&&rec.len<mn) setTimeout(()=>toast('⚠ '+(window.LANG==='en'?'Under the minimum size (':'Κάτω από το ελάχιστο μέγεθος (')+mn+' cm)'),600); if(lw==='Lagocephalus sceleratus') setTimeout(()=>toast('⚠ '+(window.LANG==='en'?'Toxic species. Do not eat it.':'Τοξικό είδος. Μην το φας.')),600); }catch(e){}
     if(editing){ toast('Αποθηκεύτηκε.'); }
     else if(lat!=null){ toast(window.LANG==='en'?'Saved on the map':'Αποθηκεύτηκε στον χάρτη'); if(!document.body.classList.contains('ontrip')) showOnMap(lat,lon,id); }
     else { toast(mode==='auto'?'Αποθηκεύτηκε, αλλά δεν βρέθηκε θέση.':'Αποθηκεύτηκε χωρίς θέση.'); }
@@ -1459,6 +1466,7 @@ $('liveRefresh').addEventListener('click',()=>{ if(window.PsaroCore.viewRefresh&
 
 /* ---------- Law (Cyprus) ---------- */
 const MIN=window.MIN_SIZES||{};
+function minOf(la){ if(!la) return 0; if(MIN[la]) return MIN[la]; const g=la.split(' ')[0]; if(g==='Chelon'||g==='Liza'||g==='Oedalechilus') return MIN['Mugil spp.']||0; return MIN[g+' spp.']||MIN[g+' sp.']||0; }
 function lnk(href,text){return h('a',{href:href,target:'_blank',rel:'noopener',text:text});}
 function lawCard(title,items,src){
   return h('div',{class:'card'},h('h3',{text:title}),h('ul',{class:'law'},items.map(x=>h('li',{},x))),src?h('div',{class:'note',style:'margin-top:8px'},'Πηγή: ',src):null);
@@ -1466,8 +1474,16 @@ function lawCard(title,items,src){
 function renderLaw(){
   const L=$('g-law'); L.replaceChildren();
   L.append(h('div',{class:'card'},h('p',{text:'Περίληψη για ερασιτεχνικό ψάρεμα από σκάφος στη Δημοκρατία της Κύπρου, ελεγμένη στις 15/10/2026. Δεν αποτελεί νομική συμβουλή. Οι κανονισμοί αλλάζουν και ισχύει πάντα το κείμενο του νόμου και ό,τι ανακοινώνει το Τμήμα Αλιείας και Θαλασσίων Ερευνών (ΤΑΘΕ). Όπου η πηγή είναι δευτερογενής, το γράφει.'})));
+  L.append(lawCard('Πώς βγάζω ή ανανεώνω άδεια',[
+    'Από στεριά με καλάμι δεν χρειάζεται άδεια. Άδεια χρειάζεται για ψάρεμα με σκάφος, ψαροντούφεκο, δεξαμενές και ψαροπαγίδες.',
+    'Αίτηση ηλεκτρονικά, με δύο τρόπους: με CY Login (τα στοιχεία συμπληρώνονται και δεν χρειάζεται αντίγραφο ταυτότητας) ή με τη φόρμα του ΤΑΘΕ (ανεβάζεις αντίγραφο ταυτότητας).',
+    'Η φόρμα δέχεται έως 3 σκάφη. Ο έλεγχος γίνεται σε 2 εργάσιμες και ειδοποιείσαι με SMS και email.',
+    'Κάθε άδεια λήγει 31 Δεκεμβρίου του έτους έκδοσης. Αν είχες ενεργή άδεια από το 2022, η φόρμα συμπληρώνει τα στοιχεία σου με ταυτότητα/διαβατήριο και ημερομηνία γέννησης.',
+    'Υπενθύμιση λήξης: Ρυθμίσεις, «Άδεια και λίστα».',
+    'Επικοινωνία ΤΑΘΕ: 22 807 818, 22 807 829, licenses@dfmr.moa.gov.cy.'
+  ],['licence.dfmr.moa.gov.cy, ελέγχθηκε 23/10/2026 · ',lnk('https://licence.dfmr.moa.gov.cy/licence-application','Αίτηση με φόρμα'),' · ',lnk('https://cge.cyprus.gov.cy/cylogin/core/login?signin=324f639347ffadbdd621f920d2c6bf09','Αίτηση με CY Login'),' · ',lnk('https://licence.dfmr.moa.gov.cy/','Σελίδα αδειών')]));
   L.append(lawCard('Όρια ποσότητας (ανά έξοδο και ανά 24ωρο)',[
-    'Από σκάφος: 10 kg συνολικά, ή 5 kg και 1 ψάρι οποιουδήποτε βάρους, ανεξάρτητα από τον αριθμό των αδειούχων.',
+    'Από σκάφος: 10 kg συνολικά και 1 ψάρι οποιουδήποτε βάρους, ανεξάρτητα από τον αριθμό των αδειούχων.',
     'Μακρύπτερος τόνος (Thunnus alalunga) από σκάφος: 3 ψάρια ανά αδειούχο επιβαίνοντα, μέχρι 9 ανά σκάφος. Μαζί με άλλα είδη: 3 μακρύπτερους και 5 kg άλλων ειδών ανά σκάφος.',
     'Ψαροντούφεκο: 5 kg και 1 ψάρι οποιουδήποτε βάρους.',
     'Το ΤΑΘΕ μπορεί να αλλάξει το όριο μόνο για διαγωνισμούς ή τουριστική δραστηριότητα, και μόνο για μακρύπτερο τόνο και λαγοκέφαλο.'
@@ -1489,7 +1505,7 @@ function renderLaw(){
   L.append(h('div',{class:'card'},h('h3',{text:'Ελάχιστα μεγέθη (ολικό μήκος)'}),
     h('div',{class:'bar',style:'grid-template-columns:1fr auto;font-weight:600'},h('span',{text:'Είδος'}),h('span',{text:'cm'})),
     rows.map(r=>h('div',{class:'bar',style:'grid-template-columns:1fr auto'},h('span',{},r[0],' ',h('i',{class:'muted',text:r[1]})),h('span',{class:'n',text:String(r[2])}))),
-    h('div',{class:'note',style:'margin-top:8px'},'Πηγή: βιβλίο «Τα 100 σημαντικότερα είδη ψαριών των κυπριακών θαλασσών» του ΤΑΘΕ (περίπου 2012), που παραπέμπει σε ευρωπαϊκούς κανονισμούς. Δεν ελέγχθηκε με τον ισχύοντα κατάλογο της ΕΕ (Καν. 2019/1241), άρα επιβεβαίωσε πριν κρατήσεις οριακό ψάρι. Για όσα είδη δεν αναγράφονται, ρώτα το ΤΑΘΕ.')));
+    h('div',{class:'note',style:'margin-top:8px'},'Πηγή: πίνακας ελάχιστων μεγεθών του Τμήματος Αλιείας και Θαλασσίων Ερευνών (gov.cy), ελεγμένος στις 23/10/2026. Τα όρια ισχύουν και για τα είδη του ίδιου γένους (π.χ. κέφαλοι, σαφρίδια, ορφοί). Δεν περιλαμβάνονται ακόμα όλα τα είδη του πίνακα. Για όσα δεν αναγράφονται, ρώτα το ΤΑΘΕ.')));
   L.append(lawCard('Ειδικά είδη (δευτερογενής πηγή, επιβεβαίωσε)',[
     'Κόκκινος τόνος (Thunnus thynnus): απαγορεύεται η αλιεία, η διατήρηση και η εκφόρτωση όλο τον χρόνο. Ελευθέρωση αμέσως.',
     'Μακρύπτερος τόνος: κλειστή περίοδος 1–31 Μαρτίου και 1 Οκτωβρίου–30 Νοεμβρίου, και ως τυχαίο αλίευμα.',
@@ -1504,8 +1520,13 @@ function renderLaw(){
   L.append(lawCard('Άλλοι περιορισμοί',[
     'Περιοχές λουομένων: όχι ψαροπαγίδες ή δίχτυα.',
     'Έξι θαλάσσιες προστατευόμενες περιοχές με τεχνητούς υφάλους: καμία αλιεία (δευτερογενής πηγή, ελέγξτε με τη λίστα πάνω).',
+    'Πόλις–Γιαλιά (Ειδική Ζώνη Διατήρησης CY4000001): από 15 Μαΐου έως 30 Σεπτεμβρίου, από 0 έως 10 μέτρα ισοβαθή, απαγορεύεται η διέλευση και η αγκυροβόληση μηχανοκίνητων σκαφών (εξαιρούνται σκάφη επαγγελματικής παράκτιας αλιείας μικρής κλίμακας). Τα ακριβή όρια της ζώνης δεν είναι στο αρχείο και δεν σχεδιάζονται στον χάρτη.',
+    'Απαγορεύεται η είσοδος στα θαλάσσια σπήλαια των Θαλασσινών Σπηλιών Πέγειας και Αγίας Νάπας, του Αγίου Γεωργίου Αλαμάνου και του Χάλαβρου, χωρίς γραπτή άδεια του Διευθυντή.',
+    'Απαγορεύεται η παρενόχληση και η σίτιση προστατευόμενων ειδών (κητώδη, θαλάσσιες χελώνες κ.ά.) και η απόρριψη απορριμμάτων στη θάλασσα.',
+    'Ποινές: παράβαση διατάγματος απαγόρευσης (π.χ. αλιεία σε προστατευόμενη περιοχή) επισύρει φυλάκιση έως 2 έτη ή πρόστιμο έως €20.000, ή και τα δύο.',
+    'Ποινές: παράβαση των Κανονισμών (π.χ. όρια ποσότητας, εργαλεία, άδεια) επισύρει φυλάκιση έως 1 έτος ή πρόστιμο έως €20.000, ή και τα δύο.',
     'Μπορεί να υπάρχουν και άλλοι μόνιμοι ή εποχικοί περιορισμοί που δεν είναι στο αρχείο.'
-  ],null));
+  ],['ΚΔΠ 139/2026, Κανονισμοί 14Α, 14Β και 15 · Ν. 78(Ι)/2024, άρθρα 5Α(6) και 6(3)']));
   L.append(h('div',{class:'card'},h('h3',{text:'Πηγές'}),h('ul',{class:'law'},
     [['https://www.cylaw.org/KDP/data/2019_1_416.pdf','Κ.Δ.Π. 416/2019, Αλιεία (Τροποποιητικοί) Κανονισμοί'],['https://www.cylaw.org/KDP/data/2024_1_256.pdf','Κ.Δ.Π. 256/2024, Αλιεία (Τροποποιητικοί) Κανονισμοί'],['https://www.gov.cy/en/service/issue-of-fishing-licence/','gov.cy: άδεια ερασιτεχνικής αλιείας'],['https://www.gov.cy/moa-dfmr/en/','Τμήμα Αλιείας και Θαλασσίων Ερευνών']].map(x=>h('li',{},lnk(x[0],x[1]))))));
 }
@@ -1517,7 +1538,7 @@ function latinForName(name){
 }
 function updateLaw(){
   const out=$('bLaw'); const msgs=[];
-  const lat=latinForName($('bSpecies').value), len=+$('bLen').value||0, mn=lat&&MIN[lat];
+  const lat=latinForName($('bSpecies').value), len=+$('bLen').value||0, mn=lat&&minOf(lat);
   { const nt=$('bMinNote'); if(nt){ const en=window.LANG==='en'; let t='', warn=false;
     if(lat==='Thunnus thynnus'||lat==='Xiphias gladius'){ t=en?'Not allowed to keep (recreational).':'Απαγορεύεται η κράτηση (ερασιτεχνική αλιεία).'; warn=true; }
     else if(mn){ t=(en?'Minimum legal size: ':'Ελάχιστο επιτρεπόμενο μέγεθος: ')+mn+' cm'; if(len&&len<mn){ t='⚠ '+t+(en?' – under the limit, release it.':' – κάτω από το όριο, ελευθέρωσέ το.'); warn=true; } }
@@ -1538,7 +1559,7 @@ function updateLaw(){
   let kg=$('bRel').checked?0:(+$('bKg').value||0); const since=Date.now()-86400000;
   for(const b of Store.get('bites')) if(b.kg&&!b.rel&&!(editRec&&b.id===editRec.id)&&biteMs(b)>=since) kg+=+b.kg;
   if($('bRel').checked) msgs.push('Catch & release: δεν μετράει στο όριο των κιλών.');
-  if(kg>0) msgs.push('Καταγεγραμμένα τις τελευταίες 24 ώρες: '+kg.toFixed(1)+' kg. Όριο από σκάφος: 10 kg, ή 5 kg και 1 ψάρι.'+(kg>10?' ⚠ Πάνω από το όριο, αν τα κρατάς όλα.':''));
+  if(kg>0) msgs.push('Καταγεγραμμένα τις τελευταίες 24 ώρες: '+kg.toFixed(1)+' kg. Όριο από σκάφος: 10 kg και 1 ψάρι οποιουδήποτε βάρους.'+(kg>10?' ⚠ Πάνω από το όριο, αν τα κρατάς όλα.':''));
   out.textContent=msgs.join(' ');
 }
 $('biteForm').addEventListener('input',updateLaw);

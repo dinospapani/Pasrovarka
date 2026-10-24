@@ -403,6 +403,7 @@
       <button type="button" data-g="tech" aria-pressed="false">Τεχνικές</button>
       <button type="button" data-g="law" aria-pressed="false">Νόμοι</button>
       <button type="button" data-g="safety" aria-pressed="false">Ασφάλεια</button>
+      <button type="button" data-g="shops" aria-pressed="false">Μαγαζιά</button>
     </div>
     <div id="g-species" class="list">
       <input type="text" id="spQ" placeholder="Αναζήτηση είδους (ελληνικά, αγγλικά, λατινικά)" aria-label="Αναζήτηση είδους">
@@ -412,6 +413,13 @@
     </div>
     <div id="g-tech" class="list" hidden></div>
     <div id="g-law" class="list" hidden></div>
+    <div id="g-shops" class="list" hidden>
+      <div class="card">
+        <h3>Κοντινά μαγαζιά ψαρικής</h3>
+        <p class="note">Ανοίγει το Google Maps με αναζήτηση γύρω από τη θέση σου, με ώρες, τηλέφωνα και οδηγίες. Η θέση δεν αποθηκεύεται στην εφαρμογή.</p>
+        <div class="row" style="margin-top:8px"><button class="btn acc" type="button" id="sShops">Άνοιγμα στο Google Maps</button></div>
+      </div>
+    </div>
     <div id="g-safety" hidden>
       <div class="card">
         <h3>Λίστα πριν την έξοδο</h3>
@@ -529,6 +537,7 @@
 <script src="todayloc.js"></script>
 <script src="mine-tab.js"></script>
 <script src="knowledge.js"></script>
+<script src="ext.js"></script>
 <script src="advisor.js"></script>
 <script src="diag.js"></script>
 <script src="track.js"></script>
