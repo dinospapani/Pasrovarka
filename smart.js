@@ -211,7 +211,7 @@ var OVP=['https://overpass-api.de/api/interpreter','https://overpass.kumi.system
 function portsNear(lat,lon,rad){
   rad=rad||3000;
   var ck=C.lsGet('psaro-port-cache2',null); if(ck&&Math.abs(ck.lat-lat)<0.002&&Math.abs(ck.lon-lon)<0.002&&Date.now()-ck.t<30*86400000&&ck.rad>=rad) return Promise.resolve(ck.list);
-  var q='[out:json][timeout:15];(nwr(around:'+rad+','+lat+','+lon+')["leisure"="marina"];nwr(around:'+rad+','+lat+','+lon+')["harbour"="yes"];nwr(around:'+rad+','+lat+','+lon+')["seamark:type"~"^(harbour|harbour_basin|small_craft_facility)$"];nwr(around:'+rad+','+lat+','+lon+')["amenity"="boat_rental"]["name"];);out center tags 60;';
+  var q='[out:json][timeout:15];(nwr(around:'+rad+','+lat+','+lon+')["leisure"="marina"];nwr(around:'+rad+','+lat+','+lon+')["harbour"="yes"];nwr(around:'+rad+','+lat+','+lon+')["seamark:type"~"^(harbour|harbour_basin|small_craft_facility)$"];nwr(around:'+rad+','+lat+','+lon+')["amenity"="boat_rental"]["name"];nwr(around:'+rad+','+lat+','+lon+')["leisure"="slipway"]["name"];);out center tags 60;';
   function ask(i){
     if(i>=OVP.length) return Promise.reject(new Error('net'));
     var ctl=window.AbortController?new AbortController():null, tm=setTimeout(function(){ if(ctl) ctl.abort(); },8000);
@@ -304,14 +304,21 @@ function suggest(input,getItems,onPick,remote){
   function all(){ var seen={}, out=[]; base().concat(nearList,remoteList).forEach(function(x){ var k=norm(x.name)+x.lat.toFixed(3); if(!seen[k]){ seen[k]=1; out.push(x); } }); list=out; return out; }
   function fmt(x){ return x.d!=null?Object.assign({},x,{sub:Math.round(x.d*10)/10+' km'}):x; }
   var sg=suggest(pin,function(){ return all().map(fmt); },null,function(q,cb){ var p=fixP; nomi(q,p?p.lat:null,p?p.lon:null,0.6).then(function(r){ remoteList=r; cb(r.map(fmt)); }).catch(function(e){ cb([],T('Δεν υπάρχει ίντερνετ για αναζήτηση.','No internet for search.')); }); });
-  function prefill(){ pin.value=S.home?(S.home.name||T('Λιμάνι','Port')):''; hint.textContent=''; }
+  function prefill(){ pin.value=S.home?(S.home.name||T('Λιμάνι','Port')):''; hint.textContent=''; delete pin.dataset.touched; delete pin.dataset.auto; }
+  /* αυτόματη συμπλήρωση: το πλησιέστερο ονομασμένο λιμάνι/ράμπα σε 800 μ. από τη θέση σου, αν δεν έχεις γράψει εσύ κάτι */
+  function autoFill(){
+    if(!fixP||pin.dataset.touched==='1'||!nearList.length) return;
+    var best=null; nearList.forEach(function(x){ if(typeof x.lat!=='number') return; var d=distKm(fixP.lat,fixP.lon,x.lat,x.lon); if(!best||d<best.d) best={x:x,d:d}; });
+    if(best&&best.d<=0.8){ pin.value=best.x.name; pin.dataset.auto='1'; hint.textContent=T('Αυτόματα, ','Auto, ')+Math.round(best.d*1000)+T(' μ. από εσένα',' m from you'); try{ if(document.activeElement===pin) pin.blur(); }catch(e){} }
+  }
+  pin.addEventListener('input',function(){ pin.dataset.touched='1'; delete pin.dataset.auto; });
   var loaded=0;
-  function load(){
-    if(Date.now()-loaded<120000) return; loaded=Date.now(); hint.textContent=T('Αναζήτηση λιμανιών…','Looking for ports…'); sg.busy(true);
-    fixNow(function(p){ fixP=p; portsNearSafe(p.lat,p.lon,8000).then(function(l){ sg.busy(false); nearList=l.filter(function(x){ return x.named; }); hint.textContent=nearList.length?'':T('Δεν βρέθηκαν λιμάνια κοντά.','No ports found nearby.'); sg.refresh(); }).catch(function(e){ sg.busy(false); hint.textContent=T('Δεν φορτώθηκαν λιμάνια (','Ports did not load (')+((e&&e.message)||'net')+T('). Γράψε το όνομα.','). Type the name.'); loaded=0; }); },function(){ hint.textContent=T('Δεν βρέθηκε θέση GPS.','No GPS fix.'); loaded=0; });
+  function load(force){
+    if(!force&&Date.now()-loaded<120000) return; loaded=Date.now(); hint.textContent=T('Αναζήτηση λιμανιών…','Looking for ports…'); sg.busy(true);
+    fixNow(function(p){ fixP=p; portsNearSafe(p.lat,p.lon,8000).then(function(l){ sg.busy(false); nearList=l.filter(function(x){ return x.named; }); hint.textContent=nearList.length?'':T('Δεν βρέθηκαν λιμάνια κοντά.','No ports found nearby.'); autoFill(); sg.refresh(); if(pin.dataset.auto==='1'&&document.activeElement!==pin){ var bx=pin.parentNode.querySelector('.sgbox'); if(bx) bx.hidden=true; } }).catch(function(e){ sg.busy(false); hint.textContent=T('Δεν φορτώθηκαν λιμάνια (','Ports did not load (')+((e&&e.message)||'net')+T('). Γράψε το όνομα.','). Type the name.'); loaded=0; }); },function(){ hint.textContent=T('Δεν βρέθηκε θέση GPS.','No GPS fix.'); loaded=0; });
   }
   pin.addEventListener('focus',load);
-  var tb=$('tripBtn'); if(tb) tb.addEventListener('click',function(){ setTimeout(prefill,50); setTimeout(load,300); });
+  var tb=$('tripBtn'); if(tb) tb.addEventListener('click',function(){ setTimeout(prefill,50); setTimeout(function(){ load(true); },300); });
   setTimeout(function(){ if(!C.lsGet('psaro-port-cache3',null)&&navigator.onLine) load(); },5000);
   prefill();
   /* προτάσεις προορισμού */
@@ -321,6 +328,7 @@ function suggest(input,getItems,onPick,remote){
     var v=pin.value.trim(); if(!v) return;
     var cur=S.home&&(S.home.name||T('Λιμάνι','Port')); if(cur&&norm(v)===norm(cur)) return;
     var m=all().find(function(x){ return norm(x.name)===norm(v); }); if(!m) return;
+    if(pin.dataset.auto==='1'){ var o2=S.home; S.home={lat:m.lat,lon:m.lon,name:m.name}; if(o2) S.homeBack=o2; else delete S.homeBack; save(); autoStop(); rt(); return; }
     var old=S.home; setTimeout(function(){
       window.PsaroAsk(T('Λιμάνι αναχώρησης: «','Departure port: “')+m.name+T('». Να γίνει και το μόνιμο λιμάνι σου;','”. Make it your permanent home port too?'),{title:T('Λιμάνι','Home port'),ok:T('Μόνιμο','Permanent'),cancel:T('Μόνο αυτή την έξοδο','This trip only')}).then(function(ok){
         if(!ok&&old) S.homeBack=old; else if(!ok) S.homeBack=null;
@@ -385,6 +393,6 @@ function openPanel(){ render(); P.hidden=false; }
   var r=el('div','sprow'), x=el('div','sptx'); x.append(el('b','',T('Λιμάνι και σκάφος','Port and boat')),el('span','',S.home?T('Λιμάνι ορισμένο','Port set')+(S.tank?' · '+S.tank+' L':''):T('Όρισε λιμάνι, καύσιμο και αυτόματες προτάσεις.','Set port, fuel and automatic suggestions.')));
   r.append(x,btn(T('Άνοιγμα','Open'),'acc',openPanel)); return r;
 });
-window.PsaroSmart={state:function(){ return S; },rt:rt,heat:heat,lastYear:lastYear,openPanel:openPanel,findPort:findPort,portsNear:portsNear,offerHome:offerHome,badIn:badIn,weekly:weekly};
+window.PsaroSmart={setHome:function(h){ S.home={lat:h.lat,lon:h.lon,name:h.name}; delete S.homeNo; delete S.homeBack; save(); autoStop(); autoStart(); rt(); },state:function(){ return S; },rt:rt,heat:heat,lastYear:lastYear,openPanel:openPanel,findPort:findPort,portsNear:portsNear,offerHome:offerHome,badIn:badIn,weekly:weekly};
 autoStart();
 })();

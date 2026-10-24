@@ -38,7 +38,7 @@ if(mode==='old') return;
 /* ---- νέα εμφάνιση ---- */
 var mb=document.querySelector('.mapbtns'), box=mb&&mb.parentNode; if(!mb||!box) return;
 document.body.classList.add('nd');
-var G={layers:['bLayer','bSea','bDepthMap','bZones','bNav','bDams','bHot'],actions:['bQuick','bGear','bSpotPick'],safety:['bTools']};
+var G={layers:['bLayer','bSea','bPorts','bDepthMap','bZones','bNav','bDams','bHot'],actions:['bQuick','bGear','bSpotPick'],safety:['bTools']};
 var TITLE={layers:T('Στρώματα','Layers'),actions:T('Ενέργειες','Actions'),safety:T('Ασφάλεια και θάλασσα','Safety and sea')};
 var SUB={layers:T('Τι φαίνεται πάνω στο χάρτη','What shows on the map'),actions:T('Καταγραφή, εργαλεία και σημεία','Record, gear and spots'),safety:T('Λειτουργούν με GPS και ανοιχτή εφαρμογή. Δεν είναι ναυτικό όργανο.','Work with GPS and the app open. Not a navigation instrument.')};
 function groupOf(id){ for(var k in G) if(G[k].indexOf(id)>=0) return k; return 'actions'; }
@@ -55,9 +55,20 @@ sheet.append(back,panel); document.body.append(sheet);
 function open(g){
   Object.keys(lists).forEach(function(k){ lists[k].hidden=(k!==g); });
   ttl.textContent=TITLE[g]; sub.textContent=SUB[g]; panel.setAttribute('aria-label',TITLE[g]);
-  sheet.hidden=false; try{ done.focus({preventScroll:true}); }catch(e){}
+  sheet.dataset.g=g; ed.hidden=(g==='safety'); sheet.hidden=false; try{ done.focus({preventScroll:true}); }catch(e){}
 }
-function close(){ sheet.hidden=true; }
+function close(){ sheet.hidden=true; if(typeof setEdit==='function') setEdit(false); }
+var ed=el('button','btn ghost sm ndedit',T('Προσαρμογή','Customize')); ed.type='button'; ed.setAttribute('aria-pressed','false');
+var editing=false, TKEY='psaro-toolsoff';
+function setEdit(v){ editing=v; sheet.classList.toggle('ndediting',v); ed.setAttribute('aria-pressed',String(v)); ed.textContent=v?T('Έτοιμο','Finish'):T('Προσαρμογή','Customize'); sub.textContent=v?T('Πάτα ένα εργαλείο για να το κρύψεις ή να το εμφανίσεις.',''):SUB[sheet.dataset.g]||''; sub.style.display=v?'block':''; }
+ed.addEventListener('click',function(){ setEdit(!editing); });
+head.insertBefore(ed,done);
+panel.addEventListener('click',function(e){
+  if(!editing) return; var b=e.target.closest&&e.target.closest('.mbtn'); if(!b||b.id==='bQuick') return;
+  e.stopPropagation(); e.preventDefault();
+  var off=C.lsGet(TKEY,[]); if(!Array.isArray(off)) off=[]; var i=off.indexOf(b.id); if(i>=0) off.splice(i,1); else off.push(b.id);
+  C.lsSet(TKEY,off); b.classList.toggle('tool-off',off.indexOf(b.id)>=0);
+},true);
 back.addEventListener('click',close); done.addEventListener('click',close);
 document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&!sheet.hidden) close(); });
 Object.keys(lists).forEach(function(g){
@@ -128,23 +139,37 @@ box.insertBefore(bar,mb.nextSibling);
   function closeF(){ fd.hidden=true; try{ fi.blur(); }catch(e){} }
   fb.addEventListener('click',closeF);
   document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&!fd.hidden) closeF(); });
+  var GR={'α':'a','β':'v','γ':'g','δ':'d','ε':'e','ζ':'z','η':'i','θ':'th','ι':'i','κ':'k','λ':'l','μ':'m','ν':'n','ξ':'x','ο':'o','π':'p','ρ':'r','σ':'s','ς':'s','τ':'t','υ':'y','φ':'f','χ':'ch','ψ':'ps','ω':'o'};
+  function plain(s){ return s.normalize('NFD').replace(/[̀-ͯ]/g,''); }
+  function latin(s){ return plain(s).toLowerCase().replace(/[α-ως]/g,function(c){ return GR[c]||c; }); }
+  function omSearch(q){
+    return fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=6&format=json&language='+(EN?'en':'el'))
+      .then(function(r){ return r.json(); }).then(function(j){ return ((j&&j.results)||[]).map(function(x){ return {name:x.name,lat:x.latitude,lon:x.longitude,sub:[x.admin1,x.country].filter(Boolean).filter(function(v,i,a){ return a.indexOf(v)===i; }).join(', ')}; }); }).catch(function(){ return []; });
+  }
+  function osmSearch(q){
+    return fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&accept-language='+(EN?'en':'el')+'&viewbox=32.2,35.75,34.7,34.5&q='+encodeURIComponent(q))
+      .then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(j){ return (j||[]).map(function(x){ var p=(x.display_name||'').split(',').map(function(s){ return s.trim(); }); return {name:(x.name||p[0]||'').trim(),lat:+x.lat,lon:+x.lon,sub:p.slice(1,3).join(', ')}; }).filter(function(x){ return x.name&&isFinite(x.lat)&&isFinite(x.lon); }); }).catch(function(){ return []; });
+  }
   function find(){
     var q=fi.value.trim(), my=++seq; showBase(); if(q.length<2) return;
     var note=el('div','note',T('Αναζήτηση…','Searching…')); fr.append(note);
-    fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=6&format=json&language='+(EN?'en':'el'))
-      .then(function(r){ return r.json(); }).then(function(j){
-        if(my!==seq) return; note.remove(); var res=(j&&j.results)||[];
-        if(!res.length){ fr.append(el('div','note',T('Δεν βρέθηκε τοποθεσία.','No place found.'))); return; }
-        res.forEach(function(x){
-          var sub=[x.admin1,x.country].filter(Boolean).filter(function(v,i,a){ return a.indexOf(v)===i; }).join(', ');
-          row(x.name,sub,function(){
-            setLabel(x.name); closeF();
-            if(window.PsaroPlaces&&PsaroPlaces.pick) PsaroPlaces.pick(x.name,x.latitude,x.longitude);
-            else if(C.viewPlace) C.viewPlace({id:'s'+x.latitude+','+x.longitude,name:x.name,lat:x.latitude,lon:x.longitude});
-            try{ var m=C.map&&C.map(); if(m) m.setView([x.latitude,x.longitude],Math.max(m.getZoom(),11)); }catch(e){}
-          },PIN);
-        });
-      }).catch(function(){ if(my!==seq) return; note.textContent=T('Η αναζήτηση δεν δούλεψε. Έλεγξε τη σύνδεση.','Search failed. Check your connection.'); });
+    var variants=[q]; var p1=plain(q), l1=latin(q); if(p1!==q) variants.push(p1); if(l1!==p1&&l1!==q) variants.push(l1);
+    /* πρώτα Open-Meteo (με παραλλαγές γραφής), μετά και OpenStreetMap */
+    var chain=Promise.resolve([]);
+    variants.forEach(function(v){ chain=chain.then(function(acc){ return acc.length?acc:omSearch(v); }); });
+    Promise.all([chain,osmSearch(variants[variants.length-1]===l1&&l1!==q?q:q)]).then(function(rs){
+      if(my!==seq) return; note.remove();
+      var seen={}, all=rs[0].concat(rs[1]).filter(function(x){ var k=x.lat.toFixed(2)+','+x.lon.toFixed(2); if(seen[k]) return false; seen[k]=1; return true; }).slice(0,8);
+      if(!all.length){ fr.append(el('div','note',T('Δεν βρέθηκε τοποθεσία. Δοκίμασε άλλη γραφή ή λατινικούς χαρακτήρες.','No place found. Try another spelling.'))); return; }
+      all.forEach(function(x){
+        row(x.name,x.sub,function(){
+          setLabel(x.name); closeF();
+          if(window.PsaroPlaces&&PsaroPlaces.pick) PsaroPlaces.pick(x.name,x.lat,x.lon);
+          else if(C.viewPlace) C.viewPlace({id:'s'+x.lat+','+x.lon,name:x.name,lat:x.lat,lon:x.lon});
+          try{ var m=C.map&&C.map(); if(m) m.setView([x.lat,x.lon],Math.max(m.getZoom(),11)); }catch(e){}
+        },PIN);
+      });
+    }).catch(function(){ if(my!==seq) return; note.textContent=T('Η αναζήτηση δεν δούλεψε. Έλεγξε τη σύνδεση.','Search failed. Check your connection.'); });
   }
   fi.addEventListener('input',function(){ clearTimeout(tmr); tmr=setTimeout(find,400); });
   fi.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); clearTimeout(tmr); find(); } });

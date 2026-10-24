@@ -96,3 +96,59 @@ body.nd .ndfind .ndpanel{top:0;bottom:auto;border-radius:0 0 28px 28px;padding:c
 body.nd .ndq{width:100%;box-sizing:border-box;height:52px;border:1px solid var(--line);border-radius:26px;padding:0 20px;font:inherit;font-size:17px;background:var(--bg2,var(--surface));color:var(--ink);margin-bottom:10px}
 body.nd .ndres{display:grid;gap:8px}
 body.nd .ndbars{gap:3px}body.nd .ndlab span{font-size:11px}
+
+/* v31z154: καθαρή γραμμή καιρού μέσα στην κάρτα, σε ίσες στήλες */
+body.nd .ndfoot{flex-wrap:wrap;gap:10px}
+body.nd .ndwx{flex:1 1 100%}
+body.nd .ndcard .mapwx .mwrow,body.nd .ndcard .mapwx[data-n] .mwrow{display:flex!important;flex-wrap:nowrap;align-items:center;gap:0!important}
+body.nd .ndcard .mapwx .mw,body.nd .ndcard .mapwx[data-n] .mw{flex:1 1 0;min-width:0;padding:2px 0;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px}
+body.nd .ndcard .mapwx .mw+.mw{border-left:1px solid var(--line)!important}
+body.nd .ndcard .mapwx .mw b{font-size:19px;line-height:1.1;white-space:nowrap}
+body.nd .ndcard .mapwx .mw span{font-size:11px;line-height:1.1;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+body.nd .ndcard .mapwx .mwgear{flex:none;margin:0 0 0 8px}
+body.nd .ndshop{flex:1 1 100%;justify-content:center;height:42px}
+body.ontrip.nd .ndcard .mapwx .mw b{font-size:17px}
+body.nd .ndcard .mapwx .mw b,body.nd .ndcard .mapwx .mw span{width:100%;text-align:center!important;margin:0!important;padding:0!important;display:block}
+body.nd .ndcard .mapwx .mw,body.nd .ndcard .mapwx[data-n] .mw{display:flex!important;flex-direction:column!important;grid-template-columns:none!important;align-items:center!important}body.nd .ndcard .mapwx .mw i{display:none!important}
+
+/* v31z155: μικρό πλαίσιο αντί για πλήρες φύλλο: ο χάρτης φαίνεται, το μενού μένει ορατό */
+body.nd .ndsheet[data-g=layers] .ndback{background:transparent}
+body.nd .ndsheet:not(.ndfind) .ndback{background:rgba(0,0,0,.18)}
+body.nd .ndsheet[data-g=layers] .ndback{background:transparent}
+body.nd .ndsheet:not(.ndfind) .ndpanel{left:12px;right:12px;bottom:calc(var(--navh,64px) + 26px + env(safe-area-inset-bottom,0px));border-radius:26px;max-height:56dvh;padding:8px 14px 14px;box-shadow:0 8px 32px rgba(0,0,0,.4);border:1px solid var(--line)}
+body.nd .ndsheet:not(.ndfind) .ndhand{display:none}
+body.nd .ndsheet:not(.ndfind) .ndhead{margin:4px 0 0}
+body.nd .ndsheet:not(.ndfind) .ndhead h2{font-size:17px}
+body.nd .ndsheet:not(.ndfind) .ndsub{margin:2px 0 8px;font-size:12px}
+body.nd .ndlist:not([hidden]){grid-template-columns:1fr 1fr;gap:8px}
+body.nd .ndlist .mbtn,body.nd .ndrow{flex-direction:column;justify-content:center;text-align:center;gap:6px;min-height:76px;padding:8px 6px;font-size:13px;line-height:1.15;border-radius:16px}
+body.nd .ndlist .mbtn svg,body.nd .ndrow svg{width:24px;height:24px}
+body.nd .ndfind .ndpanel{left:0;right:0}
+body.nd .ndfind .ndrow{flex-direction:row;justify-content:flex-start;text-align:left;min-height:56px;font-size:15px;padding:10px 16px}
+body.nd .ndlist .mbtn,body.nd .ndrow{min-height:62px}body.nd .ndsheet:not(.ndfind) .ndsub{display:none}
+
+/* v31z156: έλεγχος λεπτομερειών */
+/* κρυμμένα εργαλεία (από την παλιά επιλογή) μένουν κρυμμένα, εκτός από την ώρα της προσαρμογής */
+body.nd .ndlist .mbtn.tool-off{display:none!important}
+body.nd .ndsheet.ndediting .ndlist .mbtn.tool-off{display:flex!important;opacity:.4!important;filter:grayscale(1)!important}
+body.nd .ndsheet.ndediting .ndsub{display:block!important}
+body.nd .ndhead .ndedit{margin-left:auto;margin-right:8px}
+/* προειδοποιήσεις και οδηγίες πάνω από την κάρτα και το μενού */
+body.nd .maphint,body.mapfull.nd .maphint,body.nd .zonewarn,body.mapfull.nd .zonewarn{bottom:calc(var(--navh,64px) + var(--ndch,0px) + 40px)}
+body.nd #dtBar{bottom:calc(var(--navh,64px) + var(--ndch,0px) + 40px)}
+body.hasdt.nd:not(.ontrip) .zonewarn,body.hasdt.nd:not(.ontrip) .maphint{bottom:calc(var(--navh,64px) + var(--ndch,0px) + 110px)}
+body.ontrip.nd #dtBar,body.ontrip.nd .zonewarn,body.ontrip.nd .maphint{bottom:calc(var(--navh,64px) + 140px)}
+body.hasdt.ontrip.nd .zonewarn,body.hasdt.ontrip.nd .maphint{bottom:calc(var(--navh,64px) + 210px)}
+/* μικρές οθόνες: λιγότερο ύψος για να χωράνε μπάρα και κάρτα */
+@media (max-height:720px){
+  body.nd .ndbars,body.nd .ndlab{display:none}
+  body.nd .ndcard{padding:10px 14px}
+  body.nd .ndb{height:46px;width:52px}
+  body.nd .ndbar{padding:4px}
+  body.nd .ndshop{height:38px}
+}
+/* η δεξιά μπάρα ανεβαίνει όταν εμφανίζεται μπάρα απόστασης ή προειδοποίηση */
+body.nd.hasdt .ndbar,body.nd:has(.zonewarn:not([hidden])) .ndbar,body.nd:has(.maphint:not([hidden])) .ndbar{bottom:calc(var(--navh,64px) + var(--ndch,0px) + 104px)}
+body.nd.hasdt:has(.zonewarn:not([hidden])) .ndbar{bottom:calc(var(--navh,64px) + var(--ndch,0px) + 170px)}
+body.ontrip.nd.hasdt .ndbar,body.ontrip.nd:has(.zonewarn:not([hidden])) .ndbar{bottom:calc(var(--navh,64px) + 215px)}
+body.ontrip.nd.hasdt:has(.zonewarn:not([hidden])) .ndbar{bottom:calc(var(--navh,64px) + 285px)}
