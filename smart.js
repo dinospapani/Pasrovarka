@@ -144,6 +144,22 @@ bH.addEventListener('click',function(){ S.hot.on=!S.hot.on; save(); heat(); if(S
 map.on('zoomend moveend',function(){ if(S.hot.on) heat(); }); C.Store.on('bites',function(){ if(S.hot.on) heat(); });
 heat();
 
+/* γρήγορο φίλτρο είδους πάνω στον χάρτη */
+(function(){
+  var Ctl=L.Control.extend({options:{position:'topleft'},onAdd:function(){
+    var d=L.DomUtil.create('div','leaflet-bar spfilt'); L.DomEvent.disableClickPropagation(d);
+    var sel=el('select','spsel'); sel.setAttribute('aria-label',T('Είδος ψαριού στον χάρτη','Fish species on the map')); d.append(sel);
+    function fill(){ var spn={}; (C.Store.get('bites')||[]).forEach(function(b){ if(b.species&&typeof b.lat==='number') spn[b.species]=(spn[b.species]||0)+1; });
+      sel.replaceChildren(new Option('🐟 '+T('Όλα τα είδη','All species'),'')); Object.keys(spn).sort().forEach(function(k){ sel.append(new Option('🐟 '+k+' ('+spn[k]+')',k)); });
+      if(S.hot.sp&&!spn[S.hot.sp]) sel.append(new Option('🐟 '+S.hot.sp,S.hot.sp)); sel.value=S.hot.sp||''; d.classList.toggle('on',!!S.hot.sp); d.hidden=!Object.keys(spn).length; }
+    sel.addEventListener('change',function(){ S.hot.sp=sel.value; if(sel.value) S.hot.on=true; save(); heat(); d.classList.toggle('on',!!sel.value);
+      if(sel.value&&!hotL.getLayers().length) C.toast(T('Δεν έχεις καταγεγραμμένα ψάρια με θέση για αυτό το είδος.','No located catches of this species.')); });
+    C.Store.on('bites',fill); fill(); return d; }});
+  map.addControl(new Ctl());
+  var st=document.createElement('style'); st.textContent='.spfilt{border:0!important;box-shadow:0 2px 10px rgba(0,0,0,.25)!important;border-radius:18px;overflow:hidden}.spsel{height:36px;max-width:190px;border:0;padding:0 10px;font:600 14px system-ui;background:#fff;color:#123}.spfilt.on .spsel{background:#ffd54a}';
+  document.head.appendChild(st);
+})();
+
 /* ---------- «Πέρσι τέτοια μέρα» ---------- */
 function lastYear(){
   var tt=$('tab-today'); if(!tt) return; var card=$('lyCard');
@@ -374,6 +390,11 @@ function render(){
   row(T('Έγινε service','Service done'),null,btn(T('Τώρα','Now'),'',function(){ S.eng.last=S.eng.h; save(); render(); }));
   sec(T('Αυτόματα','Automatic'));
   row(T('Προτάσεις έναρξης και λήξης','Start and end suggestions'),T('Ρωτά όταν φεύγεις από το λιμάνι ή γυρίζεις. Χρησιμοποιεί GPS όσο η εφαρμογή είναι ανοιχτή.','Asks when you leave or return to the port. Uses GPS while the app is open.'),sw(S.auto,function(){ S.auto=!S.auto; save(); if(S.auto) autoStart(); else autoStop(); render(); }));
+  sec(T('Πλοήγηση «Πηγαίνω εκεί»','“Go there” navigation'));
+  var rs=el('select','sminp'); [['0',T('Ευθεία γραμμή (χωρίς έλεγχο στεριάς)','Straight line (no land check)')],['100','100 '+T('μ. από στεριά','m from land')],['200','200 '+T('μ. από στεριά (προεπιλογή)','m from land (default)')],['500','500 '+T('μ. από στεριά','m from land')],['1852','1 '+T('ν.μ. από στεριά','nm from land')]].forEach(function(o){ rs.append(new Option(o[1],o[0])); });
+  rs.value=String(C.lsGet('psaro-route-clr',200)); if(rs.selectedIndex<0) rs.value='200';
+  rs.addEventListener('change',function(){ C.lsSet('psaro-route-clr',+rs.value); });
+  row(T('Διαδρομή γύρω από στεριά','Route around land'),T('Ενδεικτική διαδρομή που κρατά απόσταση από ακτές και νησιά. Δεν είναι ναυτικός χάρτης. Χρειάζεται σύνδεση.','Indicative route keeping a distance from coasts and islands. Not a nautical chart. Needs a connection.'),rs);
   sec(T('Θερμά σημεία','Hotspots'));
   var spn={}; (C.Store.get('bites')||[]).forEach(function(b){ if(b.species) spn[b.species]=1; });
   var s1=el('select','sminp'); s1.append(new Option(T('Όλα τα είδη','All species'),'')); Object.keys(spn).sort().forEach(function(k){ s1.append(new Option(k,k)); }); s1.value=S.hot.sp||'';

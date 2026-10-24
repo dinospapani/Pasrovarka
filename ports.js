@@ -63,15 +63,14 @@ function load(i,j,t){
   return loadBox(key(i,j,t),'('+s+','+w+','+n+','+e+')',800,25000);
 }
 function pop(p){
-  var w=document.createElement('div'); w.className='pop portpop';
+  var w=document.createElement('div'); w.className='pop portpop land';
   var b=document.createElement('b'); b.textContent=p.n||KIND[p.k]; w.appendChild(b);
   var k=document.createElement('div'); k.className='pk'; var me=C.getCond&&C.getCond();
   k.textContent=KIND[p.k]+(me&&me.lat!=null?' · '+(Math.round(dist(me.lat,me.lon,p.la,p.lo)*10)/10)+' km':''); w.appendChild(k);
   var r=document.createElement('div'); r.className='pbtns';
   var a=document.createElement('button'); a.type='button'; a.className='pb'; a.textContent=T('Λιμάνι αναχώρησης','Departure port');
   a.addEventListener('click',function(){ var sm=window.PsaroSmart; if(sm&&sm.setHome){ sm.setHome({lat:p.la,lon:p.lo,name:p.n||KIND[p.k]}); map.closePopup(); C.toast(T('Λιμάνι: ','Port: ')+(p.n||KIND[p.k])); } });
-  var d=document.createElement('a'); d.className='pb g'; d.target='_blank'; d.rel='noopener'; d.textContent=T('Οδηγίες','Directions'); d.href='https://www.google.com/maps/dir/?api=1&destination='+p.la+','+p.lo;
-  r.append(a,d);
+  r.append(a);
   if(p.mine){ k.textContent+=' · '+T('δικό σου','yours'); var x=document.createElement('button'); x.type='button'; x.className='pb g'; x.textContent=T('Διαγραφή','Delete');
     x.addEventListener('click',function(){ mine=mine.filter(function(q){ return !(q.la===p.la&&q.lo===p.lo); }); C.lsSet(KM,mine); var id=p.la+','+p.lo+(p.n||''); if(shown[id]){ layer.removeLayer(shown[id]); delete shown[id]; } map.closePopup(); C.toast(T('Διαγράφηκε.','Deleted.')); }); r.append(x); }
   w.appendChild(r); return w;

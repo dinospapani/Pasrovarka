@@ -9,9 +9,10 @@ var tgt=C.lsGet(KEY,null); if(tgt&&(typeof tgt.lat!=='number'||typeof tgt.lon!==
 var pos=null, prev=null, spd=null, wid=null, lastZ=0, zNames=[], arrived=false;
 var layer=L.layerGroup().addTo(map), line=null, tm=null;
 var bar=document.createElement('div'); bar.id='dtBar'; bar.hidden=true;
-bar.innerHTML='<div class="dtmain"><b class="dtname"></b><span class="dtinfo"></span><span class="dtwarn" hidden></span></div><button type="button" class="dtx" aria-label="'+T('Τέλος πλοήγησης','Stop navigation')+'">✕</button>';
+bar.innerHTML='<div class="dtmain"><b class="dtname"></b><span class="dtinfo"></span><span class="dtwarn" hidden></span><span class="dtland" hidden></span></div><button type="button" class="dtx" aria-label="'+T('Τέλος πλοήγησης','Stop navigation')+'">✕</button>';
 box.appendChild(bar);
-var nameEl=bar.querySelector('.dtname'), infoEl=bar.querySelector('.dtinfo'), warnEl=bar.querySelector('.dtwarn');
+var nameEl=bar.querySelector('.dtname'), infoEl=bar.querySelector('.dtinfo'), warnEl=bar.querySelector('.dtwarn'), landEl=bar.querySelector('.dtland');
+var rt=null, planning=false;
 
 var R=Math.PI/180;
 function distKm(a,b,c,d){ var dl=(c-a)*R, dn=(d-b)*R, x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a*R)*Math.cos(c*R)*Math.sin(dn/2)*Math.sin(dn/2); return 12742*Math.asin(Math.min(1,Math.sqrt(x))); }
@@ -27,15 +28,38 @@ function crossed(a,b,c,d){
 }
 function fmtEta(min){ if(min>=600) return '>10'+T('ω','h'); var h=Math.floor(min/60), m=Math.round(min%60); return h?h+T('ω ','h ')+m+T('λ','m'):Math.max(1,m)+T('λ','m'); }
 
+function replan(){
+  if(!tgt||!pos||planning||!window.PsaroRoute) return;
+  var clr=+C.lsGet('psaro-route-clr',200); if(!clr){ rt=null; return; }
+  planning=true; var key=tgt.lat+','+tgt.lon, t0=Date.now();
+  window.PsaroRoute.plan({lat:pos.lat,lon:pos.lon},{lat:tgt.lat,lon:tgt.lon},clr).then(function(r){
+    if(!tgt||key!==tgt.lat+','+tgt.lon) return;
+    rt=r.straight?{straight:1,t:t0}:r.err?{err:r.err,t:t0,clr:clr}:{pts:r.pts,len:r.len,direct:r.direct,k:0,t:t0,clr:clr};
+  }).catch(function(){ if(tgt) rt={off:1,t:t0}; }).then(function(){ planning=false; render(); });
+}
 function render(){
   layer.clearLayers(); line=null; tm=null;
-  if(!tgt){ bar.hidden=true; document.body.classList.remove('hasdt'); return; }
+  if(!tgt){ bar.hidden=true; document.body.classList.remove('hasdt','hasland'); return; }
   bar.hidden=false; document.body.classList.add('hasdt');
   tm=L.circleMarker([tgt.lat,tgt.lon],{radius:9,color:'#fff',weight:3,fillColor:'#e8541e',fillOpacity:1}).addTo(layer);
   nameEl.textContent='➤ '+(tgt.name||T('Σημείο','Point'));
   if(!pos){ infoEl.textContent=T('Αναμονή για GPS…','Waiting for GPS…'); warnEl.hidden=true; return; }
-  var d=distKm(pos.lat,pos.lon,tgt.lat,tgt.lon), b=bearing(pos.lat,pos.lon,tgt.lat,tgt.lon);
-  line=L.polyline([[pos.lat,pos.lon],[tgt.lat,tgt.lon]],{color:'#ff8a50',weight:3,dashArray:'8 8',opacity:.95}).addTo(layer);
+  var d=distKm(pos.lat,pos.lon,tgt.lat,tgt.lon), b=bearing(pos.lat,pos.lon,tgt.lat,tgt.lon), landTxt='';
+  if(!planning&&(!rt||Date.now()-rt.t>60000)) setTimeout(replan,0);
+  if(rt&&rt.pts){
+    var k=rt.k||0; while(k<rt.pts.length-2&&distKm(pos.lat,pos.lon,rt.pts[k+1][0],rt.pts[k+1][1])<0.15) k++; rt.k=k;
+    var seg=[[pos.lat,pos.lon]].concat(rt.pts.slice(k+1)); d=0; for(var s=1;s<seg.length;s++) d+=distKm(seg[s-1][0],seg[s-1][1],seg[s][0],seg[s][1]);
+    b=bearing(pos.lat,pos.lon,seg[1][0],seg[1][1]);
+    L.polyline([[pos.lat,pos.lon],[tgt.lat,tgt.lon]],{color:'#ff8a50',weight:2,dashArray:'2 9',opacity:.4,interactive:false}).addTo(layer);
+    line=L.polyline(seg,{color:'#ffd166',weight:4,dashArray:'10 7',opacity:.98}).addTo(layer);
+    landTxt='↪ '+T('Ενδεικτική διαδρομή γύρω από στεριά (+','Indicative route around land (+')+Math.max(0.1,Math.round((d-distKm(pos.lat,pos.lon,tgt.lat,tgt.lon))*10)/10)+' km). '+T('Όχι ναυτική πλοήγηση: κοίτα πάντα έξω.','Not marine navigation: always look outside.');
+  } else {
+    line=L.polyline([[pos.lat,pos.lon],[tgt.lat,tgt.lon]],{color:'#ff8a50',weight:3,dashArray:'8 8',opacity:.95}).addTo(layer);
+    if(rt&&rt.err==='nopath') landTxt='⚠ '+T('Η ευθεία πορεία περνά από στεριά και δεν βρέθηκε ασφαλής διαδρομή με απόσταση ','The straight course crosses land and no safe route was found with ')+rt.clr+T(' μ. Πρόσεχε.',' m clearance. Be careful.');
+    else if(rt&&rt.err) landTxt='⚠ '+T('Δεν έγινε έλεγχος στεριάς για αυτή την πορεία.','Land was not checked for this course.');
+    else if(rt&&rt.off) landTxt=T('Χωρίς σύνδεση: δεν ελέγχθηκε η στεριά στην πορεία.','Offline: land on the course was not checked.');
+  }
+  landEl.hidden=!landTxt; landEl.textContent=landTxt; document.body.classList.toggle('hasland',!!landTxt);
   var nm=d/1.852, kn=spd!=null?spd*1.94384:null, parts=[];
   parts.push(U?U.dist(d,d<10?(d<1?2:1):0):d.toFixed(1)+' km');
   parts.push(('00'+Math.round(b)).slice(-3)+'° '+card(b));
@@ -58,10 +82,17 @@ function onPos(p){
 function onErr(e){ if(e&&e.code===1){ try{ C.toast(T('Δεν δόθηκε άδεια θέσης. Χωρίς GPS δεν υπάρχει πορεία.','Location permission denied. No course without GPS.')); }catch(x){} } }
 function begin(){ if(wid!=null||!navigator.geolocation) return; try{ wid=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:3000,timeout:30000}); }catch(e){ wid=null; } }
 function stop(){ if(wid!=null){ try{ navigator.geolocation.clearWatch(wid); }catch(e){} wid=null; } }
-function go(lat,lon,name){ tgt={lat:+lat,lon:+lon,name:(name||'').slice(0,40)}; C.lsSet(KEY,tgt); arrived=false; spd=null; prev=null; lastZ=0; map.closePopup(); begin(); render(); try{ C.toast(T('Πλοήγηση προς ','Heading to ')+(tgt.name||T('σημείο','point'))); }catch(e){} }
-function clear(){ tgt=null; arrived=false; C.lsSet(KEY,null); stop(); render(); }
+function go(lat,lon,name){ rt=null; tgt={lat:+lat,lon:+lon,name:(name||'').slice(0,40)}; C.lsSet(KEY,tgt); arrived=false; spd=null; prev=null; lastZ=0; map.closePopup(); begin(); render(); try{ C.toast(T('Πλοήγηση προς ','Heading to ')+(tgt.name||T('σημείο','point'))); }catch(e){} }
+function clear(){ rt=null; tgt=null; arrived=false; C.lsSet(KEY,null); stop(); render(); }
 bar.querySelector('.dtx').addEventListener('click',function(e){ e.stopPropagation(); clear(); });
 bar.querySelector('.dtmain').addEventListener('click',function(){ if(!tgt) return; var pts=[[tgt.lat,tgt.lon]]; if(pos) pts.push([pos.lat,pos.lon]); if(pts.length>1) map.fitBounds(L.latLngBounds(pts),{padding:[70,70],maxZoom:16}); else map.flyTo(pts[0],Math.max(map.getZoom(),14)); });
+
+/* προορισμός στη στεριά: οδηγίες οδήγησης στην εφαρμογή χαρτών του τηλεφώνου (όχι ευθεία γραμμή) */
+function navExt(la,lo){
+  var ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  var u=ios?'https://maps.apple.com/?daddr='+la+','+lo+'&dirflg=d':'https://www.google.com/maps/dir/?api=1&travelmode=driving&destination='+la+','+lo;
+  window.open(u,'_blank','noopener');
+}
 
 /* κουμπί «Πηγαίνω εκεί» σε κάθε παράθυρο πληροφοριών του χάρτη */
 map.on('popupopen',function(e){
@@ -71,9 +102,10 @@ map.on('popupopen',function(e){
   var nm=(pop.querySelector('b')||{}).textContent||'';
   var b=document.createElement('button'); b.type='button'; b.className='pact pdirect'+(pop.classList.contains('pmap')?'':' solo');
   b.innerHTML='<svg viewBox="0 0 24 24" class="pi"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg><span></span>'; b.querySelector('span').textContent=T('Πηγαίνω εκεί','Go there');
-  b.addEventListener('click',function(){ go(ll.lat,ll.lng,nm); });
+  var land=pop.classList.contains('land');
+  b.addEventListener('click',function(){ if(land) navExt(ll.lat,ll.lng); else go(ll.lat,ll.lng,nm); });
   (pop.querySelector('.pbtns')||pop).appendChild(b);
 });
-window.PsaroDirect={go:go,clear:clear,target:function(){ return tgt; }};
+window.PsaroDirect={navExt:navExt,go:go,clear:clear,target:function(){ return tgt; }};
 if(tgt){ begin(); render(); }
 })();

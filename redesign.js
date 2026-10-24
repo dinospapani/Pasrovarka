@@ -1,4 +1,4 @@
-/* Νέα εμφάνιση: τα κουμπιά του χάρτη μαζεύονται σε 4 κουμπιά (Στρώματα, Ενέργειες, Ασφάλεια, Εγώ) με φύλλα.
+/* Νέα εμφάνιση: τα κουμπιά του χάρτη μαζεύονται σε 4 κουμπιά (Στρώματα, Ενέργειες, Ασφάλεια, Θέση μου) με φύλλα.
    Δεν αλλάζει λογική: μετακινεί τα ίδια τα υπάρχοντα κουμπιά, με τους ίδιους χειριστές.
    Διακόπτης: Προφίλ → Ρυθμίσεις → Εμφάνιση (κλειδί psaro-ui: new ή old). */
 (function(){
@@ -76,12 +76,12 @@ Object.keys(lists).forEach(function(g){
 });
 
 /* ενέργειες που δεν ήταν κουμπιά του χάρτη: ίδιες συναρτήσεις με πριν */
-function proxy(g,label,icon,fn,first){
-  var b=el('button','ndrow'); b.type='button'; b.innerHTML=icon+'<span></span>'; b.lastChild.textContent=label; b.addEventListener('click',fn);
+function proxy(g,label,icon,fn,first,tripHide){
+  var b=el('button','ndrow'); if(tripHide) b.classList.add('ndnotrip'); b.type='button'; b.innerHTML=icon+'<span></span>'; b.lastChild.textContent=label; b.addEventListener('click',fn);
   if(first&&lists[g].firstChild) lists[g].insertBefore(b,lists[g].firstChild); else lists[g].append(b);
 }
-proxy('actions',T('Νέο ψάρι (φόρμα)','New fish (form)'),IC.fish,function(){ var f=$('fab'); if(f) f.click(); },false);
-if(C.quickMiss) proxy('actions',T('Έχασα ψάρι','Lost a fish'),IC.miss,function(){ C.quickMiss(); },false);
+proxy('actions',T('Νέο ψάρι (φόρμα)','New fish (form)'),IC.fish,function(){ var f=$('fab'); if(f) f.click(); },false,true);
+if(C.quickMiss) proxy('actions',T('Έχασα ψάρι','Lost a fish'),IC.miss,function(){ C.quickMiss(); },false,true);
 
 var SHOP='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9l1.5-5h13L20 9"/><path d="M4 9a2.7 2.7 0 005.3 0 2.7 2.7 0 005.4 0A2.7 2.7 0 0020 9"/><path d="M5.5 12v8h13v-8"/></svg>';
 proxy('actions',T('Κοντινά μαγαζιά ψαρικής','Nearby fishing stores'),SHOP,function(){ var b=$('sShops'); if(b) b.click(); },false);
@@ -103,7 +103,7 @@ function nb(label,icon,fn){ var b=el('button','ndb'); b.type='button'; b.innerHT
 nb(T('Στρώματα','Layers'),IC.layers,function(){ open('layers'); });
 nb(T('Ενέργειες','Actions'),IC.actions,function(){ open('actions'); });
 nb(T('Ασφάλεια','Safety'),IC.safety,function(){ open('safety'); });
-nb(T('Εγώ','Me'),IC.me,function(){ var l=$('bLoc'); if(l) l.click(); });
+nb(T('Θέση μου','My position'),IC.me,function(){ var l=$('bLoc'); if(l) l.click(); });
 box.insertBefore(bar,mb.nextSibling);
 
 /* ---- αρχική οθόνη: αναζήτηση, κάρτα «Σήμερα», κάτω μενού με κεντρικό κουμπί ---- */

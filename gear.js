@@ -379,7 +379,7 @@ function renderLog(){
   });
 }
 if(seg&&$('l-stats')){
-  lbtn=el('button','',T('Στατικά','Passive')); lbtn.type='button'; lbtn.dataset.l='gear'; lbtn.setAttribute('aria-pressed','false'); var stb=seg.querySelector('[data-l=stats]'); if(stb) seg.insertBefore(lbtn,stb); else seg.appendChild(lbtn);
+  lbtn=el('button','',T('Δίχτυα','Nets')); lbtn.type='button'; lbtn.dataset.l='gear'; lbtn.setAttribute('aria-pressed','false'); var stb=seg.querySelector('[data-l=stats]'); if(stb) seg.insertBefore(lbtn,stb); else seg.appendChild(lbtn);
   lbox=el('div','col'); lbox.id='l-gear'; lbox.hidden=true; $('l-stats').parentNode.insertBefore(lbox,$('l-stats').nextSibling);
   Array.prototype.forEach.call(seg.querySelectorAll('button'),function(b){ b.addEventListener('click',function(){
     var on=b===lbtn; lbox.hidden=!on;

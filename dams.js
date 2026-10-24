@@ -23,7 +23,7 @@ var ST={
   check:[T('Η άδεια ισχύει μόνο αν το φράγμα έχει δηλωθεί ανοιχτό. Επιβεβαίωσε.','The licence is valid only if the reservoir is declared open. Please confirm.'),'warn']
 };
 function pop(d){
-  var s=ST[d[4]], w=document.createElement('div'); w.className='pop dampop';
+  var s=ST[d[4]], w=document.createElement('div'); w.className='pop dampop land';
   var b=document.createElement('b'); b.textContent=(EN?d[1]:d[0])+T(' · Φράγμα',' Dam'); w.appendChild(b);
   var st=document.createElement('div'); st.className='damst '+s[1]; st.textContent=s[0]; w.appendChild(st);
   [T('Μόνο από την όχθη. 1 καλάμι, 1 αγκίστρι.','Bank only. 1 rod, 1 hook.'),T('1 ώρα πριν την ανατολή έως 1 ώρα μετά τη δύση.','1 h before sunrise to 1 h after sunset.'),

@@ -176,3 +176,9 @@ body.ontrip.nd.mapfull header.top{padding-top:calc(8px + env(safe-area-inset-top
 html body.nd.mapfull.ontrip.ontrip #sosBtn:not([hidden]),html body.nd.ontrip.ontrip.ontrip #bMob,html body.nd.mapfull.ontrip.ontrip #tripBtn{top:calc(56px + env(safe-area-inset-top,0px) + var(--ndwx,0px))!important}
 body.ontrip.nd .ndcard{border-radius:22px;background:color-mix(in srgb,var(--surface) 80%,transparent);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);box-shadow:0 8px 28px rgba(0,0,0,.35)}
 body.ontrip.nd .tripbtn.on{height:40px;padding:0 18px;font-size:15px;letter-spacing:.01em;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+
+body.ontrip.nd .ndrow.ndnotrip{display:none!important}
+/* η έναρξη εξόδου γίνεται από το κεντρικό κουμπί, όχι διπλά και από την κεφαλίδα */
+body.nd:not(.ontrip) #tripBtn{display:none!important}
+body.nd.hasdt.hasland .ndbar{bottom:calc(var(--navh,64px) + var(--ndch,0px) + 150px)}
+body.ontrip.nd.hasdt.hasland .ndbar{bottom:calc(var(--navh,64px) + 255px)}

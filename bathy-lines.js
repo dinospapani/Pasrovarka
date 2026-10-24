@@ -217,6 +217,7 @@ function setMode(m){
 window.addEventListener('psaro-depthmode',function(e){ dm=e&&e.detail?e.detail.dm:0; sync(); update(); });
 map.on('moveend',function(){ if(active()) refresh(); });
 var bl=document.getElementById('bLayer'); if(bl) bl.addEventListener('click',function(){ setTimeout(function(){ if(active()&&cache.length) update(); },200); });
+window.PsaroBathy={fetchGrid:fetchGrid};
 window.PsaroDense={setMode:setMode,on:active,parse:parseTiff,contour:contour,mode:function(){ return mode; },update:update};
 dm=window.PsaroDepthMode?window.PsaroDepthMode():(+C.lsGet('psaro-depth',0)||0);
 sync();
