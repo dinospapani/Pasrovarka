@@ -190,7 +190,7 @@ decorate();
 /* ---------- χρονιά ---------- */
 (function(){
   var pm=$('pMain'), ps=$('pStats'); if(!pm||!ps) return;
-  var b=el('button','btn sm yrbtn',T('🎬 Η χρονιά μου','🎬 My year')); b.type='button';
+  var b=el('button','btn sm yrbtn',T('Η χρονιά μου','My year')); b.type='button';
   b.addEventListener('click',function(){ var y=+C.nicosiaToday().slice(0,4); preview(yearCard(y),'bitecast-'+y+'.png',T('Η χρονιά μου στο ψάρεμα','My fishing year')+' '+y); });
   ps.parentNode.insertBefore(b,ps.nextSibling);
 })();

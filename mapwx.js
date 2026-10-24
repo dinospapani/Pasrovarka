@@ -23,7 +23,7 @@ function draw(){
   var row=document.createElement('div'); row.className='mwrow';
   ITEMS.forEach(function(it){
     if(editing||on.indexOf(it[0])<0) return;
-    var v=it[3](c), d=document.createElement('div'); d.className='mw';
+    var v=it[3](c), d=document.createElement('div'); d.className='mw'+(v?'':' na');
     var i=document.createElement('i'); i.innerHTML=it[1]; var b=document.createElement('b'); b.textContent=v?v[0]:'–'; var s=document.createElement('span'); s.textContent=v?v[1]:it[2];
     d.append(i,b,s); row.append(d);
   });

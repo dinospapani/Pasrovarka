@@ -254,7 +254,7 @@ body.nd .rngbar.on .rngchips .btn{opacity:.9}
 /* ---------- Κάρτες λιστών: ήρεμες ενέργειες ---------- */
 body.nd .list>.card{padding:16px;gap:4px}
 body.nd .list>.card .row{gap:8px;margin-top:12px}
-body.nd .list>.card .row .btn,body.nd .card .row>.btn.sm{min-height:36px;padding:6px 13px;font-size:13px;font-weight:600;border-radius:10px;background:var(--surface);color:var(--ink);box-shadow:none}
+body.nd .list>.card .row .btn,body.nd .card .row>.btn.sm{min-height:36px;padding:6px 13px;font-size:13px;font-weight:600;border-radius:10px;box-shadow:none}
 body.nd .card .btn.ndel{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,var(--line));background:transparent}
 
 /* ---------- Φόρμα ψαριού ---------- */
@@ -329,3 +329,23 @@ body.nd #profile select,body.nd #profile .setcard select{color:var(--ink)!import
 body.nd #logRange.card,body.nd #pRng.card{padding:0;background:transparent;border:0;box-shadow:none}
 body.nd #logRange.rngbar,body.nd #pRng.rngbar{padding:2px 0!important}
 body.nd .rngbar .rngchips{justify-content:flex-start!important}
+/* round 3 — from real-phone screenshots */
+body.nd .card .row>.btn:not(.ghost):not(.acc):not(.danger),body.nd .list>.card .row .btn:not(.ghost):not(.acc):not(.danger){background:var(--ink);color:var(--bg);border:0}
+body.nd .card .row>.btn.acc,body.nd .list>.card .row .btn.acc{background:var(--accent);color:var(--accent-ink,#fff);border:0}
+/* Profile: sticky tab bar must not let content peek above it */
+body.nd #profile .pbox{padding-top:0}
+body.nd #profile .phead{padding-top:18px}
+body.nd #profile #pSeg{background:var(--bg);padding-top:8px;padding-bottom:8px;box-shadow:0 8px 0 var(--bg)}
+body.nd #profile #pSeg button{padding:10px 2px;font-size:13.5px;letter-spacing:0}
+/* Trips hero: extra gear line as a quiet note, not a 4th column */
+body.nd #stats.card>*:nth-child(n+4){grid-column:1/-1;border-left:0;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);margin-top:12px;padding-top:12px;font-size:13px;color:var(--muted);text-align:center;letter-spacing:0;text-transform:none}
+/* tackle suggestion card: no empty block under the title */
+body.nd #pTackle details>summary{min-height:0;padding:14px 16px}
+body.nd #pTackle details:not([open]){padding:0}
+/* hide map chrome behind an open sheet */
+body.nd.ndopen .ndbar,body.nd.ndopen .ndcard{visibility:hidden}
+/* settings: spacing for section labels above buttons */
+body.nd .setcard .label{margin:14px 0 6px}
+body.nd .setcard .row{margin-top:8px}
+/* hide tiles/items with no data (e.g. sea values while inland) */
+body.nd .tile.na,body.nd .mapwx .mw.na{display:none!important}

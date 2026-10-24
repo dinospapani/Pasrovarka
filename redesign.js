@@ -61,9 +61,9 @@ function open(g){
   if(g==='layers'){ lists.layers.insertBefore(secA,lists.layers.firstChild); lists.layers.append(secB); lists.layers.append(tgRow); syncTg(); }
   Object.keys(lists).forEach(function(k){ lists[k].hidden=(k!==g); });
   ttl.textContent=TITLE[g]; sub.textContent=SUB[g]; panel.setAttribute('aria-label',TITLE[g]);
-  sheet.dataset.g=g; ed.hidden=(g==='safety'); sheet.hidden=false; try{ done.focus({preventScroll:true}); }catch(e){}
+  sheet.dataset.g=g; ed.hidden=(g==='safety'); sheet.hidden=false; document.body.classList.add('ndopen'); try{ done.focus({preventScroll:true}); }catch(e){}
 }
-function close(){ sheet.hidden=true; if(typeof setEdit==='function') setEdit(false); }
+function close(){ sheet.hidden=true; document.body.classList.remove('ndopen'); if(typeof setEdit==='function') setEdit(false); }
 var ed=el('button','btn ghost sm ndedit','⚙'); ed.type='button'; ed.setAttribute('aria-pressed','false'); ed.setAttribute('aria-label',T('Προσαρμογή: διάλεξε ποια εργαλεία φαίνονται','Customize: choose which tools show'));
 var editing=false, TKEY='psaro-toolsoff';
 function setEdit(v){ editing=v; sheet.classList.toggle('ndediting',v); ed.setAttribute('aria-pressed',String(v)); ed.textContent=v?'✓':'⚙'; sub.textContent=v?T('Πάτα ένα εργαλείο για να το κρύψεις ή να το εμφανίσεις.',''):SUB[sheet.dataset.g]||''; sub.style.display=v?'block':''; }
@@ -150,7 +150,7 @@ box.insertBefore(bar,mb.nextSibling);
   function plain(s){ return s.normalize('NFD').replace(/[̀-ͯ]/g,''); }
   function latin(s){ return plain(s).toLowerCase().replace(/[α-ως]/g,function(c){ return GR[c]||c; }); }
   function omSearch(q){
-    return fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=6&format=json&language='+(EN?'en':'el'))
+    return fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=12&format=json&language='+(EN?'en':'el'))
       .then(function(r){ return r.json(); }).then(function(j){ return ((j&&j.results)||[]).map(function(x){ return {name:x.name,lat:x.latitude,lon:x.longitude,sub:[x.admin1,x.country].filter(Boolean).filter(function(v,i,a){ return a.indexOf(v)===i; }).join(', ')}; }); }).catch(function(){ return []; });
   }
   function osmSearch(q){
@@ -166,7 +166,11 @@ box.insertBefore(bar,mb.nextSibling);
     variants.forEach(function(v){ chain=chain.then(function(acc){ return acc.length?acc:omSearch(v); }); });
     Promise.all([chain,osmSearch(variants[variants.length-1]===l1&&l1!==q?q:q)]).then(function(rs){
       if(my!==seq) return; note.remove();
-      var seen={}, all=rs[0].concat(rs[1]).filter(function(x){ var k=x.lat.toFixed(2)+','+x.lon.toFixed(2); if(seen[k]) return false; seen[k]=1; return true; }).slice(0,8);
+      var seen={}, all=rs[0].concat(rs[1]).filter(function(x){ var k=x.lat.toFixed(2)+','+x.lon.toFixed(2); if(seen[k]) return false; seen[k]=1; return true; });
+      /* ταξινόμηση: πιο κοντινά πρώτα (από το κέντρο του χάρτη, αλλιώς από το κέντρο της Κύπρου) */
+      var ref=[35.0,33.2]; try{ var mm=C.map&&C.map(); if(mm){ var cc=mm.getCenter(); ref=[cc.lat,cc.lng]; } }catch(e){}
+      var dist=function(x){ var dl=(x.lat-ref[0])*Math.PI/180, dn=(x.lon-ref[1])*Math.PI/180, a1=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(ref[0]*Math.PI/180)*Math.cos(x.lat*Math.PI/180)*Math.sin(dn/2)*Math.sin(dn/2); return 2*Math.asin(Math.min(1,Math.sqrt(a1))); };
+      all.sort(function(x,y){ return dist(x)-dist(y); }); all=all.slice(0,8);
       if(!all.length){ fr.append(el('div','note',T('Δεν βρέθηκε τοποθεσία. Δοκίμασε άλλη γραφή ή λατινικούς χαρακτήρες.','No place found. Try another spelling.'))); return; }
       all.forEach(function(x){
         row(x.name,x.sub,function(){

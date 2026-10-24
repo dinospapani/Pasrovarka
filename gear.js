@@ -360,7 +360,7 @@ function renderLog(){
     [['new',T('Νεότερα πρώτα','Newest first')],['old',T('Παλαιότερα πρώτα','Oldest first')],['eff',T('Καλύτερη απόδοση (ψάρια/ώρα)','Best catch rate (fish/hour)')],['hrs',T('Περισσότερες ώρες μέσα','Most hours in water')]].forEach(function(o){ var op=document.createElement('option'); op.value=o[0]; op.textContent=o[1]; s.append(op); });
     s.value=skey; s.addEventListener('change',function(){ C.lsSet('psaro-sort-gear',s.value); renderLog(); }); w.append(s); w.style.margin='6px 0'; lbox.append(w); })();
   var tot=items.filter(function(i){ return i.state==='done'; }), tn_=0, tk=0; tot.forEach(function(i){ var f=fishOf(i); tn_+=f.n; tk+=f.kg; });
-  lbox.append(el('div',items.length?'muted':'muted empty',items.length?T(items.length+' εργαλεία · '+tn_+' ψάρια · '+(Math.round(tk*10)/10)+' kg (ολοκληρωμένα)',items.length+' gear · '+tn_+' fish · '+(Math.round(tk*10)/10)+' kg (completed)'):T('Δεν υπάρχουν εργαλεία ακόμα. Ξεκίνα από το κουμπί εργαλείων στον χάρτη.','No gear yet. Start from the gear button on the map.')));
+  lbox.append(el('div',items.length?'muted':'muted empty',items.length?T(items.length+(items.length===1?' εργαλείο · ':' εργαλεία · ')+tn_+' ψάρια · '+(Math.round(tk*10)/10)+' kg (ολοκληρωμένα)',items.length+' gear · '+tn_+' fish · '+(Math.round(tk*10)/10)+' kg (completed)'):T('Δεν υπάρχουν εργαλεία ακόμα. Ξεκίνα από το κουμπί εργαλείων στον χάρτη.','No gear yet. Start from the gear button on the map.')));
   items.forEach(function(it){
     var f=fishOf(it), s=it.set||{}, h=it.haul, card=el('div','item'), head=el('div','ihead');
     var when=s.ta?dayOf(s.ta):(h&&h.ta?dayOf(h.ta):'');

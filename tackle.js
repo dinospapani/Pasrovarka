@@ -142,7 +142,7 @@ function shopLoad(){ var a=C.lsGet(SHOPK,[]); return Array.isArray(a)?a.filter(f
 function shopSave(a){ C.lsSet(SHOPK,a.slice(0,200)); }
 function blobUrl(b){ return new Promise(function(res,rej){ var r=new FileReader(); r.onload=function(){ res(r.result); }; r.onerror=rej; r.readAsDataURL(b); }); }
 function listPanel(){
-  var d=el('div','card'); d.style.margin='8px 0'; d.append(el('h3',null,T('🔔 Υπενθυμίσεις και λίστα','🔔 Reminders and list')));
+  var d=el('div','card'); d.style.margin='8px 0'; d.append(el('h3',null,T('Υπενθυμίσεις και λίστα','Reminders and list')));
   var R=reminders(), today=C.nicosiaToday();
   var sec=function(title){ var h=el('b',null,title); h.style.cssText='display:block;margin:10px 0 4px'; d.append(h); };
   var row=function(txt,sub,actBtn){ var r=el('div','meta'); r.style.cssText='display:flex;gap:8px;align-items:center;justify-content:space-between;padding:3px 0'; var x=el('span',null,txt+(sub?' · '+sub:'')); x.style.flex='1'; r.append(x); if(actBtn) r.append(actBtn); d.append(r); };
@@ -226,7 +226,7 @@ function render(){
   var all=load();
   if(all.length&&!editing) box.append(advisor());
   var chips=el('div','seg'); chips.style.cssText='flex-wrap:wrap;margin:8px 0';
-  [['all',T('Όλα','All')]].concat(TYPES.map(function(t){ return [t[0],t[1]]; })).concat([['lst',T('🔔 Λίστα','🔔 List')],['units',T('📏 Μονάδες','📏 Units')]]).forEach(function(c){
+  [['all',T('Όλα','All')]].concat(TYPES.map(function(t){ return [t[0],t[1]]; })).concat([['lst',T('Λίστα','List')],['units',T('Μονάδες','Units')]]).forEach(function(c){
     var n=c[0]==='all'?all.length:c[0]==='lst'?remCount():all.filter(function(x){ return x.type===c[0]; }).length;
     var b=el('button','',c[1]+(n?' '+n:'')); b.type='button'; b.style.flex='1 0 auto'; b.setAttribute('aria-pressed',String(fType===c[0]));
     b.addEventListener('click',function(){ fType=c[0]; editing=null; render(); }); chips.append(b);

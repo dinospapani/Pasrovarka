@@ -60,7 +60,7 @@ function paint(){
   if(!host) return; host.replaceChildren();
   var R=window.PsaroRange, all=items().filter(function(g){ return !R||R.inR('log',{date:ldate(g.t0)}); });
   var wx=wxLoad();
-  host.append(el('h3','','📊 '+T('Στατιστικά εργαλείων','Gear statistics')));
+  host.append(el('h3','',T('Στατιστικά εργαλείων','Gear statistics')));
   var sg=el('div','seg gsseg'); [['all',T('Όλα','All')],['net',TYPES.net],['ll',TYPES.ll],['trap',TYPES.trap]].forEach(function(p){
     var b=el('button','',p[1]); b.type='button'; b.setAttribute('aria-pressed',String(sel===p[0]));
     b.addEventListener('click',function(){ sel=p[0]; C.lsSet(SK,sel); paint(); }); sg.append(b); }); host.append(sg);
