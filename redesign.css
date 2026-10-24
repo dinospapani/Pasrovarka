@@ -33,7 +33,7 @@ body.nd .ndrow:active,body.nd .ndlist .mbtn:active{transform:scale(.985)}
 body.nd.mapfull .mapbox{bottom:0!important}
 body.nd .startbig{display:none!important}
 body.nd .leaflet-top.leaflet-left{top:74px}
-body.nd .ndbar{top:calc(50% - 60px)}
+body.nd .ndbar{top:auto;bottom:calc(var(--navh,64px) + var(--ndch,0px) + 40px);transform:none}
 body.nd .ndsearch{position:absolute;left:12px;right:12px;top:12px;z-index:810;height:56px;border:0;border-radius:28px;padding:0 18px 0 8px;display:flex;align-items:center;gap:12px;background:color-mix(in srgb,var(--surface) 92%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);color:var(--muted);font:inherit;font-size:16px;font-weight:600;text-align:left;cursor:pointer;box-shadow:0 6px 24px rgba(0,0,0,.28);border:1px solid var(--line)}
 body.nd .ndsearch img{width:40px;height:40px;border-radius:12px;flex:none}
 body.nd .ndsearch span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -87,7 +87,7 @@ body.ontrip.nd .ndsearch{display:none!important}
 body.ontrip.nd .ndcard{top:var(--ndtop,112px);bottom:auto;padding:8px 12px}
 body.ontrip.nd .ndcard .ndtop,body.ontrip.nd .ndcard .ndbars,body.ontrip.nd .ndcard .ndlab,body.ontrip.nd .ndcard .ndshop{display:none}
 body.ontrip.nd .ndcard .ndfoot{margin:0;padding:0;border:0}
-body.ontrip.nd .ndbar{top:calc(50% + 20px)}
+body.ontrip.nd .ndbar{top:auto;bottom:calc(var(--navh,64px) + 150px)}
 body.ontrip.nd .leaflet-top.leaflet-left{top:150px}
 body.nd .fishbtns{bottom:calc(var(--navh,64px) + 40px)!important;z-index:820}
 body.nd .ndsearch.ndset{color:var(--ink)}
@@ -95,3 +95,4 @@ body.nd .ndfind:not([hidden]){display:block;position:fixed;inset:0;z-index:3100}
 body.nd .ndfind .ndpanel{top:0;bottom:auto;border-radius:0 0 28px 28px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 18px;max-height:80dvh}
 body.nd .ndq{width:100%;box-sizing:border-box;height:52px;border:1px solid var(--line);border-radius:26px;padding:0 20px;font:inherit;font-size:17px;background:var(--bg2,var(--surface));color:var(--ink);margin-bottom:10px}
 body.nd .ndres{display:grid;gap:8px}
+body.nd .ndbars{gap:3px}body.nd .ndlab span{font-size:11px}

@@ -167,8 +167,8 @@ box.insertBefore(bar,mb.nextSibling);
   var shop=el('button','ndshop'); shop.type='button'; shop.innerHTML=SHOP+'<span></span>'; shop.lastChild.textContent=T('Μαγαζιά','Stores');
   shop.addEventListener('click',function(){ var b=$('sShops'); if(b) b.click(); });
   foot.append(shop); card.append(top,bars,lab,foot); box.append(card);
-  var FR=5, TO=20;
-  for(var h=FR;h<=TO;h++){ var bb=el('i'); bb.dataset.h=h; bars.append(bb); var lb=el('span',null,(h===6||h===12||h===18)?pad(h):''); lab.append(lb); }
+  var FR=0, TO=23;
+  for(var h=FR;h<=TO;h++){ var bb=el('i'); bb.dataset.h=h; bars.append(bb); var lb=el('span',null,(h===0||h===6||h===12||h===18)?pad(h):''); lab.append(lb); }
   function draw(){
     var cc=C.getCond&&C.getCond(), c=null; try{ c=cc&&C.compute&&C.compute(); }catch(e){ c=null; }
     if(!c||!c.hours||c.day==null){ card.hidden=true; document.body.classList.remove('ndhascard'); return; }
@@ -206,6 +206,7 @@ box.insertBefore(bar,mb.nextSibling);
     var logb=nav.querySelector('[data-tab="log"]'); nav.insertBefore(cb,logb||null);
   }
   setInterval(function(){ var tb=$('tripBtn'), on=document.body.classList.contains('ontrip'); if(on&&tb&&tb.offsetParent){ var br=box.getBoundingClientRect(), r2=tb.getBoundingClientRect(); card.style.setProperty('--ndtop',Math.max(70,Math.round(r2.bottom-br.top+10))+'px'); } else card.style.removeProperty('--ndtop'); },500);
+  setInterval(function(){ box.style.setProperty('--ndch',(card.hidden||document.body.classList.contains('ontrip')?0:card.offsetHeight)+'px'); },400);
   setInterval(function(){ var m=box.querySelector('.mapwx'); if(m){ m.style.removeProperty('left'); m.style.removeProperty('top'); } },500);
 })();
 })();
