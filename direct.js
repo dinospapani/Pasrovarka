@@ -34,7 +34,7 @@ function replan(){
   planning=true; var key=tgt.lat+','+tgt.lon, t0=Date.now();
   window.PsaroRoute.plan({lat:pos.lat,lon:pos.lon},{lat:tgt.lat,lon:tgt.lon},clr).then(function(r){
     if(!tgt||key!==tgt.lat+','+tgt.lon) return;
-    rt=r.straight?{straight:1,t:t0}:r.err?{err:r.err,t:t0,clr:clr}:{pts:r.pts,len:r.len,direct:r.direct,k:0,t:t0,clr:clr};
+    rt=r.straight?{straight:1,t:t0}:r.err?{err:r.err,which:r.which,t:t0,clr:clr}:{pts:r.pts,len:r.len,direct:r.direct,k:0,t:t0,clr:clr};
   }).catch(function(){ if(tgt) rt={off:1,t:t0}; }).then(function(){ planning=false; render(); });
 }
 function render(){
@@ -56,6 +56,7 @@ function render(){
   } else {
     line=L.polyline([[pos.lat,pos.lon],[tgt.lat,tgt.lon]],{color:'#ff8a50',weight:3,dashArray:'8 8',opacity:.95}).addTo(layer);
     if(rt&&rt.err==='nopath') landTxt='⚠ '+T('Η ευθεία πορεία περνά από στεριά και δεν βρέθηκε ασφαλής διαδρομή με απόσταση ','The straight course crosses land and no safe route was found with ')+rt.clr+T(' μ. Πρόσεχε.',' m clearance. Be careful.');
+    else if(rt&&rt.err==='nosea') landTxt='⚠ '+(rt.which==='start'?T('Βρίσκεσαι στη στεριά, μακριά από θάλασσα. Η διαδρομή στη θάλασσα υπολογίζεται όταν είσαι κοντά στην ακτή.','You are on land, away from the sea. The sea route is calculated when you are near the coast.'):T('Ο προορισμός είναι στη στεριά, μακριά από θάλασσα. Η γραμμή είναι ευθεία.','The destination is on land, away from the sea. The line is straight.'));
     else if(rt&&rt.err) landTxt='⚠ '+T('Δεν έγινε έλεγχος στεριάς για αυτή την πορεία.','Land was not checked for this course.');
     else if(rt&&rt.off) landTxt=T('Χωρίς σύνδεση: δεν ελέγχθηκε η στεριά στην πορεία.','Offline: land on the course was not checked.');
   }

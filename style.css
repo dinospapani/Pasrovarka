@@ -1389,3 +1389,4 @@ body.ontrip /* Προφίλ: 4 ίσες καρτέλες που χωράνε σ�
 
 #paBar{position:fixed;left:8px;right:8px;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:6000;display:flex;gap:10px;align-items:center;background:#c2410c;color:#fff;padding:10px 12px;border-radius:14px;font-size:14px;line-height:1.35;box-shadow:0 6px 24px rgba(0,0,0,.45)}
 #dtBar .dtland{font-size:11.5px;color:#ffe08a;line-height:1.25}
+#bHot{display:none!important}

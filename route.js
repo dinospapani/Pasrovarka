@@ -41,7 +41,7 @@ function plan(from,to,clr,mul){
       var rad=Math.ceil(2000/Math.min(P.mx,P.my)), best=null, bd=1e18;
       for(var dj=-rad;dj<=rad;dj++) for(var di=-rad;di<=rad;di++){ var i=c[0]+di,j=c[1]+dj; if(!inside(P,i,j)||!P.sea[j*P.w+i]) continue; var d=di*di*P.mx*P.mx+dj*dj*P.my*P.my; if(d<bd){ bd=d; best=[i,j]; } }
       return best; }
-    var a=nearSea(A), b=nearSea(B); if(!a||!b) return {err:'nosea'};
+    var a=nearSea(A), b=nearSea(B); if(!a||!b) return {err:'nosea',which:a?'end':'start'};
     function ok(i,j){ if(!inside(P,i,j)) return false; var k=j*P.w+i; if(!P.sea[k]) return false;
       if(P.dist[k]>=minClr) return true;
       var dA=Math.hypot((i-a[0])*P.mx,(j-a[1])*P.my), dB=Math.hypot((i-b[0])*P.mx,(j-b[1])*P.my); return dA<=free||dB<=free; }

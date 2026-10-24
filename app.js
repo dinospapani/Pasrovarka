@@ -569,6 +569,8 @@ function catchPopup(b){
       h('button',{class:'btn sm ghost',type:'button',text:window.LANG==='en'?'✎ Edit':'✎ Επεξεργασία',onclick:()=>{ if(map) map.closePopup(); editBite(b); }}),
       typeof b.lat==='number'?h('button',{class:'btn sm',type:'button',text:window.LANG==='en'?'Send':'Στείλε',onclick:()=>sharePlace((b.species||'')+(b.kg?' · '+b.kg+' kg':''),b.lat,b.lon)}):null));
 }
+function spFilt(){ try{ var s=lsGet('psaro-smart',{}); return (s&&s.hot&&s.hot.sp)||''; }catch(e){ return ''; } }
+document.addEventListener('psaro-spfilter',function(){ try{ drawMap(); }catch(e){} });
 function drawMap(){
   if(!map) return;
   spotsG.clearLayers(); bitesG.clearLayers();
@@ -588,6 +590,7 @@ function drawMap(){
     m.addTo(spotsG); markerById[sp.id]=m;
   }
   for(const b of Store.get('bites')){
+    if(spFilt()&&b.species!==spFilt()) continue;
     if(typeof b.lat!=='number'||typeof b.lon!=='number') continue;
     if(reviewSet&&!tripActive()&&!reviewSet.has(b.id)) continue;
     const m=L.marker([b.lat,b.lon],{icon:L.divIcon({className:'',html:'<div class="mk-fish'+(b.photo?' ph':'')+(b.rel?' rel':'')+'">🐟</div>',iconSize:[30,30]}),title:b.species||''});
@@ -613,6 +616,7 @@ function drawMap(){
   }
   /* Χαμένα ψάρια (αστοχίες): μικρό ✕ στη θέση που τσίμπησαν */
   for(const b of (Store.misses?Store.misses():[])){
+    if(spFilt()) continue;
     if(typeof b.lat!=='number'||typeof b.lon!=='number') continue;
     if(reviewSet&&!tripActive()) continue;
     const en=window.LANG==='en';

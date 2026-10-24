@@ -10,7 +10,7 @@ var $=function(i){ return document.getElementById(i); };
 var KEY='psaro-smart', R=Math.PI/180;
 var S=C.lsGet(KEY,{}); if(!S||typeof S!=='object'||Array.isArray(S)) S={};
 S.cruise=+S.cruise>0?+S.cruise:15; S.reserve=S.reserve!=null?+S.reserve:20; S.auto=S.auto!==false; S.ring=S.ring!==false;
-S.hot=S.hot||{on:false,sp:'',per:'all'}; S.eng=S.eng||{h:0,every:100,last:0};
+S.hot=S.hot||{on:false,sp:'',per:'all'}; S.hot.on=false; /* η επικάλυψη «θερμά σημεία» αφαιρέθηκε· μένει το φίλτρο ειδών */ S.eng=S.eng||{h:0,every:100,last:0};
 S.cl=S.cl||{items:null,done:{}}; if(!Array.isArray(S.cl.items)) S.cl.items=T(['Σωσίβια για όλους','Καύσιμα επαρκή','Δολώματα και εξοπλισμός','Άδεια ψαρέματος','Φορτισμένο κινητό','Νερό και φαγητό','Φαρμακείο πρώτων βοηθειών','Φακός / VHF'],['Lifejackets for everyone','Enough fuel','Bait and tackle','Fishing licence','Phone charged','Water and food','First aid kit','Torch / VHF']);
 function save(){ C.lsSet(KEY,S); }
 function distKm(a,b,c,d){ var dl=(c-a)*R, dn=(d-b)*R, x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a*R)*Math.cos(c*R)*Math.sin(dn/2)*Math.sin(dn/2); return 12742*Math.asin(Math.min(1,Math.sqrt(x))); }
@@ -129,8 +129,8 @@ function heat(){
   var z=map.getZoom(), cell=z>=14?0.002:z>=12?0.005:z>=10?0.02:0.08, B={}, mx=1;
   (C.Store.get('bites')||[]).forEach(function(b){
     if(typeof b.lat!=='number'||typeof b.lon!=='number'||!inPeriod(b)) return; if(S.hot.sp&&b.species!==S.hot.sp) return;
-    var k=Math.floor(b.lat/cell)+'|'+Math.floor(b.lon/cell), o=B[k]||(B[k]={la:(Math.floor(b.lat/cell)+.5)*cell,lo:(Math.floor(b.lon/cell)+.5)*cell,n:0,kg:0,sp:{}});
-    o.n++; o.kg+=+b.kg||0; if(b.species) o.sp[b.species]=(o.sp[b.species]||0)+1; mx=Math.max(mx,o.n);
+    var k=Math.floor(b.lat/cell)+'|'+Math.floor(b.lon/cell), o=B[k]||(B[k]={sla:0,slo:0,la:0,lo:0,n:0,kg:0,sp:{}});
+    o.n++; o.sla+=b.lat; o.slo+=b.lon; o.la=o.sla/o.n; o.lo=o.slo/o.n; o.kg+=+b.kg||0; if(b.species) o.sp[b.species]=(o.sp[b.species]||0)+1; mx=Math.max(mx,o.n);
   });
   Object.keys(B).forEach(function(k){
     var o=B[k], f=o.n/mx, col='hsl('+Math.round(55-55*f)+',95%,50%)';
@@ -152,7 +152,7 @@ heat();
     function fill(){ var spn={}; (C.Store.get('bites')||[]).forEach(function(b){ if(b.species&&typeof b.lat==='number') spn[b.species]=(spn[b.species]||0)+1; });
       sel.replaceChildren(new Option('🐟 '+T('Όλα τα είδη','All species'),'')); Object.keys(spn).sort().forEach(function(k){ sel.append(new Option('🐟 '+k+' ('+spn[k]+')',k)); });
       if(S.hot.sp&&!spn[S.hot.sp]) sel.append(new Option('🐟 '+S.hot.sp,S.hot.sp)); sel.value=S.hot.sp||''; d.classList.toggle('on',!!S.hot.sp); d.hidden=!Object.keys(spn).length; }
-    sel.addEventListener('change',function(){ S.hot.sp=sel.value; if(sel.value) S.hot.on=true; save(); heat(); d.classList.toggle('on',!!sel.value);
+    sel.addEventListener('change',function(){ S.hot.sp=sel.value; save(); heat(); document.dispatchEvent(new Event('psaro-spfilter')); d.classList.toggle('on',!!sel.value);
       if(sel.value&&!hotL.getLayers().length) C.toast(T('Δεν έχεις καταγεγραμμένα ψάρια με θέση για αυτό το είδος.','No located catches of this species.')); });
     C.Store.on('bites',fill); fill(); return d; }});
   map.addControl(new Ctl());
@@ -395,14 +395,6 @@ function render(){
   rs.value=String(C.lsGet('psaro-route-clr',200)); if(rs.selectedIndex<0) rs.value='200';
   rs.addEventListener('change',function(){ C.lsSet('psaro-route-clr',+rs.value); });
   row(T('Διαδρομή γύρω από στεριά','Route around land'),T('Ενδεικτική διαδρομή που κρατά απόσταση από ακτές και νησιά. Δεν είναι ναυτικός χάρτης. Χρειάζεται σύνδεση.','Indicative route keeping a distance from coasts and islands. Not a nautical chart. Needs a connection.'),rs);
-  sec(T('Θερμά σημεία','Hotspots'));
-  var spn={}; (C.Store.get('bites')||[]).forEach(function(b){ if(b.species) spn[b.species]=1; });
-  var s1=el('select','sminp'); s1.append(new Option(T('Όλα τα είδη','All species'),'')); Object.keys(spn).sort().forEach(function(k){ s1.append(new Option(k,k)); }); s1.value=S.hot.sp||'';
-  s1.addEventListener('change',function(){ S.hot.sp=s1.value; save(); heat(); });
-  var s2=el('select','sminp'); [['all',T('Όλες οι περίοδοι','All time')],['90',T('Τελευταίες 90 ημέρες','Last 90 days')],['season',T('Τρέχουσα εποχή (±1 μήνας)','This season (±1 month)')]].forEach(function(o){ s2.append(new Option(o[1],o[0])); }); s2.value=S.hot.per||'all';
-  s2.addEventListener('change',function(){ S.hot.per=s2.value; save(); heat(); });
-  row(T('Εμφάνιση στον χάρτη','Show on map'),T('Κουμπί φλόγας στη δεξιά στήλη. Δείχνει πού πιάνεις, χωρίς μεμονωμένα ψάρια.','Flame button on the right. Shows where you catch, without individual fish.'),sw(S.hot.on,function(){ S.hot.on=!S.hot.on; save(); heat(); render(); }));
-  var r3=el('div','sprow'); r3.append(s1,s2); body.append(r3);
   sec(T('Άδεια και λίστα','Licence and checklist'));
   var li=el('input','sminp'); li.type='date'; if(S.lic) li.value=S.lic; li.addEventListener('change',function(){ S.lic=li.value||null; save(); var s=C.lsGet('psaro-smart-sent',{}); delete s.lic; C.lsSet('psaro-smart-sent',s); licCheck(); });
   row(T('Λήξη άδειας ψαρέματος','Licence expiry'),T('Υπενθύμιση 14 ημέρες πριν.','Reminder 14 days before.'),li);
