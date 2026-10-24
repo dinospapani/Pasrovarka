@@ -7,7 +7,7 @@ var C=window.PsaroCore, mb=document.querySelector('.mapbtns'); if(!C||!mb||typeo
 var map=C.map&&C.map(); if(!map) return;
 var EN=window.LANG==='en', T=function(el,en){ return EN?en:el; };
 var KEY='psaro-ports-on', TK='psaro-ports-tiles', ZMIN=10, TILE=0.2, DAYS=30;
-var OVP=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://overpass.private.coffee/api/interpreter'];
+var OVP=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass.openstreetmap.fr/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
 var on=C.lsGet(KEY,true)!==false;
 var layer=L.layerGroup(), tiles=C.lsGet(TK,{}), mem={}, shown={}, tm=null, warned=0;
 if(!tiles||typeof tiles!=='object') tiles={};
@@ -66,8 +66,13 @@ function refresh(){
   if(map.getZoom()<ZMIN) return;
   var b=map.getBounds(), i0=Math.floor(b.getSouth()/TILE), i1=Math.floor(b.getNorth()/TILE), j0=Math.floor(b.getWest()/TILE), j1=Math.floor(b.getEast()/TILE);
   if((i1-i0+1)*(j1-j0+1)>12) return;
-  var jobs=[]; for(var i=i0;i<=i1;i++) for(var j=j0;j<=j1;j++) jobs.push(load(i,j).then(function(l){ l.forEach(add); },function(){ return 'x'; }));
-  Promise.all(jobs).then(function(r){ if(r.indexOf('x')>=0&&Date.now()-warned>60000){ warned=Date.now(); C.toast(T('Δεν φορτώθηκαν λιμάνια. Χρειάζεται σύνδεση.','Ports did not load. Needs a connection.')); } });
+  var jobs=[], nIn=0, b2=b; for(var i=i0;i<=i1;i++) for(var j=j0;j<=j1;j++) jobs.push(load(i,j).then(function(l){ l.forEach(function(p){ add(p); if(b2.contains([p.la,p.lo])) nIn++; }); return 'ok'; },function(){ return 'x'; }));
+  Promise.all(jobs).then(function(r){
+    var bad=r.indexOf('x')>=0, now=Date.now();
+    if(bad&&nIn===0){ if(now-warned>60000){ warned=now; C.toast(T('Δεν φορτώθηκαν λιμάνια. Χρειάζεται σύνδεση.','Ports did not load. Needs a connection.')); } }
+    else if(!bad&&nIn===0){ if(now-warned>60000){ warned=now; C.toast(T('Δεν υπάρχουν καταχωρισμένα λιμάνια ή ράμπες εδώ στο OpenStreetMap.','No ports or ramps are recorded here in OpenStreetMap.')); } }
+    else if(!bad&&!refresh.said){ refresh.said=1; C.toast(T('Λιμάνια και ράμπες στην περιοχή: ','Ports and ramps here: ')+nIn); }
+  });
 }
 var btn=document.createElement('button'); btn.type='button'; btn.id='bPorts'; btn.className='mbtn'; btn.setAttribute('aria-pressed',String(on));
 btn.setAttribute('aria-label',T('Λιμάνια και ράμπες','Ports and ramps')); btn.title=T('Λιμάνια, μαρίνες και ράμπες καθέλκυσης','Ports, marinas and boat ramps');

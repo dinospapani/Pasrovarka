@@ -9,7 +9,10 @@ var lab=top.querySelector('.label'), baseLabel=lab?lab.textContent:'';
 var wrap=document.createElement('div'); wrap.id='tdLoc'; top.parentNode.insertBefore(wrap,top.nextSibling);
 function el(tag,cls,txt){ var e=document.createElement(tag); if(cls) e.className=cls; if(txt!=null) e.textContent=txt; return e; }
 function places(){ try{ return window.PsaroPlaces?PsaroPlaces.list():JSON.parse(localStorage.getItem('psaro-places')||'[]'); }catch(e){ return []; } }
-function pick(p){ sel=p.gps?'gps':p.id; if(lab) lab.textContent=p.gps?baseLabel:T('Καιρός για: ','Weather for: ')+p.name; C.viewPlace(p); render(); }
+function mark(p){ sel=p.gps?'gps':p.id; if(lab){ lab.textContent=p.gps?baseLabel:T('Καιρός για: ','Weather for: ')+p.name; lab.classList.toggle('viewing',!p.gps); } try{ document.dispatchEvent(new CustomEvent('psaro-viewname',{detail:p.gps?null:p.name})); }catch(e){} }
+function pick(p){ mark(p); C.viewPlace(p); render(); }
+/* ώστε η αναζήτηση της αρχικής και η Πρόγνωση να δείχνουν εδώ την ίδια τοποθεσία */
+window.PsaroTodayLoc={sync:function(p){ if(!p) return; mark(p); render(); }};
 function svg(d){ var w=document.createElement('span'); w.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>'; return w.firstChild; }
 function lp(b,fn,tap){ /* παρατεταμένο πάτημα = διαγραφή, κανονικό = επιλογή */
   var tm=null, fired=false;
@@ -61,7 +64,7 @@ window.addEventListener('psaro-todaypick',function(e){
   pick(p);
   fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14&accept-language='+(EN?'en':'el')+'&lat='+d.lat+'&lon='+d.lon).then(function(r){ return r.ok?r.json():null; }).then(function(j){
     var a=(j&&j.address)||{}, n=a.suburb||a.village||a.town||a.city||a.hamlet||a.neighbourhood||a.municipality||(j&&j.name)||''; if(!n||!window.PsaroPlaces||!PsaroPlaces.rename) return;
-    PsaroPlaces.rename(p.id,n); p.name=n; if(sel===p.id){ if(lab) lab.textContent=T('Καιρός για: ','Weather for: ')+n; render(); }
+    PsaroPlaces.rename(p.id,n); p.name=n; if(sel===p.id){ if(lab) lab.textContent=T('Καιρός για: ','Weather for: ')+n; try{ document.dispatchEvent(new CustomEvent('psaro-viewname',{detail:n})); }catch(e){} render(); }
   }).catch(function(){});
 });
 function choose(name,lat,lon){

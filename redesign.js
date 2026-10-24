@@ -132,9 +132,10 @@ box.insertBefore(bar,mb.nextSibling);
     row(T('Η θέση μου','My location'),label?T('προεπιλογή','default'):'',function(){
       setLabel(null); closeF();
       if(window.PsaroPlaces&&PsaroPlaces.selectGps) PsaroPlaces.selectGps();
-      if(C.viewPlace) C.viewPlace({gps:true});
+      if(window.PsaroPlaces&&PsaroPlaces.view) PsaroPlaces.view(); else if(C.viewPlace) C.viewPlace({gps:true});
     },IC.me);
   }
+  document.addEventListener('psaro-viewname',function(e){ setLabel(e.detail); });
   function openF(){ fd.hidden=false; fi.value=''; showBase(); setTimeout(function(){ try{ fi.focus(); }catch(e){} },80); }
   function closeF(){ fd.hidden=true; try{ fi.blur(); }catch(e){} }
   fb.addEventListener('click',closeF);

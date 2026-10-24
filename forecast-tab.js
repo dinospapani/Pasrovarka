@@ -31,13 +31,13 @@ function allPlaces(){ var g=gps(); return (g?[g]:[]).concat(places); }
 function findPlace(id){ return allPlaces().filter(function(p){ return p.id===id; })[0]||null; }
 function pid(lat,lon){ return 'p'+Math.round(lat*100)+'_'+Math.round(lon*100); }
 /* νέα εμφάνιση: η επιλογή τοποθεσίας αλλάζει και τον καιρό στον χάρτη */
-function viewSel(){ try{ if(!document.body.classList.contains('nd')||!C.viewPlace) return; var p=findPlace(sel); if(p) C.viewPlace(p); }catch(e){} }
+function viewSel(){ try{ if(!document.body.classList.contains('nd')||!C.viewPlace) return; var p=findPlace(sel); if(p){ C.viewPlace(p); if(window.PsaroTodayLoc) PsaroTodayLoc.sync(p); } }catch(e){} }
 function addPlace(name,lat,lon){
   var id=pid(lat,lon), ex=places.filter(function(p){ return p.id===id; })[0];
   if(!ex){ places.unshift({id:id,name:name,lat:+lat.toFixed(4),lon:+lon.toFixed(4),watch:true}); places=places.slice(0,10); }
   sel=id; save(); renderPlaces(); load(); syncNotify(); viewSel();
 }
-window.PsaroPlaces={pick:function(n,la,lo){ addPlace(n,la,lo); },selectGps:function(){ sel='gps'; save(); renderPlaces(); },rename:function(id,n){ var q=places.filter(function(x){ return x.id===id; })[0]; if(q){ q.name=n; q.auto=false; save(); renderPlaces(); } },remove:function(id){ var was=sel===id; places=places.filter(function(p){ return p.id!==id; }); if(was) sel='gps'; save(); renderPlaces(); if(was&&!document.getElementById('tab-fc').hidden) load(); syncNotify(); },list:function(){ return places.slice(); },add:function(name,lat,lon){ var id=pid(lat,lon), ex=places.filter(function(p){ return p.id===id; })[0]; if(!ex){ places.unshift({id:id,name:name,lat:+lat.toFixed(4),lon:+lon.toFixed(4),watch:true}); places=places.slice(0,10); save(); renderPlaces(); ex=places[0]; } return ex; }};
+window.PsaroPlaces={view:function(){ viewSel(); },pick:function(n,la,lo){ addPlace(n,la,lo); },selectGps:function(){ sel='gps'; save(); renderPlaces(); },rename:function(id,n){ var q=places.filter(function(x){ return x.id===id; })[0]; if(q){ q.name=n; q.auto=false; save(); renderPlaces(); } },remove:function(id){ var was=sel===id; places=places.filter(function(p){ return p.id!==id; }); if(was) sel='gps'; save(); renderPlaces(); if(was&&!document.getElementById('tab-fc').hidden) load(); syncNotify(); },list:function(){ return places.slice(); },add:function(name,lat,lon){ var id=pid(lat,lon), ex=places.filter(function(p){ return p.id===id; })[0]; if(!ex){ places.unshift({id:id,name:name,lat:+lat.toFixed(4),lon:+lon.toFixed(4),watch:true}); places=places.slice(0,10); save(); renderPlaces(); ex=places[0]; } return ex; }};
 function lpress(b,fn,tap){ /* παρατεταμένο πάτημα = διαγραφή, κανονικό = επιλογή */
   var tm=null, fired=false; function cancel(){ if(tm){ clearTimeout(tm); tm=null; } }
   b.addEventListener('pointerdown',function(){ fired=false; cancel(); tm=setTimeout(function(){ tm=null; fired=true; try{ if(navigator.vibrate) navigator.vibrate(30); }catch(e){} fn(); },650); });

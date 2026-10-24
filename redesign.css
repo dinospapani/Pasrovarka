@@ -152,3 +152,8 @@ body.nd.hasdt .ndbar,body.nd:has(.zonewarn:not([hidden])) .ndbar,body.nd:has(.ma
 body.nd.hasdt:has(.zonewarn:not([hidden])) .ndbar{bottom:calc(var(--navh,64px) + var(--ndch,0px) + 170px)}
 body.ontrip.nd.hasdt .ndbar,body.ontrip.nd:has(.zonewarn:not([hidden])) .ndbar{bottom:calc(var(--navh,64px) + 215px)}
 body.ontrip.nd.hasdt:has(.zonewarn:not([hidden])) .ndbar{bottom:calc(var(--navh,64px) + 285px)}
+
+/* v31z160: η τοποθεσία που βλέπεις φαίνεται καθαρά */
+body.nd #liveBox .label.viewing{color:var(--accent);font-weight:800;font-size:15px;letter-spacing:.02em;text-transform:none}
+body.nd #tdLoc .chip[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+body.nd #plChips .chip[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
