@@ -28,3 +28,56 @@ body.nd nav.tabs button[aria-selected=true]{box-shadow:none;color:var(--accent)}
 body.nd nav.tabs button[aria-selected=true]::before{content:"";position:absolute;top:5px;left:50%;width:54px;height:30px;margin-left:-27px;border-radius:15px;background:color-mix(in srgb,var(--accent) 16%,transparent);z-index:-1}
 body.nd nav.tabs button[aria-selected=true] svg{stroke-width:2.1}
 body.nd .ndrow:active,body.nd .ndlist .mbtn:active{transform:scale(.985)}
+
+/* ===== v31z151: αρχική οθόνη ===== */
+body.nd.mapfull .mapbox{bottom:0!important}
+body.nd .startbig{display:none!important}
+body.nd .leaflet-top.leaflet-left{top:74px}
+body.nd .ndbar{top:calc(50% - 60px)}
+body.nd .ndsearch{position:absolute;left:12px;right:12px;top:12px;z-index:810;height:56px;border:0;border-radius:28px;padding:0 18px 0 8px;display:flex;align-items:center;gap:12px;background:color-mix(in srgb,var(--surface) 92%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);color:var(--muted);font:inherit;font-size:16px;font-weight:600;text-align:left;cursor:pointer;box-shadow:0 6px 24px rgba(0,0,0,.28);border:1px solid var(--line)}
+body.nd .ndsearch img{width:40px;height:40px;border-radius:12px;flex:none}
+body.nd .ndsearch span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.nd .ndsearch svg{width:22px;height:22px;flex:none}
+body.nd .ndcard{position:absolute;left:12px;right:12px;bottom:calc(var(--navh,64px) + 26px);z-index:805;border-radius:26px;padding:14px 16px 12px;background:color-mix(in srgb,var(--surface) 94%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);color:var(--ink);box-shadow:0 8px 28px rgba(0,0,0,.32);border:1px solid var(--line)}
+body.nd .ndcard[hidden],body.ontrip.nd .ndcard,body.picking.nd .ndcard,body.wxedit.nd .ndcard.x{display:none!important}
+body.nd .ndtop{display:flex;align-items:center;gap:12px}
+body.nd .ndringw{position:relative;width:56px;height:56px;flex:none}
+body.nd .ndring{width:56px;height:56px;display:block}
+body.nd .ndring circle{fill:none;stroke-width:6}
+body.nd .ndr0{stroke:var(--line)}
+body.nd .ndr1{stroke:var(--accent);stroke-linecap:round}
+body.nd .ndrn{position:absolute;inset:0;display:grid;place-items:center;font-size:22px;font-weight:800}
+body.nd .ndtx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+body.nd .ndtx b{font-size:19px;font-weight:800;letter-spacing:-.2px}
+body.nd .ndtx span{font-size:14px;color:var(--muted);font-weight:600}
+body.nd .ndgo{width:44px;height:44px;border:0;border-radius:50%;background:var(--line);color:var(--ink);display:grid;place-items:center;cursor:pointer;flex:none;padding:0}
+body.nd .ndgo svg{width:20px;height:20px}
+body.nd .ndbars{display:flex;align-items:flex-end;gap:4px;height:52px;margin-top:12px}
+body.nd .ndbars i{flex:1;border-radius:4px;background:var(--line);min-height:6px}
+body.nd .ndbars i.hi{background:var(--accent)}
+body.nd .ndlab{display:flex;gap:4px;margin-top:3px}
+body.nd .ndlab span{flex:1;font-size:11px;color:var(--muted);text-align:left;white-space:nowrap;overflow:visible;font-weight:600}
+body.nd .ndfoot{display:flex;align-items:center;gap:10px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+body.nd .ndwx{flex:1;min-width:0}
+body.nd .ndshop{flex:none;height:44px;border:0;border-radius:22px;padding:0 16px;display:flex;align-items:center;gap:8px;background:var(--line);color:var(--ink);font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+body.nd .ndshop svg{width:20px;height:20px}
+/* η κάρτα καιρού μέσα στη νέα κάρτα */
+body.nd .ndcard .mapwx{position:static!important;transform:none!important;left:auto!important;top:auto!important;width:auto!important;max-width:none!important;padding:0!important;margin:0;background:none!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;color:var(--ink)!important;border-radius:0!important}
+body.nd .ndcard .mapwx .mwrow,body.nd .ndcard .mapwx[data-n] .mwrow{display:flex!important;flex-wrap:wrap;align-items:center;gap:2px 14px!important}
+body.nd .ndcard .mapwx .mw,body.nd .ndcard .mapwx[data-n] .mw{min-width:0;padding:2px 0;text-align:left;border:0!important}
+body.nd .ndcard .mapwx .mw::before{display:none!important}
+body.nd .ndcard .mapwx .mw i{display:none}
+body.nd .ndcard .mapwx .mw b{font-size:17px;font-weight:800;display:block}
+body.nd .ndcard .mapwx .mw span{font-size:11px;text-transform:none;opacity:1;color:var(--muted);letter-spacing:0}
+body.nd .ndcard .mapwx .mwgear{width:30px;height:30px;margin:0 0 0 auto;grid-column:auto;background:var(--line);color:var(--ink)}
+body.nd .ndcard .mapwx.edit{width:100%!important}
+body.nd .ndcard .mapwx .mwchip,body.nd .ndcard .mapwx .mwchip[aria-pressed=true]{color:var(--ink)!important}
+body.nd .ndcard .mapwx .mwtitle{width:100%;text-align:left;padding:4px 0}
+/* κάτω μενού: αιωρούμενη κάψουλα */
+body.nd nav.tabs{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));border-radius:32px;border:1px solid var(--line);padding:6px 6px;background:color-mix(in srgb,var(--surface) 94%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 8px 28px rgba(0,0,0,.3);align-items:center}
+body.nd nav.tabs button[aria-selected=true]::before{display:none}
+body.nd nav.tabs button{padding:6px 2px}
+body.nd nav.tabs button.navprof{padding:6px 2px}
+body.nd nav.tabs .ndfish{flex:none;width:68px;height:68px;margin:-26px 6px 0;border-radius:50%;background:var(--accent);color:var(--accent-ink);padding:0;justify-content:center;box-shadow:0 8px 20px rgba(0,0,0,.4),0 0 0 5px var(--surface)}
+body.nd nav.tabs .ndfish svg{width:34px;height:34px;stroke-width:2.1}
+body.nd section.tab{padding-bottom:calc(var(--navh,64px) + 28px)}

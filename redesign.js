@@ -92,4 +92,76 @@ nb(T('Ενέργειες','Actions'),IC.actions,function(){ open('actions'); });
 nb(T('Ασφάλεια','Safety'),IC.safety,function(){ open('safety'); });
 nb(T('Εγώ','Me'),IC.me,function(){ var l=$('bLoc'); if(l) l.click(); });
 box.insertBefore(bar,mb.nextSibling);
+
+/* ---- αρχική οθόνη: αναζήτηση, κάρτα «Σήμερα», κάτω μενού με κεντρικό κουμπί ---- */
+(function(){
+  var NS='http://www.w3.org/2000/svg';
+  function svgEl(n,a){ var e=document.createElementNS(NS,n); for(var k in a) e.setAttribute(k,a[k]); return e; }
+  function pad(n){ return (n<10?'0':'')+n; }
+  var tab=function(n){ if(C.switchTab) C.switchTab(n); };
+
+  /* 1. γραμμή αναζήτησης: ανοίγει την πρόγνωση με το πεδίο τοποθεσίας έτοιμο */
+  var sb=el('button','ndsearch'); sb.type='button';
+  var lg=document.createElement('img'); lg.src='icon-192.png'; lg.alt=''; lg.width=40; lg.height=40;
+  var st=el('span',null,T('Πού θα ψαρέψεις;','Where will you fish?'));
+  var mg=svgEl('svg',{viewBox:'0 0 24 24','aria-hidden':'true'}); mg.setAttribute('fill','none'); mg.setAttribute('stroke','currentColor'); mg.setAttribute('stroke-width','2'); mg.setAttribute('stroke-linecap','round');
+  mg.append(svgEl('circle',{cx:'11',cy:'11',r:'7'}),svgEl('path',{d:'m20 20-3.5-3.5'}));
+  sb.append(lg,st,mg); sb.setAttribute('aria-label',T('Αναζήτηση τοποθεσίας','Search a place'));
+  sb.addEventListener('click',function(){ tab('fc'); setTimeout(function(){ var q=$('plQ'); if(q){ try{ q.focus(); }catch(e){} } },250); });
+  box.append(sb);
+
+  /* 2. κάρτα «Σήμερα» */
+  var card=el('div','ndcard'); card.hidden=true;
+  var top=el('div','ndtop');
+  var ring=svgEl('svg',{viewBox:'0 0 56 56',class:'ndring','aria-hidden':'true'});
+  ring.append(svgEl('circle',{cx:'28',cy:'28',r:'23',class:'ndr0'}),svgEl('circle',{cx:'28',cy:'28',r:'23',class:'ndr1',transform:'rotate(-90 28 28)'}));
+  var rn=el('span','ndrn','–'); var rw=el('div','ndringw'); rw.append(ring,rn);
+  var tx=el('div','ndtx'); var h1=el('b',null,'…'); var h2=el('span',null,''); tx.append(h1,h2);
+  var go=el('button','ndgo'); go.type='button'; go.setAttribute('aria-label',T('Άνοιγμα λεπτομερειών σήμερα','Open today details')); go.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';
+  go.addEventListener('click',function(){ tab('today'); });
+  top.append(rw,tx,go);
+  var bars=el('div','ndbars'), lab=el('div','ndlab');
+  var foot=el('div','ndfoot'); var wxslot=el('div','ndwx'); foot.append(wxslot);
+  var shop=el('button','ndshop'); shop.type='button'; shop.innerHTML=SHOP+'<span></span>'; shop.lastChild.textContent=T('Μαγαζιά','Stores');
+  shop.addEventListener('click',function(){ var b=$('sShops'); if(b) b.click(); });
+  foot.append(shop); card.append(top,bars,lab,foot); box.append(card);
+  var FR=5, TO=20;
+  for(var h=FR;h<=TO;h++){ var bb=el('i'); bb.dataset.h=h; bars.append(bb); var lb=el('span',null,(h===6||h===12||h===18)?pad(h):''); lab.append(lb); }
+  function draw(){
+    var cc=C.getCond&&C.getCond(), c=null; try{ c=cc&&C.compute&&C.compute(); }catch(e){ c=null; }
+    if(!c||!c.hours||c.day==null){ card.hidden=true; document.body.classList.remove('ndhascard'); return; }
+    card.hidden=false; document.body.classList.add('ndhascard');
+    var day=c.day, sc=Math.max(1,Math.min(10,Math.round(day/10)));
+    rn.textContent=String(sc); ring.querySelector('.ndr1').style.strokeDasharray=(2*Math.PI*23*sc/10).toFixed(1)+' 999';
+    h1.textContent=day>=75?T('Πολύ καλό δάγκωμα','Very good bite'):day>=60?T('Καλό δάγκωμα','Good bite'):day>=45?T('Μέτριο δάγκωμα','Fair bite'):T('Αδύναμο δάγκωμα','Weak bite');
+    var mx=Math.max.apply(null,c.hours), thr=mx-6, gs=[], cur=null;
+    c.hours.forEach(function(v,i){ if(v>=thr){ if(cur&&cur.e===i-1){ cur.e=i; if(v>cur.m) cur.m=v; } else { cur={s:i,e:i,m:v}; gs.push(cur); } } });
+    gs.sort(function(a,b){ return b.m-a.m; });
+    h2.textContent=gs.length?T('Καλύτερα ','Best ')+pad(gs[0].s)+':00–'+pad((gs[0].e+1)%24)+':00':'';
+    Array.prototype.forEach.call(bars.children,function(b){ var v=c.hours[+b.dataset.h]||0; b.style.height=Math.max(8,Math.round(v/Math.max(mx,1)*100))+'%'; b.className=v>=thr?'hi':''; });
+  }
+  document.addEventListener('psaro-cond',function(){ setTimeout(draw,80); });
+  setTimeout(draw,900); setTimeout(draw,3600); setInterval(draw,30000);
+
+  /* τα στοιχεία καιρού που έχεις διαλέξει (⚙) μπαίνουν μέσα στην κάρτα, με την ίδια λογική */
+  var mw=box.querySelector('.mapwx'); if(mw) wxslot.append(mw);
+  var mo=new MutationObserver(function(){ var m=box.querySelector('.mapwx'); if(m) wxslot.append(m); });
+  mo.observe(box,{childList:true});
+
+  /* 3. κάτω μενού: «Πρόγνωση» και κεντρικό κουμπί ψαρέματος */
+  var nav=document.querySelector('nav.tabs');
+  if(nav){
+    var fcb=nav.querySelector('[data-tab="fc"]');
+    if(fcb){ for(var i=0;i<fcb.childNodes.length;i++){ var n=fcb.childNodes[i]; if(n.nodeType===3&&n.textContent.trim()){ n.textContent=T('Πρόγνωση','Forecast'); break; } } }
+    var cb=el('button','ndfish'); cb.type='button'; cb.innerHTML=IC.fish;
+    function fl(){ cb.setAttribute('aria-label',document.body.classList.contains('ontrip')?T('Νέο ψάρι','New fish'):T('Ξεκίνα έξοδο για ψάρεμα','Start a fishing trip')); }
+    fl(); new MutationObserver(fl).observe(document.body,{attributes:true,attributeFilter:['class']});
+    cb.addEventListener('click',function(){
+      if(document.body.classList.contains('ontrip')){ var f=$('fab'); if(f) f.click(); }
+      else { var t=$('tripBtn'); if(t) t.click(); }
+    });
+    var logb=nav.querySelector('[data-tab="log"]'); nav.insertBefore(cb,logb||null);
+  }
+  setInterval(function(){ var m=box.querySelector('.mapwx'); if(m){ m.style.removeProperty('left'); m.style.removeProperty('top'); } },500);
+})();
 })();
