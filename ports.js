@@ -105,15 +105,25 @@ function refresh(){
 function lowZoom(){ var el=map.getContainer(); el.classList.toggle('zlow',map.getZoom()<11); }
 mine.forEach(function(q){ add({n:q.n,la:q.la,lo:q.lo,k:q.k,mine:1}); });
 function openForm(ll){
-  var w=document.createElement('div'); w.className='pop portpop';
-  var b=document.createElement('b'); b.textContent=T('Νέο σημείο','New point'); w.appendChild(b);
-  var inp=document.createElement('input'); inp.type='text'; inp.maxLength=60; inp.placeholder=T('Όνομα (π.χ. Ράμπα Λατσί)','Name (e.g. Latchi ramp)'); inp.style.cssText='width:100%;box-sizing:border-box;margin-top:8px;padding:9px;border:1px solid var(--line,#ccd);border-radius:10px;font:inherit';
+  /* πάνελ στο πάνω μέρος της οθόνης: το πληκτρολόγιο και οι κάρτες δεν το καλύπτουν */
+  var old=document.getElementById('portForm'); if(old) old.remove();
+  var w=document.createElement('div'); w.id='portForm'; w.setAttribute('role','dialog');
+  w.style.cssText='position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:100000;background:var(--card,#fff);color:var(--ink,#0E2A36);border:1px solid var(--line,#ccd);border-radius:16px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.35);font-family:inherit';
+  var b=document.createElement('b'); b.textContent=T('Νέο σημείο','New point'); b.style.cssText='font-size:16px'; w.appendChild(b);
+  var inp=document.createElement('input'); inp.type='text'; inp.maxLength=60; inp.placeholder=T('Όνομα (π.χ. Ράμπα Λατσί)','Name (e.g. Latchi ramp)'); inp.setAttribute('aria-label',T('Όνομα','Name'));
+  inp.style.cssText='width:100%;box-sizing:border-box;margin-top:10px;padding:12px;border:1px solid var(--line,#ccd);border-radius:12px;font:inherit;font-size:16px;background:var(--bg,#fff);color:inherit';
   w.appendChild(inp);
-  var r=document.createElement('div'); r.className='pbtns';
-  function save(kind){ var q={n:inp.value.trim(),la:+ll.lat.toFixed(5),lo:+ll.lng.toFixed(5),k:kind}; mine.push(q); C.lsSet(KM,mine); add({n:q.n,la:q.la,lo:q.lo,k:q.k,mine:1}); map.closePopup(); C.toast(T('Αποθηκεύτηκε.','Saved.')); }
-  [[T('Ράμπα','Ramp'),'ramp'],[T('Λιμάνι','Port'),'port']].forEach(function(x){ var a=document.createElement('button'); a.type='button'; a.className='pb'; a.textContent=x[0]; a.addEventListener('click',function(){ save(x[1]); }); r.appendChild(a); });
-  var c=document.createElement('button'); c.type='button'; c.className='pb g'; c.textContent=T('Άκυρο','Cancel'); c.addEventListener('click',function(){ map.closePopup(); }); r.appendChild(c);
-  w.appendChild(r); L.popup({minWidth:230}).setLatLng(ll).setContent(w).openOn(map); setTimeout(function(){ try{ inp.focus(); }catch(e){} },100);
+  var r=document.createElement('div'); r.style.cssText='display:flex;gap:8px;margin-top:10px';
+  function done(){ w.remove(); document.body.classList.remove('ndopen'); }
+  function save(kind){ var q={n:inp.value.trim(),la:+ll.lat.toFixed(5),lo:+ll.lng.toFixed(5),k:kind}; mine.push(q); C.lsSet(KM,mine); add({n:q.n,la:q.la,lo:q.lo,k:q.k,mine:1}); done(); C.toast(T('Αποθηκεύτηκε.','Saved.')); }
+  function mk(txt,fn,solid){ var a=document.createElement('button'); a.type='button'; a.textContent=txt; a.style.cssText='flex:1;min-height:44px;border-radius:12px;font:inherit;font-weight:700;border:1px solid var(--line,#ccd);'+(solid?'background:var(--accent,#0B6572);color:#fff;border-color:transparent':'background:transparent;color:inherit'); a.addEventListener('click',fn); r.appendChild(a); }
+  mk(T('Ράμπα','Ramp'),function(){ save('ramp'); },true);
+  mk(T('Λιμάνι','Port'),function(){ save('port'); },true);
+  mk(T('Άκυρο','Cancel'),done,false);
+  w.appendChild(r); document.body.appendChild(w); document.body.classList.add('ndopen');
+  var m=L.circleMarker(ll,{radius:9,color:'#fff',weight:3,fillColor:'#E8743B',fillOpacity:1}).addTo(map);
+  var _d=done; done=function(){ try{map.removeLayer(m);}catch(e){} _d(); };
+  setTimeout(function(){ try{ inp.focus(); }catch(e){} },100);
 }
 function startAdd(){
   if(!map.hasLayer(layer)){ on=true; layer.addTo(map); C.lsSet(KEY,true); var bb=document.getElementById('bPorts'); if(bb) bb.setAttribute('aria-pressed','true'); }
