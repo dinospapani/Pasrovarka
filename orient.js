@@ -29,15 +29,15 @@ function layout(on){
   else { lm.style.inset=''; lm.style.width=''; lm.style.height=''; lm.style.left=''; lm.style.top=''; lm.style.transform=''; lm.style.transformOrigin=''; }
   try{ var m=getMap(); if(m) m.invalidateSize({animate:false}); }catch(e){}
 }
-var isOn=false, saved=null, tapTimer=null, pinching=false;
+var isOn=false, saved=null;
 function setOn(on){
   if(on===isOn) return; isOn=on; hoist();
   box.classList.toggle('mrot',on); layout(on);
-  try{ var m=getMap(); if(m){ if(on){ saved={t:m.options.touchZoom,w:m.options.scrollWheelZoom}; m.options.touchZoom='center'; m.options.scrollWheelZoom='center'; } else if(saved){ m.options.touchZoom=saved.t; m.options.scrollWheelZoom=saved.w; } } }catch(e){}
-  lm.style.transition=on?'transform .35s linear':''; if(!on) shown=0;
+  try{ var m=getMap(); if(m){ if(on){ saved={t:m.options.touchZoom,w:m.options.scrollWheelZoom}; m.options.touchZoom='center'; m.options.scrollWheelZoom='center'; try{ m.dragging.disable(); }catch(e){} } else if(saved){ m.options.touchZoom=saved.t; m.options.scrollWheelZoom=saved.w; try{ m.dragging.enable(); }catch(e){} } } }catch(e){}
+  lm.style.transition=on?'transform .35s linear':''; lm.style.touchAction=on?'none':''; if(!on) shown=0;
 }
 function target(){
-  if(Date.now()<paused) return null;
+  if(Date.now()<paused||popHold) return null;
   if(mode==='CU') return head;
   if(mode==='HU') return comp!=null?comp:head;
   return null;
@@ -77,28 +77,41 @@ function startCompass(){
 }
 window.addEventListener('psaro-head',function(e){ var h=e.detail&&e.detail.head; if(h!=null){ head=h; } if(mode!=='NU') apply(); });
 
-/* Πάτημα πάνω στον χάρτη όσο είναι γυρισμένος: γυρνά προσωρινά σε NU και δεν εκτελεί το πάτημα */
-function revert(){ paused=Date.now()+20000; swallowUntil=Date.now()+900; apply(); setTimeout(apply,20100); }
-function swallow(e){
-  if(!isOn&&Date.now()>=swallowUntil) return;
-  if(!lm.contains(e.target)) return;
-  if(e.type==='wheel') return; /* ζουμ με τροχό: γύρω από το κέντρο */
-  if(e.type==='touchstart'){
-    if(e.touches&&e.touches.length>=2){ pinching=true; if(tapTimer){ clearTimeout(tapTimer); tapTimer=null; } return; } /* τσίμπημα για ζουμ: περνά στον χάρτη */
-    if(!pinching&&!tapTimer){ tapTimer=setTimeout(function(){ tapTimer=null; if(isOn) revert(); },230); }
-    e.stopPropagation(); return;
-  }
-  if(pinching&&(e.type==='click'||e.type==='dblclick')){ e.stopPropagation(); return; }
-  if(e.type==='mousedown'){ if(isOn) revert(); }
-  e.stopPropagation(); if(e.cancelable&&e.type==='click') e.preventDefault();
+/* Όσο ο χάρτης είναι γυρισμένος: σύρσιμο με ένα δάχτυλο (δικός μας χειρισμός, γιατί το Leaflet δεν ξέρει για την περιστροφή)
+   και σωστή θέση πατήματος (διόρθωση συντεταγμένων). Όταν ανοίγει μενού ή παράθυρο πάνω στον χάρτη, ο χάρτης γυρίζει προσωρινά σε NU ώστε να διαβάζεται. */
+var popHold=false, dragged=0, ptr={}, startPt=null, pinching=false;
+function toLocal(cx,cy){ var r=lm.getBoundingClientRect(), mx=r.left+r.width/2, my=r.top+r.height/2, th=shown*Math.PI/180, dx=cx-mx, dy=cy-my, c=Math.cos(th), s=Math.sin(th);
+  return {x:lm.clientWidth/2+c*dx+s*dy, y:lm.clientHeight/2-s*dx+c*dy, dx:c*dx+s*dy, dy:-s*dx+c*dy}; }
+var patched=false;
+function patch(){ var m=getMap(); if(patched||!m) return; patched=true;
+  var orig=m.mouseEventToContainerPoint;
+  m.mouseEventToContainerPoint=function(e){ if(!isOn) return orig.call(this,e); var t=e.touches&&e.touches[0]||e.changedTouches&&e.changedTouches[0]||e, p=toLocal(t.clientX,t.clientY); return L.point(p.x,p.y); };
+  m.on('popupopen',function(e){ popHold=true; apply(); setTimeout(function(){ try{ var el=e.popup&&e.popup.getElement&&e.popup.getElement(); if(!el) return; var r=el.getBoundingClientRect(), br=box.getBoundingClientRect(), dx=0, dy=0;
+    if(r.right>br.right-10) dx=r.right-(br.right-10); else if(r.left<br.left+10) dx=r.left-(br.left+10);
+    if(r.top<br.top+90) dy=r.top-(br.top+90); else if(r.bottom>br.bottom-90) dy=r.bottom-(br.bottom-90);
+    if(dx||dy) m.panBy([dx,dy],{animate:true}); }catch(x){} },450); });
+  m.on('popupclose',function(){ popHold=false; apply(); });
 }
-['mousedown','touchstart','click','dblclick','contextmenu','wheel'].forEach(function(t){ box.addEventListener(t,swallow,true); });
-function endTouch(e){ if(e.touches&&e.touches.length===0){ if(tapTimer&&pinching){ clearTimeout(tapTimer); tapTimer=null; } if(pinching){ pinching=false; swallowUntil=Date.now()+500; if(isOn&&Date.now()>=paused&&window.PsaroFollowReset) window.PsaroFollowReset(); } } }
-box.addEventListener('touchend',endTouch,true); box.addEventListener('touchcancel',endTouch,true);
+function nPtr(){ return Object.keys(ptr).length; }
+lm.addEventListener('pointerdown',function(e){ if(!isOn) return; ptr[e.pointerId]={x:e.clientX,y:e.clientY}; startPt=nPtr()===1?{x:e.clientX,y:e.clientY}:null; dragged=0; },true);
+lm.addEventListener('pointermove',function(e){
+  if(!isOn||!ptr[e.pointerId]||nPtr()!==1||pinching) return; var m=getMap(); if(!m) return;
+  var p=ptr[e.pointerId], sx=e.clientX-p.x, sy=e.clientY-p.y;
+  if(!dragged&&startPt&&Math.hypot(e.clientX-startPt.x,e.clientY-startPt.y)<7) return;
+  dragged=Date.now(); var th=shown*Math.PI/180, c=Math.cos(th), s=Math.sin(th);
+  m.panBy([-(c*sx+s*sy),-(-s*sx+c*sy)],{animate:false}); p.x=e.clientX; p.y=e.clientY;
+},true);
+function pend(e){ delete ptr[e.pointerId]; }
+lm.addEventListener('pointerup',pend,true); lm.addEventListener('pointercancel',pend,true);
+/* μετά από σύρσιμο δεν πρέπει να εκτελεστεί «πάτημα» */
+['click','dblclick'].forEach(function(t){ lm.addEventListener(t,function(e){ if(isOn&&dragged&&Date.now()-dragged<450){ e.stopPropagation(); e.preventDefault(); } },true); });
+lm.addEventListener('touchstart',function(e){ if(e.touches&&e.touches.length>=2) pinching=true; },true);
+function endT(e){ if(e.touches&&e.touches.length===0&&pinching){ pinching=false; ptr={}; if(isOn&&window.PsaroFollowReset) window.PsaroFollowReset(); } }
+lm.addEventListener('touchend',endT,true); lm.addEventListener('touchcancel',endT,true);
 window.addEventListener('resize',function(){ if(isOn) layout(true); });
 window.addEventListener('orientationchange',function(){ setTimeout(function(){ if(isOn) layout(true); },300); });
 
 /* Δεν φορτώνει τίποτα ακόμα; ο χάρτης δημιουργείται από το app.js, οπότε περιμένουμε λίγο */
 window.PsaroOrient={mode:function(){ return mode; }};
-var tries=0; (function wait(){ if(getMap()||tries++>40){ hoist(); if(mode==='HU') startCompass(); apply(); updBtn(); } else setTimeout(wait,250); })();
+var tries=0; (function wait(){ if(getMap()||tries++>40){ hoist(); patch(); if(mode==='HU') startCompass(); apply(); updBtn(); } else setTimeout(wait,250); })();
 })();
