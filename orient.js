@@ -43,6 +43,7 @@ function target(){
   return null;
 }
 function apply(){
+  if(popOpen&&isOn&&mode!=='NU') return; /* όσο είναι ανοιχτό το μενού, ο χάρτης δεν γυρίζει */
   var t=target();
   if(t==null){ if(isOn) setOn(false); lm.style.removeProperty('--mc'); updBtn(); return; }
   if(!isOn){ setOn(true); shown=-t; }
@@ -79,7 +80,7 @@ window.addEventListener('psaro-head',function(e){ var h=e.detail&&e.detail.head;
 
 /* Όσο ο χάρτης είναι γυρισμένος: σύρσιμο με ένα δάχτυλο (δικός μας χειρισμός, γιατί το Leaflet δεν ξέρει για την περιστροφή)
    και σωστή θέση πατήματος (διόρθωση συντεταγμένων). Όταν ανοίγει μενού ή παράθυρο πάνω στον χάρτη, ο χάρτης γυρίζει προσωρινά σε NU ώστε να διαβάζεται. */
-var popHold=false, dragged=0, ptr={}, startPt=null, pinching=false;
+var popHold=false, popOpen=false, dragged=0, ptr={}, startPt=null, pinching=false;
 function toLocal(cx,cy){ var r=lm.getBoundingClientRect(), mx=r.left+r.width/2, my=r.top+r.height/2, th=shown*Math.PI/180, dx=cx-mx, dy=cy-my, c=Math.cos(th), s=Math.sin(th);
   return {x:lm.clientWidth/2+c*dx+s*dy, y:lm.clientHeight/2-s*dx+c*dy, dx:c*dx+s*dy, dy:-s*dx+c*dy}; }
 var patched=false;
@@ -89,11 +90,11 @@ function patch(){ var m=getMap(); if(patched||!m) return; patched=true;
   /* Το Leaflet τοποθετεί το παράθυρο με translate3d. Για να γυρίσει γύρω από το σημείο του (και όχι γύρω από τη γωνία του), η αρχή της περιστροφής είναι το σημείο + η μετατόπιση */
   function fixPop(){ try{ Array.prototype.forEach.call(lm.querySelectorAll('.leaflet-popup'),function(el){ var mt=/translate3d\(\s*(-?[\d.]+)px,\s*(-?[\d.]+)px/.exec(el.style.transform||''); var tx=mt?+mt[1]:0, ty=mt?+mt[2]:0; el.style.transformOrigin=(el.offsetWidth/2+tx)+'px '+(el.offsetHeight+19+ty)+'px'; }); }catch(x){} }
   m.on('popupopen zoomend viewreset moveend resize',function(){ setTimeout(fixPop,0); });
-  m.on('popupopen',function(e){ fixPop(); setTimeout(function(){ try{ if(!isOn) return; var el=e.popup&&e.popup.getElement&&e.popup.getElement(); if(!el) return; var r=el.getBoundingClientRect(), br=box.getBoundingClientRect(), dx=0, dy=0;
+  m.on('popupopen',function(e){ popOpen=true; fixPop(); setTimeout(function(){ try{ if(!isOn) return; var el=e.popup&&e.popup.getElement&&e.popup.getElement(); if(!el) return; var r=el.getBoundingClientRect(), br=box.getBoundingClientRect(), dx=0, dy=0;
     if(r.right>br.right-10) dx=r.right-(br.right-10); else if(r.left<br.left+10) dx=r.left-(br.left+10);
     if(r.top<br.top+90) dy=r.top-(br.top+90); else if(r.bottom>br.bottom-90) dy=r.bottom-(br.bottom-90);
     if(dx||dy){ var th=shown*Math.PI/180, c=Math.cos(th), s=Math.sin(th); m.panBy([c*dx+s*dy,-s*dx+c*dy],{animate:true}); } }catch(x){} },300); });
-  
+  m.on('popupclose',function(){ popOpen=false; apply(); });
 }
 function nPtr(){ return Object.keys(ptr).length; }
 lm.addEventListener('pointerdown',function(e){ if(!isOn) return; ptr[e.pointerId]={x:e.clientX,y:e.clientY}; startPt=nPtr()===1?{x:e.clientX,y:e.clientY}:null; dragged=0; },true);
