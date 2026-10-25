@@ -422,3 +422,8 @@ html body.ontrip.nd #dtBar{top:calc(var(--ndwx,0px) + 112px + env(safe-area-inse
 html body.ontrip.nd #dtShow{top:calc(var(--ndwx,0px) + 112px + env(safe-area-inset-top,0px));bottom:auto;left:12px;transform:none}
 html body.ontrip.nd .ndbar,html body.ontrip.nd.hasdt .ndbar,html body.ontrip.nd.hasdt.hasland .ndbar,html body.ontrip.nd:has(.zonewarn:not([hidden])) .ndbar,html body.ontrip.nd.hasdt:has(.zonewarn:not([hidden])) .ndbar{top:calc(var(--ndwx,0px) + 112px + var(--dth,0px) + env(safe-area-inset-top,0px));max-height:calc(100% - var(--ndwx,0px) - var(--dth,0px) - var(--navh,64px) - 150px)}
 html body.ontrip.nd .leaflet-top.leaflet-left{top:calc(var(--ndwx,0px) + 112px + var(--dth,0px))}
+
+/* v31z215: η κάρτα πορείας κολλάει ακριβώς κάτω από τη γραμμή καιρού (μετρημένη, όχι σταθερή απόσταση) */
+html body.ontrip.nd #dtBar,html body.ontrip.nd #dtShow{top:var(--ndtop,72px)}
+html body.ontrip.nd .ndbar,html body.ontrip.nd.hasdt .ndbar,html body.ontrip.nd.hasdt.hasland .ndbar,html body.ontrip.nd:has(.zonewarn:not([hidden])) .ndbar,html body.ontrip.nd.hasdt:has(.zonewarn:not([hidden])) .ndbar{top:calc(var(--ndtop,72px) + var(--dth,0px));max-height:calc(100% - var(--ndtop,72px) - var(--dth,0px) - var(--navh,64px) - 150px)}
+html body.ontrip.nd .leaflet-top.leaflet-left{top:calc(var(--ndtop,72px) + var(--dth,0px))}
