@@ -108,6 +108,11 @@ nb(T('Στρώματα','Layers'),IC.layers,function(){ open('layers'); });
 nb(T('Ενέργειες','Actions'),IC.actions,function(){ open('actions'); });
 nb(T('Ασφάλεια','Safety'),IC.safety,function(){ open('safety'); });
 nb(T('Θέση μου','My position'),IC.me,function(){ var l=$('bLoc'); if(l) l.click(); });
+/* NU/CU/HU: ο προσανατολισμός του χάρτη ως εργαλείο της μπάρας (μόνο κατά την έξοδο), χρησιμοποιεί το ίδιο κουμπί #bOrient */
+var orb=nb('NU',SVG+'<circle cx="12" cy="12" r="8.500"/><path d="m15.500 8.500-2 5-5 2 2-5z"/></svg>',function(){ var x=$('bOrient'); if(x) x.click(); });
+orb.classList.add('ndorient'); orb.setAttribute('aria-label',T('Προσανατολισμός χάρτη','Map orientation'));
+function orUpd(){ var x=$('bOrient'); if(!x) return; var m=x.textContent||'NU'; if(orb.lastChild.textContent!==m) orb.lastChild.textContent=m; orb.classList.toggle('on',x.classList.contains('on')); orb.title=x.title||''; }
+setInterval(orUpd,400); orUpd();
 /* MOB και SOS μέσα στη μπάρα (μόνο κατά την έξοδο): χρησιμοποιούν τα ίδια κουμπιά και τις ίδιες λειτουργίες με πριν */
 var sosb=nb('SOS',SVG+'<path d="M12 3.500 21.500 20h-19z"/><path d="M12 10v4.500M12 17.300v.01"/></svg>',function(){ var x=$('sosBtn'); if(x) x.click(); });
 sosb.classList.add('ndsos'); sosb.setAttribute('aria-label',T('SOS: ειδοποίηση κινδύνου','SOS: distress alert')); bar.insertBefore(sosb,bar.firstChild);
