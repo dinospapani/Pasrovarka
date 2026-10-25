@@ -108,6 +108,23 @@ nb(T('Στρώματα','Layers'),IC.layers,function(){ open('layers'); });
 nb(T('Ενέργειες','Actions'),IC.actions,function(){ open('actions'); });
 nb(T('Ασφάλεια','Safety'),IC.safety,function(){ open('safety'); });
 nb(T('Θέση μου','My position'),IC.me,function(){ var l=$('bLoc'); if(l) l.click(); });
+/* MOB και SOS μέσα στη μπάρα (μόνο κατά την έξοδο): χρησιμοποιούν τα ίδια κουμπιά και τις ίδιες λειτουργίες με πριν */
+var sosb=nb('SOS',SVG+'<path d="M12 3.500 21.500 20h-19z"/><path d="M12 10v4.500M12 17.300v.01"/></svg>',function(){ var x=$('sosBtn'); if(x) x.click(); });
+sosb.classList.add('ndsos'); sosb.setAttribute('aria-label',T('SOS: ειδοποίηση κινδύνου','SOS: distress alert')); bar.insertBefore(sosb,bar.firstChild);
+var mobb=nb('MOB',SVG+'<circle cx="12" cy="12" r="8.500"/><circle cx="12" cy="12" r="3.500"/><path d="M6 6l3.500 3.500M14.500 14.500 18 18M18 6l-3.500 3.500M9.500 14.500 6 18"/></svg>',function(){});
+mobb.classList.add('ndmob'); mobb.setAttribute('aria-label',T('Άνθρωπος στη θάλασσα (MOB)','Man overboard (MOB)')); bar.insertBefore(mobb,bar.firstChild);
+/* MOB με παρατεταμένο πάτημα (1,5 δευτ.), ώστε να μη ενεργοποιείται κατά λάθος από κύμα ή βρεγμένα χέρια */
+(function(){
+  var HOLD=1500, tm=null, fired=false;
+  mobb.setAttribute('aria-label',T('Άνθρωπος στη θάλασσα (MOB), κράτα πατημένο','Man overboard (MOB), press and hold'));
+  function stop(){ clearTimeout(tm); tm=null; mobb.classList.remove('holding'); }
+  function fire(){ fired=true; stop(); try{ navigator.vibrate&&navigator.vibrate([60,40,60]); }catch(e){} var x=$('bMob'); if(x) x.click(); }
+  mobb.addEventListener('pointerdown',function(e){ fired=false; stop(); mobb.classList.add('holding'); tm=setTimeout(fire,HOLD); });
+  ['pointerup','pointerleave','pointercancel'].forEach(function(ev){ mobb.addEventListener(ev,function(){ if(tm){ stop(); if(ev==='pointerup'&&!fired) C.toast(T('Κράτα πατημένο το MOB 1,5 δευτ.','Hold MOB for 1.5 s')); } }); });
+  mobb.addEventListener('contextmenu',function(e){ e.preventDefault(); });
+  /* το πληκτρολόγιο (Enter/Space) ενεργοποιεί αμέσως */
+  mobb.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); fire(); } });
+})();
 box.insertBefore(bar,mb.nextSibling);
 
 /* ---- αρχική οθόνη: αναζήτηση, κάρτα «Σήμερα», κάτω μενού με κεντρικό κουμπί ---- */
@@ -227,7 +244,9 @@ box.insertBefore(bar,mb.nextSibling);
     c.hours.forEach(function(v,i){ if(v>=thr){ if(cur&&cur.e===i-1){ cur.e=i; if(v>cur.m) cur.m=v; } else { cur={s:i,e:i,m:v}; gs.push(cur); } } });
     gs.sort(function(a,b){ return b.m-a.m; });
     h2.textContent=gs.length?T('Καλύτερα ','Best ')+pad(gs[0].s)+':00–'+pad((gs[0].e+1)%24)+':00':'';
-    Array.prototype.forEach.call(bars.children,function(b){ var v=c.hours[+b.dataset.h]||0; b.style.height=Math.max(8,Math.round(v/Math.max(mx,1)*100))+'%'; b.className=v>=thr?'hi':''; });
+    var lvl=function(v){ return v>=75?'g':v>=60?'l':v>=45?'w':'b'; };
+    card.dataset.lv=lvl(day); showb.dataset.lv=lvl(day);
+    Array.prototype.forEach.call(bars.children,function(b){ var v=c.hours[+b.dataset.h]||0; b.style.height=Math.max(8,Math.round(v/Math.max(mx,1)*100))+'%'; b.dataset.lv=lvl(v); b.className=v>=thr?'hi':''; b.title=pad(+b.dataset.h)+':00 · '+v+'%'; });
   }
   document.addEventListener('psaro-cond',function(){ setTimeout(draw,80); });
   document.addEventListener('psaro-view',function(){ setTimeout(draw,80); });

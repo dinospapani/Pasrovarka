@@ -37,6 +37,7 @@ function setOn(on){
   lm.style.transition=on?'transform .35s linear':''; lm.style.touchAction=on?'none':''; if(!on) shown=0;
 }
 function target(){
+  if(!document.body.classList.contains('ontrip')) return null; /* εκτός εξόδου ο χάρτης μένει NU */
   if(Date.now()<paused||popHold) return null;
   if(mode==='CU') return head;
   if(mode==='HU') return comp!=null?comp:head;
@@ -116,6 +117,7 @@ window.addEventListener('resize',function(){ if(isOn) layout(true); });
 window.addEventListener('orientationchange',function(){ setTimeout(function(){ if(isOn) layout(true); },300); });
 
 /* Δεν φορτώνει τίποτα ακόμα; ο χάρτης δημιουργείται από το app.js, οπότε περιμένουμε λίγο */
-window.PsaroOrient={mode:function(){ return mode; }};
+window.PsaroOrient={mode:function(){ return document.body.classList.contains('ontrip')?mode:'NU'; }};
+try{ new MutationObserver(function(){ apply(); }).observe(document.body,{attributes:true,attributeFilter:['class']}); }catch(e){}
 var tries=0; (function wait(){ if(getMap()||tries++>40){ hoist(); patch(); if(mode==='HU') startCompass(); apply(); updBtn(); } else setTimeout(wait,250); })();
 })();

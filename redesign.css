@@ -365,3 +365,41 @@ body.nd:not(.ontrip).ndmin.ndhascard:not(.picking) .ndshowc{display:flex;align-i
 body.nd .ndshowc svg{width:20px;height:20px}
 body.nd .ndshowc b{font-size:15px;font-weight:800;color:var(--accent)}
 body.ontrip.nd .ndhide{display:none}
+
+/* v31z210: MOB και SOS μέσα στη δεξιά μπάρα, με έντονη αντίθεση */
+body.nd:not(.ontrip) .ndb.ndmob,body.nd:not(.ontrip) .ndb.ndsos{display:none}
+body.nd.ontrip #bMob,body.nd.ontrip #sosBtn{display:none!important}
+body.nd .ndb.ndmob,body.nd .ndb.ndsos{font-weight:800;letter-spacing:.04em;margin:0 0 3px;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+body.nd .ndb.ndmob{background:#ff6a3d;color:#1a0a04}
+body.nd .ndb.ndsos{background:#d93036;color:#fff;margin-bottom:8px}
+body.nd .ndb.ndmob:active{background:#ff8a63}body.nd .ndb.ndsos:active{background:#ef4a4f}
+body.nd .ndb.ndmob svg,body.nd .ndb.ndsos svg{stroke-width:2.2}
+
+/* v31z211: το MOB ενεργοποιείται με παρατεταμένο πάτημα, με ένδειξη προόδου */
+body.nd .ndb.ndmob{position:relative;overflow:hidden;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body.nd .ndb.ndmob::after{content:"";position:absolute;left:0;right:0;bottom:0;height:100%;background:rgba(8,32,43,.38);transform:scaleY(0);transform-origin:bottom}
+body.nd .ndb.ndmob.holding::after{animation:ndhold 1.5s linear forwards}
+@keyframes ndhold{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+
+/* v31z212: χρώματα με νόημα. Πράσινο = έναρξη και καλό δάγκωμα, πορτοκαλί = τέλος εξόδου, λευκό MOB */
+body.nd nav.tabs .ndfish{background:var(--good);color:var(--bg)}
+body.nd nav.tabs .ndfish.end{background:var(--accent);color:var(--accent-ink)}
+body.nd nav.tabs .ndfish.end.late{background:var(--bad);color:var(--bg)}
+body.nd .ndb.ndmob{background:#fff;color:#c62828;box-shadow:0 2px 8px rgba(0,0,0,.35),inset 0 0 0 2px #c62828}
+body.nd .ndb.ndmob:active{background:#ffe9e9}
+body.nd .ndb.ndmob::after{background:rgba(198,40,40,.32)}
+/* ωριαία μπαράκια και βαθμός με χρώμα ανάλογα με το ποσοστό (το ύψος μένει ως δεύτερη ένδειξη) */
+body.nd .ndbars i{background:var(--line);opacity:.8}
+body.nd .ndbars i.hi{opacity:1}
+body.nd .ndbars i[data-lv=g]{background:var(--good)}
+body.nd .ndbars i[data-lv=l]{background:color-mix(in srgb,var(--good) 50%,var(--warn))}
+body.nd .ndbars i[data-lv=w]{background:var(--warn)}
+body.nd .ndbars i[data-lv=b]{background:color-mix(in srgb,var(--warn) 45%,var(--bad))}
+body.nd .ndcard[data-lv=g] .ndr1{stroke:var(--good)}
+body.nd .ndcard[data-lv=l] .ndr1{stroke:color-mix(in srgb,var(--good) 50%,var(--warn))}
+body.nd .ndcard[data-lv=w] .ndr1{stroke:var(--warn)}
+body.nd .ndcard[data-lv=b] .ndr1{stroke:color-mix(in srgb,var(--warn) 45%,var(--bad))}
+body.nd .ndshowc[data-lv=g] b{color:var(--good)}
+body.nd .ndshowc[data-lv=l] b{color:color-mix(in srgb,var(--good) 50%,var(--warn))}
+body.nd .ndshowc[data-lv=w] b{color:var(--warn)}
+body.nd .ndshowc[data-lv=b] b{color:color-mix(in srgb,var(--warn) 45%,var(--bad))}

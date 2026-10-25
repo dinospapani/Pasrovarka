@@ -1402,3 +1402,6 @@ body.ontrip .you{box-sizing:border-box;width:34px;height:34px;margin:-8px 0 0 -8
 
 /* Όσο ο χάρτης είναι γυρισμένος, τα παράθυρα (μενού πατήματος) μένουν όρθια γύρω από το σημείο τους */
 .mapbox.mrot .leaflet-popup{rotate:var(--mc,0deg);transition:opacity .2s linear,rotate .35s linear}
+
+/* v31z209: το NU/CU/HU φαίνεται μόνο κατά την έξοδο */
+body:not(.ontrip) .mo-btn{display:none!important}
