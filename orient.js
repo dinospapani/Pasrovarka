@@ -29,10 +29,11 @@ function layout(on){
   else { lm.style.inset=''; lm.style.width=''; lm.style.height=''; lm.style.left=''; lm.style.top=''; lm.style.transform=''; lm.style.transformOrigin=''; }
   try{ var m=getMap(); if(m) m.invalidateSize({animate:false}); }catch(e){}
 }
-var isOn=false;
+var isOn=false, saved=null, tapTimer=null, pinching=false;
 function setOn(on){
   if(on===isOn) return; isOn=on; hoist();
   box.classList.toggle('mrot',on); layout(on);
+  try{ var m=getMap(); if(m){ if(on){ saved={t:m.options.touchZoom,w:m.options.scrollWheelZoom}; m.options.touchZoom='center'; m.options.scrollWheelZoom='center'; } else if(saved){ m.options.touchZoom=saved.t; m.options.scrollWheelZoom=saved.w; } } }catch(e){}
   lm.style.transition=on?'transform .35s linear':''; if(!on) shown=0;
 }
 function target(){
@@ -77,13 +78,23 @@ function startCompass(){
 window.addEventListener('psaro-head',function(e){ var h=e.detail&&e.detail.head; if(h!=null){ head=h; } if(mode!=='NU') apply(); });
 
 /* Πάτημα πάνω στον χάρτη όσο είναι γυρισμένος: γυρνά προσωρινά σε NU και δεν εκτελεί το πάτημα */
+function revert(){ paused=Date.now()+20000; swallowUntil=Date.now()+900; apply(); setTimeout(apply,20100); }
 function swallow(e){
   if(!isOn&&Date.now()>=swallowUntil) return;
   if(!lm.contains(e.target)) return;
-  if(e.type==='touchstart'||e.type==='mousedown'){ paused=Date.now()+20000; swallowUntil=Date.now()+900; apply(); setTimeout(apply,20100); }
+  if(e.type==='wheel') return; /* ζουμ με τροχό: γύρω από το κέντρο */
+  if(e.type==='touchstart'){
+    if(e.touches&&e.touches.length>=2){ pinching=true; if(tapTimer){ clearTimeout(tapTimer); tapTimer=null; } return; } /* τσίμπημα για ζουμ: περνά στον χάρτη */
+    if(!pinching&&!tapTimer){ tapTimer=setTimeout(function(){ tapTimer=null; if(isOn) revert(); },230); }
+    e.stopPropagation(); return;
+  }
+  if(pinching&&(e.type==='click'||e.type==='dblclick')){ e.stopPropagation(); return; }
+  if(e.type==='mousedown'){ if(isOn) revert(); }
   e.stopPropagation(); if(e.cancelable&&e.type==='click') e.preventDefault();
 }
 ['mousedown','touchstart','click','dblclick','contextmenu','wheel'].forEach(function(t){ box.addEventListener(t,swallow,true); });
+function endTouch(e){ if(e.touches&&e.touches.length===0){ if(tapTimer&&pinching){ clearTimeout(tapTimer); tapTimer=null; } if(pinching){ pinching=false; swallowUntil=Date.now()+500; if(isOn&&Date.now()>=paused&&window.PsaroFollowReset) window.PsaroFollowReset(); } } }
+box.addEventListener('touchend',endTouch,true); box.addEventListener('touchcancel',endTouch,true);
 window.addEventListener('resize',function(){ if(isOn) layout(true); });
 window.addEventListener('orientationchange',function(){ setTimeout(function(){ if(isOn) layout(true); },300); });
 

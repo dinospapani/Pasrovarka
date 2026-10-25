@@ -531,7 +531,7 @@ function setYou(lat,lon){
 /* Ζωντανή θέση: η μπλε τελεία ακολουθεί το GPS όσο η εφαρμογή είναι ανοιχτή */
 let youW=null;
 /* Όσο είσαι σε έξοδο, ο χάρτης κρατά τη θέση σου στο κέντρο. Αν τον σύρεις ή τον πατήσεις, η παρακολούθηση σταματά για 20 δευτερόλεπτα και μετά συνεχίζει. */
-let followPause=0;
+let followPause=0; window.PsaroFollowReset=function(){ followPause=0; };
 function followMe(lat,lon){ try{ if(!map||!(document.body.classList.contains('ontrip')||(window.PsaroOrient&&window.PsaroOrient.mode()!=='NU'))||$('tab-map').hidden||Date.now()<followPause) return; map.panTo([lat,lon],{animate:true,duration:.6}); }catch(e){} }
 function youStart(){
   if(youW!=null||!navigator.geolocation) return;
