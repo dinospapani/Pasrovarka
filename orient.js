@@ -86,11 +86,14 @@ var patched=false;
 function patch(){ var m=getMap(); if(patched||!m) return; patched=true;
   var orig=m.mouseEventToContainerPoint;
   m.mouseEventToContainerPoint=function(e){ if(!isOn) return orig.call(this,e); var t=e.touches&&e.touches[0]||e.changedTouches&&e.changedTouches[0]||e, p=toLocal(t.clientX,t.clientY); return L.point(p.x,p.y); };
-  m.on('popupopen',function(e){ popHold=true; apply(); setTimeout(function(){ try{ var el=e.popup&&e.popup.getElement&&e.popup.getElement(); if(!el) return; var r=el.getBoundingClientRect(), br=box.getBoundingClientRect(), dx=0, dy=0;
+  /* Το Leaflet τοποθετεί το παράθυρο με translate3d. Για να γυρίσει γύρω από το σημείο του (και όχι γύρω από τη γωνία του), η αρχή της περιστροφής είναι το σημείο + η μετατόπιση */
+  function fixPop(){ try{ Array.prototype.forEach.call(lm.querySelectorAll('.leaflet-popup'),function(el){ var mt=/translate3d\(\s*(-?[\d.]+)px,\s*(-?[\d.]+)px/.exec(el.style.transform||''); var tx=mt?+mt[1]:0, ty=mt?+mt[2]:0; el.style.transformOrigin=(el.offsetWidth/2+tx)+'px '+(el.offsetHeight+19+ty)+'px'; }); }catch(x){} }
+  m.on('popupopen zoomend viewreset moveend resize',function(){ setTimeout(fixPop,0); });
+  m.on('popupopen',function(e){ fixPop(); setTimeout(function(){ try{ if(!isOn) return; var el=e.popup&&e.popup.getElement&&e.popup.getElement(); if(!el) return; var r=el.getBoundingClientRect(), br=box.getBoundingClientRect(), dx=0, dy=0;
     if(r.right>br.right-10) dx=r.right-(br.right-10); else if(r.left<br.left+10) dx=r.left-(br.left+10);
     if(r.top<br.top+90) dy=r.top-(br.top+90); else if(r.bottom>br.bottom-90) dy=r.bottom-(br.bottom-90);
-    if(dx||dy) m.panBy([dx,dy],{animate:true}); }catch(x){} },450); });
-  m.on('popupclose',function(){ popHold=false; apply(); });
+    if(dx||dy){ var th=shown*Math.PI/180, c=Math.cos(th), s=Math.sin(th); m.panBy([c*dx+s*dy,-s*dx+c*dy],{animate:true}); } }catch(x){} },300); });
+  
 }
 function nPtr(){ return Object.keys(ptr).length; }
 lm.addEventListener('pointerdown',function(e){ if(!isOn) return; ptr[e.pointerId]={x:e.clientX,y:e.clientY}; startPt=nPtr()===1?{x:e.clientX,y:e.clientY}:null; dragged=0; },true);
