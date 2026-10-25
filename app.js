@@ -512,19 +512,30 @@ function initMap(){
   if(cond&&cond.lat!=null) setYou(cond.lat,cond.lon);
   checkZoneHere();
 }
+let youHead=null, youPrev=null;
+/* Πορεία: από το GPS αν κινείσαι (>~1,5 kn), αλλιώς από τη μετατόπιση ανάμεσα σε δύο θέσεις. Όταν στέκεσαι, κρατά την τελευταία πορεία. */
+function headFix(lat,lon,gh,gs){
+  try{
+    if(gh!=null&&isFinite(gh)&&gs!=null&&isFinite(gs)&&gs>0.8){ youHead=gh; }
+    else if(youPrev){ const R=6371000, dy=(lat-youPrev[0])*Math.PI/180*R, dx=(lon-youPrev[1])*Math.PI/180*R*Math.cos(lat*Math.PI/180), d=Math.hypot(dx,dy); if(d>15){ youHead=(Math.atan2(dx,dy)*180/Math.PI+360)%360; youPrev=[lat,lon]; } }
+    if(!youPrev) youPrev=[lat,lon];
+  }catch(e){}
+}
+function applyHead(){ try{ if(youHead!=null) window.dispatchEvent(new CustomEvent('psaro-head',{detail:{head:youHead}})); }catch(e){} try{ const el=youM&&youM.getElement&&youM.getElement(), d=el&&el.firstChild; if(d) d.style.transform=(youHead==null?'':'rotate('+Math.round(youHead)+'deg)'); }catch(e){} }
 function setYou(lat,lon){
   if(!map) return;
   try{ window.dispatchEvent(new CustomEvent('psaro-pos',{detail:{lat:lat,lon:lon}})); }catch(e){}
   if(youM) youM.setLatLng([lat,lon]); else youM=L.marker([lat,lon],{icon:L.divIcon({className:'',html:'<div class="you"></div>',iconSize:[18,18]}),interactive:false,zIndexOffset:-100}).addTo(map);
+  applyHead();
 }
 /* Ζωντανή θέση: η μπλε τελεία ακολουθεί το GPS όσο η εφαρμογή είναι ανοιχτή */
 let youW=null;
 /* Όσο είσαι σε έξοδο, ο χάρτης κρατά τη θέση σου στο κέντρο. Αν τον σύρεις ή τον πατήσεις, η παρακολούθηση σταματά για 20 δευτερόλεπτα και μετά συνεχίζει. */
 let followPause=0;
-function followMe(lat,lon){ try{ if(!map||!document.body.classList.contains('ontrip')||$('tab-map').hidden||Date.now()<followPause) return; map.panTo([lat,lon],{animate:true,duration:.6}); }catch(e){} }
+function followMe(lat,lon){ try{ if(!map||!(document.body.classList.contains('ontrip')||(window.PsaroOrient&&window.PsaroOrient.mode()!=='NU'))||$('tab-map').hidden||Date.now()<followPause) return; map.panTo([lat,lon],{animate:true,duration:.6}); }catch(e){} }
 function youStart(){
   if(youW!=null||!navigator.geolocation) return;
-  try{ youW=navigator.geolocation.watchPosition(p=>{ const c=p.coords; if(c.accuracy&&c.accuracy>150) return; setYou(c.latitude,c.longitude); followMe(c.latitude,c.longitude); },()=>{},{enableHighAccuracy:true,maximumAge:2000,timeout:30000}); }catch(e){ youW=null; }
+  try{ youW=navigator.geolocation.watchPosition(p=>{ const c=p.coords; if(c.accuracy&&c.accuracy>150) return; headFix(c.latitude,c.longitude,c.heading,c.speed); setYou(c.latitude,c.longitude); followMe(c.latitude,c.longitude); },()=>{},{enableHighAccuracy:true,maximumAge:2000,timeout:30000}); }catch(e){ youW=null; }
 }
 function youStop(){ if(youW!=null){ try{ navigator.geolocation.clearWatch(youW); }catch(e){} youW=null; } }
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) youStop(); else youStart(); });
