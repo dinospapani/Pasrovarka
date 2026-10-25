@@ -349,3 +349,19 @@ body.nd .setcard .label{margin:14px 0 6px}
 body.nd .setcard .row{margin-top:8px}
 /* hide tiles/items with no data (e.g. sea values while inland) */
 body.nd .tile.na,body.nd .mapwx .mw.na{display:none!important}
+
+/* v31z206: κατά την έξοδο το κεντρικό κουμπί είναι «Τέλος εξόδου»· το πράσινο κουμπί από πάνω κρύβεται */
+body.nd.ontrip #tripBtn{display:none!important}
+body.nd nav.tabs .ndfish.end{background:#d9483b;color:#fff}
+body.nd nav.tabs .ndfish.end.late{background:#e0a526;color:#1a0a04}
+body.nd nav.tabs .ndfish.end svg{width:30px;height:30px}
+
+/* v31z207: κάρτα «Σήμερα» με βελάκι απόκρυψης */
+body.nd .ndhide{position:absolute;left:50%;top:-15px;transform:translateX(-50%);width:60px;height:28px;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--surface) 96%,transparent);color:var(--muted);display:grid;place-items:center;padding:0;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+body.nd .ndhide svg{width:22px;height:22px}
+body.nd:not(.ontrip).ndmin .ndcard{display:none!important}
+body.nd .ndshowc{display:none}
+body.nd:not(.ontrip).ndmin.ndhascard:not(.picking) .ndshowc{display:flex;align-items:center;gap:6px;position:absolute;left:50%;transform:translateX(-50%);bottom:calc(var(--navh,64px) + 30px);z-index:805;height:36px;padding:0 14px 0 10px;border:1px solid var(--line);border-radius:18px;background:color-mix(in srgb,var(--surface) 94%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);color:var(--ink);font:inherit;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.3)}
+body.nd .ndshowc svg{width:20px;height:20px}
+body.nd .ndshowc b{font-size:15px;font-weight:800;color:var(--accent)}
+body.ontrip.nd .ndhide{display:none}

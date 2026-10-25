@@ -203,6 +203,17 @@ box.insertBefore(bar,mb.nextSibling);
   var shop=el('button','ndshop'); shop.type='button'; shop.innerHTML=SHOP+'<span></span>'; shop.lastChild.textContent=T('Μαγαζιά','Stores');
   shop.addEventListener('click',function(){ var b=$('sShops'); if(b) b.click(); });
   foot.append(shop); card.append(top,bars,lab,foot); box.append(card);
+  /* κουμπί απόκρυψης της κάρτας (βελάκι προς τα κάτω) και μικρό κουμπί για να ξαναβγεί */
+  var CHEV_D='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+  var CHEV_U='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg>';
+  var hideb=el('button','ndhide'); hideb.type='button'; hideb.setAttribute('aria-label',T('Απόκρυψη κάρτας','Hide card')); hideb.innerHTML=CHEV_D;
+  var showb=el('button','ndshowc'); showb.type='button'; showb.setAttribute('aria-label',T('Εμφάνιση κάρτας','Show card'));
+  var shn=el('b',null,'–'); showb.innerHTML=CHEV_U; showb.append(shn);
+  card.prepend(hideb); box.append(showb);
+  function setMin(v){ document.body.classList.toggle('ndmin',!!v); try{ localStorage.setItem('psaro_ndmin',v?'1':'0'); }catch(e){} }
+  try{ if(localStorage.getItem('psaro_ndmin')==='1') document.body.classList.add('ndmin'); }catch(e){}
+  hideb.addEventListener('click',function(){ setMin(true); });
+  showb.addEventListener('click',function(){ setMin(false); });
   var FR=0, TO=23;
   for(var h=FR;h<=TO;h++){ var bb=el('i'); bb.dataset.h=h; bars.append(bb); var lb=el('span',null,(h===0||h===6||h===12||h===18)?pad(h):''); lab.append(lb); }
   function draw(){
@@ -210,7 +221,7 @@ box.insertBefore(bar,mb.nextSibling);
     if(!c||!c.hours||c.day==null){ card.hidden=true; document.body.classList.remove('ndhascard'); return; }
     card.hidden=false; document.body.classList.add('ndhascard');
     var day=c.day, sc=Math.max(1,Math.min(10,Math.round(day/10)));
-    rn.textContent=String(sc); ring.querySelector('.ndr1').style.strokeDasharray=(2*Math.PI*23*sc/10).toFixed(1)+' 999';
+    rn.textContent=String(sc); shn.textContent=String(sc); ring.querySelector('.ndr1').style.strokeDasharray=(2*Math.PI*23*sc/10).toFixed(1)+' 999';
     h1.textContent=day>=75?T('Πολύ καλό δάγκωμα','Very good bite'):day>=60?T('Καλό δάγκωμα','Good bite'):day>=45?T('Μέτριο δάγκωμα','Fair bite'):T('Αδύναμο δάγκωμα','Weak bite');
     var mx=Math.max.apply(null,c.hours), thr=mx-6, gs=[], cur=null;
     c.hours.forEach(function(v,i){ if(v>=thr){ if(cur&&cur.e===i-1){ cur.e=i; if(v>cur.m) cur.m=v; } else { cur={s:i,e:i,m:v}; gs.push(cur); } } });
@@ -233,11 +244,22 @@ box.insertBefore(bar,mb.nextSibling);
     var fcb=nav.querySelector('[data-tab="fc"]');
     if(fcb){ for(var i=0;i<fcb.childNodes.length;i++){ var n=fcb.childNodes[i]; if(n.nodeType===3&&n.textContent.trim()){ n.textContent=T('Πρόγνωση','Forecast'); break; } } }
     var cb=el('button','ndfish'); cb.type='button'; cb.innerHTML=IC.fish;
-    function fl(){ cb.setAttribute('aria-label',document.body.classList.contains('ontrip')?T('Νέο ψάρι','New fish'):T('Ξεκίνα έξοδο για ψάρεμα','Start a fishing trip')); }
+    var STOP=SVG+'<rect x="6" y="6" width="12" height="12" rx="2.5" fill="currentColor"/></svg>';
+    /* κατά την έξοδο το κεντρικό κουμπί γίνεται «Τέλος εξόδου» (πάτημα = επιβεβαίωση, παρατεταμένο = λεπτομέρειες) */
+    function fl(){
+      var on=document.body.classList.contains('ontrip'), tb=$('tripBtn');
+      cb.setAttribute('aria-label',on?T('Τέλος εξόδου','End trip'):T('Ξεκίνα έξοδο για ψάρεμα','Start a fishing trip'));
+      cb.innerHTML=on?STOP:IC.fish; cb.classList.toggle('end',on); cb.classList.toggle('late',!!(on&&tb&&tb.classList.contains('late')));
+    }
     fl(); new MutationObserver(fl).observe(document.body,{attributes:true,attributeFilter:['class']});
+    var tbn=$('tripBtn'); if(tbn) new MutationObserver(fl).observe(tbn,{attributes:true,attributeFilter:['class']});
+    var lt=null, lheld=false;
+    cb.addEventListener('pointerdown',function(){ lheld=false; clearTimeout(lt); if(!document.body.classList.contains('ontrip')) return; lt=setTimeout(function(){ lheld=true; try{ navigator.vibrate&&navigator.vibrate(30); }catch(e){} if(window.PsaroTrip&&window.PsaroTrip.sheet) window.PsaroTrip.sheet(); },450); });
+    ['pointerup','pointerleave','pointercancel'].forEach(function(ev){ cb.addEventListener(ev,function(){ clearTimeout(lt); }); });
+    cb.addEventListener('contextmenu',function(e){ e.preventDefault(); });
     cb.addEventListener('click',function(){
-      if(document.body.classList.contains('ontrip')){ var f=$('fab'); if(f) f.click(); }
-      else { var t=$('tripBtn'); if(t) t.click(); }
+      if(lheld){ lheld=false; return; }
+      var t=$('tripBtn'); if(t) t.click();
     });
     var logb=nav.querySelector('[data-tab="log"]'); nav.insertBefore(cb,logb||null);
   }

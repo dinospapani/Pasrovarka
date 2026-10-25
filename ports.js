@@ -84,7 +84,7 @@ function add(p){
 function note(nIn,bad){
   var now=Date.now();
   if(bad&&nIn===0){ if(now-warned>60000){ warned=now; C.toast(T('Δεν φορτώθηκαν λιμάνια. Χρειάζεται σύνδεση.','Ports did not load. Needs a connection.')); } }
-  else if(!bad&&nIn===0){ if(now-warned>60000){ warned=now; C.toast(T('Δεν υπάρχουν καταχωρισμένα λιμάνια ή ράμπες εδώ στο OpenStreetMap.','No ports or ramps are recorded here in OpenStreetMap.')); } }
+  else if(!bad&&nIn===0){ if(!note.emptySaid&&!document.body.classList.contains('ontrip')&&now-warned>60000){ note.emptySaid=1; warned=now; C.toast(T('Δεν υπάρχουν καταχωρισμένα λιμάνια ή ράμπες εδώ στο OpenStreetMap.','No ports or ramps are recorded here in OpenStreetMap.')); } }
   else if(!bad&&!note.said){ note.said=1; C.toast(T('Λιμάνια και ράμπες στην περιοχή: ','Ports and ramps here: ')+nIn); }
 }
 function inCY(b){ var c=b.getCenter(); return c.lat>=CYB.s&&c.lat<=CYB.n&&c.lng>=CYB.w&&c.lng<=CYB.e; }
