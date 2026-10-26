@@ -141,7 +141,6 @@ body.ontrip.nd #dtBar,body.ontrip.nd .zonewarn,body.ontrip.nd .maphint{bottom:ca
 body.hasdt.ontrip.nd .zonewarn,body.hasdt.ontrip.nd .maphint{bottom:calc(var(--navh,64px) + 210px)}
 /* μικρές οθόνες: λιγότερο ύψος για να χωράνε μπάρα και κάρτα */
 @media (max-height:720px){
-  body.nd .ndbars,body.nd .ndlab{display:none}
   body.nd .ndcard{padding:10px 14px}
   body.nd .ndb{height:46px;width:52px}
   body.nd .ndbar{padding:4px}
@@ -463,3 +462,27 @@ body.nd .ndcard[data-lv=w] .ndr1{stroke:color-mix(in srgb,var(--accent) 48%,var(
 body.nd .ndbars i[data-lv=b]{background:color-mix(in srgb,var(--accent) 26%,var(--line))}
 body.nd .ndcard[data-lv=b] .ndr1{stroke:color-mix(in srgb,var(--accent) 26%,var(--line))}
 body.nd .ndshowc[data-lv] b{color:var(--accent)}
+
+/* v31z220: οι ωριαίες μπάρες κρύβονται μόνο σε πολύ μικρές οθόνες (χωρίς το Stores χωράνε και με τη μπάρα του browser) */
+@media (max-height:600px){ body.nd .ndbars,body.nd .ndlab{display:none} }
+
+/* v31z221: όνομα στην ίδια γραμμή με το ✕, στοιχεία πορείας από κάτω, βελάκι μηνυμάτων στο κέντρο κάτω */
+body.nd #dtBar .dtmain{flex-direction:column;align-items:stretch;gap:2px}
+body.nd #dtBar .dtname{flex:none;font-size:15px}
+body.nd #dtBar .dtinfo{white-space:normal;font-size:12.5px}
+body.nd #dtBar .dtmsgs{margin-top:4px}
+body.nd #dtBar.min,body.nd #dtBar.nomsg{padding-bottom:14px}
+
+/* v31z222: η δεξιά μπάρα πάντα στη μέση της οθόνης, στη δεξιά πλευρά */
+html body.nd .ndbar,html body.nd:not(.ontrip) .ndbar,html body.nd:not(.ontrip).hasdt .ndbar,html body.nd:not(.ontrip).hasdt.hasland .ndbar,html body.nd:not(.ontrip):has(.zonewarn:not([hidden])) .ndbar,html body.nd:not(.ontrip):has(.maphint:not([hidden])) .ndbar,html body.ontrip.nd .ndbar,html body.ontrip.nd.hasdt .ndbar,html body.ontrip.nd.hasdt.hasland .ndbar,html body.ontrip.nd:has(.zonewarn:not([hidden])) .ndbar,html body.ontrip.nd.hasdt:has(.zonewarn:not([hidden])) .ndbar{top:50%;bottom:auto;transform:translateY(-50%);max-height:none;overflow:visible}
+html body.ontrip.nd .ndbar .ndb{height:50px}
+html body.ontrip.nd .ndbar .ndb.ndmob,html body.ontrip.nd .ndbar .ndb.ndsos{height:44px}
+html body.ontrip.nd .leaflet-top.leaflet-left{top:calc(var(--ndtop,72px) + var(--dth,0px))}
+
+/* μικρό ύψος οθόνης κατά την έξοδο: κουμπιά μόνο με εικονίδιο ώστε η μπάρα να μη φτάνει στην κάρτα πορείας */
+@media (max-height:660px){
+  html body.ontrip.nd .ndbar .ndb{height:40px;width:48px}
+  html body.ontrip.nd .ndbar .ndb span{display:none}
+  html body.ontrip.nd .ndbar .ndb svg{width:22px;height:22px}
+}
+@media (max-width:380px){ body.nd #dtBar .dtinfo{font-size:11px;letter-spacing:-.2px} body.nd #dtBar .dtname{font-size:14px} }

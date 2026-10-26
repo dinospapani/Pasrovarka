@@ -43,7 +43,7 @@ function applyMin(){
   var b=document.body.classList; b.toggle('dtmin',dmin); b.add('hasdt'); bar.classList.toggle('min',dmin);
   pill.hidden=true; setH();
 }
-function setH(){ document.documentElement.style.setProperty('--dth',(tgt&&document.body.classList.contains('ontrip')?'66px':'0px')); }
+function setH(){ document.documentElement.style.setProperty('--dth',(tgt&&document.body.classList.contains('ontrip')?'88px':'0px')); }
 function sigNow(){ return (tgt?tgt.lat+','+tgt.lon:'')+'|'+(warnEl.hidden?'':warnEl.textContent)+'|'+(landEl.hidden?'':landEl.textContent.slice(0,40)); }
 function render(){
   layer.clearLayers(); line=null; tm=null;
