@@ -504,3 +504,15 @@ body.nd .ndcard.ndclear .ndgo{width:40px;height:40px}
 /* v31z226: όταν η κάρτα πορείας με ανοιχτά μηνύματα θα έπεφτε πάνω στη δεξιά μπάρα, στενεύει και αφήνει τη μπάρα ελεύθερη */
 html body.ontrip.nd #dtBar.dtclear{right:86px}
 html body.ontrip.nd #dtBar.dtclear .dtmsgs{padding-right:0}
+
+/* v31z227: η δεξιά μπάρα πάνω (κάτω από την αναζήτηση / την κάρτα πορείας), MOB και SOS κάτω από «Θέση μου» */
+html body.nd .ndbar,html body.nd:not(.ontrip) .ndbar,html body.nd:not(.ontrip).hasdt .ndbar,html body.nd:not(.ontrip).hasdt.hasland .ndbar,html body.nd:not(.ontrip):has(.zonewarn:not([hidden])) .ndbar,html body.nd:not(.ontrip):has(.maphint:not([hidden])) .ndbar{top:calc(80px + env(safe-area-inset-top,0px));bottom:auto;transform:none;max-height:none;overflow:visible}
+html body.ontrip.nd .ndbar,html body.ontrip.nd.hasdt .ndbar,html body.ontrip.nd.hasdt.hasland .ndbar,html body.ontrip.nd:has(.zonewarn:not([hidden])) .ndbar,html body.ontrip.nd.hasdt:has(.zonewarn:not([hidden])) .ndbar{top:calc(var(--ndtop,72px) + var(--dth,0px));bottom:auto;transform:none;max-height:none;overflow:visible}
+body.nd .ndb.ndsos{margin:6px 0 0}
+body.nd .ndb.ndmob{margin:6px 0 0}
+body.nd .ndcard.ndclear{right:12px!important}
+
+/* v31z228: κατά την έξοδο η δεξιά μπάρα μένει πάνω δεξιά, δίπλα στην κάρτα πορείας (η κάρτα αφήνει πάντα χώρο) */
+html body.ontrip.nd .ndbar,html body.ontrip.nd.hasdt .ndbar,html body.ontrip.nd.hasdt.hasland .ndbar,html body.ontrip.nd:has(.zonewarn:not([hidden])) .ndbar,html body.ontrip.nd.hasdt:has(.zonewarn:not([hidden])) .ndbar{top:var(--ndtop,72px)}
+html body.ontrip.nd #dtBar{right:86px}
+html body.ontrip.nd #dtBar .dtmsgs{padding-right:0}

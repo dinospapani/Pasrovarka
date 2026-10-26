@@ -115,9 +115,9 @@ function orUpd(){ var x=$('bOrient'); if(!x) return; var m=x.textContent||'NU'; 
 setInterval(orUpd,400); orUpd();
 /* MOB και SOS μέσα στη μπάρα (μόνο κατά την έξοδο): χρησιμοποιούν τα ίδια κουμπιά και τις ίδιες λειτουργίες με πριν */
 var sosb=nb('SOS',SVG+'<path d="M12 3.500 21.500 20h-19z"/><path d="M12 10v4.500M12 17.300v.01"/></svg>',function(){ var x=$('sosBtn'); if(x) x.click(); });
-sosb.classList.add('ndsos'); sosb.setAttribute('aria-label',T('SOS: ειδοποίηση κινδύνου','SOS: distress alert')); bar.insertBefore(sosb,bar.firstChild);
+sosb.classList.add('ndsos'); sosb.setAttribute('aria-label',T('SOS: ειδοποίηση κινδύνου','SOS: distress alert'));
 var mobb=nb('MOB',SVG+'<circle cx="12" cy="12" r="8.500"/><circle cx="12" cy="12" r="3.500"/><path d="M6 6l3.500 3.500M14.500 14.500 18 18M18 6l-3.500 3.500M9.500 14.500 6 18"/></svg>',function(){});
-mobb.classList.add('ndmob'); mobb.setAttribute('aria-label',T('Άνθρωπος στη θάλασσα (MOB)','Man overboard (MOB)')); bar.insertBefore(mobb,bar.firstChild);
+mobb.classList.add('ndmob'); mobb.setAttribute('aria-label',T('Άνθρωπος στη θάλασσα (MOB)','Man overboard (MOB)')); bar.insertBefore(mobb,sosb); /* κάτω από «Θέση μου»: πρώτα MOB, μετά SOS */
 /* MOB με παρατεταμένο πάτημα (1,5 δευτ.), ώστε να μη ενεργοποιείται κατά λάθος από κύμα ή βρεγμένα χέρια */
 (function(){
   var HOLD=1500, tm=null, fired=false;
@@ -287,7 +287,7 @@ box.insertBefore(bar,mb.nextSibling);
     });
     var logb=nav.querySelector('[data-tab="log"]'); nav.insertBefore(cb,logb||null);
   }
-  setInterval(function(){ try{ var tb=document.querySelector('.ndbar'); if(!tb) return; var br=tb.getBoundingClientRect(), cr=card.getBoundingClientRect(); var dtb=document.getElementById('dtBar'); if(dtb){ var dr=dtb.getBoundingClientRect(); dtb.classList.toggle('dtclear',dr.height>0&&br.height>0&&br.top<dr.bottom+16&&br.bottom>dr.top); } card.classList.toggle('ndclear',cr.height>0&&!document.body.classList.contains('ontrip')&&br.height>0&&br.bottom>cr.top-6&&br.top<cr.bottom); }catch(e){} }, 400);
+  setInterval(function(){ try{ var tb=document.querySelector('.ndbar'); if(!tb) return; var br=tb.getBoundingClientRect(), cr=card.getBoundingClientRect(); var dtb=document.getElementById('dtBar'); if(dtb){ var dr=dtb.getBoundingClientRect(); dtb.classList.toggle('dtclear',dr.height>0&&br.height>0&&br.top<dr.bottom+16&&br.bottom>dr.top); } card.classList.toggle('ndclear',false&&!document.body.classList.contains('ontrip')&&br.height>0&&br.bottom>cr.top-6&&br.top<cr.bottom); }catch(e){} }, 400);
   setInterval(function(){ var on=document.body.classList.contains('ontrip')&&!card.hidden; document.documentElement.style.setProperty('--ndwx',on?Math.max(0,card.offsetHeight-34)+'px':'0px'); document.documentElement.style.setProperty('--ndtop',(on?card.offsetTop+card.offsetHeight+8:72)+'px'); },400);
   setInterval(function(){ box.style.setProperty('--ndch',(card.hidden||document.body.classList.contains('ontrip')?0:card.offsetHeight)+'px'); },400);
   setInterval(function(){ var m=box.querySelector('.mapwx'); if(m){ m.style.removeProperty('left'); m.style.removeProperty('top'); } },500);
