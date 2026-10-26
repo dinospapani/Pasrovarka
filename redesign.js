@@ -224,7 +224,7 @@ box.insertBefore(bar,mb.nextSibling);
   var foot=el('div','ndfoot'); var wxslot=el('div','ndwx'); foot.append(wxslot);
   var shop=el('button','ndshop'); shop.type='button'; shop.innerHTML=SHOP+'<span></span>'; shop.lastChild.textContent=T('Μαγαζιά','Stores');
   shop.addEventListener('click',function(){ var b=$('sShops'); if(b) b.click(); });
-  foot.append(shop); card.append(top,bars,lab,foot); box.append(card);
+  card.append(top,bars,lab,foot); box.append(card);
   /* κουμπί απόκρυψης της κάρτας (βελάκι προς τα κάτω) και μικρό κουμπί για να ξαναβγεί */
   var CHEV_D='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
   var CHEV_U='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg>';

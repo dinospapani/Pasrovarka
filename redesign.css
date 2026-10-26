@@ -382,7 +382,7 @@ body.nd .ndb.ndmob.holding::after{animation:ndhold 1.5s linear forwards}
 @keyframes ndhold{from{transform:scaleY(0)}to{transform:scaleY(1)}}
 
 /* v31z212: χρώματα με νόημα. Πράσινο = έναρξη και καλό δάγκωμα, πορτοκαλί = τέλος εξόδου, λευκό MOB */
-body.nd nav.tabs .ndfish{background:var(--good);color:var(--bg)}
+body.nd nav.tabs .ndfish{background:var(--accent);color:var(--accent-ink)}
 body.nd nav.tabs .ndfish.end{background:var(--accent);color:var(--accent-ink)}
 body.nd nav.tabs .ndfish.end.late{background:var(--bad);color:var(--bg)}
 body.nd .ndb.ndmob{background:#fff;color:#c62828;box-shadow:0 2px 8px rgba(0,0,0,.35),inset 0 0 0 2px #c62828}
@@ -411,7 +411,7 @@ html body.nd .mo-btn{display:none!important}
 html body.ontrip.nd .ndbar{top:calc(var(--ndwx,0px) + 112px + env(safe-area-inset-top,0px));bottom:auto;transform:none;max-height:calc(100% - var(--ndwx,0px) - var(--navh,64px) - 260px);overflow-y:auto}
 html body.ontrip.nd.hasdt .ndbar,html body.ontrip.nd.hasdt.hasland .ndbar,html body.ontrip.nd:has(.zonewarn:not([hidden])) .ndbar,html body.ontrip.nd.hasdt:has(.zonewarn:not([hidden])) .ndbar{top:calc(var(--ndwx,0px) + 112px + env(safe-area-inset-top,0px));bottom:auto}
 body.nd #dtBar .dthide{flex:none;width:34px;height:34px;border-radius:50%;border:0;background:rgba(255,255,255,.16);color:#fff;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer}
-body.nd #dtBar.min{display:none}
+
 body.nd #dtShow{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(var(--navh,64px) + var(--ndch,0px) + 40px);z-index:810;display:flex;align-items:center;gap:6px;max-width:70%;height:36px;padding:0 14px 0 10px;border-radius:18px;border:1px solid var(--line);background:color-mix(in srgb,var(--surface) 92%,transparent);color:var(--ink);font:700 13px var(--font,system-ui);box-shadow:0 2px 10px rgba(0,0,0,.35);cursor:pointer}
 body.nd #dtShow[hidden],body.nd.picking #dtShow{display:none}
 body.nd #dtShow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -427,3 +427,39 @@ html body.ontrip.nd .leaflet-top.leaflet-left{top:calc(var(--ndwx,0px) + 112px +
 html body.ontrip.nd #dtBar,html body.ontrip.nd #dtShow{top:var(--ndtop,72px)}
 html body.ontrip.nd .ndbar,html body.ontrip.nd.hasdt .ndbar,html body.ontrip.nd.hasdt.hasland .ndbar,html body.ontrip.nd:has(.zonewarn:not([hidden])) .ndbar,html body.ontrip.nd.hasdt:has(.zonewarn:not([hidden])) .ndbar{top:calc(var(--ndtop,72px) + var(--dth,0px));max-height:calc(100% - var(--ndtop,72px) - var(--dth,0px) - var(--navh,64px) - 150px)}
 html body.ontrip.nd .leaflet-top.leaflet-left{top:calc(var(--ndtop,72px) + var(--dth,0px))}
+
+/* v31z216: η μπάρα εργαλείων μένει σταθερή κάτω από την αναζήτηση, δεν κινείται με την κάρτα πρόγνωσης */
+html body.nd:not(.ontrip) .ndbar,html body.nd:not(.ontrip).hasdt .ndbar,html body.nd:not(.ontrip).hasdt.hasland .ndbar,html body.nd:not(.ontrip):has(.zonewarn:not([hidden])) .ndbar,html body.nd:not(.ontrip):has(.maphint:not([hidden])) .ndbar{top:calc(80px + env(safe-area-inset-top,0px));bottom:auto;transform:none}
+body.nd .ndshop{display:none!important}
+
+/* v31z217: κάρτα πορείας σε μία γραμμή, ✕ πάνω δεξιά, βελάκι στο κέντρο για τα μηνύματα, σταθερή δεξιά μπάρα */
+body.nd #dtBar{display:block;position:absolute;padding:10px 12px 10px 14px;overflow:visible}
+body.nd #dtBar .dtrow{display:flex;align-items:center;gap:8px;min-height:30px}
+body.nd #dtBar .dtmain{flex:1;min-width:0;display:flex;flex-direction:row;align-items:center;gap:8px;flex-wrap:nowrap}
+body.nd #dtBar .dtname{flex:1 1 auto;min-width:0;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.nd #dtBar .dtinfo{flex:none;white-space:nowrap;font:600 12px var(--font-mono,monospace)}
+body.nd #dtBar .dtx{width:30px;height:30px;font-size:14px;flex:none}
+body.nd #dtBar .dtmsgs{display:flex;flex-direction:column;gap:3px;margin-top:6px;padding-bottom:10px}
+body.nd #dtBar.min .dtmsgs,body.nd #dtBar.nomsg .dtmsgs{display:none}
+body.nd #dtBar.nomsg{padding-bottom:10px}
+body.nd #dtBar .dthide{position:absolute;left:50%;bottom:-14px;transform:translateX(-50%);width:56px;height:26px;border-radius:13px;border:1px solid var(--line);background:color-mix(in srgb,var(--surface) 96%,transparent);color:var(--ink);padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+body.nd #dtBar.nomsg .dthide{display:none}
+body.nd #dtBar.min .dthide svg{transform:rotate(180deg)}
+body.nd #dtShow{display:none!important}
+/* οι προειδοποιήσεις να μην πέφτουν κάτω από τη δεξιά μπάρα */
+html body.ontrip.nd #dtBar .dtmsgs{padding-right:78px}
+html body.ontrip.nd .ndbar{z-index:820}
+/* ο MOB και ο SOS λίγο πιο μικροί */
+body.nd .ndb.ndmob,body.nd .ndb.ndsos{height:46px;gap:1px}
+body.nd .ndb.ndmob svg,body.nd .ndb.ndsos svg{width:22px;height:22px}
+body.nd .ndb.ndmob span,body.nd .ndb.ndsos span{font-size:11.5px}
+
+/* v31z219: ένα χρώμα αντί για πολλά: το ποσοστό τσιμπήματος φαίνεται με ένταση του πορτοκαλί */
+body.nd .ndbars i[data-lv=g],body.nd .ndcard[data-lv=g] .ndr1{background:var(--accent);stroke:var(--accent)}
+body.nd .ndbars i[data-lv=l]{background:color-mix(in srgb,var(--accent) 72%,var(--line))}
+body.nd .ndcard[data-lv=l] .ndr1{stroke:color-mix(in srgb,var(--accent) 72%,var(--line))}
+body.nd .ndbars i[data-lv=w]{background:color-mix(in srgb,var(--accent) 48%,var(--line))}
+body.nd .ndcard[data-lv=w] .ndr1{stroke:color-mix(in srgb,var(--accent) 48%,var(--line))}
+body.nd .ndbars i[data-lv=b]{background:color-mix(in srgb,var(--accent) 26%,var(--line))}
+body.nd .ndcard[data-lv=b] .ndr1{stroke:color-mix(in srgb,var(--accent) 26%,var(--line))}
+body.nd .ndshowc[data-lv] b{color:var(--accent)}
