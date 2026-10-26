@@ -12,7 +12,7 @@ var bar=document.createElement('div'); bar.id='dtBar'; bar.hidden=true;
 bar.innerHTML='<div class="dtrow"><div class="dtmain"><b class="dtname"></b><span class="dtinfo"></span></div><button type="button" class="dtx" aria-label="'+T('Τέλος πλοήγησης','Stop navigation')+'">✕</button></div><div class="dtmsgs"><span class="dtwarn" hidden></span><span class="dtland" hidden></span></div><button type="button" class="dthide" aria-label="'+T('Μηνύματα','Messages')+'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button>';
 box.appendChild(bar);
 var pill=document.createElement('button'); pill.type='button'; pill.id='dtShow'; pill.hidden=true; pill.setAttribute('aria-label',T('Εμφάνιση πορείας','Show course')); pill.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg><span></span>'; box.appendChild(pill);
-var dmin=false, dsig='';
+var dmin=false, dseen={}, lk='', wasTrip=document.body.classList.contains('ontrip');
 var nameEl=bar.querySelector('.dtname'), infoEl=bar.querySelector('.dtinfo'), warnEl=bar.querySelector('.dtwarn'), landEl=bar.querySelector('.dtland');
 var rt=null, planning=false;
 
@@ -44,10 +44,10 @@ function applyMin(){
   pill.hidden=true; setH();
 }
 function setH(){ document.documentElement.style.setProperty('--dth',(tgt&&document.body.classList.contains('ontrip')?'88px':'0px')); }
-function sigNow(){ return (tgt?tgt.lat+','+tgt.lon:'')+'|'+(warnEl.hidden?'':warnEl.textContent)+'|'+(landEl.hidden?'':landEl.textContent.slice(0,40)); }
+function keysNow(){ var o={}; if(zNames&&!warnEl.hidden) zNames.forEach(function(n){ o['z:'+n]=1; }); if(lk) o['l:'+lk]=1; return o; }
 function render(){
   layer.clearLayers(); line=null; tm=null;
-  if(!tgt){ bar.hidden=true; pill.hidden=true; dmin=false; dsig=''; document.body.classList.remove('hasdt','hasland','dtmin'); setH(); return; }
+  if(!tgt){ bar.hidden=true; pill.hidden=true; dmin=false; dseen={}; document.body.classList.remove('hasdt','hasland','dtmin'); setH(); return; }
   bar.hidden=false; applyMin();
   tm=L.circleMarker([tgt.lat,tgt.lon],{radius:9,color:'#fff',weight:3,fillColor:'#e8541e',fillOpacity:1}).addTo(layer);
   nameEl.textContent='➤ '+(tgt.name||T('Σημείο','Point'));
@@ -78,7 +78,9 @@ function render(){
   if(now-lastZ>4000){ lastZ=now; zNames=crossed(pos.lat,pos.lon,tgt.lat,tgt.lon); }
   warnEl.hidden=!zNames.length; warnEl.textContent=zNames.length?'⚠ '+T('Περνά μέσα από απαγορευμένη περιοχή: ','Crosses a no-fishing zone: ')+zNames.join(', '):'';
   setH();
-  if(dmin&&sigNow()!==dsig){ dmin=false; applyMin(); try{ if(navigator.vibrate) navigator.vibrate(60); }catch(e){} }
+  lk=landTxt?(rt&&rt.err?'e:'+rt.err+(rt.which||''):(rt&&rt.pts?'route':'off')):'';
+  var kn2=keysNow(), fresh=Object.keys(kn2).some(function(k){ return !dseen[k]; });
+  if(dmin&&fresh){ dmin=false; applyMin(); try{ if(navigator.vibrate) navigator.vibrate(60); }catch(e){} }
   bar.classList.toggle('nomsg',warnEl.hidden&&landEl.hidden);
   if(d<0.05&&!arrived){ arrived=true; try{ if(navigator.vibrate) navigator.vibrate([120,80,120]); }catch(e){} try{ C.toast(T('Έφτασες στο σημείο','You have arrived')); }catch(e){} setTimeout(function(){ if(arrived) clear(); },4000); }
 }
@@ -96,7 +98,7 @@ function begin(){ if(wid!=null||!navigator.geolocation) return; try{ wid=navigat
 function stop(){ if(wid!=null){ try{ navigator.geolocation.clearWatch(wid); }catch(e){} wid=null; } }
 function go(lat,lon,name){ rt=null; tgt={lat:+lat,lon:+lon,name:(name||'').slice(0,40)}; C.lsSet(KEY,tgt); arrived=false; spd=null; prev=null; lastZ=0; map.closePopup(); begin(); render(); try{ C.toast(T('Πλοήγηση προς ','Heading to ')+(tgt.name||T('σημείο','point'))); }catch(e){} }
 function clear(){ rt=null; tgt=null; arrived=false; C.lsSet(KEY,null); stop(); render(); }
-bar.querySelector('.dthide').addEventListener('click',function(e){ e.stopPropagation(); dmin=!dmin; if(dmin) dsig=sigNow(); applyMin(); });
+bar.querySelector('.dthide').addEventListener('click',function(e){ e.stopPropagation(); dmin=!dmin; if(dmin) dseen=keysNow(); applyMin(); });
 pill.addEventListener('click',function(){ dmin=false; applyMin(); });
 bar.querySelector('.dtx').addEventListener('click',function(e){ e.stopPropagation(); clear(); });
 bar.querySelector('.dtmain').addEventListener('click',function(){ if(!tgt) return; var pts=[[tgt.lat,tgt.lon]]; if(pos) pts.push([pos.lat,pos.lon]); if(pts.length>1) map.fitBounds(L.latLngBounds(pts),{padding:[70,70],maxZoom:16}); else map.flyTo(pts[0],Math.max(map.getZoom(),14)); });
@@ -121,6 +123,7 @@ map.on('popupopen',function(e){
   (pop.querySelector('.pbtns')||pop).appendChild(b);
 });
 try{ if(window.ResizeObserver) new ResizeObserver(setH).observe(bar); new MutationObserver(setH).observe(document.body,{attributes:true,attributeFilter:['class']}); }catch(e){}
+try{ new MutationObserver(function(){ var on=document.body.classList.contains('ontrip'); if(wasTrip&&!on&&tgt) clear(); wasTrip=on; }).observe(document.body,{attributes:true,attributeFilter:['class']}); }catch(e){}
 window.PsaroDirect={navExt:navExt,go:go,clear:clear,target:function(){ return tgt; }};
 if(tgt){ begin(); render(); }
 })();

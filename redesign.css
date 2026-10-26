@@ -486,3 +486,7 @@ html body.ontrip.nd .leaflet-top.leaflet-left{top:calc(var(--ndtop,72px) + var(-
   html body.ontrip.nd .ndbar .ndb svg{width:22px;height:22px}
 }
 @media (max-width:380px){ body.nd #dtBar .dtinfo{font-size:11px;letter-spacing:-.2px} body.nd #dtBar .dtname{font-size:14px} }
+
+/* v31z224: η δεξιά μπάρα μένει πάνω από την κάρτα πρόγνωσης, και η κάρτα αφήνει χώρο όταν συμπίπτουν */
+html body.nd .ndbar{z-index:820}
+body.nd .ndcard.ndclear .ndtop,body.nd .ndcard.ndclear .ndbars,body.nd .ndcard.ndclear .ndlab{margin-right:74px}
