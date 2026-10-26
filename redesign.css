@@ -490,3 +490,17 @@ html body.ontrip.nd .leaflet-top.leaflet-left{top:calc(var(--ndtop,72px) + var(-
 /* v31z224: η δεξιά μπάρα μένει πάνω από την κάρτα πρόγνωσης, και η κάρτα αφήνει χώρο όταν συμπίπτουν */
 html body.nd .ndbar{z-index:820}
 body.nd .ndcard.ndclear .ndtop,body.nd .ndcard.ndclear .ndbars,body.nd .ndcard.ndclear .ndlab{margin-right:74px}
+
+/* v31z225: όταν η κάρτα πρόγνωσης θα έπεφτε πάνω στη δεξιά μπάρα, στενεύει ολόκληρη ώστε να μην έχουν επικάλυψη */
+body.nd .ndcard.ndclear{right:86px}
+body.nd .ndcard.ndclear .ndtop,body.nd .ndcard.ndclear .ndbars,body.nd .ndcard.ndclear .ndlab{margin-right:0}
+body.nd .ndcard.ndclear .ndwx .mwrow{gap:0!important}
+body.nd .ndcard.ndclear .ndwx .mw{min-width:0!important;flex:1 1 0;padding:6px 1px!important}
+body.nd .ndcard.ndclear .ndwx .mw b{font-size:14.5px!important;white-space:nowrap}
+body.nd .ndcard.ndclear .ndwx .mw span{font-size:9.5px!important;white-space:nowrap}
+body.nd .ndcard.ndclear .ndwx .mwgear{width:28px!important;height:28px!important;flex:none;margin:0 0 0 4px!important}
+body.nd .ndcard.ndclear .ndgo{width:40px;height:40px}
+
+/* v31z226: όταν η κάρτα πορείας με ανοιχτά μηνύματα θα έπεφτε πάνω στη δεξιά μπάρα, στενεύει και αφήνει τη μπάρα ελεύθερη */
+html body.ontrip.nd #dtBar.dtclear{right:86px}
+html body.ontrip.nd #dtBar.dtclear .dtmsgs{padding-right:0}
