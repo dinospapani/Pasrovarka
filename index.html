@@ -14,7 +14,6 @@
 <style>html.rst{background:#0c2b3a url(icon-192.png) center/84px no-repeat fixed!important}html.rst body{visibility:hidden}</style>
 <script>try{if(sessionStorage.getItem("psaro-restore"))document.documentElement.classList.add("rst");}catch(e){}</script>
 <script>try{if(!localStorage.getItem("psaro-sess"))document.documentElement.classList.add("gated");}catch(e){}</script>
-<script>try{var L=localStorage;if(L.getItem("psaro-sess")&&L.getItem("psaro-onboard")&&!(L.getItem("psaro-askfp")==="0"&&L.getItem("psaro-fprof-done")))document.documentElement.classList.add("ndpend");}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -23,6 +22,7 @@
 <link rel="stylesheet" href="redesign.css">
 </head>
 <body>
+<script src="startpick.js"></script>
 <div id="gate" role="dialog" aria-label="BiteCast">
   <div class="gbox">
     <img src="icon-192.png" alt="" width="84" height="84" class="glogo">
@@ -518,57 +518,13 @@
   <button role="tab" data-tab="log" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3V4z"/><path d="M8 17h11"/></svg>Ημερολόγιο</button>
   <button type="button" id="navProf" class="navprof" aria-label="Προφίλ"><span class="navav" id="navProfAv">?</span>Προφίλ</button>
 </nav>
-<script src="leaflet.js"></script>
-<script src="species.js"></script>
-<script src="cy100.js"></script>
-<script src="regions.js"></script>
-<script src="rules.js"></script>
-<script src="i18n.js"></script>
-<script src="forecast.js"></script>
-<script src="personal.js"></script>
-<script src="push-config.js"></script>
-<script src="zones.js"></script>
-<script src="units.js"></script>
-<script src="version.js"></script>
-<script src="coords.js"></script>
-<script src="hist.js"></script>
-<script src="dialog.js"></script>
-<script src="range.js"></script>
-<script src="app.js"></script>
-<script src="cloud.js"></script>
-<script src="extras.js"></script>
-<script src="forecast-tab.js"></script>
-<script src="todayloc.js"></script>
-<script src="mine-tab.js"></script>
-<script src="knowledge.js"></script>
-<script src="ext.js"></script>
-<script src="advisor.js"></script>
-<script src="diag.js"></script>
-<script src="track.js"></script>
-<script src="mapwx.js"></script>
-<script src="tripui.js"></script>
-<script src="profile-view.js"></script>
-<script src="tackle-lib.js"></script>
-<script src="tackle-guide.js"></script>
-<script src="tackle.js"></script>
-<script src="knots.js"></script>
-<script src="orient.js"></script>
-<script src="navigator.js"></script>
-<script src="bathy-lines.js"></script>
-<script src="route.js"></script>
-<script src="direct.js"></script>
-<script src="sea.js"></script>
-<script src="cards.js"></script>
-<script src="dams.js"></script>
-<script src="ports.js"></script>
-<script src="smart.js"></script>
-<script src="insights.js"></script>
-<script src="speciespick.js"></script>
-<script src="community.js"></script>
-<script src="gearstats.js"></script>
-<script src="techs.js"></script>
-<script src="gear.js"></script>
-<script src="tools.js"></script>
-<script src="redesign.js"></script>
+
+<script>
+/* Οι υπόλοιπες δέσμες φορτώνουν μετά την πρώτη εικόνα, ώστε η οθόνη επιλογής να φαίνεται αμέσως. Η σειρά εκτέλεσης είναι ίδια με πριν. */
+(function(){var L=["leaflet.js", "species.js", "cy100.js", "regions.js", "rules.js", "i18n.js", "forecast.js", "personal.js", "push-config.js", "zones.js", "units.js", "version.js", "coords.js", "hist.js", "dialog.js", "range.js", "app.js", "cloud.js", "extras.js", "forecast-tab.js", "todayloc.js", "mine-tab.js", "knowledge.js", "ext.js", "advisor.js", "diag.js", "track.js", "mapwx.js", "tripui.js", "profile-view.js", "tackle-lib.js", "tackle-guide.js", "tackle.js", "knots.js", "orient.js", "navigator.js", "bathy-lines.js", "route.js", "direct.js", "sea.js", "cards.js", "dams.js", "ports.js", "smart.js", "insights.js", "speciespick.js", "community.js", "gearstats.js", "techs.js", "gear.js", "tools.js", "redesign.js"],ran=false;
+function go(){if(ran)return;ran=true;for(var i=0;i<L.length;i++){var s=document.createElement('script');s.src=L[i];s.async=false;document.body.appendChild(s);}}
+try{requestAnimationFrame(function(){setTimeout(go,0);});}catch(e){}
+setTimeout(go,400);})();
+</script>
 </body>
 </html>

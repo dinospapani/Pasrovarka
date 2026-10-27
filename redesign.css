@@ -901,8 +901,16 @@ html body .askbtns .btn{flex:1 1 130px;height:auto!important;min-height:48px;pad
 @media (max-height:760px){.ndstg .ndpic,.ndstg .ndpic svg{width:80px!important;height:80px!important}}
 
 /* v31z284 κάλυμμα μέχρι να βγει η οθόνη επιλογής, ώστε να μη φαίνεται πρώτα ο χάρτης */
-html.ndpend body::before{content:"";position:fixed;inset:0;z-index:4400;background:#0b1620}
+
 @media (prefers-color-scheme:light){html.ndpend:not([data-theme=dark]) body::before{background:#eef3f5}}
 html[data-theme=light].ndpend body::before{background:#eef3f5}
 .ndstf{position:sticky;bottom:0;padding-bottom:max(12px,env(safe-area-inset-bottom));background:linear-gradient(to top,var(--bg) 75%,transparent)}
 .ndstart{z-index:4500}
+
+/* v31z288 χωρίς fade στην οθόνη επιλογής: το κάλυμμα φεύγει μόνο όταν έχει ζωγραφιστεί */
+.ndstart{animation:none!important}
+
+/* v31z291 εργαλεία χάρτη ανά προφίλ ψαρέματος */
+body.fp-shore #bGear,body.fp-lake #bGear,body.fp-spear #bGear{display:none!important}
+body.fp-lake #bSea,body.fp-lake #bDepthMap,body.fp-lake #bZones,body.fp-lake #bNav,body.fp-lake #bPorts{display:none!important}
+body.fp-spear #bDams,body.fp-spear #bSea{display:none!important}
