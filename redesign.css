@@ -829,3 +829,27 @@ body.ndbsopen .ndcard,body.ndbsopen .ndshowc{opacity:0;pointer-events:none}
 #ndFProf .ndvh{margin-top:18px}
 #ndFProf .ndvs{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:10px 0 8px}
 #ndFProf .ndvs button{min-height:44px}
+
+/* v31z277 πλακίδια με εικονίδιο για τον τύπο ψαρέματος */
+.ndobp{background:none!important;padding:0!important;gap:10px}
+.ndobp button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:84px;padding:12px 6px;border:1.5px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink);font:inherit;font-weight:600;font-size:14px;cursor:pointer}
+.ndobp button svg{width:32px;height:32px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.ndobp button[aria-pressed=true]{border-color:var(--sea);background:color-mix(in srgb,var(--sea) 14%,var(--surface));color:var(--sea,var(--ink))}
+.ndobp{overflow:visible!important;height:auto!important;max-height:none!important;margin-bottom:18px}
+
+/* v31z277 κάρτες με εικονογράφηση (σχέδιο «Επιλογή προφίλ») */
+.ndobp button{position:relative;gap:6px;padding:14px 8px 12px;min-height:0;border-radius:22px;text-align:center}
+.ndobp .ndpic{display:block;width:84px;height:84px}
+.ndobp .ndpic svg{display:block}
+.ndobp b{font-size:15px;font-weight:700;line-height:1.2}
+.ndobp .ndpd{font-size:11.5px;font-weight:400;line-height:1.3;color:var(--muted)}
+.ndobp .ndck{position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);box-sizing:border-box}
+.ndobp button[aria-pressed=true] .ndck{background:var(--sea);border-color:var(--sea)}
+.ndobp button[aria-pressed=true] .ndck::after{content:"";position:absolute;left:6px;top:2px;width:5px;height:10px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+.ndobp button[aria-pressed=true]{border-width:2px}
+@media (max-height:700px){.ndobp .ndpic{width:60px;height:60px}.ndobp .ndpd{display:none}}
+.ndobp .ndpic{flex:none;width:84px;height:84px;align-self:center}
+.ndobp .ndpic svg{width:84px!important;height:84px!important}
+@media (max-height:700px){.ndobp .ndpic,.ndobp .ndpic svg{width:60px!important;height:60px!important}}
+.ndobp button[aria-pressed=true]{background:color-mix(in srgb,var(--sea) 16%,var(--surface))!important;color:var(--ink)!important;border-color:var(--sea)!important;box-shadow:none!important}
+.ndobp button[aria-pressed=true] .ndpd{color:var(--muted)!important}
