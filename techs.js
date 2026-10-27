@@ -10,18 +10,29 @@ var ANG=[
  ['Ιαπωνικές',[['Tai Rubber','Tai Rubber'],['Tenya','Tenya'],['Ika Metal','Ika Metal']]],
  ['Άλλες',[['Καλαμαριέρα','Squid jigging'],['Spinning','Spinning'],['Ζωντανό δόλωμα','Live bait'],['Drifting','Drifting'],['Με πλωτήρα','Float fishing'],['Light / ultralight','Light / ultralight']]]
 ];
+/* Ομάδες ανά τύπο ψαρέματος (προφίλ). Η επιλογή γίνεται στα Settings. */
+var SHORE=['Από στεριά',[['Surf casting','Surf casting'],['Spinning από στεριά','Shore spinning'],['Βυθού από στεριά','Shore bottom fishing'],['Με πλωτήρα από στεριά','Shore float fishing'],['Καλαμαριέρα από στεριά','Shore squid jigging']]];
+var LAKE=['Λίμνη / φράγμα',[['Με πλωτήρα','Float fishing'],['Βυθού με δόλωμα','Bottom with bait'],['Spinning','Spinning'],['Ζωντανό δόλωμα','Live bait'],['Fly fishing','Fly fishing'],['Feeder / ποντίκι','Feeder']]];
+var SPEAR=['Ψαροντούφεκο',[['Αναμονή','Ambush (hovering)'],['Περιπλάνηση','Searching / roaming'],['Τρύπες και φωλιές','Holes and ledges'],['Βαθιά κατάδυση','Deep dive']]];
+var PROFILES={
+  boat:function(a){ return a; },
+  shore:function(a){ return [SHORE].concat(a.filter(function(g){ return g[0]==='Άλλες'||g[0]==='Jigging'||g[0]==='Καθετή / βυθός'; })); },
+  lake:function(a){ return [LAKE]; },
+  spear:function(a){ return [SPEAR]; }
+};
+function prof(){ try{ var p=localStorage.getItem('psaro-fprof'); return PROFILES[p]?p:'boat'; }catch(e){ return 'boat'; } }
 var PAS=[['Δίχτυ','Net'],['Παραγάδι','Longline'],['Ζεμπίλι / παγίδα','Pot / trap']];
 var KEY='psaro-customtech', NEW='__new__';
 function load(){ try{ var a=JSON.parse(localStorage.getItem(KEY)||'[]'); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
 function save(a){ try{ localStorage.setItem(KEY,JSON.stringify(a)); }catch(e){} }
 function opt(v,t){ var o=document.createElement('option'); o.value=v; o.textContent=t||v; return o; }
-function known(v){ var f=false; ANG.forEach(function(g){ g[1].forEach(function(x){ if(x[0]===v) f=true; }); }); PAS.forEach(function(x){ if(x[0]===v) f=true; }); return f||v==='Άλλο'||load().indexOf(v)>=0; }
+function known(v){ var f=false; ANG.concat([SHORE,LAKE,SPEAR]).forEach(function(g){ g[1].forEach(function(x){ if(x[0]===v) f=true; }); }); PAS.forEach(function(x){ if(x[0]===v) f=true; }); return f||v==='Άλλο'||load().indexOf(v)>=0; }
 
 function build(sel,passive){
   var cur=sel.value;
   sel.replaceChildren();
-  ANG.forEach(function(g){
-    var og=document.createElement('optgroup'); og.label=T(g[0],{'Καθετή / βυθός':'Vertical / bottom','Συρτή':'Trolling','Jigging':'Jigging','Ιαπωνικές':'Japanese','Άλλες':'Other'}[g[0]]);
+  PROFILES[prof()](ANG).forEach(function(g){
+    var og=document.createElement('optgroup'); og.label=T(g[0],{'Καθετή / βυθός':'Vertical / bottom','Συρτή':'Trolling','Jigging':'Jigging','Ιαπωνικές':'Japanese','Άλλες':'Other','Από στεριά':'From shore','Λίμνη / φράγμα':'Lake / dam','Ψαροντούφεκο':'Spearfishing'}[g[0]]);
     g[1].forEach(function(x){ og.appendChild(opt(x[0],EN?x[1]:x[0])); });
     sel.appendChild(og);
   });
@@ -63,5 +74,7 @@ function wire(id,passive){
   inp.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); add(); } else if(e.key==='Escape'){ e.stopPropagation(); close(true); } });
 }
 wire('bTech',false); wire('tTech',true);
-window.PsaroTechs={custom:load};
+function rebuildAll(){ [['bTech',false],['tTech',true]].forEach(function(p){ var s=document.getElementById(p[0]); if(!s) return; var c=s.value; build(s,p[1]); var d=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value'); if(c&&known(c)){ if(!Array.prototype.some.call(s.options,function(o){ return o.value===c; })) s.insertBefore(opt(c),s.querySelector('option[value="Άλλο"]')); d.set.call(s,c); } else s.selectedIndex=0; }); }
+window.addEventListener('psaro-fprof',rebuildAll);
+window.PsaroTechs={custom:load,rebuild:rebuildAll};
 })();
