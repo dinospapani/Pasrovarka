@@ -63,7 +63,7 @@ async function sync(manual){
     // 1) λήψη
     var r=await rest('records?select=kind,id,data,deleted,updated_at&order=updated_at.asc&limit=10000');
     var rows=await r.json(), remote={}, got=0, needPh=[];
-    rows.forEach(function(x){ remote[x.kind+'/'+x.id]=x; var u=Date.parse(x.updated_at)||0; if(Store.mergeIn(x.kind,x.id,x.data||{},x.deleted,(x.data&&x.data._u)||u)){ got++; if(!x.deleted&&x.data&&x.data.photo){ if(x.kind==='bites') needPh.push(x.id); else if(x.kind==='tackle') needPh.push('tk-'+x.id); } } });
+    rows.forEach(function(x){ remote[x.kind+'/'+x.id]=x; var u=Date.parse(x.updated_at)||0; if(Store.mergeIn(x.kind,x.id,x.data||{},x.deleted,(x.data&&x.data._u)||u)){ got++; if(!x.deleted&&x.data&&x.data.photo){ if(x.kind==='bites'){ needPh.push(x.id); for(var xi=1;xi<=(+x.data.xph||0);xi++) needPh.push(x.id+'~'+xi); } else if(x.kind==='tackle') needPh.push('tk-'+x.id); } } });
     if(got) Store.flush();
     // 2) αποστολή όσων είναι νεότερα τοπικά
     var out=[];
@@ -72,7 +72,7 @@ async function sync(manual){
     for(var i=0;i<out.length;i+=200) await rest('records',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(out.slice(i,i+200))});
     // 3) φωτογραφίες
     var up=0;
-    var pl=Store.raw('bites').filter(function(b){ return b.photo; }).map(function(b){ return b.id; }).concat(Store.raw('tackle').filter(function(b){ return b.photo; }).map(function(b){ return 'tk-'+b.id; }));
+    var pl=[]; Store.raw('bites').forEach(function(b){ if(b.photo) pl.push(b.id); for(var xi=1;xi<=(+b.xph||0);xi++) pl.push(b.id+'~'+xi); }); pl=pl.concat(Store.raw('tackle').filter(function(b){ return b.photo; }).map(function(b){ return 'tk-'+b.id; }));
     for(var bi=0;bi<pl.length;bi++){ var pk=pl[bi]; if(pup[pk]) continue; var bl=null; try{ bl=await Photos.get(pk); }catch(e){} if(!bl) continue; var rr=await storage('POST','photos/'+sess.uid+'/'+pk+'.jpg',bl,'image/jpeg'); if(rr.ok){ pup[pk]=1; up++; } }
     ls('psaro-pup',pup);
     var dl=0;
