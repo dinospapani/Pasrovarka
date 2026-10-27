@@ -312,9 +312,39 @@ function suggest(input,getItems,onPick,remote){
   var pin=el('input'); pin.type='text'; pin.id='sfPort'; pin.maxLength=80; pin.autocomplete='off'; pin.placeholder=T('π.χ. Μαρίνα Λατσιού','e.g. Latchi marina');
   pl.append(pin); ps.append(pl); sec0.parentNode.insertBefore(ps,sec0);
   var hint=el('div','sfhint'); pl.append(hint);
+  /* v31z294: ετικέτα ανά προφίλ — ψαροτούφεκο/στεριά: λιμάνι Ή σημείο εκκίνησης */
+  function portLabels(){ var fp='boat'; try{ fp=localStorage.getItem('psaro-fprof')||'boat'; }catch(e){}
+    var t=fp==='lake'?T('Σημείο εκκίνησης','Starting point'):(fp==='spear'||fp==='shore')?T('Λιμάνι ή σημείο εκκίνησης','Departure port or point'):T('Λιμάνι αναχώρησης','Departure port');
+    if(pl.firstChild&&pl.firstChild.nodeType===3) pl.firstChild.nodeValue=t;
+    pin.placeholder=fp==='boat'?T('π.χ. Μαρίνα Λατσιού','e.g. Latchi marina'):T('π.χ. Μαρίνα Λατσιού ή παραλία','e.g. Latchi marina or beach'); }
+  portLabels(); window.addEventListener('psaro-fprof',function(){ setTimeout(portLabels,50); });
   var list=[], remoteList=[], nearList=[], fixP=null;
+  var picked=[];
+  /* v31z295: επιλογή σημείου εκκίνησης από τον χάρτη */
+  var mb=el('button','btn ghost sm'); mb.type='button'; mb.id='sfPortMap'; mb.style.marginTop='6px'; mb.textContent=T('📍 Επιλογή από τον χάρτη','📍 Pick on the map'); pl.append(mb);
+  mb.addEventListener('click',function(){
+    var map=C.map&&C.map(), sheet=$('tripSheet'), L=window.L; if(!map||!L){ C.toast(T('Ο χάρτης δεν είναι έτοιμος.','Map not ready.')); return; }
+    var bar=el('div'); bar.style.cssText='position:fixed;left:12px;right:12px;top:12px;z-index:100000;background:#0d2230;color:#fff;border:1px solid #E8743B;border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 6px 24px #0008;font-size:15px';
+    var tx=el('span'); tx.style.flex='1'; tx.textContent=T('Πάτα στον χάρτη το σημείο εκκίνησης.','Tap the map at your starting point.');
+    var cb=el('button','btn ghost sm'); cb.type='button'; cb.textContent=T('Άκυρο','Cancel'); bar.append(tx,cb); document.body.appendChild(bar);
+    var tab=document.querySelector('[role=tab][data-tab=map]'); if(tab) tab.click(); sheet.hidden=true;
+    function back(){ try{ bar.remove(); }catch(e){} map.off('click',onClick); sheet.hidden=false; }
+    cb.addEventListener('click',back);
+    function onClick(e){
+      var la=e.latlng.lat, lo=e.latlng.lng, mk=L.circleMarker(e.latlng,{radius:9,color:'#fff',weight:3,fillColor:'#E8743B',fillOpacity:1}).addTo(map);
+      tx.textContent=T('Βρίσκω όνομα…','Finding a name…');
+      var fb=T('Σημείο ','Point ')+la.toFixed(4)+', '+lo.toFixed(4), done=false;
+      function fin(nm){ if(done) return; done=true; try{ map.removeLayer(mk); }catch(x){}
+        var it={name:nm,lat:la,lon:lo,sub:T('από τον χάρτη','from map')}; picked=picked.filter(function(q){ return norm(q.name)!==norm(nm); }); picked.push(it);
+        pin.value=nm; pin.dataset.touched='1'; delete pin.dataset.auto; hint.textContent=T('Από τον χάρτη','From the map'); back(); }
+      var t=setTimeout(function(){ fin(fb); },3500);
+      fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=17&accept-language='+(EN?'en':'el')+'&lat='+la+'&lon='+lo).then(function(r){ return r.json(); }).then(function(j){
+        var a=(j&&j.address)||{}, nm=(j&&j.name)||a.road||a.neighbourhood||a.suburb||a.village||a.town||a.city||''; clearTimeout(t); fin(nm?(nm+' · '+la.toFixed(3)+', '+lo.toFixed(3)):fb); }).catch(function(){ clearTimeout(t); fin(fb); });
+    }
+    map.off('click',onClick); setTimeout(function(){ map.once('click',onClick); },0);
+  });
   function base(){ var a=[]; if(S.home) a.push({name:S.home.name||T('Λιμάνι','Port'),lat:S.home.lat,lon:S.home.lon,sub:T('το λιμάνι σου','your port')}); (C.Store.get('spots')||[]).forEach(function(x){ if(typeof x.lat==='number'&&x.name) a.push({name:x.name,lat:x.lat,lon:x.lon,sub:T('σημείο σου','your spot')}); }); ((window.PsaroPorts&&PsaroPorts.mine())||[]).forEach(function(x){ a.push({name:x.name,lat:x.lat,lon:x.lon,sub:T('δικό σου','yours')}); }); return a; }
-  function all(){ var seen={}, out=[]; base().concat(nearList,remoteList).forEach(function(x){ var k=norm(x.name)+x.lat.toFixed(3); if(!seen[k]){ seen[k]=1; out.push(x); } }); list=out; return out; }
+  function all(){ var seen={}, out=[]; base().concat(picked,nearList,remoteList).forEach(function(x){ var k=norm(x.name)+x.lat.toFixed(3); if(!seen[k]){ seen[k]=1; out.push(x); } }); list=out; return out; }
   function fmt(x){ return x.d!=null?Object.assign({},x,{sub:Math.round(x.d*10)/10+' km'}):x; }
   var sg=suggest(pin,function(){ return all().map(fmt); },null,function(q,cb){ var p=fixP; nomi(q,p?p.lat:null,p?p.lon:null,0.6).then(function(r){ remoteList=r; cb(r.map(fmt)); }).catch(function(e){ cb([],T('Δεν υπάρχει ίντερνετ για αναζήτηση.','No internet for search.')); }); });
   function prefill(){ pin.value=S.home?(S.home.name||T('Λιμάνι','Port')):''; hint.textContent=''; delete pin.dataset.touched; delete pin.dataset.auto; }

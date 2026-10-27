@@ -5,16 +5,17 @@ var C=window.PsaroCore, $=function(i){ return document.getElementById(i); }; if(
 var EN=window.LANG==='en', T=function(el,en){ return EN?en:el; };
 var range=C.lsGet('psaro-prange','28');
 var view='stats';
-function setView(v){ view=v; $('pMain').hidden=v!=='stats'; $('pSettings').hidden=v!=='set'; var pt=$('pTackle'); if(pt) pt.hidden=v!=='tackle';
+function setView(v){ view=v; $('pMain').hidden=v!=='stats'; $('pSettings').hidden=v!=='set'; var pt=$('pTackle'); if(pt) pt.hidden=v!=='tackle'; var gd=$('tab-guide'); if(gd){ var pg=$('pGuide'); if(pg&&gd.parentNode!==pg) pg.appendChild(gd); gd.hidden=v!=='guide'; if(pg) pg.hidden=v!=='guide'; }
   Array.prototype.forEach.call(document.querySelectorAll('#pSeg button'),function(b){ b.setAttribute('aria-pressed',String(b.dataset.p===v)); });
   try{ $('profile').scrollTop=0; }catch(e){} try{ window.dispatchEvent(new CustomEvent('psaro-pview',{detail:v})); }catch(e){} }
 function showSet(on){ setView(on?'set':'stats'); }
 window.PsaroProfView={get:function(){ return view; },set:setView};
 (function(){ var ph=document.querySelector('#profile .phead'); if(!ph||$('pSeg')) return;
   var sg=document.createElement('div'); sg.className='seg'; sg.id='pSeg'; sg.setAttribute('role','group'); sg.style.margin='8px 0';
-  [['stats',T('Στατιστικά','Stats')],['tackle',T('Εξοπλισμός','Tackle')],['guide',T('Οδηγός','Guide')],['set',T('Ρυθμίσεις','Settings')]].forEach(function(x){ var b=document.createElement('button'); b.type='button'; b.dataset.p=x[0]; b.textContent=x[1]; b.setAttribute('aria-pressed',String(x[0]==='stats')); b.addEventListener('click',function(){ if(x[0]==='guide'){ var c=$('pClose'); if(c) c.click(); setTimeout(function(){ C.switchTab('guide'); },60); return; } setView(x[0]); if(x[0]==='stats') draw(); }); sg.append(b); });
+  [['stats',T('Στατιστικά','Stats')],['tackle',T('Εξοπλισμός','Tackle')],['guide',T('Οδηγός','Guide')],['set',T('Ρυθμίσεις','Settings')]].forEach(function(x){ var b=document.createElement('button'); b.type='button'; b.dataset.p=x[0]; b.textContent=x[1]; b.setAttribute('aria-pressed',String(x[0]==='stats')); b.addEventListener('click',function(){ setView(x[0]); if(x[0]==='stats') draw(); }); sg.append(b); });
   ph.parentNode.insertBefore(sg,ph.nextSibling);
   var tk=document.createElement('div'); tk.id='pTackle'; tk.hidden=true; $('pMain').parentNode.insertBefore(tk,$('pSettings'));
+  var gw=document.createElement('div'); gw.id='pGuide'; gw.hidden=true; $('pMain').parentNode.insertBefore(gw,$('pSettings')); var gd0=$('tab-guide'); if(gd0){ gw.appendChild(gd0); gd0.hidden=true; var gr=gd0.querySelector(':scope>.row'); if(gr) gr.style.display='none'; }
   var bk=$('pBackMain'); if(bk&&bk.parentNode) bk.parentNode.style.display='none';
 })();
 function hrs(ms){ return Math.round(ms/360000)/10; }
@@ -57,7 +58,9 @@ setTimeout(function(){
 },400);
 var gbp=$('gBackProf'); if(gbp) gbp.addEventListener('click',function(){ var pb=$('profBtn'); if(pb) pb.click(); });
 /* Αν ο Οδηγός είναι ανοιχτός πίσω από το Προφίλ, το ✕ γυρνάει στην καρτέλα που ήσουν πριν */
-function leaveGuide(){ var g=$('tab-guide'); if(g&&!g.hidden) C.switchTab(window.__lastTab||'map'); }
+function leaveGuide(){}
+function fixG(){ var g=$('tab-guide'); if(!$('profile').hidden&&view==='guide'&&g&&g.hidden) g.hidden=false; }
+new MutationObserver(function(){ fixG(); setTimeout(fixG,120); setTimeout(fixG,400); }).observe($('profile'),{attributes:true,attributeFilter:['hidden']});
 $('pClose').addEventListener('click',leaveGuide);
 $('profile').addEventListener('click',function(e){ if(e.target===this) leaveGuide(); });
 var cl=$('pClose'); cl.parentNode.insertBefore(gear,cl); gear.style.marginLeft='auto'; cl.style.marginLeft='0';

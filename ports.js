@@ -68,7 +68,7 @@ function pop(p){
   var k=document.createElement('div'); k.className='pk'; var me=C.getCond&&C.getCond();
   k.textContent=KIND[p.k]+(me&&me.lat!=null?' · '+(Math.round(dist(me.lat,me.lon,p.la,p.lo)*10)/10)+' km':''); w.appendChild(k);
   var r=document.createElement('div'); r.className='pbtns';
-  var a=document.createElement('button'); a.type='button'; a.className='pb'; a.textContent=T('Λιμάνι αναχώρησης','Departure port');
+  var a=document.createElement('button'); a.type='button'; a.className='pb'; a.textContent=(function(){var f='boat';try{f=localStorage.getItem('psaro-fprof')||'boat';}catch(e){} return f==='lake'?T('Σημείο εκκίνησης','Starting point'):(f==='spear'||f==='shore')?T('Λιμάνι ή σημείο εκκίνησης','Departure port or point'):T('Λιμάνι αναχώρησης','Departure port');})();
   a.addEventListener('click',function(){ var sm=window.PsaroSmart; if(sm&&sm.setHome){ sm.setHome({lat:p.la,lon:p.lo,name:p.n||KIND[p.k]}); map.closePopup(); C.toast(T('Λιμάνι: ','Port: ')+(p.n||KIND[p.k])); } });
   r.append(a);
   if(p.mine){ k.textContent+=' · '+T('δικό σου','yours'); var x=document.createElement('button'); x.type='button'; x.className='pb g'; x.textContent=T('Διαγραφή','Delete');

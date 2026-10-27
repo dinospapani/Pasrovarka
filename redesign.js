@@ -735,8 +735,10 @@ box.insertBefore(tools,bar.nextSibling);
   function tile(lab,val,sub){ var t=document.createElement('div'); t.className='ndhrt'; var b=document.createElement('b'); b.textContent=val; var l=document.createElement('span'); l.textContent=lab; t.append(b,l); if(sub){ var s=document.createElement('small'); s.textContent=sub; t.append(s); } return t; }
   var PT={slow:T('Πέφτει αργά','Falling slowly'),stable:T('Σταθερή','Steady'),rise:T('Ανεβαίνει','Rising'),fast:T('Πέφτει απότομα','Falling fast')};
   var CL={clear:T('Καθαρός','Clear'),part:T('Λίγα σύννεφα','Partly cloudy'),over:T('Συννεφιά','Overcast')};
+  function makeView(hEl,rEl,getDay,getFc,labFn){
+    var selH=null;
   function renderHours(){
-    var d=fc.days[selD]; hEl.replaceChildren(); if(!d) return;
+    var d=getDay(), fc=getFc(); hEl.replaceChildren(); if(!d) return;
     var nowH=fc.nowLocal.slice(0,13), today=fc.nowLocal.slice(0,10);
     d.hours.forEach(function(h){
       var b=document.createElement('button'); b.type='button'; b.className='ndhc'; b.dataset.lv=lvl(h.score); b.dataset.h=h.hr; b.setAttribute('role','option');
@@ -749,18 +751,11 @@ box.insertBefore(tools,bar.nextSibling);
     });
     var on=hEl.querySelector('.on'); if(on&&on.scrollIntoView){ try{ hEl.scrollLeft=Math.max(0,on.offsetLeft-hEl.clientWidth/2+on.offsetWidth/2); }catch(e){} }
   }
-  function centerOn(){ var on=hEl.querySelector('.on'); if(on) hEl.scrollLeft=Math.max(0,on.offsetLeft-hEl.clientWidth/2+on.offsetWidth/2); }
-  function renderDays(){
-    dEl.replaceChildren();
-    fc.days.slice(0,4).forEach(function(d,i){ var b=document.createElement('button'); b.type='button'; b.className='ndhdb'+(i===selD?' on':''); b.textContent=dayLab(d.date,i); b.setAttribute('role','tab'); b.setAttribute('aria-selected',i===selD?'true':'false');
-      b.addEventListener('click',function(){ selD=i; var d2=fc.days[i]; if(!d2.hours.some(function(h){ return h.hr===selH; })) selH=d2.hours[0]&&d2.hours[0].hr; if(i===0){ var nh=+fc.nowLocal.slice(11,13); var ok=d2.hours.filter(function(h){ return h.hr>=nh; })[0]; if(ok&&selH<nh) selH=ok.hr; } renderDays(); renderHours(); renderDetail(); setTimeout(centerOn,30); });
-      dEl.append(b); });
-  }
   function renderDetail(){
-    var d=fc.days[selD], h=d&&d.hours.filter(function(x){ return x.hr===selH; })[0]; rEl.replaceChildren(); if(!h) return;
+    var d=getDay(), h=d&&d.hours.filter(function(x){ return x.hr===selH; })[0]; rEl.replaceChildren(); if(!h) return;
     var top=document.createElement('div'); top.className='ndhrtop';
     var sc=document.createElement('div'); sc.className='ndhrsc'; sc.dataset.lv=lvl(h.score); sc.innerHTML='<b></b><span>/100</span>'; sc.firstChild.textContent=h.score;
-    var tx=document.createElement('div'); tx.className='ndhrtx'; var t1=document.createElement('b'); t1.textContent=dayLab(d.date,selD)+' · '+p2(h.hr)+':00'; var t2=document.createElement('span'); t2.textContent=verdict(h.score);
+    var tx=document.createElement('div'); tx.className='ndhrtx'; var t1=document.createElement('b'); t1.textContent=labFn(d)+' · '+p2(h.hr)+':00'; var t2=document.createElement('span'); t2.textContent=verdict(h.score);
     var fp=(window.PsaroFProf&&window.PsaroFProf.get())||'boat', okc=h.safe, msgOk, msgNo;
     var wv=h.wave==null?0:h.wave, gs=h.gust==null?0:h.gust, st=h.code!=null&&h.code>=95;   /* όρια ενδεικτικά, δική μου εκτίμηση */
     if(fp==='shore'){ okc=!(wv>=1.5||gs>=30||st); msgOk=T('Ήπιες συνθήκες για ψάρεμα από στεριά','Mild conditions for shore fishing'); msgNo=T('Προσοχή: δυνατό κύμα ή ριπές στην ακτή. Μην πλησιάζεις τους βράχους.','Caution: strong waves or gusts at the shore. Stay away from the rocks.'); }
@@ -779,6 +774,12 @@ box.insertBefore(tools,bar.nextSibling);
     if(h.rain!=null) g.append(tile(T('Βροχή','Rain'),Math.round(h.rain)+'%',''));
     rEl.append(g);
   }
+    function centerOn(){ var on=hEl.querySelector('.on'); if(on) hEl.scrollLeft=Math.max(0,on.offsetLeft-hEl.clientWidth/2+on.offsetWidth/2); }
+    return {setH:function(v){ selH=v; },getH:function(){ return selH; },hours:renderHours,detail:renderDetail,center:centerOn};
+  }
+  var view=makeView(hEl,rEl,function(){ return fc.days[0]; },function(){ return fc; },function(){ return T('Σήμερα','Today'); });
+  function renderHours(){ view.hours(); } function renderDetail(){ view.detail(); } function centerOn(){ view.center(); }
+
   function load(){
     var cc=C.getViewCond&&C.getViewCond(); if(!cc||cc.lat==null||!window.PF){ card.hidden=true; return; }
     var k=cc.lat.toFixed(3)+','+cc.lon.toFixed(3);
@@ -788,15 +789,45 @@ box.insertBefore(tools,bar.nextSibling);
     window.PF.getForecast(+cc.lat,+cc.lon,undefined,{days:4}).then(function(r){
       fc=r; key=k; at=Date.now(); busy=false; if(!fc.days.length){ card.hidden=true; return; }
       selD=Math.min(selD,fc.days.length-1);
-      var nh=+fc.nowLocal.slice(11,13); if(selH==null||firstTime){ selD=0; var d0=fc.days[0]; var nx=d0.hours.filter(function(h){ return h.hr>nh; })[0]||d0.hours[d0.hours.length-1]; selH=nx&&nx.hr; }
+      var nh=+fc.nowLocal.slice(11,13); if(view.getH()==null||firstTime){ selD=0; var d0=fc.days[0]; var nx=d0.hours.filter(function(h){ return h.hr>nh; })[0]||d0.hours[d0.hours.length-1]; view.setH(nx&&nx.hr); }
       var nm=document.getElementById('liveSub'); pEl.textContent=T('Για: ','For: ')+((cc.name||'')||T('το επιλεγμένο σημείο','the selected place'));
-      card.hidden=false; renderDays(); renderHours(); renderDetail(); setTimeout(centerOn,60);
+      card.hidden=false; renderHours(); renderDetail(); setTimeout(centerOn,60);
     }).catch(function(){ busy=false; if(!fc) card.hidden=true; });
   }
   ['psaro-view','psaro-cond'].forEach(function(ev){ document.addEventListener(ev,function(){ setTimeout(load,300); }); });
   document.addEventListener('click',function(e){ if(e.target.closest&&e.target.closest('[data-tab],[data-go]')) setTimeout(function(){ if(!card.hidden) centerOn(); },200); });
   setTimeout(load,2500); setInterval(function(){ var t=document.getElementById('tab-today'); if(t&&!t.hidden) load(); },60000);
   window.addEventListener('psaro-units',function(){ if(fc&&!card.hidden) renderDetail(); });
+  /* Επόμενες μέρες: ώρα-προς-ώρα μέσα σε κάθε μέρα της καρτέλας Πρόγνωση */
+  dEl.hidden=true;
+  var more=document.createElement('button'); more.type='button'; more.className='btn ghost sm ndhmore'; more.textContent=T('Επόμενες μέρες ανά ώρα → Πρόγνωση','Next days by hour → Forecast');
+  more.addEventListener('click',function(){ try{ C.lsSet('psaro-wxsub','fc'); C.switchTab('fc'); }catch(e){} });
+  card.querySelector('.ndhrn').insertAdjacentElement('beforebegin',more);
+  var fcData=null, fvs=[];
+  window.addEventListener('psaro-fcloaded',function(ev){ fcData=ev&&ev.detail&&ev.detail.fc||null; });
+  function enhance(){
+    var D=document.getElementById('fcDays'); if(!D||!fcData) return;
+    fvs=[];
+    Array.prototype.forEach.call(D.querySelectorAll('details.fday'),function(det){
+      if(det.querySelector('.ndfdh')) return;
+      var date=(det.id||'').slice(3), day=null; fcData.days.forEach(function(x){ if(x.date===date) day=x; });
+      if(!day||!day.hours||!day.hours.length) return;
+      var box=document.createElement('div'); box.className='ndfdh';
+      var lb=document.createElement('div'); lb.className='label'; lb.style.marginTop='10px'; lb.textContent=T('Ώρα προς ώρα (πάτα ώρα)','Hour by hour (tap an hour)');
+      var h2=document.createElement('div'); h2.className='ndhrh'; h2.setAttribute('role','listbox'); var r2=document.createElement('div'); r2.className='ndhrr'; r2.setAttribute('aria-live','polite');
+      box.append(lb,h2,r2); det.append(box);
+      var v=makeView(h2,r2,function(){ return day; },function(){ return fcData; },function(d){ var dt=new Date(d.date+'T12:00:00Z'); return (d.date===fcData.nowLocal.slice(0,10)?T('Σήμερα','Today'):DN[dt.getUTCDay()])+' '+d.date.slice(8)+'/'+d.date.slice(5,7); });
+      var nh=+fcData.nowLocal.slice(11,13), isT=date===fcData.nowLocal.slice(0,10), pick=null;
+      if(isT) pick=day.hours.filter(function(h){ return h.hr>nh; })[0];
+      if(!pick){ pick=day.hours[0]; day.hours.forEach(function(h){ if(h.score>pick.score) pick=h; }); }
+      v.setH(pick.hr); v.hours(); v.detail(); fvs.push(v);
+      det.addEventListener('toggle',function(){ if(det.open) setTimeout(v.center,30); });
+    });
+  }
+  var fcBox=document.getElementById('fcDays'); if(fcBox) new MutationObserver(function(){ setTimeout(enhance,0); }).observe(fcBox,{childList:true});
+  window.addEventListener('psaro-fcloaded',function(){ setTimeout(enhance,60); });
+  function refreshAll(){ fvs.forEach(function(v){ try{ v.detail(); }catch(e){} }); }
+  window.addEventListener('psaro-units',refreshAll); window.addEventListener('psaro-fprof',refreshAll);
   window.addEventListener('psaro-fprof',function(){ if(fc&&!card.hidden) renderDetail(); });
 })();
 

@@ -11,6 +11,16 @@ var TYPES=[
   ['hook',T('Αγκίστρια','Hooks'),T('Αγκίστρι','Hook'),'🪝',T('Μέγεθος · τύπος (π.χ. Νο 2/0 · circle)','Size · type (e.g. 2/0 · circle)')],
   ['lure',T('Ζόκες / τεχνητά','Jigs / lures'),T('Ζόκα / τεχνητό','Jig / lure'),'🐟',T('Είδος · βάρος · χρώμα (π.χ. jig 40 g · ροζ)','Kind · weight · colour (e.g. jig 40 g · pink)')],
   ['acc',T('Αξεσουάρ','Accessories'),T('Αξεσουάρ','Accessory'),'🔹',T('Beads, φωτάκια LED, στριφτάρια, κλιπ (π.χ. glow 6×8 mm)','Beads, LED lights, swivels, snaps (e.g. glow 6×8 mm)')],
+  ['gun',T('Ψαροντούφεκα','Spearguns'),T('Ψαροντούφεκο','Speargun'),'🔱',T('Μήκος · τύπος (π.χ. 90 cm · λάστιχο / πνευματικό)','Length · type (e.g. 90 cm · band / pneumatic)')],
+  ['shaft',T('Ακόντια / σαΐτες','Shafts'),T('Ακόντιο / σαΐτα','Shaft'),'➶',T('Διάμετρος · μήκος · μύτη (π.χ. 6,5 mm · 120 cm · flopper)','Diameter · length · tip (e.g. 6.5 mm · 120 cm · flopper)')],
+  ['band',T('Λάστιχα','Bands'),T('Λάστιχο','Band'),'➰',T('Διάμετρος · μήκος (π.χ. 16 mm · 60 cm)','Diameter · length (e.g. 16 mm · 60 cm)')],
+  ['float',T('Σημαδούρες / πλωτήρες','Floats'),T('Σημαδούρα / πλωτήρας','Float'),'🟠',T('Τύπος · πετονιά (π.χ. torpedo · 20 m)','Type · line (e.g. torpedo · 20 m)')],
+  ['fins',T('Βατραχοπέδιλα','Fins'),T('Βατραχοπέδιλα','Fins'),'🦶',T('Υλικό · μέγεθος (π.χ. carbon · 42-43)','Material · size (e.g. carbon · 42-43)')],
+  ['mask',T('Μάσκες / αναπνευστήρες','Masks & snorkels'),T('Μάσκα / αναπνευστήρας','Mask / snorkel'),'🥽',T('Τύπος (π.χ. χαμηλού όγκου)','Type (e.g. low volume)')],
+  ['suit',T('Στολές','Wetsuits'),T('Στολή','Wetsuit'),'🧥',T('Πάχος · μέγεθος (π.χ. 5 mm · M)','Thickness · size (e.g. 5 mm · M)')],
+  ['weights',T('Βάρη / ζώνη','Weights & belt'),T('Βάρη / ζώνη','Weights / belt'),'⚓',T('Σύνολο kg (π.χ. 4 kg)','Total kg (e.g. 4 kg)')],
+  ['knife',T('Μαχαίρια','Knives'),T('Μαχαίρι','Knife'),'🔪',T('Τύπος · τοποθέτηση (π.χ. πόδι · ανοξείδωτο)','Type · mounting (e.g. leg · stainless)')],
+  ['watch',T('Ρολόγια / όργανα','Watches & gauges'),T('Ρολόι / όργανο','Watch / gauge'),'⌚',T('Μοντέλο (π.χ. Garmin Descent)','Model (e.g. Garmin Descent)')],
   ['set',T('Σετ','Sets'),T('Σετ','Set'),'🧰',T('Σημείωση (π.χ. για ψάρεμα βυθού)','Note (e.g. for bottom fishing)')],
   ['other',T('Άλλα','Other'),T('Άλλο','Other'),'📦',T('Περιγραφή','Description')]
 ];
@@ -19,6 +29,9 @@ var TKI={rod:'<path d="M3 21L19 5"/><path d="M19 5c1.5 0 2.5 1 2.5 2.5V11"/><cir
 function tkIco(t){ var s=el('span','tkico'); s.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(TKI[t]||TKI.other)+'</svg>'; return s; }
 var tinfo=function(k){ for(var i=0;i<TYPES.length;i++) if(TYPES[i][0]===k) return TYPES[i]; return TYPES[TYPES.length-1]; };
 var S=C.Store;
+var SPEARTY=['gun','shaft','band','float','fins','mask','suit','weights','knife','watch'], ANGTY=['rod','reel','leader','lure','hook'];
+function tprof(){ try{ return localStorage.getItem('psaro-fprof')||'boat'; }catch(e){ return 'boat'; } }
+function typeOn(k,keep){ var sp=tprof()==='spear'; if(SPEARTY.indexOf(k)>=0){ if(sp||k===keep) return true; return (S.raw('tackle')||[]).some(function(x){ return x.type===k; }); } if(ANGTY.indexOf(k)>=0){ if(!sp||k===keep) return true; return (S.raw('tackle')||[]).some(function(x){ return x.type===k; }); } return true; }
 function load(){ return (S.raw('tackle')||[]).slice(); }
 function put(o){ return S.save('tackle',o); }
 function del(id){ return S.remove('tackle',id); }
@@ -226,7 +239,7 @@ function render(){
   var all=load();
   if(all.length&&!editing) box.append(advisor());
   var chips=el('div','seg'); chips.style.cssText='flex-wrap:wrap;margin:8px 0';
-  [['all',T('Όλα','All')]].concat(TYPES.map(function(t){ return [t[0],t[1]]; })).concat([['lst',T('Λίστα','List')],['units',T('Μονάδες','Units')]]).forEach(function(c){
+  [['all',T('Όλα','All')]].concat(TYPES.filter(function(t){ return typeOn(t[0],fType); }).map(function(t){ return [t[0],t[1]]; })).concat([['lst',T('Λίστα','List')],['units',T('Μονάδες','Units')]]).forEach(function(c){
     var n=c[0]==='all'?all.length:c[0]==='lst'?remCount():all.filter(function(x){ return x.type===c[0]; }).length;
     var b=el('button','',c[1]+(n?' '+n:'')); b.type='button'; b.style.flex='1 0 auto'; b.setAttribute('aria-pressed',String(fType===c[0]));
     b.addEventListener('click',function(){ fType=c[0]; editing=null; render(); }); chips.append(b);
@@ -238,7 +251,7 @@ function render(){
   var lab=el('label','f sortsel'); lab.style.cssText='margin:0;flex:1'; lab.append(document.createTextNode(T('Ταξινόμηση','Sort by')));
   var sel=el('select'); [['new',T('Πιο πρόσφατα','Newest')],['name',T('Όνομα','Name')],['type',T('Είδος','Type')]].forEach(function(o){ var op=el('option',null,o[1]); op.value=o[0]; sel.append(op); });
   sel.value=sortKey(); sel.addEventListener('change',function(){ C.lsSet('psaro-sort-tackle',sel.value); render(); }); lab.append(sel);
-  var add=btn(T('＋ Νέο','＋ New'),'',function(){ editing={id:null,type:fType==='all'?'rod':fType}; render(); }); add.id='tkNew';
+  var add=btn(T('＋ Νέο','＋ New'),'',function(){ editing={id:null,type:(['all','lst','units'].indexOf(fType)>=0)?(tprof()==='spear'?'gun':'rod'):fType}; render(); }); add.id='tkNew';
   var selB=btn(selMode?T('✕ Τέλος επιλογής','✕ Done'):T('☑ Επιλογή','☑ Select'),'ghost',function(){ selMode=!selMode; selSet={}; render(); }); selB.id='tkSelBtn';
   bar.append(lab,add,selB); box.append(bar);
   if(editing) box.append(form(editing));
@@ -289,7 +302,7 @@ function field(label,type,val,ph){ var l=el('label','f'); l.append(document.crea
 function form(it){
   var f=el('div','card'); f.style.margin='8px 0'; f.id='tkForm';
   f.append(el('h3',null,it.id?T('Επεξεργασία','Edit'):T('Νέος εξοπλισμός','New tackle')));
-  var ls=el('label','f'); ls.append(document.createTextNode(T('Είδος','Type'))); var ts=el('select'); TYPES.forEach(function(t){ var o=el('option',null,t[2]); o.value=t[0]; ts.append(o); }); ts.value=it.type; ls.append(ts); f.append(ls);
+  var ls=el('label','f'); ls.append(document.createTextNode(T('Είδος','Type'))); var ts=el('select'); TYPES.forEach(function(t){ if(!typeOn(t[0],it.type)) return; var o=el('option',null,t[2]); o.value=t[0]; ts.append(o); }); ts.value=it.type; ls.append(ts); f.append(ls);
   var nm=field(T('Όνομα','Name'),'text',it.name,T('π.χ. Shimano Vanquish','e.g. Shimano Vanquish')), br=field(T('Μάρκα / μοντέλο','Brand / model'),'text',it.brand), sp=field(T('Χαρακτηριστικά','Specs'),'text',it.spec,tinfo(it.type)[4]),
       qt=field(T('Ποσότητα','Quantity'),'number',(it.type==='line'||it.type==='leader')&&it.qty!=null?Lm(it.qty):it.qty), nt=field(T('Σημειώσεις','Notes'),'text',it.notes),
       wt=field(T('Διαθέσιμα βάρη (','Available weights (')+Wu()+T('), χωρισμένα με κόμμα','), comma separated'),'text',(it.w||[]).map(W).join(', '),'20, 30, 40, 60'),
@@ -443,6 +456,7 @@ function names(){ var m={}; load().forEach(function(x){ m[x.id]=tinfo(x.type)[3]
 function info(){ var m={}; load().forEach(function(x){ m[x.id]={type:x.type,name:tinfo(x.type)[3]+' '+(x.name||'—'),kind:kname(x.kind)}; }); return m; }
 window.PsaroTackle={all:load,last:lastSel,mount:mount,sel:function(){ return union(); },selW:function(){ var o={}; picked.forEach(function(i){ if(pw[i]) o[i]=pw[i]; }); return o; },selH:function(){ var o={}; picked.forEach(function(i){ if(ph[i]) o[i]=ph[i]; }); return o; },selS:function(){ var o={}; union().forEach(function(i){ if(ps[i]) o[i]=ps[i]; }); return o; },names:names,info:info};
 try{ window.dispatchEvent(new Event('psaro-tackle-ready')); }catch(e){}
+window.addEventListener('psaro-fprof',function(){ if(!box.hidden&&!editing){ if(!typeOn(fType)) fType='all'; render(); } });
 window.addEventListener('psaro-pview',function(e){ if(e.detail==='tackle'){ editing=null; render(); } });
 S.on('tackle',function(){ if(!box.hidden&&!editing) render(); });
 render();
