@@ -820,3 +820,8 @@ body.fp-shore .ndmob{display:none!important}
 body.ndbsopen .ndcard,body.ndbsopen .ndshowc{opacity:0;pointer-events:none}
 @media (min-width:701px){.ndbs{display:none!important}}
 @media (prefers-reduced-motion:reduce){.ndbs{transition:none}}
+
+/* v31z273 επιλογή τύπου ψαρέματος στο καλωσόρισμα */
+.ndobp{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:4px 0 14px;width:100%}
+.ndobp[hidden]{display:none}
+.ndobp button{min-height:48px}
