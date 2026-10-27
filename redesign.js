@@ -536,6 +536,7 @@ box.insertBefore(tools,bar.nextSibling);
     document.body.appendChild(ov); document.addEventListener('keydown',key); draw(); try{ ov.querySelector('.ndobn').focus({preventScroll:true}); }catch(x){}
   }
   window.PsaroTour=function(){ open(true); };
+  window.PsaroPickProfile=function(){ open(true,true); };
   /* υπάρχοντες χρήστες που δεν έχουν διαλέξει ακόμα τύπο ψαρέματος: μία φορά */
   function fpUnset(){ try{ return !localStorage.getItem('psaro-fprof-done'); }catch(x){ return false; } }
   var decided=false, dtimer=null;
@@ -788,6 +789,9 @@ box.insertBefore(tools,bar.nextSibling);
     card.querySelector('h3').textContent=T('Τύπος ψαρέματος','Fishing type');
     var sg=card.querySelector('.seg');
     LIST.forEach(function(k){ var b=document.createElement('button'); b.type='button'; b.dataset.p=k; b.textContent=NAME[k]; b.addEventListener('click',function(){ set(k); }); sg.append(b); });
+    var pb=document.createElement('button'); pb.type='button'; pb.className='btn ghost sm ndpickb'; pb.textContent=T('Άνοιγμα με εικόνες','Open with pictures');
+    pb.addEventListener('click',function(){ if(window.PsaroPickProfile){ var p=document.getElementById('profile'); window.PsaroPickProfile(); } });
+    card.querySelector('.ndfpd').after(pb);
     card.querySelector('.ndvh').textContent=T('Γλώσσα φωνητικής καταγραφής','Voice input language');
     card.querySelector('.ndvn').textContent=T('Για το μικρόφωνο στον χάρτη (έξοδος) και το «Πες το» στη φόρμα ψαριού. Λέγε τα ονόματα των ψαριών στη γλώσσα που διαλέγεις.','For the map microphone (during a trip) and “Say it” in the catch form. Say fish names in the language you pick here.');
     var vs=card.querySelector('.ndvs');

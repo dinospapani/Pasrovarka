@@ -856,3 +856,5 @@ body.ndbsopen .ndcard,body.ndbsopen .ndshowc{opacity:0;pointer-events:none}
 /* v31z279 κουμπιά παραθύρου επιβεβαίωσης: μακριά κείμενα σε δύο γραμμές χωρίς να βγαίνουν έξω */
 html body .askbtns{flex-wrap:wrap}
 html body .askbtns .btn{flex:1 1 130px;height:auto!important;min-height:48px;padding:10px 14px;line-height:1.25;white-space:normal;text-align:center}
+
+#ndFProf .ndpickb{margin:2px 0 4px}

@@ -165,9 +165,10 @@ function wire(){
   if($('acLogout')) $('acLogout').addEventListener('click',async function(){
     if(busy) return;
     await sync(true);
-    var wipe=await window.PsaroAsk(window.LANG==='en'?'Delete the data from this device too? It stays saved in your account.':'Να σβηστούν και τα δεδομένα από αυτή τη συσκευή;\nΜένουν αποθηκευμένα στον λογαριασμό σου.',{title:window.LANG==='en'?'Sign out':'Αποσύνδεση',ok:window.LANG==='en'?'Sign out and delete':'Σβήσιμο και αποσύνδεση',cancel:window.LANG==='en'?'Sign out, keep data':'Αποσύνδεση, κράτα τα',danger:true});
+    var en=window.LANG==='en';
+    var okk=await window.PsaroAsk(en?'Sign out of your account? Your data stays on this phone and in your account.':'Αποσύνδεση από τον λογαριασμό; Τα δεδομένα σου μένουν στο κινητό και στον λογαριασμό σου.',{title:en?'Sign out':'Αποσύνδεση',ok:en?'Sign out':'Αποσύνδεση',cancel:en?'Cancel':'Άκυρο'});
+    if(!okk) return;
     try{ await fetch(URL_+'/auth/v1/logout',{method:'POST',headers:H()}); }catch(e){}
-    if(wipe){ Store.wipe(); pup={}; ls('psaro-pup',pup); ls('psaro-uid',null); }
     openP(false); signedOut();
   });
   render();
