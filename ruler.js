@@ -11,80 +11,88 @@ btn.setAttribute('aria-label',T('Χάρακας (απόσταση και βάθ�
 btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></svg>';
 mb.appendChild(btn);
 
-var on=false, A=null, B=null, line=null, mA=null, mB=null, panel=null, hint=null, seq=0, tmr=null;
+var on=false, P=[], dep=[], poly=null, live=null, mk=[], lb=[], cross=null, panel=null, seq=0, tmr=null, cdep=null, cseq=0;
+var COMP=EN?['N','NE','E','SE','S','SW','W','NW']:['Β','ΒΑ','Α','ΝΑ','Ν','ΝΔ','Δ','ΒΔ'];
 function dist(a,b){ var R=6371000, r=Math.PI/180, dl=(b.lat-a.lat)*r, dn=(b.lng-a.lng)*r, x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dn/2)*Math.sin(dn/2); return 2*R*Math.asin(Math.sqrt(x)); }
-function fmtD(m){ if(PU&&PU.dist) { try{ return PU.dist(m/1000); }catch(e){} } return m<1000?Math.round(m)+' m':(m/1000).toFixed(2)+' km'; }
-function dot(color){ return L.divIcon({className:'',html:'<div style="width:20px;height:20px;border-radius:50%;background:'+color+';border:3px solid #fff;box-shadow:0 1px 6px #0007"></div>',iconSize:[20,20],iconAnchor:[10,10]}); }
+function bearing(a,b){ var r=Math.PI/180, y=Math.sin((b.lng-a.lng)*r)*Math.cos(b.lat*r), x=Math.cos(a.lat*r)*Math.sin(b.lat*r)-Math.sin(a.lat*r)*Math.cos(b.lat*r)*Math.cos((b.lng-a.lng)*r); return (Math.atan2(y,x)/r+360)%360; }
+function fmtD(m){ var cu=PU&&PU.cfg&&PU.cfg.dist; if(!cu||cu==='km'){ return m<1000?(m<100?m.toFixed(1):Math.round(m))+' m':(m/1000).toFixed(2)+' km'; } if(PU&&PU.dist){ try{ return PU.dist(m/1000,2); }catch(e){} } return m<1000?Math.round(m)+' m':(m/1000).toFixed(2)+' km'; }
+function dirT(b){ return Math.round(b)+'° '+COMP[Math.round(b/45)%8]; }
+function total(){ var s=0; for(var i=1;i<P.length;i++) s+=dist(P[i-1],P[i]); return s; }
+function dot(color,txt){ return L.divIcon({className:'',html:'<div style="width:22px;height:22px;border-radius:50%;background:'+color+';border:3px solid #fff;box-shadow:0 1px 6px #0007;color:#fff;font:700 11px system-ui;display:flex;align-items:center;justify-content:center">'+txt+'</div>',iconSize:[22,22],iconAnchor:[11,11]}); }
+function tag(txt){ return L.divIcon({className:'',html:'<div style="transform:translate(-50%,-50%);background:#3b2a12;color:#ffd27a;border-radius:8px;padding:2px 7px;font:700 12px system-ui;white-space:nowrap;box-shadow:0 1px 4px #0008">'+txt+'</div>',iconSize:[0,0]}); }
+function ensureCross(){
+  if(cross) return; cross=document.createElement('div'); cross.id='ndRulX'; cross.setAttribute('aria-hidden','true');
+  cross.style.cssText='position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;pointer-events:none;z-index:470';
+  cross.innerHTML='<svg viewBox="0 0 44 44" width="44" height="44"><circle cx="22" cy="22" r="9" fill="none" stroke="#fff" stroke-width="3"/><circle cx="22" cy="22" r="9" fill="none" stroke="#E8743B" stroke-width="1.5"/><path d="M22 2v10M22 32v10M2 22h10M32 22h10" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M22 2v10M22 32v10M2 22h10M32 22h10" stroke="#E8743B" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  map.getContainer().appendChild(cross);
+}
 function ensurePanel(){
   if(panel) return panel;
-  panel=document.createElement('div'); panel.id='ndRuler'; panel.setAttribute('role','status');
-  panel.style.cssText='position:fixed;left:10px;right:10px;bottom:calc(var(--navh,64px) + 14px);z-index:900;background:var(--card,var(--bg,#fff));color:var(--ink,#111);border:1px solid var(--line,#8884);border-radius:16px;padding:12px 14px;box-shadow:0 8px 28px #0006;max-height:36vh;overflow:auto';
+  panel=document.createElement('div'); panel.id='ndRuler'; panel.setAttribute('role','group'); panel.setAttribute('aria-label',T('Χάρακας','Ruler'));
+  panel.style.cssText='position:fixed;left:10px;right:10px;bottom:calc(var(--navh,64px) + 14px);z-index:900;background:var(--card,var(--bg,#fff));color:var(--ink,#111);border:1px solid var(--line,#8886);border-radius:14px;padding:10px 12px;box-shadow:0 4px 18px #0004;max-height:36vh;overflow:auto';
   document.body.appendChild(panel); return panel;
 }
-function say(){
-  var p=ensurePanel(); p.replaceChildren();
-  function row(){ var d=document.createElement('div'); d.style.cssText='display:flex;gap:8px;align-items:center;justify-content:space-between'; return d; }
-  var top=row(), b1=document.createElement('b'); b1.textContent=T('Χάρακας','Ruler'); var x=document.createElement('button'); x.type='button'; x.className='btn ghost sm'; x.textContent='✕'; x.setAttribute('aria-label',T('Κλείσιμο','Close')); x.addEventListener('click',function(){ stop(); });
-  top.append(b1,x); p.append(top);
-  var t=document.createElement('p'); t.className='note'; t.style.margin='6px 0';
-  if(!A){ t.textContent=T('Πάτα στον χάρτη το σημείο εκκίνησης (π.χ. την ακτή), ή χρησιμοποίησε τη θέση σου.','Tap the start point on the map (e.g. the shoreline), or use your position.'); p.append(t);
-    var mine=document.createElement('button'); mine.type='button'; mine.className='btn sm'; mine.textContent=T('Αρχή = η θέση μου','Start = my position'); mine.addEventListener('click',useMe); p.append(mine); return; }
-  if(!B){ t.textContent=T('Τώρα πάτα το δεύτερο σημείο (προς τη θάλασσα). Μπορείς μετά να το σύρεις.','Now tap the second point (out to sea). You can drag it afterwards.'); p.append(t); return; }
-  var d=dist(A,B), big=document.createElement('div'); big.style.cssText='font-size:26px;font-weight:700;margin:4px 0'; big.textContent=fmtD(d); p.append(big);
-  var dep=document.createElement('div'); dep.id='ndRulD'; dep.textContent=T('Βάθος στο σημείο: …','Depth at the point: …'); p.append(dep);
-  var prof=document.createElement('div'); prof.id='ndRulP'; prof.style.marginTop='8px'; p.append(prof);
-  var nt=document.createElement('p'); nt.className='note'; nt.style.marginTop='8px'; nt.textContent=T('Τα βάθη είναι από το EMODnet (πλέγμα περίπου 100 m) και κοντά στην ακτή είναι πολύ ενδεικτικά. Δεν είναι ναυτικό όργανο.','Depths come from EMODnet (about 100 m grid) and are only indicative close to shore. Not a navigation instrument.'); p.append(nt);
-  var r2=row(); r2.style.marginTop='6px'; var nw=document.createElement('button'); nw.type='button'; nw.className='btn ghost sm'; nw.textContent=T('Νέα μέτρηση','New measurement'); nw.addEventListener('click',function(){ clear(); say(); });
-  r2.append(nw); p.append(r2);
-  var id=++seq; profile(id);
+function btnEl(txt,cls,fn,id){ var b=document.createElement('button'); b.type='button'; b.className='btn '+cls; if(id) b.id=id; b.textContent=txt; b.style.minHeight='44px'; b.addEventListener('click',fn); return b; }
+function render(){
+  var p=ensurePanel(); var sc=p.scrollTop; p.replaceChildren();
+  var top=document.createElement('div'); top.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:8px';
+  var h=document.createElement('b'); h.textContent=T('Χάρακας','Ruler'); top.append(h,btnEl('✕','ghost sm',stop)); p.append(top);
+  var big=document.createElement('div'); big.id='ndRulBig'; big.style.cssText='font-size:26px;font-weight:700;margin:4px 0'; big.setAttribute('aria-live','polite'); p.append(big);
+  var row=document.createElement('div'); row.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin:6px 0';
+  row.append(btnEl(T('＋ Προσθήκη σημείου','＋ Add point'),'',addPoint,'ndRulAdd'));
+  if(P.length) row.append(btnEl(T('↶ Αναίρεση','↶ Undo'),'ghost',undo));
+  if(P.length) row.append(btnEl(T('Νέα μέτρηση','New'),'ghost',reset));
+  if(!P.length) row.append(btnEl(T('Αρχή = η θέση μου','Start = my position'),'ghost',useMe));
+  p.append(row);
+  var seg=document.createElement('div'); seg.id='ndRulSeg'; seg.style.cssText='font-size:14px;margin:4px 0'; p.append(seg);
+  var cd=document.createElement('div'); cd.id='ndRulC'; cd.style.cssText='font-size:14px;margin:4px 0'; p.append(cd);
+  if(P.length){ var ls=document.createElement('div'); ls.style.marginTop='6px'; var cum=0;
+    P.forEach(function(q,i){ if(i) cum+=dist(P[i-1],q); var r=document.createElement('div'); r.style.cssText='display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:2px 0;border-top:1px solid var(--line,#8883)';
+      var a=document.createElement('span'); a.textContent='#'+(i+1)+' · '+fmtD(cum); var b=document.createElement('span'); b.textContent=T('βάθος ','depth ')+(dep[i]===undefined?'…':dep[i]===null?'–':'≈ '+dep[i]+' m'); r.append(a,b); ls.append(r); });
+    p.append(ls); }
+  var nt=document.createElement('p'); nt.className='note'; nt.style.marginTop='8px';
+  nt.textContent=P.length?T('Κούνα τον χάρτη ώστε ο σταυρός να πέσει στο επόμενο σημείο και πάτα «Προσθήκη σημείου». Τα βάθη είναι από το EMODnet (πλέγμα περίπου 100 m): κοντά στην ακτή ενδεικτικά, όχι ναυτικό όργανο.','Move the map so the cross sits on the next point and tap "Add point". Depths are from EMODnet (about 100 m grid): indicative near the coast, not a navigation instrument.'):T('Κούνα τον χάρτη ώστε ο σταυρός να πέσει στο σημείο εκκίνησης (π.χ. την ακτή) και πάτα «Προσθήκη σημείου».','Move the map so the cross sits on the start point (e.g. the shore) and tap "Add point".');
+  p.append(nt); p.scrollTop=sc; live_(); depthC();
 }
-function profile(id){
-  var n=Math.max(2,Math.min(8,Math.round(dist(A,B)/100)||2)), pts=[];
-  for(var i=1;i<=n;i++){ var f=i/n; pts.push({f:f,la:A.lat+(B.lat-A.lat)*f,lo:A.lng+(B.lng-A.lng)*f}); }
-  var D=dist(A,B);
-  Promise.all(pts.map(function(q){ return C.depthAt(q.la,q.lo).catch(function(){ return null; }); })).then(function(res){
-    if(id!==seq) return;
-    var dp=document.getElementById('ndRulD'), pr=document.getElementById('ndRulP'); if(!dp||!pr) return;
-    var last=res[res.length-1];
-    dp.textContent=T('Βάθος στο σημείο: ','Depth at the point: ')+(last!=null?'≈ '+last+' m':T('δεν βρέθηκε','not available'));
-    var mx=Math.max.apply(null,res.map(function(v){ return v||0; }).concat([1]));
-    pr.replaceChildren();
-    res.forEach(function(v,i){
-      var r=document.createElement('div'); r.style.cssText='display:flex;align-items:center;gap:8px;font-size:13px;padding:2px 0';
-      var l=document.createElement('span'); l.style.cssText='width:64px;flex:none;color:var(--muted,#888)'; l.textContent=fmtD(D*pts[i].f);
-      var bar=document.createElement('span'); bar.style.cssText='flex:1;height:8px;border-radius:4px;background:var(--line,#8883);position:relative;overflow:hidden';
-      var fill=document.createElement('i'); fill.style.cssText='position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--accent,#2a7);width:'+(v==null?0:Math.max(4,Math.round(v/mx*100)))+'%'; bar.append(fill);
-      var t=document.createElement('span'); t.style.cssText='width:74px;flex:none;text-align:right;white-space:nowrap'; t.textContent=v==null?'–':'≈ '+v+' m';
-      r.append(l,bar,t); pr.append(r);
-    });
-  });
+function live_(){
+  var big=document.getElementById('ndRulBig'), seg=document.getElementById('ndRulSeg'); if(!big) return;
+  var c=map.getCenter(), t=total(), l=null;
+  if(P.length){ l=dist(P[P.length-1],c); }
+  big.textContent=fmtD(t+(l||0));
+  if(P.length){ var br=bearing(P[P.length-1],c); seg.textContent=T('Από το τελευταίο σημείο μέχρι τον σταυρό: ','From the last point to the cross: ')+fmtD(l)+' · '+T('πορεία ','heading ')+dirT(br); }
+  else seg.textContent='';
+  if(live){ map.removeLayer(live); live=null; }
+  if(P.length) live=L.polyline([P[P.length-1],c],{color:'#E8743B',weight:3,dashArray:'4 8',interactive:false}).addTo(map);
 }
-function draw(){
-  if(line){ map.removeLayer(line); line=null; }
-  if(A&&B) line=L.polyline([A,B],{color:'#E8743B',weight:4,dashArray:'8 8'}).addTo(map);
+function depthC(){
+  clearTimeout(tmr); var el=document.getElementById('ndRulC'); if(el) el.textContent=T('Βάθος στον σταυρό: …','Depth at the cross: …');
+  var id=++cseq; tmr=setTimeout(function(){ var c=map.getCenter(); C.depthAt(c.lat,c.lng).then(function(v){ if(id!==cseq) return; var e=document.getElementById('ndRulC'); if(e) e.textContent=T('Βάθος στον σταυρό: ','Depth at the cross: ')+(v!=null?'≈ '+v+' m':T('δεν βρέθηκε','not available')); }).catch(function(){ if(id!==cseq) return; var e=document.getElementById('ndRulC'); if(e) e.textContent=T('Βάθος στον σταυρό: δεν βρέθηκε','Depth at the cross: not available'); }); },500);
 }
-function setA(ll){ A=ll; if(mA) map.removeLayer(mA); mA=L.marker(A,{icon:dot('#2a7de1'),draggable:true,zIndexOffset:2000}).addTo(map); mA.on('drag',function(e){ A=e.target.getLatLng(); draw(); }); mA.on('dragend',later); }
-function setB(ll){ B=ll; if(mB) map.removeLayer(mB); mB=L.marker(B,{icon:dot('#E8743B'),draggable:true,zIndexOffset:2001}).addTo(map); mB.on('drag',function(e){ B=e.target.getLatLng(); draw(); }); mB.on('dragend',later); }
-function later(){ clearTimeout(tmr); tmr=setTimeout(function(){ say(); },350); }
-function clear(){ A=null; B=null; seq++; [mA,mB,line].forEach(function(l){ if(l) try{ map.removeLayer(l); }catch(e){} }); mA=mB=line=null; }
+function drawAll(){
+  [poly].concat(mk,lb).forEach(function(l){ if(l) try{ map.removeLayer(l); }catch(e){} }); poly=null; mk=[]; lb=[];
+  if(P.length>1) poly=L.polyline(P,{color:'#E8743B',weight:4,interactive:false}).addTo(map);
+  P.forEach(function(q,i){ mk.push(L.marker(q,{icon:dot(i?'#E8743B':'#2a7de1',i+1),interactive:false,keyboard:false,zIndexOffset:2000}).addTo(map)); if(i){ var m=L.latLng((P[i-1].lat+q.lat)/2,(P[i-1].lng+q.lng)/2); lb.push(L.marker(m,{icon:tag(fmtD(dist(P[i-1],q))),interactive:false,keyboard:false,zIndexOffset:1500}).addTo(map)); } });
+}
+function addPoint(){
+  var c=map.getCenter(); var q=L.latLng(c.lat,c.lng); P.push(q); var i=P.length-1; dep[i]=undefined; drawAll(); render();
+  C.depthAt(q.lat,q.lng).then(function(v){ dep[i]=v==null?null:v; }).catch(function(){ dep[i]=null; }).then(function(){ if(on&&P[i]===q) render(); });
+}
+function undo(){ P.pop(); dep.length=P.length; drawAll(); render(); }
+function reset(){ P=[]; dep=[]; drawAll(); render(); }
 function useMe(){
   var p=C.getPosition?C.getPosition():Promise.reject();
-  Promise.resolve(p).then(function(q){ if(!q) throw 0; setA(L.latLng(q.lat,q.lon)); map.panTo(A); say(); }).catch(function(){ C.toast(T('Δεν βρέθηκε η θέση σου.','Could not get your position.')); });
+  Promise.resolve(p).then(function(q){ if(!q) throw 0; map.setView([q.lat,q.lon],Math.max(map.getZoom(),16)); setTimeout(function(){ if(on) addPoint(); },450); }).catch(function(){ C.toast(T('Δεν βρέθηκε η θέση σου.','Could not get your position.')); });
 }
-function onClick(e){
-  if(e.target&&e.target.closest&&(e.target.closest('.mapbtns')||e.target.closest('#ndRuler')||e.target.closest('.leaflet-marker-icon')||e.target.closest('.ndbar')||e.target.closest('.ndsheet'))) return;
-  e.stopPropagation(); e.preventDefault();
-  var ll=map.mouseEventToLatLng(e);
-  if(!A){ setA(ll); say(); }
-  else if(!B){ setB(ll); draw(); say(); }
-}
+function onMove(){ live_(); }
+function onEnd(){ depthC(); }
 function start(){
-  on=true; btn.setAttribute('aria-pressed','true'); clear(); map.getContainer().addEventListener('click',onClick,true); map.getContainer().style.cursor='crosshair'; say();
-  try{ map.closePopup(); }catch(e){}
+  if(on) return; on=true; btn.setAttribute('aria-pressed','true'); btn.classList.add('on'); P=[]; dep=[]; ensureCross(); cross.style.display='block';
+  map.on('move',onMove); map.on('moveend',onEnd); try{ map.closePopup(); }catch(e){} render();
 }
 function stop(){
-  on=false; btn.setAttribute('aria-pressed','false'); clear(); try{ map.getContainer().removeEventListener('click',onClick,true); }catch(e){} map.getContainer().style.cursor='';
-  if(panel){ panel.remove(); panel=null; }
+  on=false; btn.setAttribute('aria-pressed','false'); btn.classList.remove('on'); map.off('move',onMove); map.off('moveend',onEnd);
+  [poly,live].concat(mk,lb).forEach(function(l){ if(l) try{ map.removeLayer(l); }catch(e){} }); poly=live=null; mk=[]; lb=[]; P=[]; dep=[]; clearTimeout(tmr); cseq++;
+  if(cross) cross.style.display='none'; if(panel){ panel.remove(); panel=null; }
 }
 btn.addEventListener('click',function(){ if(on) stop(); else start(); });
 window.PsaroRuler={start:start,stop:stop};

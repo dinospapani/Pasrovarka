@@ -67,7 +67,7 @@ window.PsaroHist={fetch:fetchHist,range:fetchRange,keys:KEYS,empty:empty};
 /* ---- μαζική συμπλήρωση παλιών ψαριών (ρυθμίσεις θάλασσας) ---- */
 (window.PsaroSeaRows=window.PsaroSeaRows||[]).push(function(){
   var C=window.PsaroCore; if(!C||!C.Store||!C.biteMs) return null;
-  function todo(){ return (C.Store.get('bites')||[]).filter(function(b){ return typeof b.lat==='number'&&typeof b.lon==='number'&&(empty(b)||suspect(b,C.biteMs(b))||(b.tide==null&&!b.tideNA))&&C.biteMs(b)<Date.now()-90*60000; }); }
+  function todo(){ return (C.Store.get('bites')||[]).filter(function(b){ return typeof b.lat==='number'&&typeof b.lon==='number'&&(empty(b)||suspect(b,C.biteMs(b))||(b.tide==null&&!b.tideNA)||(b.wdeg==null&&!b.wdegNA))&&C.biteMs(b)<Date.now()-90*60000; }); }
   var r=document.createElement('div'); r.className='sprow'; var x=document.createElement('div'); x.className='sptx';
   var b1=document.createElement('b'); b1.textContent=T('Καιρός παλιών ψαριών','Weather for older catches');
   var sp=document.createElement('span'); function txt(){ var n=todo().length; sp.textContent=n?T('Υπάρχουν '+n+' ψάρια με θέση που δεν έχουν καιρό ή έχουν καιρό άλλης ώρας. Θα ενημερωθούν με εκτίμηση ιστορικού (καιρός και στάθμη θάλασσας).','There are '+n+' catches with a position and no weather, or with weather from another time. They will be updated with a historical estimate.'):T('Όλα τα ψάρια με θέση έχουν καιρό.','All catches with a position already have weather.'); }
@@ -80,7 +80,7 @@ window.PsaroHist={fetch:fetchHist,range:fetchRange,keys:KEYS,empty:empty};
       if(i>=list.length){ bt.disabled=false; bt.textContent=T('Συμπλήρωση','Fill in'); txt(); C.toast(T('Συμπληρώθηκαν '+done+' από '+list.length+'.','Filled '+done+' of '+list.length+'.')); return; }
       var b=list[i++]; bt.textContent=i+'/'+list.length+'…';
       fetchHist(b.lat,b.lon,C.biteMs(b)).then(function(h){
-        if(h&&!empty(b)&&!suspect(b,C.biteMs(b))){ /* έχει ήδη καιρό: συμπληρώνεται μόνο η στάθμη */ var o2=Object.assign({},b); if(h.tide!=null) o2.tide=h.tide; else o2.tideNA=true; return C.Store.save('bites',o2).then(function(){ if(h.tide!=null) done++; }); }
+        if(h&&!empty(b)&&!suspect(b,C.biteMs(b))){ /* έχει ήδη καιρό: συμπληρώνεται μόνο η στάθμη */ var o2=Object.assign({},b), got=false; if(b.tide==null&&!b.tideNA){ if(h.tide!=null){ o2.tide=h.tide; got=true; } else o2.tideNA=true; } if(b.wdeg==null&&!b.wdegNA){ if(h.wdeg!=null){ o2.wdeg=h.wdeg; got=true; } else o2.wdegNA=true; } return C.Store.save('bites',o2).then(function(){ if(got) done++; }); }
         if(h){ var o=Object.assign({},b); var sus=suspect(b,C.biteMs(b)); KEYS.forEach(function(k){ if(h[k]!=null||sus) o[k]=h[k]==null?null:h[k]; }); if(h.wavePeriod!=null) o.wavePeriod=h.wavePeriod; o.hist=true; return C.Store.save('bites',o).then(function(){ done++; }); }
       }).catch(function(){}).then(function(){ setTimeout(next,350); });
     })();

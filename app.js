@@ -1250,6 +1250,9 @@ $('biteForm').addEventListener('submit',async e=>{
         else { if(chg){ PsaroHist.keys.forEach(k=>{ rec[k]=null; }); rec.wavePeriod=null; delete rec.hist; } toast(window.LANG==='en'?'Historical weather not found. Left blank.':'Δεν βρέθηκε ιστορικός καιρός. Έμεινε κενό.'); }
       }
     }
+    { const wm=$('bWindM').value, wd=$('bWdirM').value, KN=[0,2,5,8.5,13.5,19,24.5,30.5,37,44,52];
+      if(wm!==''){ rec.wind=KN[+wm]; rec.wman=true; } else if(editing&&editing.wman) { delete rec.wman; }
+      if(wd!==''){ rec.wdeg=+wd*45; rec.wman=true; } }
     if(!editing) tripStamp(rec,false);
     if(phDirty||!editing){ const n=photoBlobs.length; rec.photo=n>0; if(n>1) rec.xph=n-1; else delete rec.xph; }
     const tsel=$('bTrip')?$('bTrip').value:'';
@@ -1272,6 +1275,7 @@ function editBite(b){
   $('bSpecies').value=(window.LANG==='en'&&window.spName)?window.spName(b.species||''):(b.species||''); curLatin=b.latin||'';
   $('bBait').value=b.bait||''; $('bTech').value=b.tech||''; try{ if(window.PsaroTackle) PsaroTackle.mount($('bTackle'),b.tk||[],b.tkw||{},b.tkh||{},b.tks||{}); }catch(e){}
   for(const [id,k] of [['bDepth','depth'],['bKg','kg'],['bLen','len'],['bPress','press']]) $(id).value=b[k]==null?'':b[k];
+  $('bWindM').value=(b.wman&&b.wind!=null)?String(Math.min(10,bft(b.wind))):''; $('bWdirM').value=(b.wman&&b.wdeg!=null)?String(Math.round((((b.wdeg%360)+360)%360)/45)%8):'';
   $('bNotes').value=b.notes||''; $('bRel').checked=!!b.rel; $('bMulti').checked=bc(b)>1; $('bCnt').value=bc(b)>1?bc(b):''; multiSync();
   $('bLocMode').value=(typeof b.lat==='number')?'keep':'none';
   fillTripSel(b.trip||'');
