@@ -538,16 +538,20 @@ box.insertBefore(tools,bar.nextSibling);
   window.PsaroTour=function(){ open(true); };
   /* υπάρχοντες χρήστες που δεν έχουν διαλέξει ακόμα τύπο ψαρέματος: μία φορά */
   function fpUnset(){ try{ return !localStorage.getItem('psaro-fprof-done'); }catch(x){ return false; } }
-  var t2=0, iv2=setInterval(function(){ t2++; if(t2>50){ clearInterval(iv2); return; }
-    if(document.documentElement.classList.contains('gated')||ov) return; if(!document.querySelector('.ndcard,.ndsearch')||!window.PsaroFProf) return;
-    clearInterval(iv2); if(!fpUnset()) return;
-    if(!seen()&&!hasData()) return; /* οι νέοι χρήστες το βλέπουν μέσα στο καλωσόρισμα */
-    setTimeout(function(){ if(!ov) open(true,true); },1600); },700);
-  var tries=0, iv=setInterval(function(){ tries++;
-    if(tries>40){ clearInterval(iv); return; }
+  var decided=false, dtimer=null;
+  function decide(){
+    if(decided||ov) return;
     if(document.documentElement.classList.contains('gated')) return;
-    if(!document.querySelector('.ndcard,.ndsearch')) return;
-    clearInterval(iv); setTimeout(function(){ open(false); },900); },700);
+    if(!document.querySelector('.ndcard,.ndsearch')||!window.PsaroFProf) return;
+    decided=true; clearInterval(dtimer);
+    var known=seen()||hasData();
+    if(known){ if(!seen()) done(); if(fpUnset()) setTimeout(function(){ if(!ov) open(true,true); },1200); }
+    else setTimeout(function(){ if(!ov) open(false); },900);
+  }
+  /* ξεκινά και ξανά μετά από σύνδεση (όταν φεύγει η οθόνη εισόδου), χωρίς χρονικό όριο */
+  function arm(){ if(decided) return; clearInterval(dtimer); dtimer=setInterval(decide,700); decide(); }
+  arm();
+  try{ new MutationObserver(function(){ if(!document.documentElement.classList.contains('gated')) arm(); }).observe(document.documentElement,{attributes:true,attributeFilter:['class']}); }catch(x){}
 })();
 
 /* Ειδοποίηση νέας έκδοσης: όταν ανεβαίνουν νέα αρχεία, ο χρήστης βλέπει «Νέα έκδοση» και ανανεώνει όταν θέλει (ποτέ μέσα σε έξοδο) */

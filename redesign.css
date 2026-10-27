@@ -853,3 +853,6 @@ body.ndbsopen .ndcard,body.ndbsopen .ndshowc{opacity:0;pointer-events:none}
 @media (max-height:700px){.ndobp .ndpic,.ndobp .ndpic svg{width:60px!important;height:60px!important}}
 .ndobp button[aria-pressed=true]{background:color-mix(in srgb,var(--sea) 16%,var(--surface))!important;color:var(--ink)!important;border-color:var(--sea)!important;box-shadow:none!important}
 .ndobp button[aria-pressed=true] .ndpd{color:var(--muted)!important}
+/* v31z279 κουμπιά παραθύρου επιβεβαίωσης: μακριά κείμενα σε δύο γραμμές χωρίς να βγαίνουν έξω */
+html body .askbtns{flex-wrap:wrap}
+html body .askbtns .btn{flex:1 1 130px;height:auto!important;min-height:48px;padding:10px 14px;line-height:1.25;white-space:normal;text-align:center}
