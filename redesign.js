@@ -521,7 +521,7 @@ box.insertBefore(tools,bar.nextSibling);
     ov=document.createElement('div'); ov.className='ndob'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-label',T('Καλωσόρισμα','Welcome'));
     ov.innerHTML='<div class="ndobc"><div class="ndobic"></div><h2 class="ndobt"></h2><p class="ndobb"></p><div class="ndobp seg" role="group" hidden></div><div class="ndobd" aria-hidden="true"></div><button type="button" class="btn acc ndobn"></button><button type="button" class="btn ghost ndobs"></button><button type="button" class="ndobk"></button></div>';
     ov.querySelector('.ndobs').textContent=T('Ορισμός επαφής ασφαλείας','Set a safety contact'); ov.querySelector('.ndobk').textContent=T('Παράλειψη','Skip');
-    ov.querySelector('.ndobn').addEventListener('click',function(){ if(step<ST.length-1){ step++; draw(); } else close(); });
+    ov.querySelector('.ndobn').addEventListener('click',function(){ if(step<ST.length-1){ step++; draw(); } else{ if(ST.length===1&&window.PsaroFProf) window.PsaroFProf.set(window.PsaroFProf.get()); close(); } });
     var pkb=ov.querySelector('.ndobp'), PN={boat:T('Βάρκα','Boat'),shore:T('Από στεριά','From shore'),lake:T('Λίμνη / φράγμα','Lake / dam'),spear:T('Ψαροντούφεκο','Spearfishing')};
     ['boat','shore','lake','spear'].forEach(function(k){ var b=document.createElement('button'); b.type='button'; b.dataset.p=k; b.textContent=PN[k]; b.addEventListener('click',function(){ if(window.PsaroFProf) window.PsaroFProf.set(k); draw(); }); pkb.appendChild(b); });
     ov.querySelector('.ndobk').addEventListener('click',close);
@@ -533,12 +533,12 @@ box.insertBefore(tools,bar.nextSibling);
   }
   window.PsaroTour=function(){ open(true); };
   /* υπάρχοντες χρήστες που δεν έχουν διαλέξει ακόμα τύπο ψαρέματος: μία φορά */
-  function fpUnset(){ try{ return !localStorage.getItem('psaro-fprof')&&!localStorage.getItem('psaro-fprof-asked'); }catch(x){ return false; } }
+  function fpUnset(){ try{ return !localStorage.getItem('psaro-fprof'); }catch(x){ return false; } }
   var t2=0, iv2=setInterval(function(){ t2++; if(t2>50){ clearInterval(iv2); return; }
     if(document.documentElement.classList.contains('gated')||ov) return; if(!document.querySelector('.ndcard,.ndsearch')||!window.PsaroFProf) return;
     clearInterval(iv2); if(!fpUnset()) return;
     if(!seen()&&!hasData()) return; /* οι νέοι χρήστες το βλέπουν μέσα στο καλωσόρισμα */
-    setTimeout(function(){ try{ localStorage.setItem('psaro-fprof-asked','1'); }catch(x){} if(!ov) open(true,true); },1600); },700);
+    setTimeout(function(){ if(!ov) open(true,true); },1600); },700);
   var tries=0, iv=setInterval(function(){ tries++;
     if(tries>40){ clearInterval(iv); return; }
     if(document.documentElement.classList.contains('gated')) return;
