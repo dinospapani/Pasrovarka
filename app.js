@@ -880,9 +880,53 @@ const SPECIES=[
  {n:'Κυνηγός',l:'Coryphaena hippurus',w:'Ανοιχτή θάλασσα, κοντά σε πλωτά αντικείμενα.',m:'Τρόλινγκ.',t:'Στη Μεσόγειο εμφανίζεται συνήθως από το τέλος του καλοκαιριού ως το φθινόπωρο.'},
  {n:'Λούτσος',l:'Sphyraena sphyraena',w:'Επιφάνεια ως μέσα νερά, κοντά σε ακτή και υφάλους.',m:'Τρόλινγκ, spinning.',t:'Κοφτερά δόντια. Χρησιμοποίησε ατσαλένιο ή fluorocarbon ηγέτη.'},
  {n:'Λαγοκέφαλος',l:'Lagocephalus sceleratus',w:'Εισβλητικό είδος σε όλα τα βάθη κοντά στην ακτή.',m:'Πιάνεται τυχαία σε διάφορες τεχνικές.',t:'Δηλητηριώδης. Περιέχει τετροδοτοξίνη. Δεν τρώγεται, δεν δίνεται και δεν πωλείται. Κόβει πετονιές και δαγκώνει.',warn:'Τοξικό'},
- {n:'Λεοντόψαρο',l:'Pterois miles',w:'Βράχια και ύφαλοι, σε μικρά και μεσαία βάθη.',m:'Πιάνεται τυχαία στον πυθμένα.',t:'Εισβλητικό. Τα αγκάθια είναι δηλητηριώδη. Χειρίσου με γάντια και τσιμπίδα.',warn:'Αγκάθια'}
+ {n:'Λεοντόψαρο',l:'Pterois miles',w:'Βράχια και ύφαλοι, σε μικρά και μεσαία βάθη.',m:'Πιάνεται τυχαία στον πυθμένα.',t:'Εισβλητικό. Τα αγκάθια είναι δηλητηριώδη. Χειρίσου με γάντια και τσιμπίδα.',warn:'Αγκάθια'},
+ {n:"Χταπόδι",l:"Octopus vulgaris",e:"Common octopus",w:"Βραχώδεις και αμμώδεις πυθμένες, από τα ρηχά μέχρι περίπου 100 m. Κρύβεται σε τρύπες και κενά.",m:"Χταποδιέρα (octopus jig), κάθετη ρίψη με δόλωμα καβούρι, κιούπια. Συλλέγεται και με ψαροντούφεκο.",t:"Δυνατό και έξυπνο· αρπάζει και τραβά μέσα στη φωλιά. Μετά το πιάσιμο χρειάζεται χτύπημα και καθάρισμα πριν το μαγείρεμα.",mol:1},
+ {n:"Καλαμάρι",l:"Loligo vulgaris",e:"European squid",w:"Ανοιχτά νερά και κοντά σε λιμάνια, συχνά γύρω από φώτα τη νύχτα. Βάθη από λίγα μέτρα μέχρι περίπου 100 m.",m:"Καλαμαριέρα (squid jig), ελαφριά ρίψη το σούρουπο και τη νύχτα, συχνά με φως.",t:"Εκτοξεύει μελάνι· πρόσεχε τα ρούχα και το κατάστρωμα. Καλύτερα τους ψυχρότερους μήνες.",mol:1},
+ {n:"Σουπιά",l:"Sepia officinalis",e:"Common cuttlefish",w:"Αμμώδεις και λασπώδεις πυθμένες και λιβάδια ποσειδωνίας, ρηχά κοντά στην ακτή την άνοιξη.",m:"Καλαμαριέρα ή εγκι (egi) κοντά στον πυθμένα, κάθετα ή με ρίψη, τη νύχτα και την αυγή.",t:"Εκτοξεύει μελάνι. Την άνοιξη μπαίνει ρηχά για αναπαραγωγή· ελέγξτε τα ισχύοντα μέτρα και ελάχιστα μεγέθη.",mol:1},
+ {n:"Μοσχιός",l:"Eledone moschata",e:"Musky octopus",w:"Αμμώδεις και λασπώδεις πυθμένες, συνήθως βαθύτερα από το χταπόδι.",m:"Συνήθως τυχαίο αλίευμα με βυθού ή από δίχτυα· δεν στοχεύεται συχνά με καλάμι.",t:"Μικρότερο από το χταπόδι, με έντονη μυρωδιά μόσχου. Έχει μία σειρά βεντούζες σε κάθε πλοκάμι.",mol:1},
+ {n:"Μύδι",l:"Mytilus galloprovincialis",e:"Mediterranean mussel",w:"Βράχια, λιμάνια, πασσάλους και σχοινιά σε προστατευμένα νερά, κοντά στην επιφάνεια.",m:"Δεν ψαρεύεται με καλάμι. Συλλέγεται με το χέρι. Χρησιμοποιείται και ως δόλωμα.",t:"Μη τα συλλέγεις από λιμάνια ή βρώμικα νερά. Ρωτά για τοπικούς περιορισμούς υγιεινής και αλιείας.",mol:1},
+ {n:"Πεταλίδα",l:"Patella caerulea",e:"Limpet",w:"Βράχια στη ζώνη των κυμάτων, κολλημένη στην πέτρα.",m:"Συλλέγεται με το χέρι ή με μαχαίρι από βράχια· χρησιμοποιείται και ως δόλωμα.",t:"Κρατά πολύ σφιχτά· γρήγορη κίνηση του μαχαιριού. Ελέγξτε τοπικούς κανονισμούς πριν τη συλλογή για κατανάλωση.",mol:1},
+ {n:"Πίνα",l:"Pinna nobilis",e:"Noble pen shell",w:"Λιβάδια ποσειδωνίας και αμμώδεις πυθμένες, σε ρηχά βάθη.",m:"Δεν επιτρέπεται η συλλογή.",t:"Κρισίμως απειλούμενο και αυστηρά προστατευόμενο είδος. Μην το αγγίζεις ούτε να το μαζεύεις. Αν δεις ζωντανή πίνα, άφησέ την.",warn:"Προστατευόμενο",mol:1},
+ {n:"Θαλάσσιος χουρμάς",l:"Lithophaga lithophaga",e:"Date mussel",w:"Ανοίγει τρύπες μέσα σε ασβεστολιθικούς βράχους κοντά στην επιφάνεια.",m:"Δεν επιτρέπεται η συλλογή.",t:"Η συλλογή του καταστρέφει τον βράχο και είναι απαγορευμένη. Μην το αγοράζεις και μην το συλλέγεις.",warn:"Απαγορευμένο",mol:1},
+ {n:"Σουπιοκαλάμαρο",l:"Sepioteuthis lessoniana",e:"Bigfin reef squid",w:"Εισβλητικό είδος της Ανατολικής Μεσογείου, κοντά στην ακτή, πάνω από λιβάδια ποσειδωνίας και ρηχούς υφάλους.",m:"Καλαμαριέρα ή egi, ρίψη κοντά στην ακτή την αυγή, το σούρουπο και τη νύχτα.",t:"Μοιάζει με καλαμάρι αλλά με πλατύ πτερύγιο που τρέχει σχεδόν σε όλο το μήκος του σώματος. Εκτοξεύει μελάνι.",mol:1},
+ {n:"Θράψαλο",l:"Todarodes sagittatus",e:"European flying squid",w:"Βαθύτερα νερά, συνήθως πάνω από 100 m, πάνω από ανοιχτούς πυθμένες.",m:"Σπάνια στοχεύεται από σκάφος με βαθιά καλαμαριέρα ή με πολύ βαθύ βυθού.",t:"Μεγαλύτερο από το καλαμάρι, με ρομβοειδές πτερύγιο στην ουρά.",mol:1},
+ {n:"Στρείδι",l:"Ostrea edulis",e:"European flat oyster",w:"Ρηχά, προστατευμένα νερά με σκληρό πυθμένα και βράχια.",m:"Δεν ψαρεύεται με καλάμι. Συλλέγεται με το χέρι ή ψαροντούφεκο.",t:"Ελέγξε τοπικούς κανονισμούς και υγιεινή πριν από κάθε κατανάλωση. Μη συλλέγεις από ρυπασμένα νερά.",mol:1},
+ {n:"Αχιβάδα",l:"Venus verrucosa",e:"Warty venus",w:"Αμμώδεις και αμμοβραχώδεις πυθμένες, σε ρηχά μέχρι μέτρια βάθη.",m:"Δεν ψαρεύεται με καλάμι. Συλλέγεται με το χέρι ή με εργαλείο στον πυθμένα.",t:"Ελέγξε τοπικούς κανονισμούς και υγιεινή πριν από κάθε κατανάλωση.",mol:1},
+ {n:"Χτένι",l:"Pecten jacobaeus",e:"Great Mediterranean scallop",w:"Αμμώδεις και αμμοβραχώδεις πυθμένες, συνήθως 10–100 m.",m:"Δεν ψαρεύεται με καλάμι. Συλλέγεται με κατάδυση ή εργαλεία πυθμένα.",t:"Ελέγξε τοπικούς κανονισμούς και υγιεινή. Μη συλλέγεις από ρυπασμένα νερά.",mol:1},
+ {n:"Μούρεξ",l:"Hexaplex trunculus",e:"Banded dye-murex",w:"Αμμώδεις, λασπώδεις και βραχώδεις πυθμένες, ρηχά ως μέτρια βάθη.",m:"Τυχαίο αλίευμα με κιούπια ή βυθού. Συλλέγεται και με το χέρι.",t:"Ελέγξε τοπικούς κανονισμούς και υγιεινή πριν από κάθε κατανάλωση.",mol:1},
+ {n:"Τρίτωνας",l:"Charonia seguenzae",e:"Mediterranean triton",w:"Βραχώδεις πυθμένες και λιβάδια ποσειδωνίας.",m:"Δεν επιτρέπεται η συλλογή.",t:"Μεγάλο όστρακο και προστατευόμενο είδος. Μην το συλλέγεις ούτε να το αγοράζεις.",warn:"Προστατευόμενο",mol:1},
+ {n:"Καραβίδα",l:"Palinurus elephas",e:"Common spiny lobster",w:"Βραχώδεις πυθμένες και ύφαλοι, από μέτρια μέχρι μεγάλα βάθη.",m:"Κιούπια και δίχτυα. Δεν στοχεύεται με καλάμι.",t:"Συχνά με ελάχιστο μέγεθος και απαγορευμένη περίοδο. Έλεγξε τα ισχύοντα μέτρα πριν από κάθε αλιεία.",cr:1},
+ {n:"Αστακός",l:"Homarus gammarus",e:"European lobster",w:"Βραχώδεις πυθμένες με σπηλιές, σε μέτρια βάθη. Σπάνιος στη Μεσόγειο.",m:"Κιούπια. Δεν στοχεύεται με καλάμι.",t:"Σπάνιο και προστατευόμενο είδος σε πολλές περιοχές. Έλεγξε τα ισχύοντα μέτρα.",cr:1},
+ {n:"Αρκούδα",l:"Scyllarides latus",e:"Mediterranean slipper lobster",w:"Βραχώδεις πυθμένες και ύφαλοι, ρηχά μέχρι μέτρια βάθη, συχνά τη νύχτα.",m:"Κιούπια ή βουτιά. Δεν στοχεύεται με καλάμι.",t:"Σε πολλές χώρες είναι προστατευόμενο είδος ή έχει απαγόρευση. Έλεγξε τα ισχύοντα μέτρα πριν πιάσεις.",warn:"Προστατευόμενο",cr:1},
+ {n:"Γαρίδα",l:"Melicertus kerathurus",e:"Caramote prawn",w:"Αμμώδεις και λασπώδεις πυθμένες, ρηχά ως μέτρια βάθη.",m:"Συνήθως με δίχτυα και συρόμενα εργαλεία· εφαρμόζεται και ως δόλωμα.",t:"Ελέγξε τοπικούς κανονισμούς πριν από την αλιεία.",cr:1},
+ {n:"Καβούρι πέτρας",l:"Eriphia verrucosa",e:"Warty crab",w:"Βράχια και ρηχά κοντά στην ακτή, κρυμμένο σε τρύπες.",m:"Συλλέγεται με το χέρι ή με κιούπι. Πολύ καλό δόλωμα για χταπόδι.",t:"Έχει δυνατές δαγκάνες· πρόσεχε τα δάχτυλα. Ελέγξε τοπικούς κανονισμούς.",cr:1},
+ {n:"Γαλάζιο καβούρι",l:"Portunus segnis",e:"Blue swimmer crab",w:"Αμμώδεις πυθμένες, λιμάνια και εκβολές, ρηχά.",m:"Κιούπια, μικρά δίχτυα, και τυχαία με βυθού.",t:"Εισβλητικό είδος της Ανατολικής Μεσογείου. Πρόσεχε τις δαγκάνες και μην το ξαναρίξεις στη θάλασσα αν υπάρχει σχετική οδηγία.",cr:1},
+ {n:"Αράχνη (καβούρι)",l:"Maja squinado",e:"Spiny spider crab",w:"Βραχώδεις και αμμώδεις πυθμένες, ρηχά ως μέτρια βάθη, ειδικά κατά την αναπαραγωγή.",m:"Κιούπια ή συλλογή με κατάδυση. Δεν στοχεύεται με καλάμι.",t:"Ελέγξε τοπικούς κανονισμούς, μεγέθη και απαγορευμένες περιόδους.",cr:1}
 ];
 const SPEN={
+"sepioteuthis lessoniana":{w:"Non-native species in the eastern Mediterranean, close to the coast over seagrass and shallow reefs.",m:"Squid jig or egi, cast near the coast at dawn, dusk and at night.",t:"Looks like a squid but with a broad fin running nearly the full length of the body. It squirts ink."},
+"todarodes sagittatus":{w:"Deeper water, usually below 100 m, over open bottoms.",m:"Rarely targeted from a boat with a deep squid jig or very deep bottom fishing.",t:"Larger than the common squid, with a diamond-shaped tail fin."},
+"ostrea edulis":{w:"Shallow sheltered water with hard bottom and rocks.",m:"Not caught with a rod. Collected by hand or spearfishing.",t:"Check local rules and hygiene before eating. Do not collect from polluted water."},
+"venus verrucosa":{w:"Sandy and sandy-rocky bottoms, in shallow to moderate depths.",m:"Not caught with a rod. Collected by hand or with a bottom tool.",t:"Check local rules and hygiene before eating."},
+"pecten jacobaeus":{w:"Sandy and sandy-rocky bottoms, usually 10–100 m.",m:"Not caught with a rod. Collected by diving or bottom tools.",t:"Check local rules and hygiene. Do not collect from polluted water."},
+"hexaplex trunculus":{w:"Sandy, muddy and rocky bottoms, shallow to moderate depths.",m:"Incidental catch in pots or bottom fishing. Also collected by hand.",t:"Check local rules and hygiene before eating."},
+"charonia seguenzae":{w:"Rocky bottoms and seagrass meadows.",m:"Collecting is not allowed.",t:"A large shell and a protected species. Do not collect or buy it.",warn:"Protected"},
+"palinurus elephas":{w:"Rocky bottoms and reefs, from moderate to deeper water.",m:"Pots and nets. Not targeted with a rod.",t:"Often has a minimum size and closed season. Check current rules before fishing."},
+"homarus gammarus":{w:"Rocky bottoms with caves, in moderate depths. Rare in the Mediterranean.",m:"Pots. Not targeted with a rod.",t:"Rare and protected in many areas. Check current rules."},
+"scyllarides latus":{w:"Rocky bottoms and reefs, shallow to moderate depths, often at night.",m:"Pots or diving. Not targeted with a rod.",t:"Protected or banned in many countries. Check current rules before catching.",warn:"Protected"},
+"melicertus kerathurus":{w:"Sandy and muddy bottoms, shallow to moderate depths.",m:"Usually with nets and trawls; also used as bait.",t:"Check local rules before fishing."},
+"eriphia verrucosa":{w:"Rocks and shallows close to shore, hiding in holes.",m:"Collected by hand or with a pot. Very good bait for octopus.",t:"Strong claws: mind your fingers. Check local rules."},
+"portunus segnis":{w:"Sandy bottoms, harbours and estuaries, shallow.",m:"Pots, small nets, and incidentally on bottom fishing.",t:"Non-native in the eastern Mediterranean. Mind the claws and follow local advice on release."},
+"maja squinado":{w:"Rocky and sandy bottoms, shallow to moderate depths, especially when breeding.",m:"Pots or collecting by diving. Not targeted with a rod.",t:"Check local rules, sizes and closed seasons."},
+"octopus vulgaris":{w:"Rocky and sandy bottoms, from shallows to about 100 m. Hides in holes and crevices.",m:"Octopus jig, vertical drop with crab bait, pots. Also taken by spearfishing.",t:"Strong and clever: it grabs and pulls into its den. Needs tenderising and cleaning before cooking."},
+"loligo vulgaris":{w:"Open water and near harbours, often around lights at night. From a few metres to about 100 m.",m:"Squid jig, light casting at dusk and at night, often with a light.",t:"It squirts ink: mind your clothes and the deck. Best in the cooler months."},
+"sepia officinalis":{w:"Sandy and muddy bottoms and seagrass meadows; shallow near the coast in spring.",m:"Squid jig or egi near the bottom, vertical or cast, at night and dawn.",t:"It squirts ink. It comes in shallow to breed in spring; check current rules and minimum sizes."},
+"eledone moschata":{w:"Sandy and muddy bottoms, usually deeper than the common octopus.",m:"Usually an incidental catch on bottom fishing or in nets; rarely targeted with a rod.",t:"Smaller than the common octopus, with a musky smell. One row of suckers on each arm."},
+"mytilus galloprovincialis":{w:"Rocks, harbours, piles and ropes in sheltered water, near the surface.",m:"Not caught with a rod. Collected by hand. Also used as bait.",t:"Do not collect from harbours or polluted water. Check local hygiene and fishing restrictions."},
+"patella caerulea":{w:"Rocks in the wave zone, stuck to the stone.",m:"Collected by hand or with a knife from rocks; also used as bait.",t:"Holds very tight; use a quick knife motion. Check local rules before collecting for eating."},
+"pinna nobilis":{w:"Seagrass meadows and sandy bottoms in shallow water.",m:"Collecting is not allowed.",t:"Critically endangered and strictly protected. Do not touch or collect it. If you see a living one, leave it alone.",warn:"Protected"},
+"lithophaga lithophaga":{w:"Bores into limestone rock close to the surface.",m:"Collecting is not allowed.",t:"Collecting destroys the rock and is prohibited. Do not buy or collect it.",warn:"Prohibited"},
 'dicentrarchus labrax':{w:'Close to shore, on rocks, in harbours and estuaries.',m:'Spinning with lures, live bait.',t:'Often at dawn and dusk.'},
 'sparus aurata':{w:'Sandy and muddy bottoms, roughly 5–30 m.',m:'Bottom fishing with shellfish.',t:'Slowly falling pressure helps.'},
 'diplodus sargus':{w:'Rocky shores and shallows.',m:'Bottom fishing with a light sinker and suitable bait.',t:'Works well with a little swell stirring up the bottom.'},
@@ -905,6 +949,8 @@ for(const c of CY){
   if(row){ if(!row.el) row.el=c.n; if(!row.en) row.en=c.e; row.alt=(row.alt||'')+' '+c.n; }
   else DB.push({el:c.n,en:c.e,la:c.l,k:''});
 }
+const MOLL=SPECIES.filter(x=>x.mol), CRUS=SPECIES.filter(x=>x.cr);
+for(const x of MOLL.concat(CRUS)){ if(!DB.some(r=>r.la.toLowerCase()===x.l.toLowerCase())) DB.push({el:x.n,en:x.e||'',la:x.l,k:''}); }
 DB.forEach(x=>{x.k=strip((x.el||'')+' '+(x.en||'')+' '+x.la+' '+(x.alt||''));});
 const DETAIL={}; SPECIES.forEach(x=>DETAIL[x.l.toLowerCase()]=x);
 function searchDB(q,max){
@@ -928,6 +974,22 @@ async function gbifSearch(q){
 }
 let imgP=null;
 function loadFishImgs(){ if(window.FISH_IMG) return Promise.resolve(); if(!imgP) imgP=new Promise(r=>{const s=document.createElement('script');s.src='fish-photos.js';s.onload=()=>r();s.onerror=()=>{imgP=null;r();};document.head.append(s);}); return imgP; }
+
+/* Φωτογραφίες ειδών που δεν είναι στο βιβλίο του Τμήματος Αλιείας: από Wikipedia/Wikimedia Commons, φορτώνονται online όταν ανοίγεις το είδος και αποθηκεύονται στο κινητό */
+const WP_KEY='psaro-wikipic';
+function wikiPic(la){
+  const k=(la||'').trim(); if(!k) return Promise.resolve(null);
+  let c={}; try{ c=JSON.parse(localStorage.getItem(WP_KEY)||'{}'); }catch(e){}
+  if(c[k]!==undefined) return Promise.resolve(c[k]||null);
+  if(!navigator.onLine) return Promise.resolve(null);
+  return fetch('https://en.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(k.replace(/\s+/g,'_')),{headers:{'Accept':'application/json'}})
+    .then(r=>r.ok?r.json():null).then(j=>{
+      const src=j&&j.thumbnail&&j.thumbnail.source, page=j&&j.content_urls&&j.content_urls.desktop&&j.content_urls.desktop.page;
+      const v=src&&j.type!=='disambiguation'?{src:src,page:page||''}:0;
+      try{ c[k]=v; localStorage.setItem(WP_KEY,JSON.stringify(c)); }catch(e){}
+      return v||null;
+    }).catch(()=>null);
+}
 function spItem(sp){
   const d0=DETAIL[(sp.la||'').toLowerCase()], d=d0&&window.LANG==='en'&&SPEN[d0.l.toLowerCase()]?Object.assign({},d0,SPEN[d0.l.toLowerCase()]):d0, cy=CYL[(sp.la||'').toLowerCase()];
   const slug=(sp.la||'').trim().replace(/\s+/g,'-');
@@ -937,9 +999,10 @@ function spItem(sp){
   if(!d&&!cy) body.append(fb);
   const ci=cy?CY.indexOf(cy):-1; const pic=h('img',{class:'spimg',alt:cy?cy.n:'',hidden:true});
   const det=h('details',{class:'sp'},
-    h('summary',{},h('span',{},h('b',{text:cy?((window.LANG==='en'&&cy.e)?cy.e:cy.n):(d?d.n:(window.LANG==='en'?(sp.en||dispName(sp)):dispName(sp)))}),d&&d.warn?h('span',{class:'tag',text:d.warn}):null,(sp.el&&sp.en&&!d&&!cy&&window.LANG!=='en')?h('span',{class:'muted',text:' · '+sp.en}):null),h('span',{class:'lat',text:sp.la})),
+    h('summary',{},h('span',{},h('b',{text:cy?((window.LANG==='en'&&cy.e)?cy.e:cy.n):(d?((window.LANG==='en'&&(d.mol||d.cr)&&sp.en)?sp.en:d.n):(window.LANG==='en'?(sp.en||dispName(sp)):dispName(sp)))}),d&&d.warn?h('span',{class:'tag',text:d.warn}):null,(sp.el&&sp.en&&!d&&!cy&&window.LANG!=='en')?h('span',{class:'muted',text:' · '+sp.en}):null),h('span',{class:'lat',text:sp.la})),
     h('div',{class:'body'},cy?h('p',{text:(window.LANG==='en'&&window.CY100EN&&window.CY100EN[cy.l])||cy.t}):null,cy?h('p',{class:'note',text:'Πηγή: «Τα 100 σημαντικότερα είδη ψαριών των κυπριακών θαλασσών», Τμήμα Αλιείας και Θαλασσίων Ερευνών, Κύπρος.'}):null,(d&&cy)?h('h3',{text:'Πρακτικά για το ψάρεμα',style:'margin-top:10px'}):null,d?body:(cy?null:body)));
   det.querySelector('.body').prepend(pic);
+  if(ci<0&&sp.la) det.addEventListener('toggle',()=>{ if(!det.open||pic.src||pic._w) return; pic._w=1; wikiPic(sp.la).then(r=>{ if(r&&r.src){ pic.src=r.src; pic.hidden=false; if(r.page&&!det.querySelector('.spcr')){ const c=h('p',{class:'note spcr'}); const en=window.LANG==='en'; c.append(en?'Photo: ':'Φωτογραφία: ',h('a',{href:r.page,target:'_blank',rel:'noopener',text:'Wikipedia / Wikimedia Commons'}),en?' (author and licence on the page).':' (δημιουργός και άδεια στη σελίδα).'); pic.after(c); } } }); });
   if(ci>=0) det.addEventListener('toggle',()=>{ if(!det.open||pic.src) return; loadFishImgs().then(()=>{const u=(window.FISH_IMG||[])[ci]; if(u){pic.src=u;pic.hidden=false;}}); });
   return det;
 }
@@ -949,7 +1012,7 @@ let spReg='cy';
 function spRegBar(){
   const en=window.LANG==='en'; let bar=$('spRegs'); if(!bar){ bar=h('div',{class:'spregs',id:'spRegs',role:'group','aria-label':en?'Region':'Περιοχή'}); $('spQ').after(bar); }
   bar.replaceChildren();
-  [['cy',en?'Cyprus (Dept. of Fisheries)':'Κύπρος (Τμήμα Αλιείας)'],['*',en?'All':'Όλα']].concat((window.SPECIES_REGIONS||[]).map(r=>[r[0],en?r[2]:r[1]])).forEach(([k,t])=>{
+  [['cy',en?'Cyprus (Dept. of Fisheries)':'Κύπρος (Τμήμα Αλιείας)'],['mol',en?'Molluscs':'Μαλάκια'],['cr',en?'Crustaceans':'Καρκινοειδή'],['*',en?'All':'Όλα']].concat((window.SPECIES_REGIONS||[]).map(r=>[r[0],en?r[2]:r[1]])).forEach(([k,t])=>{
     bar.append(h('button',{type:'button',class:'chip','aria-pressed':String(spReg===k),text:t,onclick:()=>{ spReg=k; renderSpecies(); }}));
   });
   try{ const on=bar.querySelector('[aria-pressed=true]'); if(on) bar.scrollLeft=Math.max(0,on.offsetLeft-12); }catch(e){}
@@ -960,7 +1023,11 @@ function renderSpecies(extra){
   const q=$('spQ').value.trim(); const L=$('spList'); L.replaceChildren();
   $('spCount').textContent=(q?'':'Τα 100 είδη των κυπριακών θαλασσών (Τμήμα Αλιείας). ')+'Στη βάση: '+DB.length+' είδη, ενδεικτική λίστα.';
   let list;
-  if(!q&&spReg!=='cy'){
+  if(!q&&(spReg==='mol'||spReg==='cr')){
+    const en=window.LANG==='en'; list=(spReg==='mol'?MOLL:CRUS).map(x=>({el:x.n,en:x.e||'',la:x.l}));
+    $('spCount').textContent=(spReg==='mol'?(en?'Molluscs · ':'Μαλάκια · '):(en?'Crustaceans · ':'Καρκινοειδή · '))+list.length+(en?' species. General guidance only: check local rules, sizes and closed seasons.':' είδη. Γενική καθοδήγηση: έλεγξε τοπικούς κανονισμούς, μεγέθη και απαγορευμένες περιόδους.');
+  }
+  else if(!q&&spReg!=='cy'){
     const rg=window.SPECIES_REG||{}, en=window.LANG==='en';
     list=DB.filter(sp=>spReg==='*'||(rg[(sp.la||'').toLowerCase()]||'m').indexOf(spReg)>=0).sort((a,b)=>strip(shownName(a)).localeCompare(strip(shownName(b)),en?'en':'el')).map(sp=>({el:sp.el,en:sp.en||'',la:sp.la}));
     const rn=spReg==='*'?(en?'All species':'Όλα τα είδη'):(((window.SPECIES_REGIONS||[]).find(r=>r[0]===spReg)||[])[en?2:1]||'');
@@ -968,7 +1035,7 @@ function renderSpecies(extra){
   }
   else if(!q){
     list=CY.slice().sort((x,y)=>x.n.localeCompare(y.n,'el')).map(c=>({el:c.n,en:c.e,la:c.l}));
-    SPECIES.forEach(x=>{ if(!CYL[x.l.toLowerCase()]) list.push({el:x.n,en:'',la:x.l}); });
+    SPECIES.forEach(x=>{ if(!CYL[x.l.toLowerCase()])list.push({el:x.n,en:x.e||'',la:x.l}); });
   }
   else list=searchDB(q,60).concat(Array.isArray(extra)?extra.filter(e=>!DB.some(d=>d.la.toLowerCase()===e.la.toLowerCase())):[]);
   for(const sp of list) L.append(spItem(sp));

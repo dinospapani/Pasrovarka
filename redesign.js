@@ -402,8 +402,8 @@ box.insertBefore(tools,bar.nextSibling);
       var ab=document.getElementById('ndAbout');
       if(!ab){ ab=document.createElement('div'); ab.id='ndAbout'; ab.className='card setcard ndabout'; }
       ab.innerHTML=E
-        ? '<h3>Privacy</h3><ul class="ndul"><li>Your catches, trips, spots, tackle and photos are stored on this phone.</li><li>If you sign in, they are also synced to your BiteCast account so you can restore them on another phone.</li><li>Your location is used on the phone and sent to weather and map services (Open-Meteo, OpenStreetMap, Esri) only to load forecasts, places and map tiles.</li><li>When trip safety monitoring is on, the route, last known position, battery level and your contact’s email are sent to the BiteCast server so an alert can be sent if you do not return.</li><li>If you use AI fish identification, the photo is sent to Anthropic with your own key.</li></ul><h3>Safety</h3><p class="note">BiteCast is a planning and logging aid. Forecasts are indicative and not an official forecast. It does not replace a VHF radio, lifejackets, flares or official weather warnings. Mobile coverage at sea is limited, so alerts can be delayed or fail.</p>'
-        : '<h3>Απόρρητο</h3><ul class="ndul"><li>Τα ψάρια, οι έξοδοι, τα σημεία, ο εξοπλισμός και οι φωτογραφίες σου αποθηκεύονται στο κινητό.</li><li>Αν συνδεθείς, συγχρονίζονται και με τον λογαριασμό σου στο BiteCast, ώστε να τα επαναφέρεις σε άλλο κινητό.</li><li>Η τοποθεσία σου χρησιμοποιείται στο κινητό και στέλνεται σε υπηρεσίες καιρού και χαρτών (Open-Meteo, OpenStreetMap, Esri) μόνο για να φορτωθούν πρόγνωση, μέρη και χάρτης.</li><li>Όταν είναι ενεργή η παρακολούθηση ασφάλειας της εξόδου, στέλνονται στον διακομιστή του BiteCast η διαδρομή, η τελευταία γνωστή θέση, η μπαταρία και το email της επαφής σου, ώστε να σταλεί ειδοποίηση αν δεν γυρίσεις.</li><li>Αν χρησιμοποιήσεις αναγνώριση ψαριού με AI, η φωτογραφία στέλνεται στην Anthropic με το δικό σου κλειδί.</li></ul><h3>Ασφάλεια</h3><p class="note">Το BiteCast είναι βοήθημα προγραμματισμού και καταγραφής. Οι προγνώσεις είναι ενδεικτικές και όχι επίσημη πρόγνωση. Δεν αντικαθιστά VHF, σωσίβια, φωτοβολίδες ή επίσημες προειδοποιήσεις καιρού. Η κάλυψη κινητού στη θάλασσα είναι περιορισμένη, οπότε οι ειδοποιήσεις μπορεί να καθυστερήσουν ή να αποτύχουν.</p>';
+        ? '<h3>Privacy</h3><ul class="ndul"><li>Your catches, trips, spots, tackle and photos are stored on this phone.</li><li>If you sign in, they are also synced to your BiteCast account so you can restore them on another phone.</li><li>Your location is used on the phone and sent to weather and map services (Open-Meteo, OpenStreetMap, Esri) only to load forecasts, places and map tiles. Species photos are loaded from Wikipedia and only the species name is sent.</li><li>When trip safety monitoring is on, the route, last known position, battery level and your contact’s email are sent to the BiteCast server so an alert can be sent if you do not return.</li><li>If you use AI fish identification, the photo is sent to Anthropic with your own key.</li></ul><h3>Safety</h3><p class="note">BiteCast is a planning and logging aid. Forecasts are indicative and not an official forecast. It does not replace a VHF radio, lifejackets, flares or official weather warnings. Mobile coverage at sea is limited, so alerts can be delayed or fail.</p>'
+        : '<h3>Απόρρητο</h3><ul class="ndul"><li>Τα ψάρια, οι έξοδοι, τα σημεία, ο εξοπλισμός και οι φωτογραφίες σου αποθηκεύονται στο κινητό.</li><li>Αν συνδεθείς, συγχρονίζονται και με τον λογαριασμό σου στο BiteCast, ώστε να τα επαναφέρεις σε άλλο κινητό.</li><li>Η τοποθεσία σου χρησιμοποιείται στο κινητό και στέλνεται σε υπηρεσίες καιρού και χαρτών (Open-Meteo, OpenStreetMap, Esri) μόνο για να φορτωθούν πρόγνωση, μέρη και χάρτης. Οι φωτογραφίες ειδών φορτώνονται από τη Wikipedia και στέλνεται μόνο το όνομα του είδους.</li><li>Όταν είναι ενεργή η παρακολούθηση ασφάλειας της εξόδου, στέλνονται στον διακομιστή του BiteCast η διαδρομή, η τελευταία γνωστή θέση, η μπαταρία και το email της επαφής σου, ώστε να σταλεί ειδοποίηση αν δεν γυρίσεις.</li><li>Αν χρησιμοποιήσεις αναγνώριση ψαριού με AI, η φωτογραφία στέλνεται στην Anthropic με το δικό σου κλειδί.</li></ul><h3>Ασφάλεια</h3><p class="note">Το BiteCast είναι βοήθημα προγραμματισμού και καταγραφής. Οι προγνώσεις είναι ενδεικτικές και όχι επίσημη πρόγνωση. Δεν αντικαθιστά VHF, σωσίβια, φωτοβολίδες ή επίσημες προειδοποιήσεις καιρού. Η κάλυψη κινητού στη θάλασσα είναι περιορισμένη, οπότε οι ειδοποιήσεις μπορεί να καθυστερήσουν ή να αποτύχουν.</p>';
       g.about.push(ab);
       g.adv.unshift(tr);
       var H={acc:E?'Account & sync':'Λογαριασμός και συγχρονισμός',pref:E?'Preferences':'Προτιμήσεις',safe:E?'Safety':'Ασφάλεια',data:E?'Data':'Δεδομένα',adv:E?'Advanced':'Για προχωρημένους',about:E?'About':'Σχετικά'};
@@ -907,7 +907,8 @@ box.insertBefore(tools,bar.nextSibling);
   function show(){
     if(el) return;
     el=document.createElement('div'); el.className='ndstart'; el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true'); el.setAttribute('aria-label',T('Τύπος ψαρέματος','Fishing type'));
-    el.innerHTML='<div class="ndstc"><h1></h1><p></p><div class="ndstg"></div><button type="button" class="btn acc ndstgo"></button></div>';
+    el.innerHTML='<div class="ndstc"><img class="ndstl" src="icon-192.png" alt="" width="56" height="56"><h1></h1><p></p><div class="ndstg"></div><div class="ndstf"><small></small><button type="button" class="btn acc ndstgo"></button></div></div>';
+    el.querySelector('.ndstf small').textContent=T('Αλλαγή αργότερα: Προφίλ › Ρυθμίσεις › Τύπος ψαρέματος','Change later: Profile › Settings › Fishing type');
     el.querySelector('h1').textContent=T('Πού ψαρεύεις σήμερα;','Where are you fishing today?');
     el.querySelector('p').textContent=T('Η εφαρμογή προσαρμόζει τις τεχνικές και τα κουμπιά ασφαλείας.','The app adapts the techniques and safety buttons.');
     var g=el.querySelector('.ndstg'), c=cur();
@@ -925,19 +926,20 @@ box.insertBefore(tools,bar.nextSibling);
   }
   window.PsaroStartPick=show;
   function newUser(){ try{ var S=window.PsaroCore&&window.PsaroCore.Store; var has=S&&S.raw&&['bites','trips','spots','tackle'].some(function(k){ return (S.raw(k)||[]).length>0; }); return !ls('psaro-onboard')&&!has; }catch(e){ return false; } }
-  var shown=false, n=0;
+  var shown=false, n=0, root=document.documentElement;
+  function uncover(){ root.classList.remove('ndpend'); }
+  setTimeout(uncover,6000);
   function tick(){
     n++; if(shown) return;
-    if(document.documentElement.classList.contains('gated')){ if(n<2000) return; }
-    if(!document.body||!document.querySelector('.ndcard,.ndsearch,#map')) return;
-    if(n<3) return;
+    if(!document.body) return;
+    if(root.classList.contains('gated')){ uncover(); return; }
+    if(!document.querySelector('.ndsearch,.ndcard')&&n<30) return;
     shown=true; clearInterval(iv);
-    if(ls('psaro-askfp')==='0'&&ls('psaro-fprof-done')) return;
-    if(document.body.classList.contains('ontrip')) return;
-    if(newUser()) return;
-    show();
+    if(ls('psaro-askfp')==='0'&&ls('psaro-fprof-done')){ uncover(); return; }
+    if(document.body.classList.contains('ontrip')||newUser()){ uncover(); return; }
+    show(); uncover();
   }
-  var iv=setInterval(tick,500);
-  try{ new MutationObserver(function(){ if(!shown&&!document.documentElement.classList.contains('gated')) n=Math.max(n,3); }).observe(document.documentElement,{attributes:true,attributeFilter:['class']}); }catch(e){}
+  var iv=setInterval(tick,100); tick();
+  try{ new MutationObserver(function(){ if(!shown&&!root.classList.contains('gated')) tick(); }).observe(root,{attributes:true,attributeFilter:['class']}); }catch(e){}
   document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
 })();

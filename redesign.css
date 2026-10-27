@@ -878,3 +878,31 @@ html body .askbtns .btn{flex:1 1 130px;height:auto!important;min-height:48px;pad
 .ndstgo{margin-top:auto;min-height:56px;font-size:17px;border-radius:28px}
 @media (max-height:700px){.ndstg .ndpic,.ndstg .ndpic svg{width:72px!important;height:72px!important}.ndstg .ndpd{display:none}}
 #ndFProf .ndaskb{margin:2px 0 4px}
+
+/* v31z284 γυάλισμα οθόνης επιλογής */
+.ndstc{gap:14px;padding-top:max(20px,env(safe-area-inset-top))}
+.ndstl{display:block;margin:6px auto 0;border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,.28)}
+.ndstc h1{margin:4px 0 0;font-size:26px;letter-spacing:.005em}
+.ndstc p{max-width:30ch;margin:0 auto 6px}
+.ndstg{gap:12px;margin:2px 0 0}
+.ndstg button{padding:16px 8px 14px;border-radius:24px;box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 6px 18px rgba(0,0,0,.14);transition:transform .12s ease,border-color .15s ease,background .15s ease}
+.ndstg button:active{transform:scale(.97)}
+.ndstg button:focus-visible{outline:3px solid var(--sea);outline-offset:3px}
+.ndstg .ndpic{width:96px;height:96px}
+.ndstg .ndpic svg{width:96px!important;height:96px!important}
+.ndstg .ndpd{display:block!important;min-height:2.6em}
+.ndstf{margin-top:auto;display:flex;flex-direction:column;gap:10px;align-items:stretch;padding-top:8px}
+.ndstf small{text-align:center;font-size:12.5px;color:var(--muted)}
+@media (max-height:620px){.ndstg .ndpic,.ndstg .ndpic svg{width:64px!important;height:64px!important}.ndstg .ndpd{display:none!important}.ndstl{display:none}}
+@media (prefers-reduced-motion:reduce){.ndstg button{transition:none}.ndstart{animation:none}}
+.ndstg{flex:none}
+.ndstg button{flex:none;min-height:0;overflow:visible}
+.ndstc>*{flex-shrink:0}
+@media (max-height:760px){.ndstg .ndpic,.ndstg .ndpic svg{width:80px!important;height:80px!important}}
+
+/* v31z284 κάλυμμα μέχρι να βγει η οθόνη επιλογής, ώστε να μη φαίνεται πρώτα ο χάρτης */
+html.ndpend body::before{content:"";position:fixed;inset:0;z-index:4400;background:#0b1620}
+@media (prefers-color-scheme:light){html.ndpend:not([data-theme=dark]) body::before{background:#eef3f5}}
+html[data-theme=light].ndpend body::before{background:#eef3f5}
+.ndstf{position:sticky;bottom:0;padding-bottom:max(12px,env(safe-area-inset-bottom));background:linear-gradient(to top,var(--bg) 75%,transparent)}
+.ndstart{z-index:4500}
