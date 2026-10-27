@@ -215,7 +215,7 @@ function weekly(){
   S.weekly=now; save(); if(!b.length&&!t.length) return;
   var kg=b.reduce(function(a,x){ return a+(+x.kg||0); },0), sp={}; b.forEach(function(x){ if(x.species) sp[x.species]=(sp[x.species]||0)+1; });
   var top=Object.keys(sp).sort(function(a,c){ return sp[c]-sp[a]; })[0];
-  window.PsaroAsk(t.length+T(' έξοδοι · ',' trips · ')+b.length+T(' ψάρια · ',' fish · ')+(Math.round(kg*10)/10)+' kg'+(top?'\n'+T('Συχνότερο: ','Most frequent: ')+top:''),{title:T('Η εβδομάδα σου','Your week'),ok:T('Εντάξει','OK'),cancel:false});
+  window.PsaroAsk(t.length+T(t.length===1?' έξοδος · ':' έξοδοι · ',t.length===1?' trip · ':' trips · ')+b.length+T(' ψάρια · ',' fish · ')+(Math.round(kg*10)/10)+' kg'+(top?'\n'+T('Συχνότερο: ','Most frequent: ')+top:''),{title:T('Η εβδομάδα σου','Your week'),ok:T('Εντάξει','OK'),cancel:false});
 }
 setTimeout(licCheck,5000); setTimeout(weekly,8000);
 

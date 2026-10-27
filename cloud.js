@@ -84,7 +84,7 @@ async function sync(manual){
   }catch(e){
     if(/HTTP 4(01|03)|JWT|refresh_token|Refresh Token|invalid_grant/i.test(String(e.message))){ signedOut(); msg('Η σύνδεση έληξε. Συνδέσου ξανά.',true); }
     else if(/relation .*records|PGRST205|HTTP 404/.test(String(e.message))) status('Λείπει η βάση δεδομένων στο Supabase (πίνακας records).');
-    else status(errText(e));
+    else { var lastOk=ls('psaro-last'); status(errText(e)+(lastOk?' '+(window.LANG==='en'?'Last successful sync: ':'Τελευταίος επιτυχής συγχρονισμός: ')+new Date(lastOk).toLocaleString(window.LANG==='en'?'en-GB':'el-GR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+'.':'')); try{ window.dispatchEvent(new CustomEvent('psaro-syncfail')); }catch(x){} }
   }
   busy=false;
   if(again){ again=false; sched(); }
@@ -101,7 +101,7 @@ document.addEventListener('visibilitychange',function(){ if(!document.hidden) sc
 
 /* ---------- Οθόνη λογαριασμού ---------- */
 function status(m){ var e=$('acStatus'); if(e) e.textContent=m||''; }
-function msg(m,bad){ var e=$('gMsg'); if(e){ e.textContent=m||''; e.style.color=bad?'#ff8a80':''; } }
+function msg(m,bad){ var e=$('gMsg'); if(e){ e.textContent=m||''; e.style.color=''; e.classList.toggle('bad',!!bad); e.setAttribute('role',bad?'alert':'status'); } }
 function gate(on){ document.documentElement.classList.toggle('gated',!!on); if(!on){ try{ window.dispatchEvent(new Event('resize')); }catch(e){} } }
 function render(){
   gate(!sess);

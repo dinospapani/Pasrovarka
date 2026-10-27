@@ -4,7 +4,7 @@
 var C=window.PsaroCore, PP=window.PP; var root=document.getElementById('fcMine'); if(!C||!PP||!root) return;
 var h=C.h, $=C.$, pad=C.pad, EN=window.LANG==='en';
 var T=function(el,en){ return EN?en:el; };
-var last={place:null,fc:null}, seg=C.lsGet('psaro-fcseg','gen');
+var last={place:null,fc:null}, seg='gen';
 var DAYS=EN?['Sun','Mon','Tue','Wed','Thu','Fri','Sat']:['Κυρ','Δευ','Τρί','Τετ','Πέμ','Παρ','Σάβ'];
 var LAB={
   block:function(i){ return pad(i*3)+'–'+pad((i*3+3)%24); },
@@ -98,7 +98,7 @@ function render(){
   root.append(formCard());
 }
 function setSeg(s){
-  seg=s; C.lsSet('psaro-fcseg',s);
+  seg=s;
   var gen=$('fcGen'); if(gen) gen.hidden=s!=='gen'; root.hidden=s!=='mine'; var adv=$('fcAdv'); if(adv) adv.hidden=s!=='adv';
   Array.prototype.forEach.call(document.querySelectorAll('#fcSeg button'),function(b){ b.setAttribute('aria-pressed',String(b.dataset.s===s)); });
   if(s==='mine') render();

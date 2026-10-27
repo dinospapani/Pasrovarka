@@ -1496,7 +1496,8 @@ function refreshConditions(){
       const c=await fetchConditions(pos.lat,pos.lon);
       c.at=fmt(nicosiaNowMin()); c.date=nicosiaToday(); cond=c; lsSet('psaro-cond',c); applyConditions(c); return c;
     }catch(e){
-      setLive('Ο καιρός δεν φορτώθηκε. Έλεγξε τη σύνδεση και δοκίμασε ξανά.'); return cond;
+      if(cond&&cond.at){ const when=(cond.date?cond.date.split('-').reverse().join('/')+' ':'')+cond.at; setLive(window.LANG==='en'?'No connection. Showing the last data from '+when+'. Do not rely on it at sea.':'Χωρίς σύνδεση. Εμφανίζονται τα τελευταία δεδομένα από '+when+'. Μην βασίζεσαι σε αυτά στη θάλασσα.'); }
+      else setLive('Ο καιρός δεν φορτώθηκε. Έλεγξε τη σύνδεση και δοκίμασε ξανά.'); return cond;
     }finally{ $('liveRefresh').disabled=false; refreshing=null; }
   })();
   return refreshing;
@@ -1700,7 +1701,7 @@ $('expBtn').addEventListener('click',async()=>{
     for(const tk of Store.raw('tackle')) if(tk.photo){ try{ const bl=await Photos.get('tk-'+tk.id); if(bl) photos['tk-'+tk.id]=await blobToDataUrl(bl); }catch(e){} }
     const data={app:'psarovarka',v:2,spots:Store.get('spots'),trips:Store.get('trips'),bites:bites,tackle:Store.raw('tackle'),gear:(window.PsaroGear?window.PsaroGear.state().items:[]),photos:photos};
     const a=h('a',{href:URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'})),download:'psarovarka-'+nicosiaToday()+'.json'});
-    document.body.append(a); a.click(); a.remove();
+    document.body.append(a); a.click(); a.remove(); try{ window.PsaroCore.lsSet('psaro-lastbackup',Date.now()); }catch(e){}
   }catch(e){ $('impMsg').textContent='Η εξαγωγή απέτυχε.'; }
   btn.disabled=false;
 });
@@ -1712,8 +1713,8 @@ $('impFile').addEventListener('change',async e=>{
     if(Array.isArray(d.gear)&&window.PsaroGear) n+=window.PsaroGear.import(d.gear);
     const ph=d.photos&&typeof d.photos==='object'?d.photos:{};
     for(const id in ph){ try{ const bl=await (await fetch(ph[id])).blob(); await Photos.put(id,bl); }catch(err){} }
-    $('impMsg').textContent=n+' εγγραφές εισήχθησαν.';
-  }catch(err){ $('impMsg').textContent='Το αρχείο δεν διαβάστηκε.'; }
+    $('impMsg').textContent=n+' εγγραφές εισήχθησαν.'; try{ toast(window.LANG==='en'?'Restored '+n+' records.':'Επαναφέρθηκαν '+n+' εγγραφές.'); }catch(e2){}
+  }catch(err){ $('impMsg').textContent='Το αρχείο δεν διαβάστηκε.'; try{ toast(window.LANG==='en'?'The file could not be read.':'Το αρχείο δεν διαβάστηκε.'); }catch(e2){} }
   e.target.value='';
 });
 

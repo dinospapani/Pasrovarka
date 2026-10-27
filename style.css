@@ -6,8 +6,8 @@ img{max-width:100%}
 [hidden]{display:none!important}
 /* Layout: nautical chart sheet. Header strip, one scrolling column, fixed bottom tab bar. */
 :root{
-  --bg:#edf2f3; --surface:#f9fbfb; --ink:#0c2b3a; --muted:#587481; --line:#cddbde;
-  --accent:#d8431c; --accent-ink:#ffffff;
+  --bg:#edf2f3; --surface:#f9fbfb; --ink:#0c2b3a; --muted:#4a646e; --line:#cddbde;
+  --accent:#c93a14; --accent-ink:#ffffff;
   --sea:#0b7285; --sea-soft:#9fcdd6; --warn:#a96d00; --bad:#c22d2d; --good:#177a4b;
   --water:#d6e8ec; --land:#efe8d6; --coast:#5c7b87;
   --font-display:'Barlow Condensed','Arial Narrow',sans-serif;

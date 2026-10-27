@@ -249,6 +249,7 @@ function render(showAll){ if(showAll===true) view=null; body.replaceChildren(); 
   if(only){ body.append(btn(T('Όλες οι αναλύσεις (κόστος, συντήρηση, εξαγωγή)','All insights (cost, maintenance, export)'),'',function(){ render(true); })); }
   focus=null; }
 function openPanel(k){ focus=k||null; view=k||null; render(); P.hidden=false; }
+window.PsaroOpenExport=function(){ var sp=$('seaPanel'); if(sp) sp.hidden=true; openPanel('export'); };
 (window.PsaroSeaRows=window.PsaroSeaRows||[]).push(function(){
   var r=el('div','sprow'), x=el('div','sptx'); x.append(el('b','',T('Αναλύσεις και αρχείο','Insights and archive')),el('span','',T('Σελήνη, κόστος ανά κιλό, συντήρηση, εξαγωγή δεδομένων','Moon, cost per kg, maintenance, data export')));
   r.append(x,btn(T('Άνοιγμα','Open'),'acc',function(){ var sp=$('seaPanel'); if(sp) sp.hidden=true; openPanel(); })); return r;
@@ -273,9 +274,12 @@ window.PsaroInsights={dayInfo:dayInfo,phaseAt:phaseAt,open:openPanel,dayTable:da
       var s=window.PsaroTrip&&window.PsaroTrip.state&&window.PsaroTrip.state(); if(s&&s.active) return;
       var nb=bites().length, ns=spots().length; if(!nb&&!ns) return;
       var now=Date.now(), since=+C.lsGet('psaro-backup-since',0)||0; if(!since){ C.lsSet('psaro-backup-since',now); since=now; }
-      var ref=Math.max(+C.lsGet('psaro-lastbackup',0)||0,since); if(now-ref<30*DAY) return;
+      var ref=Math.max(+C.lsGet('psaro-lastbackup',0)||0,since);
+      /* αν ο συγχρονισμός με τον λογαριασμό δουλεύει (τελευταίος πριν λιγότερο από 3 ημέρες) τα δεδομένα είναι ασφαλή: καμία υπενθύμιση. Αλλιώς κάθε 7 ημέρες */
+      var lastSync=+C.lsGet('psaro-last',0)||0; if(lastSync&&now-lastSync<3*DAY) return;
+      if(now-ref<7*DAY) return;
       if(now<(+C.lsGet('psaro-backup-snooze',0)||0)) return;
-      window.PsaroAsk(T('Έχεις '+nb+' ψάρια και '+ns+' σημεία. Πέρασαν πάνω από 30 ημέρες από το τελευταίο αντίγραφο ασφαλείας. Να το κάνω τώρα; Θα αποθηκευτεί ένα αρχείο στο κινητό.','You have '+nb+' catches and '+ns+' spots. It has been over 30 days since your last backup. Back up now? A file will be saved to your phone.'),{title:T('Αντίγραφο ασφαλείας','Backup'),ok:T('Αντίγραφο τώρα','Back up now'),cancel:T('Αργότερα','Later')}).then(function(ok){ if(ok) exportAll(); else C.lsSet('psaro-backup-snooze',Date.now()+7*DAY); });
+      window.PsaroAsk(T('Έχεις '+nb+' ψάρια και '+ns+' σημεία. Δεν έχει γίνει πρόσφατος συγχρονισμός με τον λογαριασμό σου ούτε αντίγραφο ασφαλείας τις τελευταίες 7 ημέρες. Να το κάνω τώρα; Θα αποθηκευτεί ένα αρχείο στο κινητό.','You have '+nb+' catches and '+ns+' spots. Nothing has synced to your account and no backup was made in the last 7 days. Back up now? A file will be saved to your phone.'),{title:T('Αντίγραφο ασφαλείας','Backup'),ok:T('Αντίγραφο τώρα','Back up now'),cancel:T('Αργότερα','Later')}).then(function(ok){ if(ok) exportAll(); else C.lsSet('psaro-backup-snooze',Date.now()+7*DAY); });
     }catch(e){}
   }
   setTimeout(check,9000);
