@@ -235,11 +235,14 @@ function renderToday(){
   const sc=$('score'); sc.replaceChildren(String(c.day),h('small',{text:'/100'}));
   $('scoreText').textContent=c.day>=75?'Πολύ καλές προϋποθέσεις':c.day>=60?'Καλές προϋποθέσεις':c.day>=45?'Μέτριες προϋποθέσεις':'Δύσκολη μέρα για ψάρεμα';
   const rf=$('ringFg'); if(rf){ rf.style.strokeDashoffset=(326.7*(1-c.day/100)).toFixed(1); rf.setAttribute('class','rfg '+(c.day>=65?'good':c.day>=45?'mid':'bad')); }
-  const lvl=(c.wind>20||c.wave>1.5)?'bad':(c.wind>14||c.wave>0.9)?'warn':'good';
+  let fpk='boat'; try{ fpk=localStorage.getItem('psaro-fprof')||'boat'; }catch(e){}
+  const TH={boat:[20,1.5,14,0.9],shore:[30,2,20,1.2],lake:[20,9,14,9],spear:[12,0.6,8,0.4]}[fpk]||[20,1.5,14,0.9];
+  const lvl=(c.wind>TH[0]||c.wave>TH[1])?'bad':(c.wind>TH[2]||c.wave>TH[3])?'warn':'good';
   const pill=$('safePill'); pill.className='pill '+lvl;
   pill.textContent={good:'Ήπια θάλασσα',warn:'Προσοχή',bad:'Δύσκολες συνθήκες'}[lvl];
-  $('safeText').textContent={good:'Συνθήκες κατάλληλες για έξοδο με μικρό σκάφος.',warn:'Αρκετός άνεμος ή κύμα για μικρό σκάφος. Κοίτα την πρόγνωση για ριπές.',bad:'Άνεμος ή κύμα ψηλά για μικρό σκάφος. Ξανασκέψου την έξοδο.'}[lvl];
-  const fx=$('factors'); fx.replaceChildren();
+  const WHO={boat:'έξοδο με μικρό σκάφος',shore:'ψάρεμα από την ακτή',lake:'ψάρεμα σε λίμνη/φράγμα',spear:'ψαροτούφεκο'}[fpk]||'έξοδο με μικρό σκάφος';
+  const WH2={boat:'μικρό σκάφος',shore:'την ακτή (κύμα στα βράχια)',lake:'λίμνη/φράγμα',spear:'ψαροτούφεκο (ορατότητα/ρεύμα)'}[fpk]||'μικρό σκάφος';
+  $('safeText').textContent={good:'Συνθήκες κατάλληλες για '+WHO+'.',warn:'Αρκετός άνεμος ή κύμα για '+WH2+'. Κοίτα την πρόγνωση για ριπές.',bad:'Άνεμος ή κύμα ψηλά για '+WH2+'. Καλύτερα αναβολή ή πιο προφυλαγμένο σημείο.'}[lvl];  const fx=$('factors'); fx.replaceChildren();
   const pressTx={slow:['Πέφτει αργά','Η πίεση πέφτει αργά: τα ψάρια τρώνε πιο πολύ πριν αλλάξει ο καιρός.'],stable:['Σταθερή','Η πίεση είναι σταθερή: φυσιολογική δραστηριότητα.'],rise:['Ανεβαίνει','Η πίεση ανεβαίνει: συνήθως πιο ήσυχα ψάρια.'],fast:['Πέφτει απότομα','Η πίεση πέφτει απότομα: έρχεται αλλαγή καιρού και τα ψάρια συχνά σταματούν.']};
   const cloudTx={clear:['Καθαρός','Καθαρός ουρανός: δυνατό φως, τα ψάρια πάνε πιο βαθιά.'],part:['Λίγα σύννεφα','Λίγα σύννεφα: καλό, μαλακό φως.'],over:['Συννεφιά','Συννεφιά: χαμηλό φως, τα ψάρια πλησιάζουν πιο εύκολα.']};
   const moonTx=c.factors[0][1]>=4?'Κοντά σε νέα ή πανσέληνο: ισχυρότερα ρεύματα και πιο έντονη όρεξη στα ψάρια.':c.factors[0][1]<=-4?'Κοντά σε τέταρτο: πιο ήρεμα ρεύματα και λιγότερη όρεξη στα ψάρια.':'Ενδιάμεση φάση σελήνης: ουδέτερη επίδραση.';
@@ -330,6 +333,7 @@ const Store=(function(){
   async function save(k,obj){
     const id=obj.id||(Date.now().toString(36)+Math.random().toString(36).slice(2,6));
     const data=Object.assign({},obj,{id:id,_u:Date.now()});
+    if(!obj.id&&!data.prof&&(k==='trips'||k==='bites')){ try{ data.prof=localStorage.getItem('psaro-fprof')||'boat'; }catch(e){} }
     cache[k]=cache[k].filter(x=>x.id!==id).concat([data]); tombs=tombs.filter(t=>!(t.k===k&&t.id===id)); persist(k); ptomb(); emit(k); changed(k,id); return id;
   }
   async function remove(k,id){cache[k]=cache[k].filter(x=>x.id!==id);tombs=tombs.filter(t=>!(t.k===k&&t.id===id)).concat([{k:k,id:id,u:Date.now()}]);persist(k);ptomb();emit(k);changed(k,id);}

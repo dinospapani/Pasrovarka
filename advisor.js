@@ -63,9 +63,18 @@ function extL(xo,mo){
   var ratio=((cm/2+K*share/2)/(N+K))/(share/2);
   return clamp(Math.log(ratio),-1,1)*N/(N+NEED_A);
 }
+/* προφίλ ψαρέματος: ποια είδη της γενικής γνώσης έχουν νόημα (εκτίμηση, όχι επικυρωμένη). Τα δικά σου ψάρια μένουν πάντα. */
+function profOf(){ try{ var v=localStorage.getItem('psaro-fprof'); return v==='shore'||v==='lake'||v==='spear'?v:'boat'; }catch(e){ return 'boat'; } }
+function kbFits(e,p){
+  if(p==='boat') return true;
+  if(p==='lake') return false;                                  /* η γενική γνώση είναι για θάλασσα */
+  if(p==='spear') return e.d[0]<=25&&e.t.some(function(t){ return t!=='Τρόλινγκ'; });
+  var land=e.t.some(function(t){ return t==='Βυθού'||t==='Spinning'||t==='Ζωντανό δόλωμα'||t==='Άλλο'; });
+  return land&&e.d[0]<=30;                                      /* στεριά */
+}
 function candidates(D){
-  var out=[], seen={};
-  KB.forEach(function(e){ var o=D.by[e.n]; seen[e.n]=1; out.push({e:e,o:o,x:D.ext[e.n],name:e.n,common:e.c}); });
+  var out=[], seen={}, P=profOf();
+  KB.forEach(function(e){ seen[e.n]=1; if(!kbFits(e,P)) return; var o=D.by[e.n]; out.push({e:e,o:o,x:D.ext[e.n],name:e.n,common:e.c}); });
   Object.keys(D.by).forEach(function(k){ if(!seen[k]){ seen[k]=1; out.push({e:null,o:D.by[k],x:D.ext[k],name:D.by[k].name,common:1}); } });
   Object.keys(D.ext).forEach(function(k){ if(!seen[k]) out.push({e:null,o:null,x:D.ext[k],name:k,common:0.5}); });
   return out;
@@ -73,7 +82,7 @@ function candidates(D){
 function rank(D,x){
   var cs=candidates(D), tot=0;
   cs.forEach(function(c){ var n=c.o?c.o.n:0, ne=c.x?c.x.n:0; c.L=lscore(D,c.e,c.o,x)+extL(c.x,x.month); c.s=(n+0.6*c.common+0.15*Math.min(ne,12))*Math.exp(clamp(c.L,-2,2)); tot+=c.s; });
-  cs.forEach(function(c){ c.p=c.s/tot; });
+  cs.forEach(function(c){ c.p=tot?c.s/tot:0; });
   return cs.sort(function(a,b){ return b.s-a.s; });
 }
 function techTally(c){
@@ -127,6 +136,9 @@ function whatCard(D){
   var S=slotX(); if(!S) return c;
   c.append(h('p',{class:'note',style:'margin:8px 0',text:condLine(S)}));
   var R=rank(D,S.x), top=R.slice(0,6), mx=top[0]?top[0].p:1;
+  var P=profOf(), PN={shore:T('Από στεριά','From shore'),lake:T('Λίμνη / φράγμα','Lake / dam'),spear:T('Ψαροντούφεκο','Spearfishing')};
+  if(P!=='boat') c.append(h('p',{class:'note',style:'margin:4px 0',text:T('Προφίλ: ','Profile: ')+PN[P]+T('. Οι προτάσεις προσαρμόζονται σε αυτό.','. The suggestions are adapted to it.')+(P==='lake'?T(' Δεν υπάρχουν ακόμα είδη γλυκού νερού στη γενική γνώση· φαίνονται μόνο τα δικά σου ψάρια.',' There are no freshwater species in the general knowledge yet; only your own catches show.'):'')}));
+  if(!top.length){ c.append(h('p',{class:'note',text:T('Δεν υπάρχουν ακόμα προτάσεις για αυτό το προφίλ. Καταγράφοντας ψάρια θα εμφανιστούν.','No suggestions for this profile yet. They will appear as you log catches.')})); return c; }
   c.append(h('div',{class:'label',style:'margin-top:6px',text:T('Πιο πιθανά είδη','Most likely species')}));
   top.forEach(function(r,i){
     var e=r.e, tl=techTally(r), tq=topKeys(tl.t,2), bq=topKeys(tl.b,2);

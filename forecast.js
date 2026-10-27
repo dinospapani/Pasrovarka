@@ -24,10 +24,22 @@ function sunMoon(dateStr,lat,lon,tz){
 }
 function hourScore(sm,hr,w){
   const wind=w.wind, wave=w.wave==null?0.5:w.wave;
+  /* προφίλ ψαρέματος: προσαρμογή βαρών (εκτίμηση, όχι επικυρωμένη). Στο service worker δεν υπάρχει localStorage, άρα ισχύει «βάρκα». */
+  let prof=w.prof; if(!prof){ try{ prof=typeof localStorage!=='undefined'?localStorage.getItem('psaro-fprof'):null; }catch(e){ prof=null; } }
   let base=50+Math.round(Math.cos(4*Math.PI*sm.f)*8);
   base+={slow:8,stable:3,rise:0,fast:-4}[w.ptrend||'stable'];
-  base+=wind<5?2:wind<=12?4:wind<=18?-3:wind<=25?-12:-25;
-  base+=wave<=0.5?3:wave<=1?0:wave<=1.5?-6:wave<=2?-15:-25;
+  if(prof==='shore'){        /* στεριά: αντέχει λίγο περισσότερο άνεμο, αλλά το δυνατό κύμα στην ακτή είναι επικίνδυνο */
+    base+=wind<5?2:wind<=14?4:wind<=20?-2:wind<=27?-12:-25;
+    base+=wave<=0.5?3:wave<=1?1:wave<=1.5?-5:wave<=2?-16:-28;
+  } else if(prof==='lake'){  /* λίμνη: δεν μετράει κύμα θάλασσας */
+    base+=wind<5?3:wind<=12?4:wind<=18?-3:wind<=25?-12:-25;
+  } else if(prof==='spear'){ /* ψαροντούφεκο: χαμηλό κύμα και ήπιος άνεμος μετράνε πολύ */
+    base+=wind<5?3:wind<=10?4:wind<=15?-6:wind<=22?-16:-28;
+    base+=wave<=0.3?4:wave<=0.6?0:wave<=1?-10:wave<=1.5?-22:-35;
+  } else {
+    base+=wind<5?2:wind<=12?4:wind<=18?-3:wind<=25?-12:-25;
+    base+=wave<=0.5?3:wave<=1?0:wave<=1.5?-6:wave<=2?-15:-25;
+  }
   base+={clear:0,part:2,over:4}[w.cloud||'part'];
   if(w.gust!=null) base+=w.gust>=35?-10:w.gust>=28?-5:0;
   if(w.code!=null&&w.code>=95) base-=15;

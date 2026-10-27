@@ -761,7 +761,13 @@ box.insertBefore(tools,bar.nextSibling);
     var top=document.createElement('div'); top.className='ndhrtop';
     var sc=document.createElement('div'); sc.className='ndhrsc'; sc.dataset.lv=lvl(h.score); sc.innerHTML='<b></b><span>/100</span>'; sc.firstChild.textContent=h.score;
     var tx=document.createElement('div'); tx.className='ndhrtx'; var t1=document.createElement('b'); t1.textContent=dayLab(d.date,selD)+' · '+p2(h.hr)+':00'; var t2=document.createElement('span'); t2.textContent=verdict(h.score);
-    var pill=document.createElement('em'); pill.className='ndhrsf'+(h.safe?'':' no'); pill.textContent=h.safe?T('Ασφαλές για μικρό σκάφος','Suitable for a small boat'):T('Όχι ασφαλές για μικρό σκάφος','Not safe for a small boat');
+    var fp=(window.PsaroFProf&&window.PsaroFProf.get())||'boat', okc=h.safe, msgOk, msgNo;
+    var wv=h.wave==null?0:h.wave, gs=h.gust==null?0:h.gust, st=h.code!=null&&h.code>=95;   /* όρια ενδεικτικά, δική μου εκτίμηση */
+    if(fp==='shore'){ okc=!(wv>=1.5||gs>=30||st); msgOk=T('Ήπιες συνθήκες για ψάρεμα από στεριά','Mild conditions for shore fishing'); msgNo=T('Προσοχή: δυνατό κύμα ή ριπές στην ακτή. Μην πλησιάζεις τους βράχους.','Caution: strong waves or gusts at the shore. Stay away from the rocks.'); }
+    else if(fp==='lake'){ okc=!(h.wind>=20||gs>=28||st); msgOk=T('Ήπιες συνθήκες για ψάρεμα σε λίμνη','Mild conditions for lake fishing'); msgNo=T('Προσοχή: δυνατός άνεμος ή καταιγίδα','Caution: strong wind or storm'); }
+    else if(fp==='spear'){ okc=!(wv>0.6||h.wind>=12||gs>=22||st); msgOk=T('Ήπιες συνθήκες για κατάδυση','Mild conditions for diving'); msgNo=T('Δύσκολες συνθήκες για κατάδυση: κύμα ή άνεμος','Difficult diving conditions: waves or wind'); }
+    else { msgOk=T('Ασφαλές για μικρό σκάφος','Suitable for a small boat'); msgNo=T('Όχι ασφαλές για μικρό σκάφος','Not safe for a small boat'); }
+    var pill=document.createElement('em'); pill.className='ndhrsf'+(okc?'':' no'); pill.textContent=okc?msgOk:msgNo;
     tx.append(t1,t2,pill); top.append(sc,tx); rEl.append(top);
     var g=document.createElement('div'); g.className='ndhrg';
     g.append(tile(T('Άνεμος','Wind'),u('wind',h.wind)+(h.dir!=null?' '+dirTxt(h.dir):''),h.gust!=null?T('Ριπές ','Gusts ')+u('wind',h.gust):''));
@@ -920,4 +926,79 @@ box.insertBefore(tools,bar.nextSibling);
   }
   window.addEventListener('psaro-fprof',function(){ setTimeout(function(){ run(true); },150); });
   var n=0, iv=setInterval(function(){ n++; if(run(false)||n>40) clearInterval(iv); },700);
+})();
+
+/* ---- Ανά προφίλ: λίστα «Πριν φύγεις», χρονόμετρο κατάδυσης, στατιστικά ανά τύπο ---- */
+(function(){
+  var en=function(){return window.LANG==='en';};
+  var T=function(a,b){return en()?b:a;};
+  var prof=function(){try{return localStorage.getItem('psaro-fprof')||'boat';}catch(e){return 'boat';}};
+  var LIST={
+    boat:[['Σωσίβια για όλους','Lifejackets for everyone'],['Φορτισμένο κινητό / VHF','Charged phone / VHF'],['Εφεδρικό καύσιμο','Spare fuel'],['Άγκυρα και σχοινί','Anchor and rope'],['Πυρσοί / φακός','Flares / torch'],['Φάρμακα και νερό','First aid and water']],
+    shore:[['Παπούτσια με πρόσφυση','Non-slip shoes'],['Φορτισμένο κινητό','Charged phone'],['Έλεγχος κύματος στα βράχια','Check the swell on the rocks'],['Είπα σε κάποιον πού πάω','Told someone where I am going'],['Νερό και αντηλιακό','Water and sunscreen'],['Φακός','Torch']],
+    lake:[['Φορτισμένο κινητό','Charged phone'],['Είπα σε κάποιον πού πάω','Told someone where I am going'],['Νερό και αντηλιακό','Water and sunscreen'],['Σωσίβιο αν βγαίνω με βάρκα','Lifejacket if on a boat'],['Έλεγξα τους κανονισμούς του φράγματος','Checked the dam rules']],
+    spear:[['Σημαδούρα / πλωτήρας με σημαία','Dive float with flag'],['Συνοδός ή ενημέρωση επαφής','Buddy or contact informed'],['Μαχαίρι','Knife'],['Ρολόι / χρονόμετρο','Watch / timer'],['Χωρίς υπεραερισμό, χωρίς μοναχική κατάδυση','No hyperventilation, never dive alone']]
+  };
+  function checklist(){
+    var f=document.getElementById('sfForm'), b=document.getElementById('sfStart');
+    if(!f||!b) return;
+    var old=document.getElementById('ndPre'); if(old) old.remove();
+    var d=document.createElement('div'); d.id='ndPre'; d.className='sfsec';
+    var h='<div class="sflabel">'+T('Πριν φύγεις','Before you go')+'</div>';
+    LIST[prof()].forEach(function(r,i){ h+='<label style="display:flex;gap:10px;align-items:center;padding:6px 0;font-size:14px"><input type="checkbox" style="width:20px;height:20px"> <span>'+T(r[0],r[1])+'</span></label>'; });
+    h+='<p class="note">'+T('Υπενθύμιση μόνο· δεν εμποδίζει την έναρξη.','Reminder only; it does not block starting.')+'</p>';
+    d.innerHTML=h; f.insertBefore(d,b);
+  }
+  /* Χρονόμετρο κατάδυσης (ψαροτούφεκο) */
+  var tm={on:false,t0:0,lastDive:0,lastSurf:0,s0:0,iv:null,lim:90};
+  function fmt(s){s=Math.max(0,Math.round(s));return Math.floor(s/60)+':'+('0'+(s%60)).slice(-2);}
+  function timer(){
+    var a=document.getElementById('safeActive'); if(!a) return;
+    var el=document.getElementById('ndDive');
+    if(prof()!=='spear'){ if(el) el.remove(); return; }
+    if(el) return;
+    el=document.createElement('div'); el.id='ndDive'; el.className='card'; el.style.margin='10px 0';
+    el.innerHTML='<div class="sflabel">'+T('Χρονόμετρο κατάδυσης','Dive timer')+'</div><div id="ndDv" style="font-size:34px;font-weight:700;text-align:center">0:00</div><p class="note" id="ndDn"></p><div class="row"><button class="btn acc big" id="ndDb" type="button">'+T('▼ Κατάδυση','▼ Dive')+'</button></div><label class="f" style="margin-top:8px">'+T('Όριο κατάδυσης (δευτ.)','Dive limit (s)')+'<input type="number" id="ndDl" min="20" max="300" value="90"></label><p class="note">'+T('Βοηθητικό εργαλείο· δεν αντικαθιστά συνοδό ούτε κρίση. Μην βουτάς μόνος και μη σπρώχνεις τα όριά σου.','Aid only; it does not replace a buddy or judgement. Never dive alone and do not push your limits.')+'</p>';
+    a.insertBefore(el,a.firstChild.nextSibling);
+    var btn=el.querySelector('#ndDb');
+    btn.onclick=function(){
+      var now=Date.now(), lim=Math.max(20,+el.querySelector('#ndDl').value||90);
+      tm.lim=lim;
+      if(!tm.on){ tm.on=true; if(tm.lastSurf) tm.surfInt=(now-tm.lastSurf)/1000; tm.t0=now; tm.warned=false; btn.textContent=T('▲ Επιφάνεια','▲ Surfaced'); }
+      else { tm.on=false; tm.lastDive=(now-tm.t0)/1000; tm.lastSurf=now; btn.textContent=T('▼ Κατάδυση','▼ Dive'); }
+      if(!tm.iv) tm.iv=setInterval(tick,500); tick();
+    };
+    function tick(){
+      var now=Date.now(), v=document.getElementById('ndDv'), n=document.getElementById('ndDn'); if(!v){clearInterval(tm.iv);tm.iv=null;return;}
+      if(tm.on){ var s=(now-tm.t0)/1000; v.textContent=fmt(s); v.style.color=s>=tm.lim?'#d33':''; 
+        if(s>=tm.lim&&!tm.warned){ tm.warned=true; try{navigator.vibrate&&navigator.vibrate([400,200,400]);}catch(e){} try{window.PsaroCore.toast&&window.PsaroCore.toast(T('Έφτασες το όριο κατάδυσης — ανέβα','Dive limit reached - surface'));}catch(e){} } }
+      else { v.style.color=''; v.textContent=tm.lastSurf?fmt((now-tm.lastSurf)/1000):'0:00'; }
+      n.textContent=tm.lastDive?T('Τελευταία κατάδυση: ','Last dive: ')+fmt(tm.lastDive)+(tm.on?'':T(' · ανάπαυση στην επιφάνεια','  · surface interval')):'';
+    }
+  }
+  /* Στατιστικά ανά τύπο ψαρέματος */
+  var NM={boat:['Βάρκα','Boat'],shore:['Από στεριά','Shore'],lake:['Λίμνη / φράγμα','Lake / dam'],spear:['Ψαροτούφεκο','Spearfishing']};
+  function stats(){
+    var st=document.getElementById('stats'), C=window.PsaroCore; if(!st||!C||!C.Store) return;
+    var old=document.getElementById('ndProfSt'); if(old) old.remove();
+    var tr=C.Store.get('trips'), bi=C.Store.get('bites'), rows={};
+    tr.forEach(function(t){ if(!t.prof) return; (rows[t.prof]=rows[t.prof]||{n:0,f:0}).n++; });
+    bi.forEach(function(b){ if(!b.prof) return; var r=(rows[b.prof]=rows[b.prof]||{n:0,f:0}); r.f+=C.bc?C.bc(b):1; });
+    var ks=Object.keys(rows).filter(function(k){return NM[k];}); if(!ks.length) return;
+    var d=document.createElement('div'); d.id='ndProfSt'; d.style.cssText='grid-column:1/-1;margin-top:10px;font-size:13px';
+    var h='<b>'+T('Ανά τύπο ψαρέματος','By fishing type')+'</b>';
+    ks.forEach(function(k){ h+='<div style="display:flex;justify-content:space-between;padding:4px 0"><span>'+T(NM[k][0],NM[k][1])+'</span><span>'+rows[k].n+' '+T('έξοδοι','trips')+' · '+rows[k].f+' '+T('ψάρια','fish')+'</span></div>'; });
+    h+='<p class="note">'+T('Μετράνε μόνο καταγραφές από αυτή την έκδοση και μετά.','Counts only records made since this version.')+'</p>';
+    d.innerHTML=h; st.appendChild(d);
+  }
+  function all(){ try{checklist();timer();}catch(e){} }
+  var busy=false;
+  function sched(){ if(busy) return; busy=true; setTimeout(function(){ busy=false; try{stats();}catch(e){} },200); }
+  function init(){
+    all();
+    var st=document.getElementById('stats'); if(st) new MutationObserver(function(m){ if(m.some(function(x){return !(x.target.id==='ndProfSt'||(x.addedNodes[0]&&x.addedNodes[0].id==='ndProfSt')||(x.removedNodes[0]&&x.removedNodes[0].id==='ndProfSt'));})) sched(); }).observe(st,{childList:true});
+    sched();
+  }
+  window.addEventListener('psaro-fprof',function(){ setTimeout(all,100); });
+  var n=0, iv=setInterval(function(){ n++; if(document.getElementById('sfForm')&&document.getElementById('stats')){ clearInterval(iv); init(); } else if(n>40) clearInterval(iv); },500);
 })();
