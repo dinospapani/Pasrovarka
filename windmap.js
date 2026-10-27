@@ -22,33 +22,69 @@ function ensure(){
   cv.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:450';
   map.getContainer().appendChild(cv); ctx=cv.getContext('2d'); fit();
   panel=document.createElement('div'); panel.id='ndWindPanel'; panel.setAttribute('role','group'); panel.setAttribute('aria-label',T('Άνεμος','Wind'));
-  panel.style.cssText='position:fixed;left:10px;right:10px;bottom:calc(var(--navh,64px) + 14px);z-index:900;background:var(--card,var(--bg,#fff));color:var(--ink,#111);border:1px solid var(--line,#8886);border-radius:14px;padding:10px 12px;box-shadow:0 4px 18px #0004;max-height:36vh;overflow:auto';
+  panel.style.cssText='position:fixed;left:10px;right:10px;bottom:calc(var(--navh,64px) + 14px);z-index:900;background:var(--card,var(--bg,#fff));color:var(--ink,#111);border:1px solid var(--line,#8886);border-radius:14px;padding:8px 10px;box-shadow:0 4px 18px #0004;max-height:42vh;overflow:auto;left:8px;right:8px';
   document.body.appendChild(panel);
 }
 function fit(){ var s=map.getSize(), r=Math.min(window.devicePixelRatio||1,2); cv.width=s.x*r; cv.height=s.y*r; ctx.setTransform(r,0,0,r,0,0); }
 function clear(){ if(ctx){ var s=map.getSize(); ctx.clearRect(0,0,s.x,s.y); } }
+var detOpen=false, tapLL=null, tapPop=null;
+function pu(){ return window.PsaroUnits; }
+function diffTxt(d){ var p=pu(), c=p&&p.cfg&&p.cfg.wind; var sg=d>0?'+':d<0?'−':''; var a=Math.abs(d);
+  if(c==='kmh') return sg+Math.round(a*1.852)+' km/h'; if(c==='ms') return sg+(Math.round(a*0.514444*10)/10)+' m/s'; if(c==='mph') return sg+Math.round(a*1.15078)+' mph';
+  return sg+Math.round(a)+' kn'; }
 function drawPanel(msg){
-  if(!panel) return; panel.replaceChildren();
-  var top=document.createElement('div'); top.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:8px';
-  var b=document.createElement('b'); b.textContent=T('Άνεμος','Wind'); var x=document.createElement('button'); x.type='button'; x.className='btn ghost sm'; x.textContent='✕'; x.setAttribute('aria-label',T('Κλείσιμο','Close')); x.addEventListener('click',stop); top.append(b,x); panel.append(top);
-  var lab=document.createElement('div'); lab.id='ndWindLab'; lab.style.cssText='font-weight:600;margin:6px 0'; lab.setAttribute('aria-live','polite'); panel.append(lab);
-  if(msg){ lab.textContent=msg; return; }
-  var tl=document.createElement('div'); tl.style.cssText='display:flex;align-items:center;gap:10px';
-  var pb=document.createElement('button'); pb.type='button'; pb.id='ndWindPlay'; pb.className='btn sm'; pb.style.cssText='min-width:44px;min-height:44px;flex:none;font-size:18px'; pb.textContent=playing?'⏸':'▶'; pb.setAttribute('aria-label',playing?T('Παύση','Pause'):T('Αναπαραγωγή','Play')); pb.setAttribute('aria-pressed',String(!!playing));
-  var sl=document.createElement('input'); sl.type='range'; sl.id='ndWindSl'; sl.min=0; sl.max=Math.max(0,hours.length-1); sl.value=hi; sl.style.cssText='width:100%;flex:1'; sl.setAttribute('aria-label',T('Ώρα','Hour'));
+  if(!panel) return; var sc=panel.scrollTop; panel.replaceChildren();
+  var top=document.createElement('div'); top.style.cssText='display:flex;align-items:center;gap:8px';
+  var pb=document.createElement('button'); pb.type='button'; pb.id='ndWindPlay'; pb.className='btn sm'; pb.style.cssText='min-width:40px;min-height:40px;flex:none;font-size:16px;padding:0'; pb.textContent=playing?'⏸':'▶'; pb.setAttribute('aria-label',playing?T('Παύση','Pause'):T('Αναπαραγωγή','Play')); pb.setAttribute('aria-pressed',String(!!playing));
+  var sl=document.createElement('input'); sl.type='range'; sl.id='ndWindSl'; sl.min=0; sl.max=Math.max(0,hours.length-1); sl.value=hi; sl.style.cssText='flex:1;min-width:0'; sl.setAttribute('aria-label',T('Ώρα','Hour')); if(msg||!hours.length){ sl.disabled=true; pb.disabled=true; }
   sl.addEventListener('input',function(){ pause(); hi=+sl.value; label(); seed(); });
   pb.addEventListener('click',function(){ playing?pause():play(); });
-  tl.append(pb,sl); panel.append(tl);
-  var row=document.createElement('label'); row.className='f'; row.style.marginTop='6px'; row.append(document.createTextNode(T('Μοντέλο','Model')));
-  var sel=document.createElement('select'); var opts=[[0,(grid&&grid.m.length>1?T('Μέσος όρος μοντέλων','Model average'):grid.m[0].name)]]; if(grid.m.length>1) grid.m.forEach(function(m,i){ opts.push([i+1,m.name]); });
-  opts.forEach(function(o){ var op=document.createElement('option'); op.value=o[0]; op.textContent=o[1]; sel.append(op); }); sel.value=String(SEL); sel.addEventListener('change',function(){ SEL=+sel.value; label(); seed(); }); row.append(sel); panel.append(row);
-  var lg=document.createElement('div'); lg.style.cssText='display:flex;height:8px;border-radius:4px;overflow:hidden;margin:8px 0 2px'; COLS.forEach(function(c){ var s=document.createElement('span'); s.style.cssText='flex:1;background:'+c[1]; lg.append(s); }); panel.append(lg);
-  var lt=document.createElement('div'); lt.className='note'; lt.style.cssText='display:flex;justify-content:space-between;font-size:11px'; ['0','7','16','28','41+ kn'].forEach(function(t){ var s=document.createElement('span'); s.textContent=t; lt.append(s); }); panel.append(lt);
-  var ag=document.createElement('div'); ag.id='ndWindAg'; ag.style.cssText='margin-top:8px;font-size:13px'; panel.append(ag);
-  var st=document.createElement('div'); st.id='ndWindSt'; st.style.cssText='margin-top:8px;font-size:13px'; panel.append(st);
-  var nt=document.createElement('p'); nt.className='note'; nt.style.marginTop='6px'; nt.textContent=T('Μοντέλα (Open-Meteo): ανάλυση περίπου 9–25 km, πλέγμα 11×11 για την περιοχή που βλέπεις. Ενδεικτικό: δεν δείχνει τοπικά φαινόμενα κοντά στην ακτή (π.χ. θαλάσσια αύρα). Οι μετρήσεις σταθμών είναι το μόνο πραγματικό στοιχείο.','Models (Open-Meteo): roughly 9–25 km resolution, 11×11 grid for the area in view. Indicative: it does not show local effects near the coast (e.g. sea breeze). Station observations are the only real measurements.'); panel.append(nt);
-  label();
+  var tg=document.createElement('button'); tg.type='button'; tg.className='btn ghost sm'; tg.style.cssText='min-width:40px;min-height:40px;flex:none;padding:0'; tg.textContent=detOpen?'▾':'▴'; tg.setAttribute('aria-expanded',String(detOpen)); tg.setAttribute('aria-label',T('Λεπτομέρειες','Details')); tg.addEventListener('click',function(){ detOpen=!detOpen; drawPanel(); });
+  var x=document.createElement('button'); x.type='button'; x.className='btn ghost sm'; x.style.cssText='min-width:40px;min-height:40px;flex:none;padding:0'; x.textContent='✕'; x.setAttribute('aria-label',T('Κλείσιμο','Close')); x.addEventListener('click',stop);
+  top.append(pb,sl,tg,x); panel.append(top);
+  var lab=document.createElement('div'); lab.id='ndWindLab'; lab.style.cssText='font-weight:600;font-size:13px;margin-top:4px'; lab.setAttribute('aria-live','polite'); panel.append(lab);
+  if(msg){ lab.textContent=msg; return; }
+  var hint=document.createElement('div'); hint.className='note'; hint.style.cssText='font-size:11px'; hint.textContent=T('Πάτα στον χάρτη για να δεις κατεύθυνση και ένταση σε οποιοδήποτε σημείο.','Tap the map to see direction and strength at any point.'); panel.append(hint);
+  if(detOpen){
+    var d=document.createElement('div'); d.style.cssText='margin-top:6px;border-top:1px solid var(--line,#8883);padding-top:6px';
+    var rw=document.createElement('div'); rw.style.cssText='display:flex;gap:8px';
+    function sel(labTxt,opts,val,fn){ var l=document.createElement('label'); l.className='f'; l.style.cssText='flex:1;margin:0'; l.append(document.createTextNode(labTxt)); var s=document.createElement('select'); opts.forEach(function(o){ var op=document.createElement('option'); op.value=o[0]; op.textContent=o[1]; s.append(op); }); s.value=String(val); s.addEventListener('change',function(){ fn(s.value); }); l.append(s); return l; }
+    var mo=[[0,(grid&&grid.m.length>1?T('Μέσος όρος μοντέλων','Model average'):grid.m[0].name)]]; if(grid.m.length>1) grid.m.forEach(function(m,i){ mo.push([i+1,m.name]); });
+    rw.append(sel(T('Μοντέλο','Model'),mo,SEL,function(v){ SEL=+v; label(); seed(); }));
+    var P=pu(); if(P&&P.options&&P.options.wind) rw.append(sel(T('Μονάδα ανέμου','Wind unit'),P.options.wind,P.cfg.wind,function(v){ P.set('wind',v); }));
+    d.append(rw);
+    var lg=document.createElement('div'); lg.style.cssText='display:flex;height:8px;border-radius:4px;overflow:hidden;margin:8px 0 2px'; COLS.forEach(function(c){ var s=document.createElement('span'); s.style.cssText='flex:1;background:'+c[1]; lg.append(s); }); d.append(lg);
+    var lt=document.createElement('div'); lt.className='note'; lt.style.cssText='display:flex;justify-content:space-between;font-size:11px'; [0,7,16,28,41].forEach(function(k,i){ var s=document.createElement('span'); s.textContent=W(k)+(i===4?'+':''); lt.append(s); }); d.append(lt);
+    var ag=document.createElement('div'); ag.id='ndWindAg'; ag.style.cssText='margin-top:8px;font-size:13px'; d.append(ag);
+    var lo=document.createElement('div'); lo.id='ndWindLocal'; lo.style.cssText='margin-top:10px;font-size:13px;border-top:1px solid var(--line,#8883);padding-top:8px'; d.append(lo);
+    var st=document.createElement('div'); st.id='ndWindSt'; st.style.cssText='margin-top:8px;font-size:13px'; d.append(st);
+    var nt=document.createElement('p'); nt.className='note'; nt.style.marginTop='6px'; nt.textContent=T('Μοντέλα (Open-Meteo): ανάλυση περίπου 7–25 km, πλέγμα 11×11 για την περιοχή που βλέπεις. Ενδεικτικό: δεν δείχνει τοπικά φαινόμενα κοντά στην ακτή (π.χ. θαλάσσια αύρα). Οι μετρήσεις σταθμών είναι το μόνο πραγματικό στοιχείο.','Models (Open-Meteo): roughly 7–25 km resolution, 11×11 grid for the area in view. Indicative: it does not show local effects near the coast (e.g. sea breeze). Station observations are the only real measurements.'); d.append(nt);
+    panel.append(d);
+  }
+  label(); panel.scrollTop=sc;
 }
+function tapData(ll){
+  var v=sample(ll.lat,ll.lng); if(!v) return null;
+  var P=pu(), kn=Math.round(v.sp), bf=P&&P.bft?P.bft(v.sp):'', main=W(v.sp), alt=(P&&P.cfg.wind==='kn')?(bf!==''?bf+' Bft':''):kn+' kn';
+  return {v:v,txt:dn(v.dir)+' '+Math.round(v.dir)+'° · '+main+(alt?' ('+alt+')':'')};
+}
+function tapIcon(ll){
+  var d=tapData(ll), body;
+  if(!d) body='<span>'+T('Εκτός περιοχής δεδομένων','Outside the data area')+'</span>';
+  else body='<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px;margin-right:5px;transform:rotate('+((d.v.dir+180)%360)+'deg)"><path d="M12 3v16M6 13l6 6 6-6" stroke="'+col(d.v.sp)+'" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>'+d.txt+'</span>';
+  return L.divIcon({className:'',iconSize:[0,0],html:'<div style="position:relative"><div style="position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid '+(d?col(d.v.sp):'#888')+';box-shadow:0 1px 4px #0008"></div><div style="position:absolute;bottom:12px;left:0;transform:translateX(-50%);background:rgba(10,20,30,.93);color:#fff;border-radius:10px;padding:5px 10px;font:600 13px system-ui;white-space:nowrap;box-shadow:0 2px 8px #0008">'+body+'</div></div>'});
+}
+function clearTap(){ if(tapPop){ try{ map.removeLayer(tapPop); }catch(e){} tapPop=null; } tapLL=null; }
+function onTap(e){
+  if(!on||!grid) return;
+  var t=e.target; if(t&&t.closest&&(t.closest('.mapbtns')||t.closest('#ndWindPanel')||t.closest('#ndRuler')||t.closest('.leaflet-marker-icon')||t.closest('.leaflet-control')||t.closest('.ndbar')||t.closest('.ndsheet')||t.closest('.ndsb')||t.closest('button,a,input,select'))) return;
+  if(document.getElementById('ndRuler')) return;
+  e.stopPropagation(); e.preventDefault();
+  var ll=map.mouseEventToLatLng(e); tapLL=ll;
+  if(tapPop) try{ map.removeLayer(tapPop); }catch(x){}
+  tapPop=L.marker(ll,{icon:tapIcon(ll),interactive:false,keyboard:false,zIndexOffset:3000}).addTo(map);
+}
+function refreshTap(){ if(tapPop&&tapLL) tapPop.setIcon(tapIcon(tapLL)); }
 var playing=false, ptm=null;
 function sync(){ var sl=document.getElementById('ndWindSl'), pb=document.getElementById('ndWindPlay'); if(sl) sl.value=hi; if(pb){ pb.textContent=playing?'⏸':'▶'; pb.setAttribute('aria-label',playing?T('Παύση','Pause'):T('Αναπαραγωγή','Play')); pb.setAttribute('aria-pressed',String(!!playing)); } }
 function pause(){ playing=false; clearInterval(ptm); ptm=null; sync(); }
@@ -57,7 +93,7 @@ function play(){
   ptm=setInterval(function(){ if(!on||!grid){ pause(); return; } if(document.hidden) return; hi=hi>=hours.length-1?Math.max(0,nowIdx):hi+1; sync(); label(); },700);
 }
 function label(){
-  var el=document.getElementById('ndWindLab'); if(!el||!hours.length) return;
+  var el=document.getElementById('ndWindLab'); if(!el||!hours.length) return; refreshTap();
   var t=hours[hi], ms=Date.parse(t+'Z'), s;
   try{ s=new Date(ms).toLocaleString(EN?'en-GB':'el-GR',{weekday:'short',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Nicosia'}); }catch(e){ s=t.slice(11,16)+'Z'; }
   var c=map.getCenter(), v=sample(c.lat,c.lng);
@@ -66,9 +102,10 @@ function label(){
     if(!a){ ag.textContent=grid&&grid.m.length<2?T('Διαθέσιμο μόνο ένα μοντέλο: δεν μπορεί να μετρηθεί η διαφωνία.','Only one model available: agreement cannot be measured.'):''; }
     else{ var lvTxt=[T('Τα μοντέλα συμφωνούν','Models agree'),T('Μέτρια διαφωνία μοντέλων','Moderate disagreement'),T('Μεγάλη διαφωνία: χαμηλή βεβαιότητα','Large disagreement: low confidence')][a.lv];
       var bd=document.createElement('b'); bd.textContent=(a.lv===0?'✅ ':a.lv===1?'⚠️ ':'🔴 ')+lvTxt; ag.append(bd,document.createElement('br'));
-      ag.append(document.createTextNode(a.vs.map(function(x){ return x.n+' '+dn(x.v.dir)+' '+W(x.v.sp); }).join(' · ')+' ('+T('διαφορά ','spread ')+Math.round(a.dsp)+' kn'+(a.dd?', '+Math.round(a.dd)+'°':'')+')')); } }
+      ag.append(document.createTextNode(a.vs.map(function(x){ return x.n+' '+dn(x.v.dir)+' '+W(x.v.sp); }).join(' · ')+' ('+T('διαφορά ','spread ')+diffTxt(a.dsp).replace(/^[+−]/,'')+(a.dd?', '+Math.round(a.dd)+'°':'')+')')); } }
+  var lo=document.getElementById('ndWindLocal'); if(lo&&window.PsaroWindLocal){ var kk=c.lat.toFixed(2)+','+c.lng.toFixed(2)+':'+(v?Math.round(v.dir/45):'-'); if(lo.dataset.k!==kk){ lo.dataset.k=kk; clearTimeout(lo._t); lo._t=setTimeout(function(){ window.PsaroWindLocal.render(lo,c.lat,c.lng,v); },700); } }
   var sd=document.getElementById('ndWindSt'); if(sd){ sd.replaceChildren(); var cp=compare();
-    if(cp.length){ var b2=document.createElement('b'); b2.textContent=T('Μετρήσεις τώρα vs μοντέλο','Observed now vs model'); sd.append(b2); cp.forEach(function(x){ var d=document.createElement('div'); d.textContent=(x.st.id||'')+' '+(x.st.name||'')+': '+Math.round(x.st.spd)+' kn '+T('μετρήθηκαν','observed')+' · '+Math.round(x.mod)+' kn '+T('μοντέλο','model')+' ('+(x.d>0?'+':'')+Math.round(x.d)+')'; sd.append(d); }); }
+    if(cp.length){ var b2=document.createElement('b'); b2.textContent=T('Μετρήσεις τώρα vs μοντέλο (σταθμοί στην περιοχή)','Observed now vs model (stations in view)'); sd.append(b2); cp.forEach(function(x){ var d=document.createElement('div'); d.textContent=(x.st.name||x.st.id||'').split(',')[0]+': '+W(x.st.spd)+' '+T('μετρήθηκε','observed')+' · '+W(x.mod)+' '+T('μοντέλο','model')+' ('+diffTxt(x.d)+')'; sd.append(d); }); }
     else if(stErr==='nofn') sd.textContent=T('Σταθμοί: δεν έχει ενεργοποιηθεί ακόμα η συνάρτηση «metar» στο Supabase.','Stations: the "metar" Supabase function is not set up yet.');
     else if(stErr) sd.textContent=T('Οι μετρήσεις σταθμών δεν φορτώθηκαν.','Station observations did not load.'); }
 }
@@ -95,6 +132,22 @@ async function fetchGrid(url){
   var ac=new AbortController(), tm=setTimeout(function(){ ac.abort(); },20000);
   try{ var r=await fetch(url,{signal:ac.signal}); if(!r.ok) throw new Error('HTTP '+r.status); return await r.json(); } finally{ clearTimeout(tm); }
 }
+/* Μοντέλα: δοκιμάζει σετ από πιο λεπτομερή σε πιο απλά. Τα ονόματα προέρχονται από τα κλειδιά της απάντησης, όχι από το αίτημα. */
+var SETS=[['ecmwf_ifs','icon_eu','icon_global','gfs_global'],['ecmwf_ifs025','icon_global','gfs_global'],[]];
+var LABEL={ecmwf_ifs:'ECMWF 9 km',ecmwf_ifs025:'ECMWF 25 km',icon_eu:'ICON-EU 7 km',icon_global:'ICON 11 km',gfs_global:'GFS 25 km',dwd_icon_eu:'ICON-EU 7 km'};
+async function modelFetch(base){
+  var err=null;
+  for(var i=0;i<SETS.length;i++){
+    try{
+      var url=SETS[i].length?base+'&models='+SETS[i].join(','):base, arr=await fetchGrid(url); arr=Array.isArray(arr)?arr:[arr];
+      var H=arr[0]&&arr[0].hourly; if(!H) throw new Error('nodata');
+      var names=[]; Object.keys(H).forEach(function(k){ var m=k.match(/^wind_speed_10m_(.+)$/); if(m&&H['wind_direction_10m_'+m[1]]){ var ok=arr.every(function(p){ var a=p.hourly['wind_speed_10m_'+m[1]]; return a&&a.some(function(x){ return typeof x==='number'; }); }); if(ok) names.push({id:m[1],name:LABEL[m[1]]||m[1],sfx:'_'+m[1]}); } });
+      if(!names.length){ if(H.wind_speed_10m) names=[{id:'auto',name:T('Μοντέλο','Model'),sfx:''}]; else throw new Error('nodata'); }
+      return {arr:arr,names:names};
+    }catch(e){ err=e; }
+  }
+  throw err||new Error('fail');
+}
 async function load(){
   var id=++loadId, b=map.getBounds().pad(0.05), s=b.getSouth(), n=b.getNorth(), w=b.getWest(), e=b.getEast();
   var lat=[], lon=[]; for(var k=0;k<N;k++){ lat.push(s+(n-s)*k/(N-1)); lon.push(w+(e-w)*k/(N-1)); }
@@ -103,14 +156,9 @@ async function load(){
   var keepT=hours.length?hours[hi]:null, keepSc=panel?panel.scrollTop:0;
   if(!grid) drawPanel(T('Φόρτωση ανέμου…','Loading wind…'));
   try{
-    var arr, multi=true;
-    try{ arr=await fetchGrid(base+'&models='+MODELS.map(function(m){ return m[0]; }).join(',')); }
-    catch(e1){ multi=false; arr=await fetchGrid(base); }
-    if(id!==loadId||!on) return;
-    arr=Array.isArray(arr)?arr:[arr]; if(arr.length<N*N) throw new Error('short');
-    var T0=arr[0].hourly.time, H=T0.length, names=[];
-    if(multi){ MODELS.forEach(function(m){ if(arr[0].hourly['wind_speed_10m_'+m[0]]&&arr[0].hourly['wind_direction_10m_'+m[0]]) names.push({id:m[0],name:m[1],sfx:'_'+m[0]}); }); }
-    if(!names.length) names=[{id:'auto',name:T('Μοντέλο','Model'),sfx:''}];
+    var mf=await modelFetch(base); if(id!==loadId||!on) return;
+    var arr=mf.arr, names=mf.names; if(arr.length<N*N) throw new Error('short');
+    var T0=arr[0].hourly.time, H=T0.length;
     var ms=names.map(function(nm){
       var U=[],V=[]; for(var h=0;h<H;h++){ var uu=new Float32Array(N*N), vv=new Float32Array(N*N);
         for(var q=0;q<N*N;q++){ var sp=arr[q].hourly['wind_speed_10m'+nm.sfx][h], d=arr[q].hourly['wind_direction_10m'+nm.sfx][h]*Math.PI/180; if(sp==null||d!=d){ sp=NaN; d=0; } uu[q]=-sp*Math.sin(d); vv[q]=-sp*Math.cos(d); }
@@ -144,16 +192,21 @@ async function loadStations(){
 function drawStations(){
   if(stLayer){ map.removeLayer(stLayer); stLayer=null; }
   if(!on||!stations||!stations.length) return; stLayer=L.layerGroup().addTo(map);
-  stations.forEach(function(st){
+  var b=map.getBounds(), c0=map.getCenter(), vis=stations.filter(function(x){ return b.contains([x.lat,x.lon])&&Date.now()-Date.parse(x.t||0)<3*3600000; });
+  vis.sort(function(p,q){ return dist2(p,c0)-dist2(q,c0); }); vis=vis.slice(0,30);
+  vis.forEach(function(st){
     var rot=((st.dir==null?0:st.dir)+180)%360, c=col(st.spd);
-    var ic=L.divIcon({className:'',iconSize:[46,46],iconAnchor:[23,23],html:'<div style="width:46px;text-align:center;font:700 11px system-ui;color:#fff;text-shadow:0 1px 3px #000"><div style="width:26px;height:26px;margin:0 auto;border-radius:50%;background:'+c+';border:2px solid #fff;box-shadow:0 1px 5px #0008;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="16" height="16" style="transform:rotate('+rot+'deg)"><path d="M12 3v16M6 13l6 6 6-6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'+Math.round(st.spd)+' kn</div>'});
-    var m=L.marker([st.lat,st.lon],{icon:ic,keyboard:false,interactive:true,title:(st.name||st.id)+' '+Math.round(st.spd)+' kn'}).addTo(stLayer);
-    m.bindPopup('<b>'+(st.id||'')+' '+(st.name||'')+'</b><br>'+T('Μέτρηση','Observed')+': '+(st.dir!=null?dn(st.dir)+' ':'')+W(st.spd)+(st.gust?' · '+T('ριπές ','gusts ')+W(st.gust):'')+(st.t?'<br>'+String(st.t).slice(11,16)+'Z':''));
+    var ic=L.divIcon({className:'',iconSize:[46,46],iconAnchor:[23,23],html:'<div style="width:46px;text-align:center;font:700 11px system-ui;color:#fff;text-shadow:0 1px 3px #000"><div style="width:26px;height:26px;margin:0 auto;border-radius:50%;background:'+c+';border:2px solid #fff;box-shadow:0 1px 5px #0008;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="16" height="16" style="transform:rotate('+rot+'deg)"><path d="M12 3v16M6 13l6 6 6-6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'+W(st.spd)+'</div>'});
+    var m=L.marker([st.lat,st.lon],{icon:ic,keyboard:false,interactive:true,title:(st.name||st.id)+' '+W(st.spd)}).addTo(stLayer);
+    m.bindPopup('<b>'+(st.name||st.id||'')+'</b>'+(st.src?' <small>('+st.src+')</small>':'')+'<br>'+T('Μέτρηση','Observed')+': '+(st.dir!=null?dn(st.dir)+' ':'')+W(st.spd)+(st.gust?' · '+T('ριπές ','gusts ')+W(st.gust):'')+(st.t?'<br>'+String(st.t).slice(11,16)+'Z':''));
   });
 }
+function dist2(p,c){ var dx=(p.lon-(c.lng!=null?c.lng:c.lon))*Math.cos(c.lat*Math.PI/180), dy=p.lat-c.lat; return dx*dx+dy*dy; }
 function compare(){
   if(!stations||!stations.length||!grid) return [];
-  return stations.map(function(st){ var v=sampleSrc(grid.mean,nowIdx,st.lat,st.lon); return v?{st:st,mod:v.sp,d:st.spd-v.sp}:null; }).filter(Boolean);
+  var b=map.getBounds(), c=map.getCenter();
+  return stations.filter(function(x){ return b.contains([x.lat,x.lon])&&Date.now()-Date.parse(x.t||0)<3*3600000; }).sort(function(p,q){ return dist2(p,c)-dist2(q,c); }).slice(0,8)
+    .map(function(st){ var v=sampleSrc(grid.mean,nowIdx,st.lat,st.lon); return v?{st:st,mod:v.sp,d:st.spd-v.sp}:null; }).filter(Boolean);
 }
 function seed(){
   var s=map.getSize(), cnt=Math.min(1600,Math.round(s.x*s.y/520)); parts=[];
@@ -177,8 +230,9 @@ function loop(ts){
   ctx.globalAlpha=1;
 }
 function moved(){ if(!on) return; clear(); clearTimeout(mvT); mvT=setTimeout(function(){ if(!on) return; var b=map.getBounds(); if(!grid||!(b.getSouth()>=grid.lat[0]-0.001&&b.getNorth()<=grid.lat[N-1]+0.001&&b.getWest()>=grid.lon[0]-0.001&&b.getEast()<=grid.lon[N-1]+0.001)||map.getBounds().getNorth()-map.getBounds().getSouth()<(grid.lat[N-1]-grid.lat[0])/3) load(); else{ seed(); label(); } },600); }
-function start(){ if(on) return; on=true; ensure(); cv.style.display='block'; btn.setAttribute('aria-pressed','true'); btn.classList.add('on'); fit(); map.on('moveend zoomend resize',moved); window.addEventListener('resize',fit); load(); }
-function stop(){ pause(); on=false; loadId++; btn.setAttribute('aria-pressed','false'); btn.classList.remove('on'); map.off('moveend zoomend resize',moved); if(raf){ cancelAnimationFrame(raf); raf=0; } if(stLayer){ map.removeLayer(stLayer); stLayer=null; } if(cv) cv.style.display='none'; if(panel){ panel.remove(); panel=null; } clear(); parts=[]; }
+function onUnits(){ if(!on) return; drawPanel(); drawStations(); label(); }
+function start(){ if(on) return; on=true; ensure(); cv.style.display='block'; btn.setAttribute('aria-pressed','true'); btn.classList.add('on'); fit(); map.on('moveend zoomend resize',moved); map.getContainer().addEventListener('click',onTap,true); window.addEventListener('psaro-units',onUnits); window.addEventListener('resize',fit); load(); }
+function stop(){ pause(); on=false; loadId++; btn.setAttribute('aria-pressed','false'); btn.classList.remove('on'); map.off('moveend zoomend resize',moved); try{ map.getContainer().removeEventListener('click',onTap,true); }catch(e){} window.removeEventListener('psaro-units',onUnits); clearTap(); if(raf){ cancelAnimationFrame(raf); raf=0; } if(stLayer){ map.removeLayer(stLayer); stLayer=null; } if(cv) cv.style.display='none'; if(panel){ panel.remove(); panel=null; } clear(); parts=[]; }
 btn.addEventListener('click',function(){ on?stop():start(); });
-window.PsaroWindMap={start:start,stop:stop,sample:sample};
+window.PsaroWindMap={start:start,stop:stop,sample:sample,modelFetch:modelFetch,diffTxt:diffTxt};
 })();
