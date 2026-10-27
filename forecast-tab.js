@@ -197,11 +197,32 @@ function pressCard(p){
     svg.append(mk('path',{d:d1,fill:'none',stroke:line,'stroke-width':2.2,'stroke-linejoin':'round'}),mk('path',{d:d2,fill:'none',stroke:line,'stroke-width':2.2,'stroke-dasharray':'4 3','stroke-linejoin':'round'}));
     svg.append(mk('line',{x1:X(n),x2:X(n),y1:TP-4,y2:H-BT,stroke:ink,'stroke-width':1,'stroke-dasharray':'2 2'}),mk('circle',{cx:X(n),cy:Y(pts[n][1]),r:3.2,fill:ink}));
     var lab=function(x,txt,anc){ var t=mk('text',{x:x,y:H-3,'text-anchor':anc,'font-size':8,fill:mut}); t.textContent=txt; svg.append(t); };
-    lab(L,T('−24 ω','−24 h'),'start'); lab(X(n),T('τώρα','now'),'middle'); lab(W-R,T('+24 ω','+24 h'),'end');
+    lab(X(n),T('τώρα','now'),'middle');
+    var hrOf=function(ms){ try{ return +new Intl.DateTimeFormat('en-GB',{hour:'2-digit',hour12:false,timeZone:'Asia/Nicosia'}).format(new Date(ms)); }catch(e){ return new Date(ms).getUTCHours(); } };
+    pts.forEach(function(q,i){ var hr=hrOf(q[0])%24; if(hr%6!==0||Math.abs(i-n)<3||i<2||i>pts.length-3) return; svg.append(mk('line',{x1:X(i),x2:X(i),y1:H-BT,y2:H-BT+3,stroke:mut,'stroke-width':1})); lab(X(i),(hr<10?'0':'')+hr+':00','middle'); });
     var dlt=function(a,b){ return pts[b][1]-pts[a][1]; }, fmt=function(d){ return (d>0?'+':d<0?'−':'')+Math.abs(d).toFixed(1)+' hPa'; };
     var back=dlt(Math.max(0,n-3),n), f3=n+3<pts.length?dlt(n,n+3):null, f6=n+6<pts.length?dlt(n,n+6):null;
     var verdict=function(d){ return d<=-3.6?T('πέφτει πολύ γρήγορα','falling very fast'):d<=-2?T('πέφτει γρήγορα','falling fast'):d<=-0.8?T('πέφτει','falling'):d>=2?T('ανεβαίνει γρήγορα','rising fast'):d>=0.8?T('ανεβαίνει','rising'):T('σταθερή','steady'); };
-    box.replaceChildren(h('h3',{text:T('Πίεση 24 ωρών','Pressure, 24 h')}),svg,
+    var iHi=vals.indexOf(Math.max.apply(null,vals)), iLo=vals.indexOf(Math.min.apply(null,vals));
+    var hhmm=function(ms){ try{ return new Date(ms).toLocaleString(window.LANG==='en'?'en-GB':'el-GR',{weekday:'short',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Nicosia'}); }catch(e){ return new Date(ms).toISOString().slice(11,16)+'Z'; } };
+    [[iHi,'▲'],[iLo,'▼']].forEach(function(q){ var t=mk('text',{x:X(q[0]),y:Y(vals[q[0]])+(q[1]==='▲'?-5:11),'text-anchor':'middle','font-size':9,fill:ink}); t.textContent=q[1]; svg.append(t); });
+    var pick=mk('line',{x1:0,x2:0,y1:TP-4,y2:H-BT,stroke:line,'stroke-width':1.5,visibility:'hidden'}), pdot=mk('circle',{cx:0,cy:0,r:4,fill:line,stroke:'#fff','stroke-width':1.5,visibility:'hidden'});
+    svg.append(pick,pdot); svg.style.touchAction='none'; svg.style.cursor='crosshair';
+    var out=h('div',{class:'meta',role:'status','aria-live':'polite',style:'margin-top:6px;font-weight:600',text:T('Άγγιξε το γράφημα για να δεις την πίεση σε κάθε ώρα. ▲ υψηλότερη, ▼ χαμηλότερη: ','Touch the chart to see the pressure at any hour. ▲ highest, ▼ lowest: ')+hhmm(pts[iHi][0])+' '+PU.press(vals[iHi])+' / '+hhmm(pts[iLo][0])+' '+PU.press(vals[iLo])});
+    function at(ev){
+      var r=svg.getBoundingClientRect(); if(!r.width) return;
+      var i=Math.round(((ev.clientX-r.left)/r.width*W-L)/(W-L-R)*(pts.length-1)); i=Math.max(0,Math.min(pts.length-1,i));
+      pick.setAttribute('x1',X(i)); pick.setAttribute('x2',X(i)); pick.setAttribute('visibility','visible');
+      pdot.setAttribute('cx',X(i)); pdot.setAttribute('cy',Y(vals[i])); pdot.setAttribute('visibility','visible');
+      var a=Math.max(0,i-3), b=Math.min(pts.length-1,i+3), tr=pts[b][1]-pts[a][1], span=b-a;
+      var tl=span?(tr/span*3):0;
+      out.textContent=hhmm(pts[i][0])+(i>n?' ('+T('πρόγνωση','forecast')+')':'')+' · '+PU.press(vals[i])+' · '+T('τάση ','trend ')+fmt(tl)+T('/3ω','/3h')+' ('+verdict(tl)+')'+(i===iHi?' ▲':i===iLo?' ▼':'');
+    }
+    var drag=false;
+    svg.addEventListener('pointerdown',function(e){ drag=true; try{ svg.setPointerCapture(e.pointerId); }catch(x){} at(e); });
+    svg.addEventListener('pointermove',function(e){ if(drag||e.pointerType==='mouse') at(e); });
+    svg.addEventListener('pointerup',function(){ drag=false; }); svg.addEventListener('pointercancel',function(){ drag=false; });
+    box.replaceChildren(h('h3',{text:T('Πίεση 24 ωρών','Pressure, 24 h')}),svg,out,
       h('div',{class:'meta',style:'margin-top:6px',text:T('Τελευταίες 3 ώρες: ','Last 3 h: ')+fmt(back)+' ('+verdict(back)+')'+(f3!=null?' · '+T('επόμενες 3 ώρες: ','next 3 h: ')+fmt(f3):'')+(f6!=null?' · '+T('επόμενες 6 ώρες: ','next 6 h: ')+fmt(f6):'')}),
       h('p',{class:'note',text:T('Συνεχής γραμμή = παρελθόν, διακεκομμένη = πρόγνωση. Ενδεικτικό, από μοντέλο και όχι από βαρόμετρο.','Solid = past, dashed = forecast. Indicative, from a model, not a barometer.')}));
   }).catch(function(){ box.replaceChildren(h('h3',{text:T('Πίεση 24 ωρών','Pressure, 24 h')}),h('p',{class:'note',text:T('Δεν φορτώθηκαν δεδομένα πίεσης.','Pressure data did not load.')})); });

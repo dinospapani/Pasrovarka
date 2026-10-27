@@ -744,7 +744,8 @@ box.insertBefore(tools,bar.nextSibling);
       var b=document.createElement('button'); b.type='button'; b.className='ndhc'; b.dataset.lv=lvl(h.score); b.dataset.h=h.hr; b.setAttribute('role','option');
       var past=d.date===today&&h.t.slice(0,13)<nowH; if(past) b.classList.add('past');
       var a=document.createElement('b'); a.textContent=p2(h.hr); var s=document.createElement('i'); s.textContent=h.score; b.append(a,s);
-      b.setAttribute('aria-label',p2(h.hr)+':00 · '+T('βαθμός ','score ')+h.score); b.setAttribute('aria-selected',h.hr===selH?'true':'false');
+      if(h.rain!=null&&h.rain>=20){ var rn=document.createElement('small'); rn.textContent='💧'+Math.round(h.rain)+'%'; rn.style.cssText='display:block;font-size:10px;line-height:1.1;margin-top:2px;white-space:nowrap'; b.append(rn); }
+      b.setAttribute('aria-label',p2(h.hr)+':00 · '+T('βαθμός ','score ')+h.score+(h.rain!=null&&h.rain>=20?' · '+T('βροχή ','rain ')+Math.round(h.rain)+'%':'')); b.setAttribute('aria-selected',h.hr===selH?'true':'false');
       if(h.hr===selH) b.classList.add('on');
       b.addEventListener('click',function(){ selH=h.hr; renderHours(); renderDetail(); });
       hEl.append(b);
@@ -771,7 +772,7 @@ box.insertBefore(tools,bar.nextSibling);
     if(h.temp!=null) g.append(tile(T('Αέρας','Air'),u('temp',h.temp),CL[h.cloud]||''));
     if(h.sst!=null&&!lakeP) g.append(tile(T('Θάλασσα','Sea'),u('temp',h.sst),''));
     if(h.pres!=null) g.append(tile(T('Πίεση','Pressure'),u('press',h.pres),PT[h.ptrend]||''));
-    if(h.rain!=null) g.append(tile(T('Βροχή','Rain'),Math.round(h.rain)+'%',''));
+    if(h.rain!=null) g.append(tile(T('Βροχή','Rain'),Math.round(h.rain)+'%',h.mm!=null&&h.mm>0?(Math.round(h.mm*10)/10)+' mm':''));
     rEl.append(g);
   }
     function centerOn(){ var on=hEl.querySelector('.on'); if(on) hEl.scrollLeft=Math.max(0,on.offsetLeft-hEl.clientWidth/2+on.offsetWidth/2); }

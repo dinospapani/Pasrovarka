@@ -26,7 +26,8 @@ function fetchHist(lat,lon,ms){
     var press=num(h.pressure_msl&&h.pressure_msl[i]), old=num(h.pressure_msl&&h.pressure_msl[i-3]), ptrend=null;
     if(press!=null&&old!=null){ var d=press-old; ptrend=d<=-3?'fast':d<=-1?'slow':d>=1?'rise':'stable'; }
     var ws=num(h.wind_speed_10m&&h.wind_speed_10m[i]), cc=num(h.cloud_cover&&h.cloud_cover[i]);
-    var out={temp:num(h.temperature_2m&&h.temperature_2m[i]),press:press==null?null:Math.round(press),ptrend:ptrend,wind:ws==null?null:Math.round(ws),
+    var wd=num(h.wind_direction_10m&&h.wind_direction_10m[i]);
+    var out={wdeg:wd==null?null:Math.round(wd),temp:num(h.temperature_2m&&h.temperature_2m[i]),press:press==null?null:Math.round(press),ptrend:ptrend,wind:ws==null?null:Math.round(ws),
       cloud:cc==null?null:cc<20?'clear':cc<70?'part':'over',wave:null,wavePeriod:null,sst:null};
     if(r[1].status==='fulfilled'){
       var m=(r[1].value&&r[1].value.hourly)||{}, mt=m.time||[], j=mt.indexOf(want);
@@ -56,7 +57,7 @@ function fetchRange(lat,lon,t0,t1){
     return out;
   }).catch(function(){ return null; });
 }
-var KEYS=['wind','wave','press','ptrend','cloud','temp','sst','tide'];
+var KEYS=['wind','wdeg','wave','press','ptrend','cloud','temp','sst','tide'];
 function empty(b){ return KEYS.every(function(k){ return b[k]==null||b[k]===''; }); }
 /* καιρός που πιθανόν δεν αντιστοιχεί στην ώρα του ψαριού: η εγγραφή φτιάχτηκε πολύ μετά (ή πριν) την ώρα του ψαριού */
 function created(b){ var n=parseInt(String(b.id||'').slice(0,8),36); return (n>1.6e12&&n<2.1e12)?n:null; }
