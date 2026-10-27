@@ -461,6 +461,20 @@ window.TACKLE_LIB=[["rod","Shimano","Vengeance"],["rod","Shimano","Speedmaster"]
  ["lure","Fiiish","Black Minnow n°2 90 mm",{"model":"Fiiish Black Minnow 90","spec":"90 mm · shad body + jig head","kind":"soft"}],
  ["lure","Fiiish","Black Minnow n°2.5 105 mm",{"model":"Fiiish Black Minnow 105","spec":"105 mm · shad body + jig head","kind":"soft"}],
  ["lure","Fiiish","Black Minnow n°3 120 mm",{"model":"Fiiish Black Minnow 120","spec":"120 mm · heads: shallow 6, shore 12, pug 16, search 18, offshore 25, deep 37, x-deep 50 g","kind":"soft","w":[6,12,16,18,25,37,50]}],
- ["lure","Fiiish","Black Minnow n°4 140 mm",{"model":"Fiiish Black Minnow 140","spec":"140 mm · heads: offshore 40, deep 60 g","kind":"soft","w":[40,60]}]
+ ["lure","Fiiish","Black Minnow n°4 140 mm",{"model":"Fiiish Black Minnow 140","spec":"140 mm · heads: offshore 40, deep 60 g","kind":"soft","w":[40,60]}],
+ ["lure","KZ Lures","BR75 Surface 7.5 cm",{"model":"KZ Lures BR75 Surface 7.5 cm","spec":"7.5 cm · 5 g · floating surface · handmade · LRF / light spinning","kind":"popper","w":[5]}],
+ ["lure","KZ Lures","BR110 Surface 11 cm",{"model":"KZ Lures BR110 Surface 11 cm","spec":"11 cm · 11 g · floating surface / topwater · handmade","kind":"pencil","w":[11]}],
+ ["lure","KZ Lures","BR200 Topwater 20 cm",{"model":"KZ Lures BR200 Topwater 20 cm","spec":"20 cm · 35 g · floating topwater pencil · handmade · spinning","kind":"pencil","w":[35]}],
+ ["lure","KZ Lures","x Coeball Popper 95 mm",{"model":"KZ Lures x Coeball Popper 95 mm","spec":"95 mm · 10 g · floating popper · 100% wood · handmade","kind":"popper","w":[10]}],
+ ["lure","KZ Lures","x Coeball Popper 150 mm",{"model":"KZ Lures x Coeball Popper 150 mm","spec":"150 mm · 50 g · floating popper · 100% wood · handmade","kind":"popper","w":[50]}],
+ ["lure","KZ Lures","x Coeball Stickbait 95 mm",{"model":"KZ Lures x Coeball Stickbait 95 mm","spec":"95 mm · 10 g · sinking stickbait · 100% wood · handmade","kind":"pencil","w":[10]}],
+ ["lure","KZ Lures","x Coeball Stickbait 150 mm",{"model":"KZ Lures x Coeball Stickbait 150 mm","spec":"150 mm · 50 g · sinking stickbait · 100% wood · handmade","kind":"pencil","w":[50]}],
+ ["lure","KZ Lures","Eginator #3.5",{"model":"KZ Lures Eginator #3.5","spec":"#3.5 · 17 g · squid jig · real shrimp · UV / glow · also with silicone UV skirts","kind":"egi","w":[17]}],
+ ["lure","KZ Lures","Devilman Trolling Squid Jig 130 mm",{"model":"KZ Lures Devilman Trolling Squid Jig 130 mm","spec":"130 mm · 14 g · slow sinking · squid jig for trolling","kind":"troll","w":[14]}],
+ ["lure","KZ Lures","Devilman Eel Silicone Jig Head",{"model":"KZ Lures Devilman Eel Silicone Jig Head","spec":"silicone eel on jig head · deep fishing · 90-130 g","kind":"soft","w":[90,130]}],
+ ["lure","KZ Lures","Devilman Zoka Ball Jig Head",{"model":"KZ Lures Devilman Zoka Ball Jig Head","spec":"zoka ball jig head · live bait fishing · 65-150 g","kind":"head","w":[65,100,150]}],
+ ["lure","KZ Lures","Xibia MonsterFishing Cuttlefish",{"model":"KZ Lures Xibia MonsterFishing Cuttlefish","spec":"handmade cuttlefish imitation silicone · boat deep fishing · glow colours","kind":"other"}],
+ ["hook","BKK","Red Octopus Beak"],
+ ["hook","Decoy","JS-3 Pike Type R"]
  ].forEach(function(r){ var k=r[0]+'|'+(r[1]+' '+r[2]).toLowerCase(); if(!have[k]){ have[k]=1; L.push(r); } });
 })();

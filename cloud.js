@@ -34,6 +34,8 @@ function errText(e){
   if(/Email not confirmed/i.test(m)) return 'Επιβεβαίωσε πρώτα το email σου (δες τα εισερχόμενα).';
   if(/least 6|weak|Password should/i.test(m)) return 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.';
   if(/valid email|invalid format/i.test(m)) return 'Γράψε έγκυρο email.';
+  if(/email rate limit/i.test(m)) return 'Έχουν σταλεί πολλά email επιβεβαίωσης τελευταία. Δοκίμασε ξανά σε περίπου 1 ώρα.';
+  var sec=m.match(/after (\d+) seconds/i); if(sec) return 'Περίμενε '+sec[1]+' δευτερόλεπτα και δοκίμασε ξανά.';
   if(/rate limit|too many/i.test(m)) return 'Πολλές προσπάθειες. Περίμενε λίγο και δοκίμασε ξανά.';
   if(/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'Δεν υπάρχει σύνδεση στο διαδίκτυο.';
   return 'Σφάλμα: '+m;
@@ -128,16 +130,102 @@ async function doLogin(signup){
   $('gLogin').disabled=$('gSignup').disabled=true; msg(signup?'Δημιουργία λογαριασμού…':'Σύνδεση…');
   try{
     if(signup){
-      var j=await auth('signup',{email:em,password:pw});
+      var j=await auth('signup?redirect_to='+encodeURIComponent(siteUrl()),{email:em,password:pw});
       if(j.access_token){ await afterLogin(j); }
-      else msg('Στάλθηκε email επιβεβαίωσης. Πάτα τον σύνδεσμο και μετά Σύνδεση.');
+      else showCode('signup',em);
     }else{
       await afterLogin(await auth('token?grant_type=password',{email:em,password:pw}));
     }
-  }catch(e){ msg(errText(e),true); }
+  }catch(e){ if(/Email not confirmed/i.test(String(e&&e.message))){ showCode('signup',em); msg(errText(e),true); } else msg(errText(e),true); }
   $('gLogin').disabled=$('gSignup').disabled=false;
 }
 function signedOut(){ sess=null; ls('psaro-sess',null); ls('psaro-last',null); if($('acStatus')) $('acStatus').textContent=''; render(); }
+
+function siteUrl(){ try{ return location.origin+location.pathname; }catch(e){ return 'https://dinospapani.github.io/Pasrovarka/'; } }
+/* Σύνδεσμοι από email (επιβεβαίωση εγγραφής, επαναφορά κωδικού): #access_token=...&type=signup|recovery */
+function newPassDialog(){
+  var EN=window.LANG==='en', T=function(a,b){ return EN?b:a; };
+  var ov=document.createElement('div'); ov.style.cssText='position:fixed;inset:0;z-index:100001;background:rgba(0,0,0,.62);display:flex;align-items:center;justify-content:center;padding:16px';
+  var cd=document.createElement('div'); cd.className='card'; cd.style.cssText='width:100%;max-width:380px';
+  var h=document.createElement('h3'); h.textContent=T('Νέος κωδικός','New password');
+  var p=document.createElement('p'); p.className='note'; p.textContent=T('Γράψε νέο κωδικό (τουλάχιστον 6 χαρακτήρες).','Enter a new password (at least 6 characters).');
+  var i=document.createElement('input'); i.type='password'; i.autocomplete='new-password'; i.setAttribute('aria-label',T('Νέος κωδικός','New password')); i.style.cssText='width:100%;margin:8px 0';
+  var m=document.createElement('p'); m.className='note'; m.setAttribute('role','status');
+  var row=document.createElement('div'); row.className='row';
+  var b=document.createElement('button'); b.type='button'; b.className='btn acc'; b.textContent=T('Αποθήκευση','Save');
+  var x=document.createElement('button'); x.type='button'; x.className='btn ghost'; x.textContent=T('Αργότερα','Later');
+  row.append(b,x); cd.append(h,p,i,m,row); ov.append(cd); document.body.appendChild(ov); try{ i.focus(); }catch(e){}
+  x.addEventListener('click',function(){ ov.remove(); });
+  b.addEventListener('click',async function(){
+    var pw=i.value; if(pw.length<6){ m.textContent=T('Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.','The password must be at least 6 characters.'); return; }
+    b.disabled=true;
+    try{ await ensure(); var r=await fetch(URL_+'/auth/v1/user',{method:'PUT',headers:H(),body:JSON.stringify({password:pw})}); var jj={}; try{ jj=await r.json(); }catch(z){} if(!r.ok) throw new Error(jj.msg||jj.message||('HTTP '+r.status)); ov.remove(); toast(T('Ο κωδικός άλλαξε.','Password changed.')); }
+    catch(e){ m.textContent=errText(e); b.disabled=false; }
+  });
+}
+async function handleLink(){
+  var hs=location.hash||''; if(hs.length<2||!/access_token=|error=/.test(hs)) return;
+  var p=new URLSearchParams(hs.slice(1)), EN=window.LANG==='en';
+  try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){}
+  if(p.get('error')){ msg(EN?'The link has expired or was already used. Request a new one.':'Ο σύνδεσμος έληξε ή έχει ήδη χρησιμοποιηθεί. Ζήτησε νέο.',true); return; }
+  var tok=p.get('access_token'); if(!tok) return;
+  try{
+    var r=await fetch(URL_+'/auth/v1/user',{headers:{apikey:KEY,Authorization:'Bearer '+tok}}); var u={}; try{ u=await r.json(); }catch(e){}
+    if(!r.ok) throw new Error(u.msg||u.message||('HTTP '+r.status));
+    await afterLogin({access_token:tok,refresh_token:p.get('refresh_token'),expires_in:+p.get('expires_in')||3600,user:u});
+    if(p.get('type')==='recovery') newPassDialog(); else toast(EN?'Email confirmed. You are signed in.':'Το email επιβεβαιώθηκε. Είσαι συνδεδεμένος.');
+  }catch(e){ msg(errText(e),true); }
+}
+
+/* Κωδικός από το email (6 ψηφία): δουλεύει και μέσα στην εγκατεστημένη εφαρμογή, χωρίς ανακατεύθυνση σε σύνδεσμο */
+var codeBox=null, codeType='signup', codeEmail='';
+function showCode(type,em){
+  var EN=window.LANG==='en', T=function(a,b){ return EN?b:a; };
+  codeType=type; codeEmail=em;
+  if(!codeBox){
+    codeBox=document.createElement('div'); codeBox.id='gCodeBox'; codeBox.className='gcode';
+    codeBox.style.cssText='margin-top:12px;padding-top:12px;border-top:1px solid rgba(128,150,170,.3)';
+    var lb=document.createElement('label'); lb.className='f'; lb.id='gCodeLab';
+    var inp=document.createElement('input'); inp.type='text'; inp.id='gCode'; inp.inputMode='numeric'; inp.autocomplete='one-time-code'; inp.maxLength=10; inp.style.cssText='text-align:center;letter-spacing:6px;font-size:22px';
+    lb.append(document.createTextNode(''),inp);
+    var row=document.createElement('div'); row.className='row';
+    var ok=document.createElement('button'); ok.type='button'; ok.className='btn'; ok.id='gCodeOk';
+    var rs=document.createElement('button'); rs.type='button'; rs.className='btn ghost'; rs.id='gCodeRs';
+    row.append(ok,rs); codeBox.append(lb,row);
+    var after=$('gForgot'); after.parentNode.insertBefore(codeBox,after.nextSibling);
+    ok.addEventListener('click',verifyCode);
+    inp.addEventListener('keydown',function(e){ if(e.key==='Enter') verifyCode(); });
+    rs.addEventListener('click',async function(){
+      var T2=function(a,b){ return window.LANG==='en'?b:a; };
+      rs.disabled=true; setTimeout(function(){ rs.disabled=false; },30000);
+      try{
+        if(codeType==='recovery') await auth('recover?redirect_to='+encodeURIComponent(siteUrl()),{email:codeEmail});
+        else await auth('resend',{type:'signup',email:codeEmail,options:{emailRedirectTo:siteUrl()}});
+        msg(T2('Στάλθηκε νέος κωδικός. Έλεγξε και τα ανεπιθύμητα.','A new code was sent. Check spam too.'));
+      }catch(e){ msg(errText(e),true); }
+    });
+  }
+  codeBox.firstChild.firstChild.nodeValue=T('Κωδικός από το email','Code from the email');
+  $('gCodeOk').textContent=T('Επιβεβαίωση','Confirm'); $('gCodeRs').textContent=T('Νέος κωδικός','Resend code');
+  codeBox.hidden=false; $('gCode').value='';
+  msg(type==='recovery'
+    ?T('Στάλθηκε email. Γράψε τον κωδικό που περιέχει (ή πάτα τον σύνδεσμο).','We sent an email. Enter the code it contains (or tap the link).')
+    :T('Στάλθηκε email επιβεβαίωσης. Γράψε τον κωδικό που περιέχει (ή πάτα τον σύνδεσμο) και θα συνδεθείς αυτόματα.','We sent a confirmation email. Enter the code it contains (or tap the link) and you will be signed in automatically.'));
+  try{ $('gCode').focus(); }catch(e){}
+}
+async function verifyCode(){
+  var EN=window.LANG==='en', code=($('gCode').value||'').replace(/\s+/g,'');
+  if(!/^\d{6,10}$/.test(code)){ msg(EN?'Enter the numeric code from the email.':'Γράψε τον αριθμητικό κωδικό από το email.',true); return; }
+  $('gCodeOk').disabled=true; msg(EN?'Checking…':'Έλεγχος…');
+  try{
+    var j=await auth('verify',{type:codeType,email:codeEmail,token:code});
+    if(!j.access_token) throw new Error('Invalid');
+    var t=codeType; codeBox.hidden=true;
+    await afterLogin(j);
+    if(t==='recovery') newPassDialog(); else toast(EN?'Email confirmed. You are signed in.':'Το email επιβεβαιώθηκε. Είσαι συνδεδεμένος.');
+  }catch(e){ msg(/expired|invalid|Token/i.test(String(e&&e.message))?(EN?'Wrong or expired code. Tap “Resend code”.':'Λάθος ή ληγμένος κωδικός. Πάτα «Νέος κωδικός».'):errText(e),true); }
+  $('gCodeOk').disabled=false;
+}
 function wire(){
   if(!$('gate')) return;
   $('gLogin').addEventListener('click',function(){ doLogin(false); });
@@ -145,7 +233,7 @@ function wire(){
   $('gPass').addEventListener('keydown',function(e){ if(e.key==='Enter') doLogin(false); });
   $('gForgot').addEventListener('click',async function(){
     var em=$('gEmail').value.trim(); if(!em){ msg('Γράψε πρώτα το email σου.',true); return; }
-    try{ await auth('recover',{email:em}); msg('Αν υπάρχει λογαριασμός, στάλθηκε email για νέο κωδικό.'); }catch(e){ msg(errText(e),true); }
+    try{ await auth('recover?redirect_to='+encodeURIComponent(siteUrl()),{email:em}); showCode('recovery',em); }catch(e){ msg(errText(e),true); }
   });
   var l2=$('langSel2'); if(l2){ l2.value=window.LANG||'el'; l2.addEventListener('change',function(){ window.setLang(l2.value); }); }
   function pmsg(m,bad){ var e=$('pMsg'); if(e){ e.textContent=m||''; e.style.color=bad?'#ff8a80':''; } }
@@ -174,5 +262,5 @@ function wire(){
   render();
   if(sess) setTimeout(function(){ sync(false); },1200);
 }
-if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',wire); else wire();
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ wire(); handleLink(); }); else { wire(); handleLink(); }
 })();
