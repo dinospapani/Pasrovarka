@@ -103,11 +103,12 @@ new MutationObserver(function(ms){ ms.forEach(function(m){ Array.prototype.forEa
 
 /* η δεξιά μπάρα: 4 κουμπιά */
 var bar=el('div','ndbar'); bar.setAttribute('role','group'); bar.setAttribute('aria-label',T('Εργαλεία χάρτη','Map tools'));
-function nb(label,icon,fn){ var b=el('button','ndb'); b.type='button'; b.innerHTML=icon+'<span></span>'; b.lastChild.textContent=label; b.addEventListener('click',fn); bar.append(b); return b; }
-nb(T('Στρώματα','Layers'),IC.layers,function(){ open('layers'); });
-nb(T('Ενέργειες','Actions'),IC.actions,function(){ open('actions'); });
-nb(T('Ασφάλεια','Safety'),IC.safety,function(){ open('safety'); });
-nb(T('Θέση μου','My position'),IC.me,function(){ var l=$('bLoc'); if(l) l.click(); });
+var tools=el('div','ndtools'); tools.setAttribute('role','group'); tools.setAttribute('aria-label',T('Εργαλεία χάρτη','Map tools'));
+function nb(label,icon,fn,host){ var b=el('button','ndb'); b.type='button'; b.innerHTML=icon+'<span></span>'; b.lastChild.textContent=label; b.addEventListener('click',fn); (host||bar).append(b); return b; }
+nb(T('Στρώματα','Layers'),IC.layers,function(){ open('layers'); },tools);
+nb(T('Ενέργειες','Actions'),IC.actions,function(){ open('actions'); },tools);
+nb(T('Ασφάλεια','Safety'),IC.safety,function(){ open('safety'); },tools);
+nb(T('Θέση','Position'),IC.me,function(){ var l=$('bLoc'); if(l) l.click(); },tools);
 /* NU/CU/HU: ο προσανατολισμός του χάρτη ως εργαλείο της μπάρας (μόνο κατά την έξοδο), χρησιμοποιεί το ίδιο κουμπί #bOrient */
 var orb=nb('NU',SVG+'<circle cx="12" cy="12" r="8.500"/><path d="m15.500 8.500-2 5-5 2 2-5z"/></svg>',function(){ var x=$('bOrient'); if(x) x.click(); });
 orb.classList.add('ndorient'); orb.setAttribute('aria-label',T('Προσανατολισμός χάρτη','Map orientation'));
@@ -130,7 +131,48 @@ mobb.classList.add('ndmob'); mobb.setAttribute('aria-label',T('Άνθρωπος 
   /* το πληκτρολόγιο (Enter/Space) ενεργοποιεί αμέσως */
   mobb.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); fire(); } });
 })();
+/* NU/CU/HU: μικρό κουμπί κάτω από το + / − του χάρτη (αριστερά), ώστε να μην πιάνει τη δεξιά πλευρά */
+orb.classList.add('ndorin');
+/* MOB και SOS: μικρά και διακριτικά, πάνω από τα «Χάρτης» (αριστερά) και «Προφίλ» (δεξιά), μόνο κατά την έξοδο */
+mobb.classList.add('ndfloat','ndfl'); sosb.classList.add('ndfloat','ndfr'); box.append(mobb,sosb);
 box.insertBefore(bar,mb.nextSibling);
+/* τα υπόλοιπα εργαλεία σε πάνελ που κρύβεται δεξιά: λαβάκι, πάτημα ή σύρσιμο από τη δεξιά άκρη */
+var hd=el('button','ndhandle'); hd.type='button'; hd.innerHTML=SVG+'<path d="m9 6 6 6-6 6"/></svg>'; tools.append(hd);
+/* όργανα μέσα στο πάνελ: «Προορισμός» (όταν υπάρχει) και «Τώρα» (ταχύτητα, πορεία) */
+(function(){
+  var ins=el('div','ndins'), dg=el('div','ndgrp'), ng=el('div','ndgrp');
+  function sec(t){ return el('div','ndsec',t); }
+  function cell(l){ var c=el('div','ndc'); var b=document.createElement('b'); b.textContent='–'; var i=document.createElement('i'); i.textContent=l; c.append(b,i); c.v=b; return c; }
+  var dd=cell(T('Απόσταση','Distance')), db=cell(T('Πορεία προς','Bearing to')), de=cell('ETA'), ns=cell(T('Ταχύτητα','Speed')), nc=cell(T('Πορεία','Course'));
+  dd.classList.add('ndo'); db.classList.add('ndo'); de.classList.add('ndo');
+  dg.append(sec(T('Προορισμός','Destination')),dd,db,de); ng.append(sec(T('Τώρα','Now')),ns,nc); ins.append(dg,ng);
+  var DIRS=['N','NE','E','SE','S','SW','W','NW'];
+  function upd(){
+    var N=window.PsaroNav, fresh=N&&Date.now()-N.t<20000, D=window.PsaroDirectInfo;
+    ns.v.textContent=(fresh&&N.kn!=null)?N.kn.toFixed(1)+' kn':'–';
+    nc.v.textContent=(fresh&&N.head!=null&&N.kn!=null&&N.kn>=0.8)?('00'+Math.round(N.head)).slice(-3)+'° '+DIRS[Math.round(N.head/45)%8]:'–';
+    dg.hidden=!D;
+    if(D){ dd.v.textContent=D.wait?'…':D.d; db.v.textContent=D.wait?'…':D.b; de.v.textContent=D.eta||'–'; }
+  }
+  setInterval(upd,1000); upd();
+  tools.insertBefore(ins,tools.firstChild); tools.insertBefore(orb,tools.querySelector('.ndb'));
+})();
+box.insertBefore(tools,bar.nextSibling);
+(function(){
+  var KEY='psaro_ndtools', shut=false, tm=null, was=null;
+  function trip(){ return document.body.classList.contains('ontrip'); }
+  function arm(){ clearTimeout(tm); if(!shut&&trip()) tm=setTimeout(function(){ set(true); },7000); }
+  function set(sh,save){ shut=sh; document.body.classList.toggle('ndtoolsopen',!sh); tools.classList.toggle('shut',sh); hd.setAttribute('aria-expanded',String(!sh)); hd.setAttribute('aria-label',sh?T('Άνοιγμα εργαλείων','Open tools'):T('Κλείσιμο εργαλείων','Close tools')); arm(); if(save&&!trip()) C.lsSet(KEY,sh?1:0); }
+  hd.addEventListener('click',function(e){ e.stopPropagation(); set(!shut,true); });
+  tools.addEventListener('click',arm,true);
+  function sync(){ var t=trip(); if(t===was) return; was=t; if(t) set(true); else set(!!C.lsGet(KEY,0)); }
+  new MutationObserver(sync).observe(document.body,{attributes:true,attributeFilter:['class']}); sync();
+  var sx=null, sy=null, inTools=false;
+  document.addEventListener('touchstart',function(e){ var t=e.touches[0]; sx=t.clientX; sy=t.clientY; inTools=tools.contains(e.target); },{passive:true});
+  document.addEventListener('touchend',function(e){ if(sx==null) return; var t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
+    if(Math.abs(dx)>50&&Math.abs(dx)>2*Math.abs(dy)){ if(dx<0&&shut&&sx>window.innerWidth-44) set(false,true); else if(dx>0&&!shut&&inTools) set(true,true); } sx=null; },{passive:true});
+  setTimeout(function(){ try{ var m=C.map&&C.map(); if(m) m.on('click',function(){ if(trip()&&!shut) set(true); }); }catch(e){} },1500);
+})();
 
 /* ---- αρχική οθόνη: αναζήτηση, κάρτα «Σήμερα», κάτω μενού με κεντρικό κουμπί ---- */
 (function(){
@@ -295,7 +337,7 @@ box.insertBefore(bar,mb.nextSibling);
     });
     var logb=nav.querySelector('[data-tab="log"]'); nav.insertBefore(cb,logb||null);
   }
-  setInterval(function(){ try{ var tb=document.querySelector('.ndbar'); if(!tb) return; var br=tb.getBoundingClientRect(), cr=card.getBoundingClientRect(); var dtb=document.getElementById('dtBar'); if(dtb){ var dr=dtb.getBoundingClientRect(); dtb.classList.toggle('dtclear',dr.height>0&&br.height>0&&br.top<dr.bottom+16&&br.bottom>dr.top); } card.classList.toggle('ndclear',false&&!document.body.classList.contains('ontrip')&&br.height>0&&br.bottom>cr.top-6&&br.top<cr.bottom); }catch(e){} }, 400);
+  setInterval(function(){ try{ var tb=document.querySelector('.ndbar'); if(!tb) return; document.documentElement.style.setProperty('--ndfixh',(tb.offsetHeight||0)+'px'); var br=tb.getBoundingClientRect(), cr=card.getBoundingClientRect(); var dtb=document.getElementById('dtBar'); if(dtb){ var dr=dtb.getBoundingClientRect(); dtb.classList.toggle('dtclear',dr.height>0&&br.height>0&&br.top<dr.bottom+16&&br.bottom>dr.top); } card.classList.toggle('ndclear',false&&!document.body.classList.contains('ontrip')&&br.height>0&&br.bottom>cr.top-6&&br.top<cr.bottom); }catch(e){} }, 400);
   setInterval(function(){ var on=document.body.classList.contains('ontrip')&&!card.hidden; document.documentElement.style.setProperty('--ndwx',on?Math.max(0,card.offsetHeight-34)+'px':'0px'); document.documentElement.style.setProperty('--ndtop',(on?card.offsetTop+card.offsetHeight+8:72)+'px'); },400);
   setInterval(function(){ box.style.setProperty('--ndch',(card.hidden||document.body.classList.contains('ontrip')?0:card.offsetHeight)+'px'); },400);
   setInterval(function(){ var m=box.querySelector('.mapwx'); if(m){ m.style.removeProperty('left'); m.style.removeProperty('top'); } },500);

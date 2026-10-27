@@ -516,6 +516,16 @@ function initMap(){
 }
 let youHead=null, youPrev=null;
 /* Πορεία: από το GPS αν κινείσαι (>~1,5 kn), αλλιώς από τη μετατόπιση ανάμεσα σε δύο θέσεις. Όταν στέκεσαι, κρατά την τελευταία πορεία. */
+let navPrev=null, navSpd=null;
+function navFix(c){
+  try{
+    const t=Date.now(); let v=(c.speed!=null&&isFinite(c.speed))?c.speed:null;
+    if(v==null&&navPrev&&t-navPrev.t>=1500){ const R=6371000, dy=(c.latitude-navPrev.lat)*Math.PI/180*R, dx=(c.longitude-navPrev.lon)*Math.PI/180*R*Math.cos(c.latitude*Math.PI/180); v=Math.hypot(dx,dy)/((t-navPrev.t)/1000); }
+    if(v!=null) navSpd=navSpd==null?v:navSpd*0.6+v*0.4;
+    if(!navPrev||t-navPrev.t>=1500) navPrev={lat:c.latitude,lon:c.longitude,t:t};
+    window.PsaroNav={lat:c.latitude,lon:c.longitude,kn:navSpd==null?null:navSpd*1.94384,head:(typeof youHead!=='undefined'&&youHead!=null)?youHead:null,t:t};
+  }catch(e){}
+}
 function headFix(lat,lon,gh,gs){
   try{
     if(gh!=null&&isFinite(gh)&&gs!=null&&isFinite(gs)&&gs>0.8){ youHead=gh; }
@@ -537,7 +547,7 @@ let followPause=0; window.PsaroFollowReset=function(){ followPause=0; };
 function followMe(lat,lon){ try{ if(!map||!(document.body.classList.contains('ontrip')||(window.PsaroOrient&&window.PsaroOrient.mode()!=='NU'))||$('tab-map').hidden||Date.now()<followPause) return; map.panTo([lat,lon],{animate:true,duration:.6}); }catch(e){} }
 function youStart(){
   if(youW!=null||!navigator.geolocation) return;
-  try{ youW=navigator.geolocation.watchPosition(p=>{ const c=p.coords; if(c.accuracy&&c.accuracy>150) return; headFix(c.latitude,c.longitude,c.heading,c.speed); setYou(c.latitude,c.longitude); followMe(c.latitude,c.longitude); },()=>{},{enableHighAccuracy:true,maximumAge:2000,timeout:30000}); }catch(e){ youW=null; }
+  try{ youW=navigator.geolocation.watchPosition(p=>{ const c=p.coords; if(c.accuracy&&c.accuracy>150) return; headFix(c.latitude,c.longitude,c.heading,c.speed); navFix(c); setYou(c.latitude,c.longitude); followMe(c.latitude,c.longitude); },()=>{},{enableHighAccuracy:true,maximumAge:2000,timeout:30000}); }catch(e){ youW=null; }
 }
 function youStop(){ if(youW!=null){ try{ navigator.geolocation.clearWatch(youW); }catch(e){} youW=null; } }
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) youStop(); else youStart(); });

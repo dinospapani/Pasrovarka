@@ -47,11 +47,11 @@ function setH(){ document.documentElement.style.setProperty('--dth',(tgt&&docume
 function keysNow(){ var o={}; if(zNames&&!warnEl.hidden) zNames.forEach(function(n){ o['z:'+n]=1; }); if(lk) o['l:'+lk]=1; return o; }
 function render(){
   layer.clearLayers(); line=null; tm=null;
-  if(!tgt){ bar.hidden=true; pill.hidden=true; dmin=false; dseen={}; document.body.classList.remove('hasdt','hasland','dtmin'); setH(); return; }
+  if(!tgt){ window.PsaroDirectInfo=null; bar.hidden=true; pill.hidden=true; dmin=false; dseen={}; document.body.classList.remove('hasdt','hasland','dtmin'); setH(); return; }
   bar.hidden=false; applyMin();
   tm=L.circleMarker([tgt.lat,tgt.lon],{radius:9,color:'#fff',weight:3,fillColor:'#e8541e',fillOpacity:1}).addTo(layer);
   nameEl.textContent='➤ '+(tgt.name||T('Σημείο','Point'));
-  if(!pos){ infoEl.textContent=T('Αναμονή για GPS…','Waiting for GPS…'); warnEl.hidden=true; return; }
+  if(!pos){ window.PsaroDirectInfo={wait:1,t:Date.now()}; warnEl.hidden=true; return; }
   var d=distKm(pos.lat,pos.lon,tgt.lat,tgt.lon), b=bearing(pos.lat,pos.lon,tgt.lat,tgt.lon), landTxt='';
   if(!planning&&(!rt||Date.now()-rt.t>60000)) setTimeout(replan,0);
   if(rt&&rt.pts){
@@ -69,11 +69,11 @@ function render(){
     else if(rt&&rt.off) landTxt=T('Χωρίς σύνδεση: δεν ελέγχθηκε η στεριά στην πορεία.','Offline: land on the course was not checked.');
   }
   landEl.hidden=!landTxt; landEl.textContent=landTxt; document.body.classList.toggle('hasland',!!landTxt);
-  var nm=d/1.852, kn=spd!=null?spd*1.94384:null, parts=[];
-  parts.push(U?U.dist(d,d<10?(d<1?2:1):0):d.toFixed(1)+' km');
-  parts.push(('00'+Math.round(b)).slice(-3)+'° '+card(b));
-  if(kn!=null&&kn>=0.8){ parts.push(kn.toFixed(1)+' kn'); parts.push('ETA '+fmtEta(nm/kn*60)); }
-  infoEl.textContent=parts.join('\u2009·\u2009').replace(/ (\d+)([ωh]) (\d+)/,' $1$2$3'); bar.classList.toggle('nomsg',warnEl.hidden&&landEl.hidden);
+  var nm=d/1.852, kn=spd!=null?spd*1.94384:null;
+  var cells=[[U?U.dist(d,d<10?(d<1?2:1):0):d.toFixed(1)+' km',T('Απόσταση','Distance')],[('00'+Math.round(b)).slice(-3)+'° '+card(b),T('Πορεία','Course')]];
+  if(kn!=null&&kn>=0.8){ cells.push([kn.toFixed(1)+' kn',T('Ταχύτητα','Speed')]); cells.push([fmtEta(nm/kn*60).replace(/ /g,''),'ETA']); }
+  infoEl.textContent=cells.map(function(c){ return c[0]; }).join(' · '); window.PsaroDirectInfo={d:cells[0][0],b:cells[1][0],spd:cells[2]?cells[2][0]:null,eta:cells[3]?cells[3][0]:null,t:Date.now()};
+  bar.classList.toggle('nomsg',warnEl.hidden&&landEl.hidden);
   var now=Date.now();
   if(now-lastZ>4000){ lastZ=now; zNames=crossed(pos.lat,pos.lon,tgt.lat,tgt.lon); }
   warnEl.hidden=!zNames.length; warnEl.textContent=zNames.length?'⚠ '+T('Περνά μέσα από απαγορευμένη περιοχή: ','Crosses a no-fishing zone: ')+zNames.join(', '):'';
