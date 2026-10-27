@@ -145,13 +145,52 @@ function pressureEvent(fc){
   }
   return best?{dir:best.d<0?'fall':'rise',delta:Math.round(Math.abs(best.d)*10)/10,from:Math.round(best.from),to:Math.round(best.to),t:best.t,hours:best.hours}:null;
 }
+/* Αλλαγή ανέμου τις επόμενες `hours` ώρες σε σχέση με την τωρινή ώρα: διεύθυνση ≥deg° (όταν και οι δύο ≥4 kn) ή ένταση ≥kn. */
+function windEvent(fc,w){
+  const deg=(w&&w.deg)||60, kn=(w&&w.kn)||6, hours=(w&&w.hours)||6;
+  const now=fc.nowLocal.slice(0,13), hs=[];
+  fc.days.forEach(d=>d.hours.forEach(h=>{ if(h.t.slice(0,13)>=now&&h.wind!=null) hs.push(h); }));
+  hs.sort((a,b)=>a.t<b.t?-1:1);
+  if(hs.length<2) return null;
+  const h0=hs[0], lim=hs.slice(1,hours+1);
+  for(let i=0;i<lim.length;i++){
+    const h=lim[i], ds=Math.abs(h.wind-h0.wind);
+    let dd=0; if(h0.dir!=null&&h.dir!=null&&h0.wind>=4&&h.wind>=4){ dd=Math.abs(h.dir-h0.dir)%360; if(dd>180) dd=360-dd; }
+    if(dd>=deg||ds>=kn) return {from:h0,to:h,dd,ds,inH:i+1};
+  }
+  return null;
+}
+/* Σημεία καμπής της πίεσης (κορυφή/κοιλάδα) σε λείανση 3 σημείων. Επιστρέφει γεγονότα:
+   {kind:'peak-soon'|'trough-soon'|'peak-past'|'trough-past', t, p, h}. "soon" = σε ≤3 ώρες, "past" = ξεκίνησε η πτώση/άνοδος τις τελευταίες ≤3 ώρες (επιβεβαιωμένη ≥0.2 hPa). */
+function pressureTurns(fc){
+  const hs=[]; fc.days.forEach(d=>d.hours.forEach(h=>{ if(h.p!=null) hs.push(h); }));
+  hs.sort((a,b)=>a.t<b.t?-1:1);
+  if(hs.length<8) return [];
+  const raw=hs.map(h=>h.p), s=raw.map((v,i)=>i>0&&i<raw.length-1?0.25*raw[i-1]+0.5*v+0.25*raw[i+1]:v);
+  const now=fc.nowLocal.slice(0,13); let n0=-1; hs.forEach((h,i)=>{ if(h.t.slice(0,13)<=now) n0=i; });
+  if(n0<0) return [];
+  const out=[];
+  for(let i=Math.max(3,n0-3);i<=Math.min(s.length-3,n0+3);i++){
+    let isMax=true,isMin=true;
+    for(let k=-2;k<=2;k++){ if(!k) continue; if(s[i+k]>s[i]) isMax=false; if(s[i+k]<s[i]) isMin=false; if(s[i+k]===s[i]&&k<0){ isMax=false; isMin=false; } }
+    if(!isMax&&!isMin) continue;
+    const lo=Math.max(0,i-6), hi=Math.min(s.length-1,i+6);
+    const win=s.slice(lo,hi+1), prom=isMax?s[i]-Math.min.apply(null,win):Math.max.apply(null,win)-s[i];
+    if(prom<1.0) continue;
+    const ahead=i-n0, base={t:hs[i].t,p:Math.round(s[i]*10)/10,h:Math.abs(ahead)};
+    if(ahead>0&&ahead<=3) out.push(Object.assign({kind:isMax?'peak-soon':'trough-soon'},base));
+    else if(ahead<=0&&ahead>=-3){ const mv=isMax?s[i]-s[n0]:s[n0]-s[i]; if(ahead<0&&mv>=0.2) out.push(Object.assign({kind:isMax?'peak-past':'trough-past'},base)); }
+  }
+  return out;
+}
+function compassOf(d,lang){ if(d==null) return ''; const c=lang==='en'?['N','NE','E','SE','S','SW','W','NW']:['Β','ΒΑ','Α','ΝΑ','Ν','ΝΔ','Δ','ΒΔ']; return c[Math.round((((d%360)+360)%360)/45)%8]; }
 const DNG=['Κυρ','Δευ','Τρί','Τετ','Πέμ','Παρ','Σάβ'], DNE=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 let DN=(typeof self!=='undefined'&&self.LANG==='en')?DNE:DNG; /* η γλώσσα ορίζεται από το cfg.lang (και ο service worker την παίρνει από εκεί) */
 function dayLabel(date){ const dt=new Date(date+'T12:00:00Z'); return DN[dt.getUTCDay()]+' '+date.slice(8)+'/'+date.slice(5,7); }
 function goodDays(fc,thr){ return fc.days.filter(d=>d.safe&&d.win&&d.best>=thr).map(d=>({date:d.date,best:d.best,win:d.win,wind:d.avgWind,wave:d.avgWave})); }
 /* cfg: {places,threshold,notified,pressure}. Επιστρέφει πάντα {items,notified,title,body}. */
 async function checkPlaces(cfg,fetchFn){
-  const thr=cfg.threshold||75, notified=Object.assign({},cfg.notified||{}), goods=[], press=[];
+  const thr=cfg.threshold||75, notified=Object.assign({},cfg.notified||{}), goods=[], press=[], winds=[], turns=[];
   const today=new Date(Date.now()-86400000).toISOString().slice(0,10);
   for(const k of Object.keys(notified)){ if(k.split(':').pop()<today) delete notified[k]; }
   for(const p of cfg.places||[]){
@@ -163,6 +202,13 @@ async function checkPlaces(cfg,fetchFn){
         const ev=pressureEvent(fc);
         if(ev){ const key=p.id+':pr-'+ev.dir+':'+ev.t.slice(0,10); if(!notified[key]) press.push(Object.assign({type:'pressure',place:p,key},ev)); }
       }
+      if(cfg.turn){
+        for(const e of pressureTurns(fc)){ const key=p.id+':pt-'+e.kind+'-'+e.t.slice(11,13)+':'+e.t.slice(0,10); if(!notified[key]) turns.push(Object.assign({type:'turn',place:p,key},e)); }
+      }
+      if(cfg.wind){
+        const we=windEvent(fc,cfg.wind);
+        if(we){ const cp=compassOf(we.to.dir,cfg.lang), key=p.id+':wd-'+(cp||'sp')+Math.round(we.to.wind/4)+':'+we.to.t.slice(0,10); if(!notified[key]) winds.push({type:'wind',place:p,key,we}); }
+      }
     }catch(e){}
   }
   goods.sort((a,b)=>b.best-a.best);
@@ -172,10 +218,19 @@ async function checkPlaces(cfg,fetchFn){
   const lines=top.map(i=>i.place.name+': '+dayLabel(i.date)+' · '+t('δείκτης ','score ')+i.best+' · '+pad(i.win.s)+':00–'+pad((i.win.e+1)%24)+':00');
   if(goods.length>top.length) lines.push('+'+(goods.length-top.length)+t(' ακόμα',' more'));
   const pl=press.slice(0,2).map(i=>i.place.name+': '+t('η πίεση ','pressure ')+(i.dir==='fall'?t('πέφτει','falling'):t('ανεβαίνει','rising'))+' '+i.delta+' hPa '+t('σε ','in ')+i.hours+t(' ώρες (',' h (')+i.from+'→'+i.to+'). '+(i.dir==='fall'?t('Πριν αλλάξει ο καιρός τα ψάρια συχνά τσιμπούν πιο έντονα.','Before the weather changes, fish often bite harder.'):t('Μετά από μεταβολή τα ψάρια συνήθως χρειάζονται λίγο να ξαναπιάσουν δουλειά.','After a change, fish usually need a little time to start feeding again.')));
-  const items=goods.concat(press);
+  const wl=winds.slice(0,2).map(i=>{ const f=i.we.from, to=i.we.to, W=v=>Math.round(v)+' kn';
+    return i.place.name+': '+t('άνεμος ','wind ')+(f.dir!=null?compassOf(f.dir,en?'en':'el')+' ':'')+W(f.wind)+' → '+to.t.slice(11,16)+' '+(to.dir!=null?compassOf(to.dir,en?'en':'el')+' ':'')+W(to.wind)+(to.gust!=null&&to.gust>=to.wind+6?' ('+t('ριπές ','gusts ')+W(to.gust)+')':''); });
+  const tl=turns.slice(0,2).map(e=>{ const hh=e.t.slice(11,16), pk=e.kind.startsWith('peak');
+    const txt={'peak-soon':t('η πίεση φτάνει κορυφή ('+e.p+' hPa) στις '+hh+', σε ~'+e.h+' ώρ. Μετά αρχίζει να πέφτει.','pressure peaks ('+e.p+' hPa) at '+hh+', in ~'+e.h+' h. Then it starts falling.'),
+      'trough-soon':t('η πίεση φτάνει κοιλάδα ('+e.p+' hPa) στις '+hh+', σε ~'+e.h+' ώρ. Μετά αρχίζει να ανεβαίνει.','pressure bottoms out ('+e.p+' hPa) at '+hh+', in ~'+e.h+' h. Then it starts rising.'),
+      'peak-past':t('πέρασε η κορυφή ('+e.p+' hPa στις '+hh+'), η πίεση άρχισε να πέφτει.','the peak has passed ('+e.p+' hPa at '+hh+'), pressure has started falling.'),
+      'trough-past':t('πέρασε η κοιλάδα ('+e.p+' hPa στις '+hh+'), η πίεση άρχισε να ανεβαίνει.','the low has passed ('+e.p+' hPa at '+hh+'), pressure has started rising.')}[e.kind];
+    return e.place.name+': '+txt; });
+  const items=goods.concat(press,winds,turns);
   items.forEach(i=>{notified[i.key]=1;});
-  const title=goods.length&&press.length?t('Ενημέρωση ψαρέματος','Fishing update'):goods.length>1?t('Καλές μέρες για ψάρεμα','Good days for fishing'):goods.length?t('Καλή μέρα για ψάρεμα','Good day for fishing'):t('Αλλαγή πίεσης','Pressure change');
-  return {items,notified,title,body:lines.concat(pl).join('\n')};
+  const kinds=(goods.length?1:0)+(press.length?1:0)+(winds.length?1:0)+(turns.length?1:0);
+  const title=kinds>1?t('Ενημέρωση ψαρέματος','Fishing update'):goods.length>1?t('Καλές μέρες για ψάρεμα','Good days for fishing'):goods.length?t('Καλή μέρα για ψάρεμα','Good day for fishing'):press.length?t('Αλλαγή πίεσης','Pressure change'):turns.length?t('Καμπή πίεσης','Pressure turning point'):t('Αλλαγή ανέμου','Wind change');
+  return {items,notified,title,body:lines.concat(pl,tl,wl).join('\n')};
 }
-g.PF={sunMoon,hourScore,getForecast,findIdeal,message,check,goodDays,checkPlaces,dayLabel,bft,pressureEvent};
+g.PF={sunMoon,hourScore,getForecast,findIdeal,message,check,goodDays,checkPlaces,dayLabel,bft,pressureEvent,windEvent,pressureTurns};
 })(typeof self!=='undefined'?self:this);

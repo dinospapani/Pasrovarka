@@ -151,12 +151,16 @@ export async function run({ env, fetch: F = fetch, sendMail, log = console.log, 
   if (PF && webpush) {
     const stale = new Date(Date.now() - 3 * 3600e3).toISOString();
     let rows = [];
-    try { rows = (await sb(`push_subs?or=(checked_at.is.null,checked_at.lt.${encodeURIComponent(stale)})&select=*`)) || []; }
-    catch (e) { log('push_subs: ' + e.message); }
+    const stale1 = new Date(Date.now() - 55 * 60e3).toISOString();
+    try { rows = (await sb(`push_subs?or=(checked_at.is.null,checked_at.lt.${encodeURIComponent(stale)},and(turn.eq.true,checked_at.lt.${encodeURIComponent(stale1)}))&select=*`)) || []; }
+    catch (e) {
+      try { rows = (await sb(`push_subs?or=(checked_at.is.null,checked_at.lt.${encodeURIComponent(stale)})&select=*`)) || []; }
+      catch (e2) { log('push_subs: ' + e2.message); }
+    }
     for (const r of rows) {
       const upd = o => sb(`push_subs?id=eq.${encodeURIComponent(r.id)}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(o) });
       try {
-        const res = await PF.checkPlaces({ places: r.places || [], threshold: r.threshold || 75, pressure: r.pressure !== false, notified: r.state || {} }, F);
+        const res = await PF.checkPlaces({ places: r.places || [], threshold: r.threshold || 75, pressure: r.pressure !== false, wind: r.wind || null, turn: r.turn === true, notified: r.state || {} }, F);
         if (res.items.length) {
           try { await webpush.sendNotification(r.sub, JSON.stringify({ title: res.title, body: res.body }), { TTL: 6 * 3600 }); stats.fc++; }
           catch (e) {

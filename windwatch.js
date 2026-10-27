@@ -9,7 +9,7 @@ var cfg=Object.assign({on:false,deg:60,kn:6,hours:6},C.lsGet(KEY,{})||{});
 var COMP=window.LANG==='en'?['N','NE','E','SE','S','SW','W','NW']:['Β','ΒΑ','Α','ΝΑ','Ν','ΝΔ','Δ','ΒΔ'];
 function dn(d){ return COMP[Math.round((((d%360)+360)%360)/45)%8]; }
 function adiff(a,b){ var d=Math.abs(a-b)%360; return d>180?360-d:d; }
-function save(){ C.lsSet(KEY,cfg); }
+function save(){ C.lsSet(KEY,cfg); try{ window.dispatchEvent(new Event('psaro-wwatch')); }catch(e){} }
 function place(){ var c=(C.getViewCond&&C.getViewCond())||(C.getCond&&C.getCond()); return c&&c.lat!=null?{lat:+c.lat,lon:+c.lon,name:c.name||''}:null; }
 /* Βρίσκει την πρώτη ώρα στο παράθυρο όπου ο άνεμος διαφέρει αρκετά από τον τωρινό. Επιστρέφει null αν δεν υπάρχει. */
 function detect(fc,deg,kn,hours){
@@ -73,7 +73,7 @@ function ui(){
   var row=document.createElement('div'); row.className='row'; row.style.marginTop='8px';
   var now=document.createElement('button'); now.type='button'; now.className='btn sm ghost'; now.textContent=T('Έλεγχος τώρα','Check now'); row.append(now); box.append(row);
   var msg=document.createElement('p'); msg.className='note'; msg.setAttribute('role','status'); box.append(msg);
-  var nt=document.createElement('p'); nt.className='note'; nt.textContent=T('Ελέγχει την ωριαία πρόγνωση για τις επόμενες 6 ώρες στη θέση που βλέπεις, περίπου κάθε 20 λεπτά, ΜΟΝΟ όσο η εφαρμογή είναι ανοιχτή. Με κλειστή εφαρμογή δεν στέλνει ωριαίες ειδοποιήσεις.','Checks the hourly forecast for the next 6 hours at the place you are viewing, about every 20 minutes, ONLY while the app is open. It does not send hourly alerts when the app is closed.'); box.append(nt);
+  var nt=document.createElement('p'); nt.className='note'; nt.textContent=T('Με ανοιχτή εφαρμογή ελέγχει κάθε ~20 λεπτά τη θέση που βλέπεις. Αν είναι ενεργές και οι ειδοποιήσεις πρόγνωσης παραπάνω, ο server ελέγχει τις αγαπημένες/παρακολουθούμενες τοποθεσίες σου περίπου κάθε 3 ώρες και σε ειδοποιεί (για τις επόμενες 6 ώρες) ακόμα και με κλειστή εφαρμογή. Δεν είναι ωριαίος έλεγχος.','With the app open it checks the place you are viewing every ~20 minutes. If forecast notifications above are also on, the server checks your watched places about every 3 hours and notifies you (for the next 6 hours) even with the app closed. It is not an hourly check.');
   card.append(box);
   function params(){ var v=+sel.value; cfg.deg=v; cfg.kn=v===45?4:v===60?6:8; save(); }
   sel.addEventListener('change',params);

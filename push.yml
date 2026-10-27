@@ -22,7 +22,7 @@ jobs:
       - run: node send-push.mjs
         env:
           PUSH_SUBS: ${{ secrets.PUSH_SUBS }}
-          VAPID_PUBLIC: BIjAK4nbFMRkUEPqIqCcsbFDDx7pkygkJ_XxCy-guhrJ0t2tX3NgkeeRvPcC_MRwAvtdiV3No0KXKqLhCwI9IwM
+          VAPID_PUBLIC: BOVxsSBNaSS80QmyfJjwBwdgCIu08tLo5R0CK7mUaLP9yyUIyWoeNZWEyLeFtx40NJgDvSpylJGeeaTJyhJrZoo
           VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
           TEST: ${{ inputs.test }}
       - name: Save state

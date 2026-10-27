@@ -71,7 +71,7 @@ function tapData(ll){
 function tapIcon(ll){
   var d=tapData(ll), body;
   if(!d) body='<span>'+T('Εκτός περιοχής δεδομένων','Outside the data area')+'</span>';
-  else body='<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px;margin-right:5px;transform:rotate('+((d.v.dir+180)%360)+'deg)"><path d="M12 3v16M6 13l6 6 6-6" stroke="'+col(d.v.sp)+'" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>'+d.txt+'</span>';
+  else body='<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px;margin-right:5px;transform:rotate('+Math.round(d.v.dir)+'deg)"><path d="M12 3v16M6 13l6 6 6-6" stroke="'+col(d.v.sp)+'" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>'+d.txt+'</span>';
   return L.divIcon({className:'',iconSize:[0,0],html:'<div style="position:relative"><div style="position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid '+(d?col(d.v.sp):'#888')+';box-shadow:0 1px 4px #0008"></div><div style="position:absolute;bottom:12px;left:0;transform:translateX(-50%);background:rgba(10,20,30,.93);color:#fff;border-radius:10px;padding:5px 10px;font:600 13px system-ui;white-space:nowrap;box-shadow:0 2px 8px #0008">'+body+'</div></div>'});
 }
 function clearTap(){ if(tapPop){ try{ map.removeLayer(tapPop); }catch(e){} tapPop=null; } tapLL=null; }
@@ -195,8 +195,8 @@ function drawStations(){
   var b=map.getBounds(), c0=map.getCenter(), vis=stations.filter(function(x){ return b.contains([x.lat,x.lon])&&Date.now()-Date.parse(x.t||0)<3*3600000; });
   vis.sort(function(p,q){ return dist2(p,c0)-dist2(q,c0); }); vis=vis.slice(0,30);
   vis.forEach(function(st){
-    var rot=((st.dir==null?0:st.dir)+180)%360, c=col(st.spd);
-    var ic=L.divIcon({className:'',iconSize:[46,46],iconAnchor:[23,23],html:'<div style="width:46px;text-align:center;font:700 11px system-ui;color:#fff;text-shadow:0 1px 3px #000"><div style="width:26px;height:26px;margin:0 auto;border-radius:50%;background:'+c+';border:2px solid #fff;box-shadow:0 1px 5px #0008;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="16" height="16" style="transform:rotate('+rot+'deg)"><path d="M12 3v16M6 13l6 6 6-6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'+W(st.spd)+'</div>'});
+    var rot=(st.dir==null?0:st.dir)%360, c=col(st.spd);
+    var ic=L.divIcon({className:'',iconSize:[46,46],iconAnchor:[23,23],html:'<div style="width:46px;text-align:center;font:700 11px system-ui;color:#fff;text-shadow:0 1px 3px #000"><div style="width:26px;height:26px;margin:0 auto;border-radius:50%;background:'+c+';border:2px solid #fff;box-shadow:0 1px 5px #0008;display:flex;align-items:center;justify-content:center">'+(st.dir==null?'<span style="font-size:16px;line-height:1">•</span>':'<svg viewBox="0 0 24 24" width="16" height="16" style="transform:rotate('+rot+'deg)"><path d="M12 3v16M6 13l6 6 6-6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>')+'</div>'+W(st.spd)+'</div>'});
     var m=L.marker([st.lat,st.lon],{icon:ic,keyboard:false,interactive:true,title:(st.name||st.id)+' '+W(st.spd)}).addTo(stLayer);
     m.bindPopup('<b>'+(st.name||st.id||'')+'</b>'+(st.src?' <small>('+st.src+')</small>':'')+'<br>'+T('Μέτρηση','Observed')+': '+(st.dir!=null?dn(st.dir)+' ':'')+W(st.spd)+(st.gust?' · '+T('ριπές ','gusts ')+W(st.gust):'')+(st.t?'<br>'+String(st.t).slice(11,16)+'Z':''));
   });
