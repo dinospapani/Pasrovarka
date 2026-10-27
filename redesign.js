@@ -162,7 +162,15 @@ box.insertBefore(bar,mb.nextSibling);
       if(window.PsaroPlaces&&PsaroPlaces.selectGps) PsaroPlaces.selectGps();
       if(window.PsaroPlaces&&PsaroPlaces.view) PsaroPlaces.view(); else if(C.viewPlace) C.viewPlace({gps:true});
     },IC.me);
+    row(T('Επιλογή στον χάρτη','Choose on map'),'',function(){ closeF(); window.dispatchEvent(new CustomEvent('psaro-pickplace')); },PIN);
   }
+  window.addEventListener('psaro-placepicked',function(e){
+    var d=e.detail||{}, nm=T('Σημείο στον χάρτη','Map point');
+    try{ if(window.PsaroCoord&&PsaroCoord.fmt) nm=PsaroCoord.fmt(d.lat,d.lon); else nm=d.lat.toFixed(4)+', '+d.lon.toFixed(4); }catch(x){}
+    setLabel(nm);
+    if(window.PsaroPlaces&&PsaroPlaces.pick) PsaroPlaces.pick(nm,d.lat,d.lon);
+    else if(C.viewPlace) C.viewPlace({id:'s'+d.lat+','+d.lon,name:nm,lat:d.lat,lon:d.lon});
+  });
   document.addEventListener('psaro-viewname',function(e){ setLabel(e.detail); });
   function openF(){ fd.hidden=false; fi.value=''; showBase(); setTimeout(function(){ try{ fi.focus(); }catch(e){} },80); }
   function closeF(){ fd.hidden=true; try{ fi.blur(); }catch(e){} }

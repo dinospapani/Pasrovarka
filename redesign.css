@@ -516,3 +516,11 @@ body.nd .ndcard.ndclear{right:12px!important}
 html body.ontrip.nd .ndbar,html body.ontrip.nd.hasdt .ndbar,html body.ontrip.nd.hasdt.hasland .ndbar,html body.ontrip.nd:has(.zonewarn:not([hidden])) .ndbar,html body.ontrip.nd.hasdt:has(.zonewarn:not([hidden])) .ndbar{top:var(--ndtop,72px)}
 html body.ontrip.nd #dtBar{right:86px}
 html body.ontrip.nd #dtBar .dtmsgs{padding-right:0}
+
+/* v31z230: ίδια χρώματα με την αρχική: πορτοκαλί σε εντάσεις για τις ώρες και τα καλύτερα παράθυρα */
+body.nd .chart .b-hi{fill:var(--accent)}
+body.nd .chart .b-mid{fill:color-mix(in srgb,var(--accent) 55%,var(--line))}
+body.nd .chart .b-lo{fill:color-mix(in srgb,var(--accent) 26%,var(--line))}
+body.nd .win span{border-color:var(--accent);color:var(--accent)}
+/* μία χρωματική οικογένεια σε όλες τις οθόνες: το «θαλασσί» των πινάκων γίνεται το πορτοκαλί της εφαρμογής */
+body.nd{--sea:var(--accent);--sea-soft:color-mix(in srgb,var(--accent) 55%,var(--line))}

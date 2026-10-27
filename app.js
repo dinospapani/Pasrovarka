@@ -357,6 +357,7 @@ const Photos=(function(){
 window.PsaroCore={Store:Store,Photos:Photos,toast:null,bc:function(b){ return Math.max(1,Math.floor(+b.cnt)||1); }};
 window.addEventListener('psaro-pickfc',()=>startPick('fc'));
 window.addEventListener('psaro-picktoday',()=>startPick('today'));
+window.addEventListener('psaro-pickplace',()=>startPick('place'));
 async function resizeImage(file){
   let bmp;
   try{ bmp=await createImageBitmap(file,{imageOrientation:'from-image'}); }
@@ -473,6 +474,7 @@ function initMap(){
     const ll=e.latlng.wrap(), lat=+ll.lat.toFixed(5), lon=+ll.lng.toFixed(5);
     if(pick==='fc'){ endPick(); switchTab('fc'); window.dispatchEvent(new CustomEvent('psaro-fcpick',{detail:{lat:lat,lon:lon}})); return; }
     if(pick==='today'){ endPick(); switchTab('today'); window.dispatchEvent(new CustomEvent('psaro-todaypick',{detail:{lat:lat,lon:lon}})); return; }
+    if(pick==='place'){ endPick(); window.dispatchEvent(new CustomEvent('psaro-placepicked',{detail:{lat:lat,lon:lon}})); return; }
     if(pick==='spot'){ endPick(); openSpotForm({lat:lat,lon:lon}); return; }
     if(pick==='bite'){ endPick(); pickedPt={lat:lat,lon:lon}; $('bLocMode').value='pick'; syncLoc(); openSheet(); return; }
     const ic=d=>{const n='http://www.w3.org/2000/svg',s=document.createElementNS(n,'svg');s.setAttribute('viewBox','0 0 24 24');s.setAttribute('class','pi');const p=document.createElementNS(n,'path');p.setAttribute('d',d);s.append(p);return s;};
@@ -542,7 +544,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.hidden) youStop()
 setTimeout(youStart,1500);
 function startPick(mode){
   pick=mode; $('mapHint').hidden=false; document.body.classList.add('picking');
-  $('mapHintTxt').textContent=mode==='fc'?'Πάτα στον χάρτη για πρόγνωση σε αυτό το σημείο':mode==='today'?'Πάτα στον χάρτη για τον καιρό σε αυτό το σημείο':mode==='spot'?'Πάτα στον χάρτη για το νέο σημείο':'Πάτα στον χάρτη εκεί που έπιασες';
+  $('mapHintTxt').textContent=mode==='fc'?'Πάτα στον χάρτη για πρόγνωση σε αυτό το σημείο':mode==='today'?'Πάτα στον χάρτη για τον καιρό σε αυτό το σημείο':mode==='place'?(window.LANG==='en'?'Tap the map to choose where you will fish':'Πάτα στον χάρτη εκεί που θα ψαρέψεις'):mode==='spot'?'Πάτα στον χάρτη για το νέο σημείο':'Πάτα στον χάρτη εκεί που έπιασες';
   switchTab('map');
 }
 function endPick(){ pick=null; $('mapHint').hidden=true; document.body.classList.remove('picking'); }
