@@ -716,3 +716,29 @@ html body.nd .ndecta{margin-top:10px}
 html body.nd .ndabout h3{margin:14px 0 6px}
 html body.nd .ndabout h3:first-child{margin-top:0}
 html body.nd .ndul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.5;color:var(--muted)}
+
+/* v31z261 επισήμανση κάρτας μετά από πλοήγηση */
+body.nd #pContacts.ndflash{box-shadow:0 0 0 2px var(--accent);transition:box-shadow .3s}
+body.nd #pContacts{scroll-margin-top:72px}
+
+/* v31z262 ζωντανή κατάσταση εξόδου */
+body.nd .ndlive{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:805;display:flex;align-items:center;gap:8px;max-width:calc(100% - 120px);padding:7px 14px;border-radius:20px;background:color-mix(in srgb,var(--surface) 94%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--line);box-shadow:0 4px 16px rgba(0,0,0,.22);font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;pointer-events:none}
+body.nd .ndlive .ndld{width:9px;height:9px;border-radius:50%;background:var(--bad);flex:none;animation:ndpulse 1.6s ease-in-out infinite}
+body.nd .ndlive .ndlt{font-family:var(--font-mono);font-size:15px;font-variant-numeric:tabular-nums}
+body.nd .ndlive .ndls{color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+body.nd .ndlive.late{border-color:var(--bad)}
+body.nd .ndlive.late .ndlt{color:var(--bad)}
+@keyframes ndpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.8)}}
+@media (prefers-reduced-motion:reduce){body.nd .ndlive .ndld{animation:none}}
+
+/* v31z262 φωτογραφίες στις κάρτες εξόδων */
+.trph{display:flex;gap:6px;margin:8px 0 2px;overflow-x:auto;scrollbar-width:none}
+.trph::-webkit-scrollbar{display:none}
+.trph img{width:64px;height:64px;object-fit:cover;border-radius:12px;flex:none;border:1px solid var(--line);background:var(--water)}
+.trph .trphm{display:flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:12px;flex:none;background:var(--bg);border:1px solid var(--line);color:var(--muted);font-weight:700}
+/* v31z262 απαλή μετάβαση tabs και «pop» στο μετρητή ψαριών */
+@keyframes ndfade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+body.nd .tab:not([hidden]):not(#tab-map){animation:ndfade .22s ease-out}
+@keyframes ndpop{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1)}}
+body.nd .ndpop{animation:ndpop .35s ease-out}
+@media (prefers-reduced-motion:reduce){body.nd .tab:not([hidden]){animation:none}body.nd .ndpop{animation:none}}

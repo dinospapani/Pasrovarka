@@ -520,7 +520,10 @@ box.insertBefore(tools,bar.nextSibling);
     ov.querySelector('.ndobs').textContent=T('Ορισμός επαφής ασφαλείας','Set a safety contact'); ov.querySelector('.ndobk').textContent=T('Παράλειψη','Skip');
     ov.querySelector('.ndobn').addEventListener('click',function(){ if(step<STEPS.length-1){ step++; draw(); } else close(); });
     ov.querySelector('.ndobk').addEventListener('click',close);
-    ov.querySelector('.ndobs').addEventListener('click',function(){ close(); var np=document.getElementById('navProf'); if(np) np.click(); setTimeout(function(){ var b=[].slice.call(document.querySelectorAll('button')).filter(function(x){ return x.offsetParent&&/^(Settings|Ρυθμίσεις)$/.test(x.textContent.trim()); })[0]; if(b) b.click(); },350); });
+    ov.querySelector('.ndobs').addEventListener('click',function(){ close(); var np=document.getElementById('navProf'); if(np) np.click(); setTimeout(function(){ var b=[].slice.call(document.querySelectorAll('button')).filter(function(x){ return x.offsetParent&&/^(Settings|Ρυθμίσεις)$/.test(x.textContent.trim()); })[0]; if(b) b.click(); var n=0, t=setInterval(function(){ n++; var c=document.getElementById('pContacts'), f=document.getElementById('sfName');
+      if(c&&c.offsetParent&&f){ clearInterval(t); try{ c.scrollIntoView({block:'start',behavior:'smooth'}); }catch(e){ c.scrollIntoView(); }
+        c.classList.add('ndflash'); setTimeout(function(){ c.classList.remove('ndflash'); },2200); setTimeout(function(){ try{ f.focus({preventScroll:true}); }catch(e){} },450); }
+      else if(n>20) clearInterval(t); },150); },350); });
     document.body.appendChild(ov); document.addEventListener('keydown',key); draw(); try{ ov.querySelector('.ndobn').focus({preventScroll:true}); }catch(x){}
   }
   window.PsaroTour=function(){ open(true); };
@@ -599,5 +602,43 @@ box.insertBefore(tools,bar.nextSibling);
     else if(p<=20&&p>10&&!warned[20]){ warned[20]=true; show(T('Μπαταρία '+p+'%. Η έξοδος συνεχίζει να καταγράφεται.','Battery '+p+'%. The trip keeps being recorded.')); }
     if(p>25){ warned[20]=warned[10]=false; } }
   navigator.getBattery().then(function(b){ b.addEventListener('levelchange',function(){ chk(b); }); b.addEventListener('chargingchange',function(){ chk(b); }); setInterval(function(){ chk(b); },60000); }).catch(function(){});
+})();
+
+/* Ζωντανή κατάσταση εξόδου: χρονόμετρο, ψάρια, χιλιόμετρα και ώρα επιστροφής πάνω από τον χάρτη */
+(function(){
+  var EN=window.LANG==='en', T=function(el,en){ return EN?en:el; };
+  var pill=null, tmr=null;
+  function p2(n){ return (n<10?'0':'')+n; }
+  function hm(ms){ var d=new Date(ms); return p2(d.getHours())+':'+p2(d.getMinutes()); }
+  function build(){
+    var host=document.querySelector('.ndsearch'); host=host&&host.parentNode; if(!host) return false;
+    pill=document.createElement('div'); pill.className='ndlive'; pill.setAttribute('role','status'); pill.hidden=true;
+    pill.innerHTML='<span class="ndld" aria-hidden="true"></span><b class="ndlt">00:00</b><span class="ndls"></span>';
+    host.appendChild(pill); return true;
+  }
+  function tick(){
+    var on=document.body.classList.contains('ontrip'); if(!pill&&!build()) return;
+    var s=null; try{ s=window.PsaroTrip&&window.PsaroTrip.state&&window.PsaroTrip.state(); }catch(e){}
+    if(!on||!s||!s.active||!s.start){ pill.hidden=true; return; }
+    pill.hidden=false;
+    var sec=Math.max(0,Math.floor((Date.now()-s.start)/1000)), h=Math.floor(sec/3600), m=Math.floor(sec%3600/60), x=sec%60;
+    pill.querySelector('.ndlt').textContent=(h?h+':'+p2(m):p2(m))+':'+p2(x);
+    var n=0, km=0; try{ n=window.PsaroTrip.counts().n||0; }catch(e){} try{ km=window.PsaroTrack&&window.PsaroTrack.km?window.PsaroTrack.km():0; }catch(e){}
+    var parts=[n+' '+(n===1?T('ψάρι','fish'):T('ψάρια','fish'))];
+    if(km>=0.05) parts.push(km.toFixed(1)+' km');
+    if(s.due) parts.push(T('επιστροφή ','back ')+hm(s.due));
+    pill.querySelector('.ndls').textContent=parts.join(' · ');
+    pill.classList.toggle('late',!!(s.due&&Date.now()>s.due));
+  }
+  tmr=setInterval(tick,1000); document.addEventListener('visibilitychange',tick);
+})();
+
+/* «pop» στο σήμα των κουμπιών ψαριού όταν αλλάζει ο αριθμός */
+(function(){
+  var last=new WeakMap();
+  setInterval(function(){
+    [].forEach.call(document.querySelectorAll('#fbCatchN,#fbMissN'),function(b){
+      var v=b.textContent; if(last.has(b)&&last.get(b)!==v){ b.classList.remove('ndpop'); void b.offsetWidth; b.classList.add('ndpop'); } last.set(b,v); });
+  },500);
 })();
 })();
