@@ -825,3 +825,7 @@ body.ndbsopen .ndcard,body.ndbsopen .ndshowc{opacity:0;pointer-events:none}
 .ndobp{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:4px 0 14px;width:100%}
 .ndobp[hidden]{display:none}
 .ndobp button{min-height:48px}
+
+#ndFProf .ndvh{margin-top:18px}
+#ndFProf .ndvs{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:10px 0 8px}
+#ndFProf .ndvs button{min-height:44px}

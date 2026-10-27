@@ -505,23 +505,23 @@ box.insertBefore(tools,bar.nextSibling);
     {ic:'fish',pick:true,t:T('Πώς ψαρεύεις;','How do you fish?'),b:T('Διάλεξε τον τύπο ψαρέματος. Προσαρμόζει τις τεχνικές και τα κουμπιά ασφαλείας. Μπορείς να το αλλάξεις αργότερα στα Settings.','Pick your fishing type. It adapts the techniques and safety buttons. You can change it later in Settings.')},
     {ic:'wave',t:T('Δες τη θάλασσα πριν φύγεις','Check the sea before you leave'),b:T('Στην Πρόγνωση βλέπεις βαθμό 0–100, τις καλύτερες ώρες, άνεμο και κύμα για το σημείο που διαλέγεις.','Forecast shows a 0–100 score, the best hours, wind and waves for the place you choose.')},
     {ic:'anchor',t:T('Κατέγραψε κάθε έξοδο','Log every outing'),b:T('Πάτα το κουμπί με το ψάρι για να ξεκινήσεις έξοδο και κατέγραψε ψάρια με ένα άγγιγμα. Αν ορίσεις επαφή ασφαλείας, η εφαρμογή την ειδοποιεί αν δεν γυρίσεις στην ώρα σου.','Tap the fish button to start a trip and log catches with one tap. If you set a safety contact, the app alerts them if you do not return on time.'),last:true}];
-  var ov=null, step=0, prevFocus=null;
+  var ov=null, step=0, prevFocus=null, ST=STEPS;
   function close(){ if(!ov) return; done(); ov.remove(); ov=null; document.removeEventListener('keydown',key); try{ if(prevFocus&&prevFocus.focus) prevFocus.focus(); }catch(x){} }
   function key(e){ if(e.key==='Escape') close(); }
   function draw(){
-    var s=STEPS[step]; ov.querySelector('.ndobic').innerHTML=SV(P[s.ic]); ov.querySelector('.ndobt').textContent=s.t; ov.querySelector('.ndobb').textContent=s.b;
-    var dots=ov.querySelector('.ndobd'); dots.innerHTML=''; STEPS.forEach(function(_,i){ var d=document.createElement('i'); if(i===step) d.className='on'; dots.appendChild(d); });
+    var s=ST[step]; ov.querySelector('.ndobic').innerHTML=SV(P[s.ic]); ov.querySelector('.ndobt').textContent=s.t; ov.querySelector('.ndobb').textContent=s.b;
+    var dots=ov.querySelector('.ndobd'); dots.innerHTML=''; ST.forEach(function(_,i){ var d=document.createElement('i'); if(i===step) d.className='on'; dots.appendChild(d); });
     var pk=ov.querySelector('.ndobp'); pk.hidden=!s.pick; if(s.pick&&window.PsaroFProf){ var cur=window.PsaroFProf.get(); [].forEach.call(pk.querySelectorAll('button'),function(b){ b.setAttribute('aria-pressed',String(b.dataset.p===cur)); }); }
-    var nx=ov.querySelector('.ndobn'); nx.textContent=s.last?T('Ξεκινάμε','Get started'):T('Επόμενο','Next');
-    var sf=ov.querySelector('.ndobs'); sf.hidden=!s.last; var sk=ov.querySelector('.ndobk'); sk.hidden=!!s.last;
+    var nx=ov.querySelector('.ndobn'); nx.textContent=s.nosafe?T('Έτοιμο','Done'):s.last?T('Ξεκινάμε','Get started'):T('Επόμενο','Next');
+    var sf=ov.querySelector('.ndobs'); sf.hidden=!s.last||!!s.nosafe; var sk=ov.querySelector('.ndobk'); sk.hidden=!!s.last;
   }
-  function open(force){
-    if(ov) return; if(!force&&(seen()||hasData())){ if(!seen()&&hasData()) done(); return; }
+  function open(force,only){
+    if(ov) return; ST=only?[Object.assign({},STEPS[1],{last:true,nosafe:true})]:STEPS; if(!force&&(seen()||hasData())){ if(!seen()&&hasData()) done(); return; }
     prevFocus=document.activeElement; step=0;
     ov=document.createElement('div'); ov.className='ndob'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-label',T('Καλωσόρισμα','Welcome'));
     ov.innerHTML='<div class="ndobc"><div class="ndobic"></div><h2 class="ndobt"></h2><p class="ndobb"></p><div class="ndobp seg" role="group" hidden></div><div class="ndobd" aria-hidden="true"></div><button type="button" class="btn acc ndobn"></button><button type="button" class="btn ghost ndobs"></button><button type="button" class="ndobk"></button></div>';
     ov.querySelector('.ndobs').textContent=T('Ορισμός επαφής ασφαλείας','Set a safety contact'); ov.querySelector('.ndobk').textContent=T('Παράλειψη','Skip');
-    ov.querySelector('.ndobn').addEventListener('click',function(){ if(step<STEPS.length-1){ step++; draw(); } else close(); });
+    ov.querySelector('.ndobn').addEventListener('click',function(){ if(step<ST.length-1){ step++; draw(); } else close(); });
     var pkb=ov.querySelector('.ndobp'), PN={boat:T('Βάρκα','Boat'),shore:T('Από στεριά','From shore'),lake:T('Λίμνη / φράγμα','Lake / dam'),spear:T('Ψαροντούφεκο','Spearfishing')};
     ['boat','shore','lake','spear'].forEach(function(k){ var b=document.createElement('button'); b.type='button'; b.dataset.p=k; b.textContent=PN[k]; b.addEventListener('click',function(){ if(window.PsaroFProf) window.PsaroFProf.set(k); draw(); }); pkb.appendChild(b); });
     ov.querySelector('.ndobk').addEventListener('click',close);
@@ -532,6 +532,13 @@ box.insertBefore(tools,bar.nextSibling);
     document.body.appendChild(ov); document.addEventListener('keydown',key); draw(); try{ ov.querySelector('.ndobn').focus({preventScroll:true}); }catch(x){}
   }
   window.PsaroTour=function(){ open(true); };
+  /* υπάρχοντες χρήστες που δεν έχουν διαλέξει ακόμα τύπο ψαρέματος: μία φορά */
+  function fpUnset(){ try{ return !localStorage.getItem('psaro-fprof')&&!localStorage.getItem('psaro-fprof-asked'); }catch(x){ return false; } }
+  var t2=0, iv2=setInterval(function(){ t2++; if(t2>50){ clearInterval(iv2); return; }
+    if(document.documentElement.classList.contains('gated')||ov) return; if(!document.querySelector('.ndcard,.ndsearch')||!window.PsaroFProf) return;
+    clearInterval(iv2); if(!fpUnset()) return;
+    if(!seen()&&!hasData()) return; /* οι νέοι χρήστες το βλέπουν μέσα στο καλωσόρισμα */
+    setTimeout(function(){ try{ localStorage.setItem('psaro-fprof-asked','1'); }catch(x){} if(!ov) open(true,true); },1600); },700);
   var tries=0, iv=setInterval(function(){ tries++;
     if(tries>40){ clearInterval(iv); return; }
     if(document.documentElement.classList.contains('gated')) return;
@@ -769,11 +776,17 @@ box.insertBefore(tools,bar.nextSibling);
   function build(){
     if(card) return card;
     card=document.createElement('div'); card.id='ndFProf'; card.className='card setcard';
-    card.innerHTML='<h3></h3><div class="seg ndfps" role="group"></div><p class="note ndfpd"></p>';
+    card.innerHTML='<h3></h3><div class="seg ndfps" role="group"></div><p class="note ndfpd"></p><h3 class="ndvh"></h3><div class="seg ndvs" role="group"></div><p class="note ndvn"></p>';
     card.querySelector('h3').textContent=T('Τύπος ψαρέματος','Fishing type');
     var sg=card.querySelector('.seg');
     LIST.forEach(function(k){ var b=document.createElement('button'); b.type='button'; b.dataset.p=k; b.textContent=NAME[k]; b.addEventListener('click',function(){ set(k); }); sg.append(b); });
-    paint(); return card;
+    card.querySelector('.ndvh').textContent=T('Γλώσσα φωνητικής καταγραφής','Voice input language');
+    card.querySelector('.ndvn').textContent=T('Για το μικρόφωνο στον χάρτη (έξοδος) και το «Πες το» στη φόρμα ψαριού. Λέγε τα ονόματα των ψαριών στη γλώσσα που διαλέγεις.','For the map microphone (during a trip) and “Say it” in the catch form. Say fish names in the language you pick here.');
+    var vs=card.querySelector('.ndvs');
+    function vget(){ var v=null; try{ v=JSON.parse(localStorage.getItem('psaro-vlang')); }catch(e){} return v==='en-US'?'en-US':'el-GR'; }
+    function vpaint(){ [].forEach.call(vs.querySelectorAll('button'),function(b){ b.setAttribute('aria-pressed',String(b.dataset.v===vget())); }); }
+    [['el-GR','Ελληνικά'],['en-US','English']].forEach(function(o){ var b=document.createElement('button'); b.type='button'; b.dataset.v=o[0]; b.textContent=o[1]; b.addEventListener('click',function(){ try{ if(C&&C.lsSet) C.lsSet('psaro-vlang',o[0]); else localStorage.setItem('psaro-vlang',JSON.stringify(o[0])); }catch(e){} vpaint(); }); vs.append(b); });
+    vpaint(); paint(); return card;
   }
   window.PsaroFProf={get:get,set:set,card:build,name:function(){ return NAME[get()]; }};
   apply(); new MutationObserver(function(){ if(!document.body.classList.contains('fp-'+get())) apply(); }).observe(document.body,{attributes:true,attributeFilter:['class']});
