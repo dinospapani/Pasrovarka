@@ -912,7 +912,7 @@ html[data-theme=light].ndpend body::before{background:#eef3f5}
 
 /* v31z291 εργαλεία χάρτη ανά προφίλ ψαρέματος */
 body.fp-shore #bGear,body.fp-lake #bGear,body.fp-spear #bGear{display:none!important}
-body.fp-lake #bSea,body.fp-lake #bDepthMap,body.fp-lake #bZones,body.fp-lake #bNav,body.fp-lake #bPorts{display:none!important}
+body.fp-lake #bSeaState,body.fp-lake #bSea,body.fp-lake #bDepthMap,body.fp-lake #bZones,body.fp-lake #bNav,body.fp-lake #bPorts{display:none!important}
 body.fp-spear #bDams,body.fp-spear #bSea{display:none!important}
 
 /* iPhone (Safari): πεδία με γράμματα μικρότερα από 16px κάνουν αυτόματο zoom όταν τα πατάς, και η σελίδα μένει μεγενθυσμένη (κόβεται δεξιά).

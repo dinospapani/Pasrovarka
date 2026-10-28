@@ -229,5 +229,5 @@ window.addEventListener('psaro-fcloaded',function(ev){
   var d=ev.detail||{};
   setTimeout(function(){ try{ render(d.place,d.fc); }catch(e){ try{ console.error('exposure',e); }catch(e0){} } },60);
 });
-window.PsaroExposure={compute:compute,logGet:logGet,level:level,hs:hs,ready:function(){ return decode(); }};
+window.PsaroExposure={compute:compute,logGet:logGet,level:level,hs:hs,ready:function(){ return decode(); },isLand:function(lat,lon){ return decode()?isLand(lat,lon):-1; }};
 })();

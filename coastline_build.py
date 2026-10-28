@@ -7,6 +7,7 @@ Data (c) OpenStreetMap contributors, ODbL 1.0 - attribution is shown in the app 
 Usage: python3 coastline_build.py <path to land_polygons.shp> <output dir>
 Writes (flat files, repo root):
   coastgrid.js      land/sea raster used by exposure.js (same format as before: lon0, lat1, step, w, h, rle)
+  coastexp.js       pre-computed effective fetch around Cyprus for the sea-state map layer (seastate.js)
   coast_cy.geojson  land polygons, Cyprus
   coast_gr.geojson  land polygons, Greece
 """
@@ -107,6 +108,109 @@ def build_grid(shp_path, out_dir):
     with open(f"{out_dir}/coastgrid.js", "w") as f:
         f.write(js)
     print(f"coastgrid.js: {w}x{h} cells, {n} polygons, land {mask.mean():.3f}, {len(js)/1024:.0f} KB")
+    return mask
+
+
+# ---------- pre-computed exposure for the sea-state map layer (seastate.js) ----------
+# Same method as exposure.js: SPM/CERC effective fetch, radials every 6 deg within +-42 deg,
+# cos weighting, 200 km cap, ray step 0.25 km, on the raster above. Cells of 0.01 deg (~1 km)
+# whose centre is sea and within BAND_KM of land.
+EXPO = dict(lon0=32.15, lat1=35.80, lon1=34.70, lat0=34.45, step=0.01, band_km=10.0)
+MAXKM, RAD_STEP, HALF, STEP_KM = 200.0, 6, 42, 0.25
+RE = 6371.0088
+
+
+def quant(km):
+    """byte: 0..200 -> 0..50 km in 0.25 km; 201..250 -> 53..200 km in 3 km."""
+    km = np.clip(km, 0, MAXKM)
+    return np.where(km <= 50, np.round(km / 0.25), 200 + np.round((km - 50) / 3)).astype(np.uint8)
+
+
+def build_exposure(mask, out_dir):
+    from scipy.ndimage import distance_transform_edt
+
+    g, e = GRID, EXPO
+    gs = g["step"]
+    H, W = mask.shape
+
+    def is_land(lat, lon):
+        c = np.floor((lon - g["lon0"]) / gs).astype(np.int64)
+        r = np.floor((g["lat1"] - lat) / gs).astype(np.int64)
+        out = (c < 0) | (r < 0) | (c >= W) | (r >= H)
+        v = np.full(lat.shape, -1, dtype=np.int8)
+        ok = ~out
+        v[ok] = mask[r[ok], c[ok]]
+        return v
+
+    ew = int(round((e["lon1"] - e["lon0"]) / e["step"]))
+    eh = int(round((e["lat1"] - e["lat0"]) / e["step"]))
+    rr, cc = np.mgrid[0:eh, 0:ew]
+    clat = e["lat1"] - (rr + 0.5) * e["step"]
+    clon = e["lon0"] + (cc + 0.5) * e["step"]
+
+    # distance to nearest land (km) on the fine raster, window around the area + 20 km
+    pad = 0.25
+    r0 = int((g["lat1"] - (e["lat1"] + pad)) / gs); r1 = int((g["lat1"] - (e["lat0"] - pad)) / gs)
+    c0 = int((e["lon0"] - pad - g["lon0"]) / gs); c1 = int((e["lon1"] + pad - g["lon0"]) / gs)
+    sub = mask[r0:r1, c0:c1]
+    kmy = gs * 111.2
+    kmx = gs * 111.2 * np.cos(np.radians((e["lat0"] + e["lat1"]) / 2))
+    dist = distance_transform_edt(sub == 0, sampling=(kmy, kmx))
+    sr = np.floor((g["lat1"] - clat) / gs).astype(int) - r0
+    sc = np.floor((clon - g["lon0"]) / gs).astype(int) - c0
+    d = dist[sr, sc]
+    keep = (is_land(clat, clon) == 0) & (d <= e["band_km"])
+    plat = clat[keep].astype(np.float64)
+    plon = clon[keep].astype(np.float64)
+    n = plat.size
+
+    la1 = np.radians(plat); lo1 = np.radians(plon)
+    sin_la, cos_la = np.sin(la1), np.cos(la1)
+
+    def ray(brg):
+        b = np.radians(brg)
+        res = np.full(n, MAXKM)
+        act = np.arange(n)
+        for k in range(1, int(round(MAXKM / STEP_KM)) + 1):
+            if act.size == 0:
+                break
+            dd = k * STEP_KM / RE
+            la2 = np.arcsin(sin_la[act] * np.cos(dd) + cos_la[act] * np.sin(dd) * np.cos(b))
+            lo2 = lo1[act] + np.arctan2(np.sin(b) * np.sin(dd) * cos_la[act], np.cos(dd) - sin_la[act] * np.sin(la2))
+            v = is_land(np.degrees(la2), np.degrees(lo2))
+            hit = v == 1
+            res[act[hit]] = (k - 1) * STEP_KM
+            gone = hit | (v == -1)  # -1: left the raster -> keep MAXKM (as exposure.js)
+            act = act[~gone]
+        return res
+
+    F = np.zeros((n, 16))
+    radials = list(range(-HALF // RAD_STEP, HALF // RAD_STEP + 1))
+    w = np.array([np.cos(np.radians(k * RAD_STEP)) for k in radials])
+    for i in range(16):
+        frm = i * 22.5
+        acc = np.zeros(n)
+        for wk, k in zip(w, radials):
+            acc += wk * ray((frm + k * RAD_STEP) % 360)
+        F[:, i] = acc / w.sum()
+
+    stamp = datetime.date.today().isoformat()
+    cells = encode_rle(keep.astype(np.uint8))
+    fb = base64.b64encode(quant(F).tobytes()).decode("ascii")
+    js = (
+        "/* Προϋπολογισμένο ενεργό fetch (km) ανά κελί 0,01° (~1 km), 16 κατευθύνσεις ανέμου, έως "
+        f"{e['band_km']:g} km από την ακτή της Κύπρου.\n"
+        "   Ίδια μέθοδος με το exposure.js (SPM/CERC, ±42°, ανά 6°, ζύγισμα cos, όριο 200 km) πάνω στο coastgrid.js.\n"
+        "   Πηγή ακτογραμμής: (c) OpenStreetMap contributors, ODbL 1.0. Φτιάχνεται από το coastline-sync.yml "
+        f"({stamp}).\n"
+        "   cells: run-length (θάλασσα/κελί με δεδομένα), f: 16 byte ανά κελί με δεδομένα, με τη σειρά των γραμμών.\n"
+        "   byte q -> km: q<=200 ? q*0.25 : 50+(q-200)*3 */\n"
+        f"window.PSARO_COASTEXP={{src:'osm',built:'{stamp}',lon0:{e['lon0']:g},lat1:{e['lat1']:g},step:{e['step']:g},"
+        f"w:{ew},h:{eh},n:{n},cells:'{cells}',f:'{fb}'}};\n"
+    )
+    with open(f"{out_dir}/coastexp.js", "w") as fh:
+        fh.write(js)
+    print(f"coastexp.js: {n} cells, {len(js)/1024:.0f} KB")
 
 
 def rnd(coords):
@@ -155,5 +259,6 @@ def build_polygons(shp_path, out_dir):
 
 
 if __name__ == "__main__":
-    build_grid(sys.argv[1], sys.argv[2])
+    m = build_grid(sys.argv[1], sys.argv[2])
+    build_exposure(m, sys.argv[2])
     build_polygons(sys.argv[1], sys.argv[2])
