@@ -19,7 +19,7 @@ async function writeLocal(a){ try{ var c=await caches.open(CFG); await c.put(sco
 async function addLocal(it){ var a=await readLocal(); if(it.id&&a.some(function(x){ return x.id===it.id; })) return; a.unshift(it); await writeLocal(a); }
 async function readServer(){
   var cl=window.PsaroCloud; if(!cl||!cl.logged||!cl.logged()) return [];
-  try{ var r=await cl.rest('notif_log?select=id,at,kind,title,body,full,place,t&order=at.desc&limit=400'); var a=await r.json(); return Array.isArray(a)?a.map(function(x){ x.src='server'; return x; }):[]; }catch(e){ return []; }
+  try{ var r=await cl.rest('notif_log?select=id,at,kind,title,body,details,place,t&order=at.desc&limit=400'); var a=await r.json(); return Array.isArray(a)?a.map(function(x){ x.src='server'; x.full=x.details||x.body; return x; }):[]; }catch(e){ return []; }
 }
 function merge(loc,srv){
   var seen={}, out=[];

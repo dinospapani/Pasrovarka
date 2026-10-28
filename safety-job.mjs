@@ -197,7 +197,7 @@ export async function run({ env, fetch: F = fetch, sendMail, log = console.log, 
           const at = new Date().toISOString();
           const payload = { title: m.title, body: m.body, full: m.full, kind: m.kind, id: m.key, tag: 'bc-' + m.kind + '-' + m.key.slice(-40), at, place: m.place || null, t: m.t || null };
           // ιστορικό στη βάση (για να φαίνεται στην εφαρμογή ακόμα κι αν δεν φτάσει το push)
-          try { await sb('notif_log', { method: 'POST', headers: { Prefer: 'return=minimal,resolution=ignore-duplicates' }, body: JSON.stringify({ id: (r.user_id + '|' + m.key).slice(0, 250), user_id: r.user_id, at, kind: m.kind, title: m.title, body: m.body, full: m.full, place: m.place || null, t: m.t || null }) }); }
+          try { await sb('notif_log', { method: 'POST', headers: { Prefer: 'return=minimal,resolution=ignore-duplicates' }, body: JSON.stringify({ id: (r.user_id + '|' + m.key).slice(0, 250), user_id: r.user_id, at, kind: m.kind, title: m.title, body: m.body, details: m.full, place: m.place || null, t: m.t || null }) }); }
           catch (e) { if (!stats.nlErr) { log('notif_log: ' + e.message + ' (τρέξε το notif_log.sql)'); stats.nlErr = 1; } }
           try { await webpush.sendNotification(r.sub, JSON.stringify(payload), { TTL: 6 * 3600 }); sent++; }
           catch (e) {
@@ -234,7 +234,7 @@ export async function run({ env, fetch: F = fetch, sendMail, log = console.log, 
       if (webpush) {
         const subs = await sb(`push_subs?user_id=eq.${t.user_id}&select=*`).catch(() => []);
         const at = new Date().toISOString(), key = 'trip-pa:' + t.id + ':' + at.slice(0, 13);
-        try { await sb('notif_log', { method: 'POST', headers: { Prefer: 'return=minimal,resolution=ignore-duplicates' }, body: JSON.stringify({ id: (t.user_id + '|' + key).slice(0, 250), user_id: t.user_id, at, kind: 'pressure', title: '📉 Πτώση πίεσης στην έξοδο', body, full: body, place: { name: 'Έξοδος', lat: +t.last_lat, lon: +t.last_lon }, t: at }) }); } catch (e) { /* χωρίς ιστορικό */ }
+        try { await sb('notif_log', { method: 'POST', headers: { Prefer: 'return=minimal,resolution=ignore-duplicates' }, body: JSON.stringify({ id: (t.user_id + '|' + key).slice(0, 250), user_id: t.user_id, at, kind: 'pressure', title: '📉 Πτώση πίεσης στην έξοδο', body, details: body, place: { name: 'Έξοδος', lat: +t.last_lat, lon: +t.last_lon }, t: at }) }); } catch (e) { /* χωρίς ιστορικό */ }
         for (const r of subs || []) { try { await webpush.sendNotification(r.sub, JSON.stringify({ title: '📉 Πτώση πίεσης στην έξοδο', body, full: body, kind: 'pressure', id: key, tag: 'bc-trip-pa-' + at.slice(0, 13), at, place: { name: 'Έξοδος', lat: +t.last_lat, lon: +t.last_lon } }), { TTL: 3600 }); sent++; } catch (e) { if (e.statusCode === 404 || e.statusCode === 410) await sb(`push_subs?id=eq.${encodeURIComponent(r.id)}`, { method: 'DELETE' }).catch(() => {}); } }
       }
       await patch(t.id, { pa_at: new Date().toISOString() });
