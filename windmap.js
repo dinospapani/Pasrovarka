@@ -25,7 +25,7 @@ function ensure(){
   }
   if(panel&&panel.isConnected) return;
   panel=document.createElement('div'); panel.id='ndWindPanel'; panel.setAttribute('role','group'); panel.setAttribute('aria-label',T('Άνεμος','Wind'));
-  panel.style.cssText='position:fixed;left:10px;right:10px;bottom:calc(var(--navh,64px) + 14px);z-index:900;background:var(--card,var(--bg,#fff));color:var(--ink,#111);border:1px solid var(--line,#8886);border-radius:14px;padding:8px 10px;box-shadow:0 4px 18px #0004;max-height:42vh;overflow:auto;left:8px;right:8px';
+  panel.style.cssText='position:fixed;left:10px;right:10px;bottom:calc(var(--navh,64px) + 30px + env(safe-area-inset-bottom,0px));z-index:900;background:var(--card,var(--bg,#fff));color:var(--ink,#111);border:1px solid var(--line,#8886);border-radius:14px;padding:8px 10px;box-shadow:0 4px 18px #0004;max-height:42vh;overflow:auto;left:8px;right:8px';
   document.body.appendChild(panel);
   try{ if(window.ResizeObserver) new ResizeObserver(function(){ if(panel&&panel.isConnected) document.documentElement.style.setProperty('--ndwh',Math.round(panel.getBoundingClientRect().height)+'px'); }).observe(panel); }catch(e){}
 }
