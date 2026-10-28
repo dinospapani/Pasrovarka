@@ -194,8 +194,42 @@ function upgrade(el,axis){
   var f=el.form; if(f) f.addEventListener('reset',function(){ setTimeout(function(){ el._cfClear(); },0); });
 }
 /* δέσιμο δύο πεδίων κειμένου. Επικόλληση ζεύγους στο πρώτο πεδίο τα γεμίζει και τα δύο. onChange(lat|null,lon|null) */
+var PAIRS=[];
+var MODES=[['dm','35°26.052′'],['dd','35.43419°'],['dms','35°26′3.1″']];
+function noteText(m){
+  var en=window.LANG==='en';
+  return {dm:en?'Degrees and minutes, as on the chartplotter.':'Μοίρες και λεπτά, όπως στο πλότερ.',dd:en?'Decimal degrees, as on iPhone and Google Maps.':'Δεκαδικές μοίρες, όπως στο iPhone και στο Google Maps.',dms:en?'Degrees, minutes and seconds.':'Μοίρες, λεπτά και δευτερόλεπτα.'}[m]+(en?' You can also paste the whole pair.':' Δέχεται και επικόλληση ολόκληρου του ζεύγους.');
+}
+function paintSwitch(pr){
+  var m=mode(); if(!pr.sw) return;
+  Array.prototype.forEach.call(pr.sw.querySelectorAll('button'),function(b){ b.setAttribute('aria-pressed',String(b.getAttribute('data-m')===m)); });
+  var n=pr.note; if(n){ if(n.getAttribute('data-orig')==null) n.setAttribute('data-orig',n.textContent); n.textContent=m==='dm'?n.getAttribute('data-orig'):noteText(m); }
+}
+/* αλλαγή μορφής επιτόπου, χωρίς επανεκκίνηση: ξαναχτίζει όλα τα πεδία συντεταγμένων κρατώντας τις τιμές */
+P.setMode=function(m){
+  if(!MODES.some(function(x){ return x[0]===m; })) return;
+  var vals=PAIRS.map(function(pr){ return [P.parse(pr.la.value,'lat'),P.parse(pr.lo.value,'lon')]; });
+  if(window.PsaroUnits&&window.PsaroUnits.set) window.PsaroUnits.set('coord',m);
+  PAIRS.forEach(function(pr,i){
+    [pr.la,pr.lo].forEach(function(el){ if(el._cf){ el._cf.remove(); el._cf=null; } el.style.display=''; });
+    upgrade(pr.la,'lat'); upgrade(pr.lo,'lon');
+    if(pr.sw&&pr.lo._cf) pr.lo._cf.after(pr.sw);
+    var v=vals[i], a=isNaN(v[0])?null:v[0], o=isNaN(v[1])?null:v[1];
+    P.set(pr.la,pr.lo,a==null?undefined:a,o==null?undefined:o);
+    paintSwitch(pr);
+    pr.la.dispatchEvent(new Event('input')); pr.lo.dispatchEvent(new Event('input'));
+  });
+};
+function addSwitch(pr){
+  var sw=document.createElement('div'); sw.className='cfmode'; sw.setAttribute('role','group'); sw.setAttribute('aria-label',window.LANG==='en'?'Coordinate format':'Μορφή συντεταγμένων');
+  MODES.forEach(function(x){ var b=document.createElement('button'); b.type='button'; b.setAttribute('data-m',x[0]); b.textContent=x[1]; b.addEventListener('click',function(){ P.setMode(x[0]); }); sw.appendChild(b); });
+  pr.sw=sw; if(pr.lo._cf) pr.lo._cf.after(sw);
+  var box=pr.lo.closest('#bCoordWrap')||pr.lo.closest('form')||pr.lo.parentNode; pr.note=box&&box.querySelector('.note')||null;
+  paintSwitch(pr);
+}
 P.bind=function(latEl,lonEl,onChange){
   upgrade(latEl,'lat'); upgrade(lonEl,'lon'); latEl._pair=lonEl; lonEl._pair=latEl;
+  var pr={la:latEl,lo:lonEl,sw:null,note:null}; PAIRS.push(pr); addSwitch(pr);
   function state(){
     var la=P.parse(latEl.value,'lat'), lo=P.parse(lonEl.value,'lon');
     latEl._cf.classList.toggle('bad',!!latEl.value.trim()&&isNaN(la)); lonEl._cf.classList.toggle('bad',!!lonEl.value.trim()&&isNaN(lo));
