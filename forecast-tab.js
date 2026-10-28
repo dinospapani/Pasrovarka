@@ -123,6 +123,7 @@ function renderFc(p,f,note,t){
   try{ var ra=$('fcRadar'), sb=$('fcSub'); if(!ra&&sb){ ra=h('a',{id:'fcRadar',class:'note',target:'_blank',rel:'noopener',style:'display:block;margin:4px 0;text-decoration:underline'}); sb.after(ra); }
     if(ra){ ra.hidden=!(p&&f); if(p) { ra.href='https://www.windy.com/-Weather-radar-radar?radar,'+(+p.lat).toFixed(3)+','+(+p.lon).toFixed(3)+',9'; ra.textContent=EN?'🌧 Live rain radar and lightning (Windy). The forecast % is a model estimate and can miss storms that are already forming.':'🌧 Ζωντανό ραντάρ βροχής και κεραυνών (Windy). Το ποσοστό βροχής της πρόγνωσης είναι εκτίμηση μοντέλου και μπορεί να χάσει καταιγίδες που ήδη σχηματίζονται.'; } } }catch(e){}
   try{ pressCard(p&&f?p:null); }catch(e){}
+  try{ turnCard(p&&f?f:null); }catch(e){}
   var wb=$('fcWatch'), delBtn=$('plDel');
   wb.hidden=!p; delBtn.hidden=!p||!!(p&&p.gps); $('plRen').hidden=delBtn.hidden;
   if(p){ var on=p.watch!==false; wb.setAttribute('aria-pressed',String(on)); wb.textContent=on?'🔔 Ειδοποιήσεις: ναι':'🔕 Ειδοποιήσεις: όχι'; }
@@ -205,6 +206,22 @@ function measured(box,p,modelNow){
   fetch(SUPA+'/functions/v1/smart-api',{signal:ac?ac.signal:undefined,headers:{apikey:SKEY,Authorization:'Bearer '+SKEY}}).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(j){
     var l=Array.isArray(j)?j:[]; lsSet('psaro-obsp',{t:Date.now(),v:l}); show(pick(l));
   }).catch(function(){}).then(function(){ clearTimeout(tm); });
+}
+function turnCard(f){
+  var D=$('fcDays'); if(!D) return;
+  var box=$('fcTurn');
+  if(!box){ box=h('div',{id:'fcTurn',class:'card',style:'margin:10px 0'}); var pr=$('fcPress'); if(pr&&pr.parentNode) pr.parentNode.insertBefore(box,pr); else D.parentNode.insertBefore(box,D); }
+  box.replaceChildren(); var o=f&&PF.pressureOutlook?PF.pressureOutlook(f):null;
+  if(!o){ box.hidden=true; return; } box.hidden=false;
+  var hh=function(t){ return t.slice(11,16); }, hrs=function(n){ return n===1?T('1 ώρα','1 hour'):n+T(' ώρες',' hours'); };
+  var tr=o.trend==='fall'?T('πέφτει','falling'):o.trend==='rise'?T('ανεβαίνει','rising'):o.trend==='steady'?T('σταθερή','steady'):'';
+  var sg=function(v){ return (v>0?'+':v<0?'−':'')+Math.abs(v).toFixed(1).replace('.',EN?'.':','); };
+  box.append(h('h3',{text:T('Τάση πίεσης και καμπές','Pressure trend and turning points')}));
+  box.append(h('p',{style:'margin:4px 0;font-weight:600',text:PU.press(o.now)+(tr?' · '+tr:'')+(o.d3!=null?' ('+sg(o.d3)+' hPa / 3 '+T('ώρες','h')+')':'')}));
+  if(o.last) box.append(h('p',{style:'margin:3px 0;font-size:13px',text:T('Πριν ','')+(EN?'':hrs(o.last.hours)+': ')+(o.last.kind==='peak'?T('κορυφή ','peak '):T('κοιλάδα ','trough '))+PU.press(o.last.p)+' ('+hh(o.last.t)+') → '+(o.last.kind==='peak'?T('ξεκίνησε πτώση','falling since'):T('ξεκίνησε άνοδος','rising since'))+(EN?', '+hrs(o.last.hours)+' ago':'')}));
+  if(o.next) box.append(h('p',{style:'margin:3px 0;font-size:13px',text:T('Επόμενη καμπή: ','Next turning point: ')+(o.next.kind==='peak'?T('κορυφή ','peak '):T('κοιλάδα ','trough '))+PU.press(o.next.p)+' '+T('στις ','at ')+hh(o.next.t)+' ('+T('σε ','in ')+hrs(o.next.hours)+') → '+(o.next.kind==='peak'?T('μετά ξεκινά πτώση','then falling'):T('μετά ξεκινά άνοδος','then rising'))}));
+  else box.append(h('p',{style:'margin:3px 0;font-size:13px',text:T('Δεν προβλέπεται καμπή στην πρόγνωση που φορτώθηκε.','No turning point in the loaded forecast.')}));
+  box.append(h('p',{class:'note',text:T('Εκτίμηση από το μοντέλο πρόγνωσης (λειασμένη), όχι μέτρηση. Καμπές μικρότερες από 0,3 hPa δεν υπολογίζονται.','Model estimate (smoothed), not a measurement. Turns below 0.3 hPa are ignored.')}));
 }
 function pressCard(p,o){
   o=o||{}; if(o.td) pressTd=p||null; else pressPlace=p||null;

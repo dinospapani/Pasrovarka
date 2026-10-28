@@ -50,7 +50,15 @@ async function rest(path,opt){
   if(!r.ok) throw new Error('HTTP '+r.status+' '+(await r.text()).slice(0,120));
   return r;
 }
-window.PsaroCloud={logged:function(){return !!sess;},rest:function(p,o){return rest(p,o);},name:function(){return sess&&sess.name||'';},uid:function(){return sess&&sess.uid||'';},url:URL_,storage:async function(m,p,b,t){ return storage(m,p,b,t); }};
+async function fn(name,body){
+  await ensure(); if(!sess||!sess.access_token) throw new Error('not logged in');
+  var o={method:'POST',headers:H(),body:JSON.stringify(body||{})};
+  var r=await fetch(URL_+'/functions/v1/'+name,o);
+  if(r.status===401){ var j=await auth('token?grant_type=refresh_token',{refresh_token:sess.refresh_token}); setSess(j); o.headers=H(); r=await fetch(URL_+'/functions/v1/'+name,o); }
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+window.PsaroCloud={logged:function(){return !!sess;},rest:function(p,o){return rest(p,o);},fn:fn,name:function(){return sess&&sess.name||'';},uid:function(){return sess&&sess.uid||'';},url:URL_,storage:async function(m,p,b,t){ return storage(m,p,b,t); }};
 var pup=ls('psaro-pup')||{};
 async function storage(method,path,body,type){
   await ensure(); var h={apikey:KEY,Authorization:'Bearer '+sess.access_token}; if(type){ h['Content-Type']=type; h['x-upsert']='true'; }

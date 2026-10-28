@@ -77,7 +77,7 @@ var chk=gc.querySelector('input'); chk.checked=!window.PsaroTrack||window.PsaroT
 chk.addEventListener('change',function(){ if(window.PsaroTrack) window.PsaroTrack.setEnabled(chk.checked); });
 var uc=document.createElement('div'); uc.className='card setcard'; uc.id='unitsCard';
 var uh=document.createElement('b'); uh.textContent=T('Μονάδες μέτρησης','Units'); uc.append(uh);
-var UL={wind:T('Άνεμος','Wind'),temp:T('Θερμοκρασία','Temperature'),press:T('Πίεση','Pressure'),wave:T('Κύμα','Waves'),dist:T('Απόσταση','Distance')};
+var UL={wind:T('Άνεμος','Wind'),temp:T('Θερμοκρασία','Temperature'),press:T('Πίεση','Pressure'),wave:T('Κύμα','Waves'),dist:T('Απόσταση','Distance'),coord:T('Συντεταγμένες','Coordinates')};
 Object.keys(UL).forEach(function(k){
   var row=document.createElement('div'); row.className='unrow';
   var l=document.createElement('span'); l.textContent=UL[k]; row.append(l);

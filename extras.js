@@ -68,6 +68,13 @@ async function pushTrip(){
     catch(e1){ extOK=false; await cl.rest('safety_trips',{method:'POST',headers:H,body:JSON.stringify(base)}); }
     srvMsg(s.active?'Η δήλωση έφτασε στον server: η επαφή θα ειδοποιηθεί αυτόματα αν κάτι δεν πάει καλά.':'');
     s=load(); s.synced=true; save(s);
+    /* άμεση ειδοποίηση επαφής (αλλιώς την στέλνει ο server στην επόμενη επανάληψη, έως 5 λεπτά αργότερα) */
+    try{
+      if(cl.fn){
+        if(s.active&&!s.pgStart){ s.pgStart=1; save(s); cl.fn('quick-processor',{action:'trip',id:s.id,phase:'start'}).catch(function(){ var q=load(); if(q.id===s.id){ q.pgStart=0; save(q); } }); }
+        else if(!s.active&&s.pgStart&&!s.pgEnd){ s.pgEnd=1; save(s); cl.fn('quick-processor',{action:'trip',id:s.id,phase:'end'}).catch(function(){ var q=load(); if(q.id===s.id){ q.pgEnd=0; save(q); } }); }
+      }
+    }catch(e3){}
   }catch(err){ var s2=load(); s2.synced=false; save(s2); srvMsg('Δεν έφτασε στον server (ελέγξτε internet ή αν έχει στηθεί ο server). Η υπενθύμιση στο κινητό δουλεύει κανονικά.'); }
 }
 
@@ -179,7 +186,7 @@ function snap0(){ var c=C.getCond(); return c?{lat:c.lat,lon:c.lon,press:c.press
 function start(){
   var d=load(), time=$('sfTime').value;
   if(!time){ $('sfMsg').textContent='Βάλε ώρα επιστροφής.'; return; }
-  var s=Object.assign({},d,{active:true,id:'trip-'+Date.now().toString(36),route:$('sfRoute').value.trim(),due:localMinToMs(time),autoExt:0,sosAt:0,last:null,start:Date.now(),startDate:C.nicosiaToday(),cond0:snap0(),sil:+$('sfSil').value||0,synced:undefined});
+  var s=Object.assign({},d,{active:true,id:'trip-'+Date.now().toString(36),route:$('sfRoute').value.trim(),due:localMinToMs(time),autoExt:0,sosAt:0,pgStart:0,pgEnd:0,last:null,start:Date.now(),startDate:C.nicosiaToday(),cond0:snap0(),sil:+$('sfSil').value||0,synced:undefined});
   save(s); $('sfMsg').textContent=''; render(); closeSheet();
   pushContact().then(function(){ return trackPos(); }).then(function(){ pushTrip(); });
   clearInterval(timer); timer=setInterval(tick,60000);

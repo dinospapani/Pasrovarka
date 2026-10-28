@@ -7,7 +7,7 @@ const TZ = 'Asia/Nicosia';
 const hm = iso => new Intl.DateTimeFormat('el-GR', { timeZone: TZ, hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
 const mapLink = (la, lo) => (la != null && lo != null) ? `https://maps.google.com/?q=${(+la).toFixed(5)},${(+lo).toFixed(5)}` : '';
 
-export async function run({ env, fetch: F = fetch, sendMail, log = console.log, PF = null, webpush = null }) {
+export async function run({ env, fetch: F = fetch, sendMail, log = console.log, PF = null, webpush = null, only = null }) {
   const URL_ = env.SUPABASE_URL, KEY = env.SUPABASE_SERVICE_KEY, TG = env.TELEGRAM_BOT_TOKEN;
   if (!URL_ || !KEY) { log('Λείπουν τα SUPABASE_URL / SUPABASE_SERVICE_KEY.'); return { ok: false }; }
   const H = { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' };
@@ -79,13 +79,39 @@ export async function run({ env, fetch: F = fetch, sendMail, log = console.log, 
     return sent;
   };
   const who = t => (t.user_name || 'Ο φίλος σου');
+  const startText = t => `${who(t)} ξεκίνησε έξοδο με σκάφος${t.route ? ' (' + t.route + ')' : ''}. Επιστροφή στις ${hm(t.due_at)}. Θα ειδοποιηθείς αυτόματα αν δεν επιβεβαιώσει ότι γύρισε, αν χαθεί η επαφή μαζί του ή αν το κινητό του μείνει από μπαταρία.`;
+  const doneText = t => (t.alerted_at || t.silence_sent || t.lowbat_sent)
+    ? `ΟΛΑ ΚΑΛΑ: ${who(t)} επιβεβαίωσε ότι γύρισε ασφαλής. Ευχαριστούμε.`
+    : `✅ ${who(t)} γύρισε από την έξοδο με σκάφος${t.route ? ' (' + t.route + ')' : ''}. Όλα καλά.`;
   const nowIso = new Date().toISOString();
 
-  // 2) Νέες έξοδοι: ενημέρωση "ξεκίνησε"
-  for (const t of (await sb(`safety_trips?status=eq.active&start_sent=eq.false&select=*`)) || []) {
+  // Άμεση ενημέρωση από την εφαρμογή (phase: start | end) για μία έξοδο ενός χρήστη. Δεν τρέχει τα υπόλοιπα βήματα.
+  if (only) {
+    const rows = (await sb(`safety_trips?id=eq.${encodeURIComponent(only.id)}&user_id=eq.${encodeURIComponent(only.uid)}&select=*`)) || [];
+    const t = rows[0]; if (!t) return { ok: true, sent: 0, why: 'no trip' };
     const c = await contactOf(t.user_id);
-    const text = `${who(t)} ξεκίνησε έξοδο με σκάφος${t.route ? ' (' + t.route + ')' : ''}. Επιστροφή στις ${hm(t.due_at)}. Θα ειδοποιηθείς αυτόματα αν δεν επιβεβαιώσει ότι γύρισε, αν χαθεί η επαφή μαζί του ή αν το κινητό του μείνει από μπαταρία.`;
-    const n = await notify(c, text, t, false);
+    if (only.phase === 'start') {
+      if (t.status !== 'active' || t.start_sent) return { ok: true, sent: 0, why: 'already' };
+      if (Date.parse(t.due_at) <= Date.now()) return { ok: true, sent: 0, why: 'late' };
+      const n = await notify(c, startText(t), t, false);
+      await patch(t.id, { start_sent: true });
+      return { ok: true, sent: n };
+    }
+    if (only.phase === 'end') {
+      if (t.status !== 'done' || t.done_sent || !t.start_sent) return { ok: true, sent: 0, why: 'skip' };
+      const n = await notify(c, doneText(t), t, false);
+      await patch(t.id, { done_sent: true });
+      return { ok: true, sent: n };
+    }
+    return { ok: false, why: 'bad phase' };
+  }
+
+  // 2) Νέες έξοδοι: ενημέρωση "ξεκίνησε" (εφεδρικά, αν δεν πρόλαβε η άμεση ειδοποίηση από την εφαρμογή).
+  //    Αν η ώρα επιστροφής έχει ήδη περάσει, δεν στέλνουμε «ξεκίνησε» (θα ακολουθήσει η ειδοποίηση ασφαλείας).
+  for (const t of (await sb(`safety_trips?status=eq.active&start_sent=eq.false&select=*`)) || []) {
+    const late = Date.parse(t.due_at) <= Date.now();
+    const c = late ? null : await contactOf(t.user_id);
+    const n = late ? 0 : await notify(c, startText(t), t, false);
     await sb(`safety_trips?id=eq.${encodeURIComponent(t.id)}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ start_sent: true }) });
     if (n) stats.start++;
   }
@@ -138,12 +164,13 @@ export async function run({ env, fetch: F = fetch, sendMail, log = console.log, 
   for (const t of (await sb(`safety_trips?status=eq.alerted&due_at=gt.${encodeURIComponent(nowIso)}&select=id`)) || [])
     await sb(`safety_trips?id=eq.${encodeURIComponent(t.id)}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ status: 'active', alerted_at: null }) });
 
-  // 5) Γύρισε ασφαλής μετά από ειδοποίηση
+  // 5) Γύρισε ασφαλής: σε κάθε έξοδο για την οποία η επαφή ενημερώθηκε ότι ξεκίνησε (τελευταίες 6 ώρες), και πάντα μετά από ειδοποίηση
   const doneQ = 'safety_trips?status=eq.done&done_sent=eq.false&select=*&';
-  const doneList = (await sb(doneQ + 'or=(alerted_at.not.is.null,silence_sent.eq.true,lowbat_sent.eq.true)').catch(() => sb(doneQ + 'alerted_at=not.is.null'))) || [];
+  const since = encodeURIComponent(new Date(Date.now() - 6 * 3600e3).toISOString());
+  const doneList = (await sb(doneQ + `or=(alerted_at.not.is.null,silence_sent.eq.true,lowbat_sent.eq.true,and(start_sent.eq.true,created_at.gt.${since}))`).catch(() => sb(doneQ + 'alerted_at=not.is.null'))) || [];
   for (const t of doneList) {
     const c = await contactOf(t.user_id);
-    await notify(c, `ΟΛΑ ΚΑΛΑ: ${who(t)} επιβεβαίωσε ότι γύρισε ασφαλής. Ευχαριστούμε.`, t, false);
+    await notify(c, doneText(t), t, false);
     await sb(`safety_trips?id=eq.${encodeURIComponent(t.id)}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ done_sent: true }) });
     stats.clear++;
   }

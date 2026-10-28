@@ -795,6 +795,18 @@ function reviewTrip(t){
   if(pts.length) setTimeout(()=>map.fitBounds(L.latLngBounds(pts),{padding:[70,70],maxZoom:16}),350);
   else toast(en?'No fish with a location on this trip.':'Δεν υπάρχουν ψάρια με θέση σε αυτή την έξοδο.');
 }
+function reviewBites(list,text){
+  const en=window.LANG==='en'; list=list.filter(b=>typeof b.lat==='number'&&typeof b.lon==='number');
+  switchTab('map'); if(!map) return;
+  if(tripActive()){ toast(en?'A trip is in progress. All your fish are already shown.':'Έξοδος σε εξέλιξη. Τα ψάρια σου φαίνονται ήδη όλα.'); return; }
+  if(!list.length){ toast(en?'No fish with a location match these filters.':'Κανένα ψάρι με θέση δεν ταιριάζει με αυτά τα φίλτρα.'); return; }
+  reviewSet=new Set(list.map(b=>b.id)); drawMap(); if(bitesVisRef) bitesVisRef(); else if(!map.hasLayer(bitesG)) bitesG.addTo(map);
+  try{ if(window.PsaroTrack&&window.PsaroTrack.hide) window.PsaroTrack.hide(); }catch(e){}
+  let bar=$('reviewBar');
+  if(!bar){ bar=h('div',{id:'reviewBar',class:'rvbar'},h('span',{class:'rvtx'}),h('button',{type:'button',class:'rvx','aria-label':en?'Close':'Κλείσιμο',text:'✕',onclick:endReview})); document.querySelector('.mapbox').appendChild(bar); }
+  bar.querySelector('.rvtx').textContent=text(list.length); bar.hidden=false;
+  setTimeout(()=>map.fitBounds(L.latLngBounds(list.map(b=>[b.lat,b.lon])),{padding:[70,70],maxZoom:16}),350);
+}
 window.addEventListener('psaro-sess',()=>{ if(tripActive()&&reviewSet) endReview(); });
 const fmtDur=ms=>{const m=Math.max(0,Math.round(ms/60000)),hh=Math.floor(m/60),en=window.LANG==='en';return hh?hh+(en?'h ':'ω ')+('0'+(m%60)).slice(-2)+(en?'m':'λ'):m+(en?'m':'λ');};
 /* Ταξινόμηση λιστών (θυμάται την επιλογή ανά λίστα) */
@@ -1356,6 +1368,8 @@ function renderBites(){
   updateSuggest();
   const L=$('biteList'); L.replaceChildren();
   const spf=spfGet(), list=Store.get('bites').filter(b=>!b.gear&&PsaroRange.inR('log',b)&&(!spf||(b.species||'').trim()===spf)).sort({new:(a,b)=>biteMs(b)-biteMs(a),old:(a,b)=>biteMs(a)-biteMs(b),kg:(a,b)=>(+b.kg||0)-(+a.kg||0)||biteMs(b)-biteMs(a),len:(a,b)=>(+b.len||0)-(+a.len||0)||biteMs(b)-biteMs(a),sp:(a,b)=>(a.species||'￿').localeCompare(b.species||'￿','el')||biteMs(b)-biteMs(a)}[biteSortGet()]);
+  if(list.length){ const en=window.LANG==='en', withPos=list.filter(b=>typeof b.lat==='number'&&typeof b.lon==='number');
+    L.append(h('button',{class:'btn sm',type:'button',style:'margin:0 0 10px',disabled:!withPos.length,text:(en?'Show all on map':'Όλα στον χάρτη')+' ('+withPos.length+')',onclick:()=>reviewBites(list,n=>{ let p=''; try{ p=PsaroRange.active('log')?PsaroRange.label('log'):''; }catch(e){} return n+(en?' fish on the map':' ψάρια στον χάρτη')+(spf?' · '+spf:'')+(p?' · '+p:''); })})); }
   if(!list.length) L.append(h('div',{class:'empty',text:PsaroRange.active('log')?(window.LANG==='en'?'No bites in this period.':'Κανένα τσίμπημα σε αυτό το διάστημα.'):'Κανένα τσίμπημα ακόμα. Πάτα το + για να καταγράψεις το πρώτο.'}));
   for(const b of list){
     const del=h('button',{class:'btn ghost sm',type:'button',text:'Διαγραφή'});

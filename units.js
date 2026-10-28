@@ -1,13 +1,14 @@
 /* Μονάδες μέτρησης: αποθηκεύονται σε psaro-units. Οι εσωτερικές τιμές μένουν kn, °C, hPa, m, km. */
 (function(){
 'use strict';
-var K='psaro-units', D={wind:'bft',temp:'c',press:'hpa',wave:'m',dist:'km'};
+var K='psaro-units', D={wind:'bft',temp:'c',press:'hpa',wave:'m',dist:'km',coord:'dm'};
 var OPT={
   wind:[['kn','kn'],['bft','Bft'],['kmh','km/h'],['ms','m/s'],['mph','mph']],
   temp:[['c','°C'],['f','°F']],
   press:[['hpa','hPa'],['inhg','inHg'],['mmhg','mmHg']],
   wave:[['m','m'],['ft','ft']],
-  dist:[['km','km'],['nm','nm'],['mi','mi']]
+  dist:[['km','km'],['nm','nm'],['mi','mi']],
+  coord:[['dm','35°26.052′'],['dd','35.43419°'],['dms','35°26′3.1″']]
 };
 var U={};
 function load(){ var o={}; try{ o=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){} var r={}; Object.keys(D).forEach(function(k){ r[k]=OPT[k].some(function(x){ return x[0]===o[k]; })?o[k]:D[k]; }); return r; }

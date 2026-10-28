@@ -1405,3 +1405,7 @@ body.ontrip .you{box-sizing:border-box;width:34px;height:34px;margin:-8px 0 0 -8
 
 /* v31z209: το NU/CU/HU φαίνεται μόνο κατά την έξοδο */
 body:not(.ontrip) .mo-btn{display:none!important}
+
+.cfield .cfdd{flex:1 1 auto;min-width:0;text-align:left!important;padding:0 10px!important}
+.cfield .cfs{flex:1.3 1 0;min-width:0}
+.cfield-dms{gap:3px}
