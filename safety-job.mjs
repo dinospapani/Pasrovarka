@@ -161,11 +161,12 @@ export async function run({ env, fetch: F = fetch, sendMail, log = console.log, 
       const upd = o => sb(`push_subs?id=eq.${encodeURIComponent(r.id)}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(o) });
       try {
         const res = await PF.checkPlaces({ places: r.places || [], threshold: r.threshold || 75, pressure: r.pressure !== false, wind: r.wind || null, turn: r.turn === true, notified: r.state || {} }, F);
+        log(`Πρόγνωση ${String(r.id).slice(0, 6)}: τοποθεσίες=${(r.places || []).length} ok=${res.okN} καλές=${res.goodsN} πίεση=${res.pressN} καμπές=${res.turnsN} άνεμος=${res.windsN} ειδοποιήσεις=${res.items.length}` + (res.errs && res.errs.length ? ' ΣΦΑΛΜΑΤΑ: ' + res.errs.slice(0, 3).join(' | ') : ''));
         if (res.items.length) {
           try { await webpush.sendNotification(r.sub, JSON.stringify({ title: res.title, body: res.body }), { TTL: 6 * 3600 }); stats.fc++; }
           catch (e) {
             if (e.statusCode === 404 || e.statusCode === 410) { await sb(`push_subs?id=eq.${encodeURIComponent(r.id)}`, { method: 'DELETE' }); continue; }
-            log('Push: ' + (e.statusCode || '') + ' ' + e.message); await upd({ checked_at: new Date().toISOString() }); continue;
+            log('Push: ' + (e.statusCode || '') + ' ' + e.message + ' ' + String(e.body || '').slice(0, 160)); await upd({ checked_at: new Date().toISOString() }); continue;
           }
         }
         await upd({ checked_at: new Date().toISOString(), state: res.notified });

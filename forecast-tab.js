@@ -170,8 +170,8 @@ function renderFc(p,f,note,t){
 }
 
 /* ---------- γράφημα πίεσης 24 ωρών (ενδεικτικό, μοντέλο Open-Meteo) ---------- */
-function pressSeries(p){
-  var key='psaro-fcpress2', c=lsGet(key,null);
+function pressSeries(p,key0){
+  var key=key0||'psaro-fcpress2', c=lsGet(key,null);
   if(c&&c.id===p.id&&Date.now()-c.t<30*60000&&c.v) return Promise.resolve(c.v);
   var url='https://api.open-meteo.com/v1/forecast?latitude='+(+p.lat).toFixed(3)+'&longitude='+(+p.lon).toFixed(3)+'&hourly=pressure_msl,wind_speed_10m,wind_gusts_10m,wind_direction_10m&wind_speed_unit=kn&past_hours=24&forecast_hours=25&timezone=UTC';
   var ac=new AbortController(), tm=setTimeout(function(){ ac.abort(); },10000);
@@ -182,15 +182,19 @@ function pressSeries(p){
     var v={pts:out,now:now}; lsSet(key,{id:p.id,t:Date.now(),v:v}); return v;
   }).catch(function(e){ clearTimeout(tm); if(c&&c.id===p.id&&c.v) return c.v; throw e; });
 }
-var pressPlace=null;
-window.addEventListener('psaro-units',function(){ if(pressPlace) { try{ pressCard(pressPlace); }catch(e){} } });
-function pressCard(p){
-  pressPlace=p||null;
-  var box=$('fcPress'); if(!box){ var D=$('fcDays'); if(!D) return; box=h('div',{id:'fcPress',class:'card',style:'margin:10px 0'}); D.parentNode.insertBefore(box,D); }
+var pressPlace=null, pressTd=null;
+window.addEventListener('psaro-units',function(){ if(pressPlace) { try{ pressCard(pressPlace); }catch(e){} } if(pressTd) { try{ pressCard(pressTd,{td:1}); }catch(e){} } });
+function pressCard(p,o){
+  o=o||{}; if(o.td) pressTd=p||null; else pressPlace=p||null;
+  var bid=o.td?'tdPress':'fcPress', box=$(bid);
+  if(!box){
+    if(o.td){ var lb=$('liveBox'); if(!lb||!lb.parentNode) return; box=h('div',{id:bid,class:'card',style:'margin:10px 0'}); lb.parentNode.insertBefore(box,lb.nextSibling); }
+    else { var D=$('fcDays'); if(!D) return; box=h('div',{id:bid,class:'card',style:'margin:10px 0'}); D.parentNode.insertBefore(box,D); }
+  }
   box.replaceChildren(); if(!p) { box.hidden=true; return; } box.hidden=false;
   var TT=T('Πίεση και άνεμος, 24 ώρες','Pressure and wind, 24 h');
   box.append(h('h3',{text:TT}),h('p',{class:'note',text:T('Φόρτωση…','Loading…')}));
-  pressSeries(p).then(function(v){
+  pressSeries(p,o.td?'psaro-fcpress2t':null).then(function(v){
     var pts=v.pts, n=v.now; if(!pts.length||n<3){ throw new Error('nodata'); }
     var hasW=pts.some(function(q){ return q.w!=null; });
     var ns='http://www.w3.org/2000/svg', W=320, L=6, R=26, TP=8, H1=84, GAP=22, H2=hasW?78:0, AR=hasW?14:0, BT=16, Ht=TP+H1+(hasW?GAP+H2+AR:0)+BT;
@@ -251,6 +255,24 @@ function pressCard(p){
       h('p',{class:'note',text:T('Πάνω: πίεση (μπλε). Κάτω: άνεμος (πορτοκαλί, διακεκομμένη κουκκίδα = ριπές, βέλη = προς πού πηγαίνει ο άνεμος). Συνεχής γραμμή = παρελθόν, διακεκομμένη = πρόγνωση. Ενδεικτικό, από μοντέλο, όχι από όργανο.','Top: pressure (blue). Bottom: wind (orange, dotted = gusts, arrows = where the wind is going). Solid = past, dashed = forecast. Indicative, from a model, not an instrument.')}));
   }).catch(function(){ box.replaceChildren(h('h3',{text:TT}),h('p',{class:'note',text:T('Δεν φορτώθηκαν δεδομένα πίεσης και ανέμου.','Pressure and wind data did not load.')})); });
 }
+/* Το ίδιο γράφημα (πίεση και άνεμος) στην καρτέλα «Σήμερα», για τη θέση που δείχνει η Σήμερα */
+var tdBusy=null;
+function todayPress(){
+  var tab=$('tab-today'); if(!tab||!$('liveBox')||tab.hidden) return;
+  clearTimeout(tdBusy); tdBusy=setTimeout(function(){
+    var c=null; try{ c=(C.getViewCond&&C.getViewCond())||(C.getCond&&C.getCond()); }catch(e){}
+    if(!c||c.lat==null||c.lon==null){ try{ pressCard(null,{td:1}); }catch(e){} return; }
+    var lat=+c.lat, lon=+c.lon, p={id:'td:'+lat.toFixed(2)+','+lon.toFixed(2),lat:lat,lon:lon,name:c.name||''};
+    if(pressTd&&pressTd.id===p.id&&$('tdPress')&&!$('tdPress').hidden) return;
+    try{ pressCard(p,{td:1}); }catch(e){}
+  },400);
+}
+(function(){
+  var tab=$('tab-today'); if(!tab) return;
+  try{ new MutationObserver(function(){ todayPress(); }).observe(tab,{attributes:true,attributeFilter:['hidden']}); }catch(e){}
+  document.addEventListener('psaro-view',todayPress);
+  setTimeout(todayPress,2500); setInterval(function(){ if(!document.hidden) todayPress(); },60000);
+})();
 /* ---------- ειδοποιήσεις ---------- */
 function cfgPlaces(){ return allPlaces().map(function(p){ return {id:p.id,name:p.name,lat:+p.lat.toFixed(3),lon:+p.lon.toFixed(3),watch:p.watch!==false}; }); }
 async function writeCfg(){

@@ -190,13 +190,14 @@ function dayLabel(date){ const dt=new Date(date+'T12:00:00Z'); return DN[dt.getU
 function goodDays(fc,thr){ return fc.days.filter(d=>d.safe&&d.win&&d.best>=thr).map(d=>({date:d.date,best:d.best,win:d.win,wind:d.avgWind,wave:d.avgWave})); }
 /* cfg: {places,threshold,notified,pressure}. Επιστρέφει πάντα {items,notified,title,body}. */
 async function checkPlaces(cfg,fetchFn){
-  const thr=cfg.threshold||75, notified=Object.assign({},cfg.notified||{}), goods=[], press=[], winds=[], turns=[];
+  const thr=cfg.threshold||75, notified=Object.assign({},cfg.notified||{}), goods=[], press=[], winds=[], turns=[]; const errs=[]; let okN=0;
   const today=new Date(Date.now()-86400000).toISOString().slice(0,10);
   for(const k of Object.keys(notified)){ if(k.split(':').pop()<today) delete notified[k]; }
   for(const p of cfg.places||[]){
     if(p.watch===false||p.lat==null) continue;
     try{
       const fc=await getForecast(p.lat,p.lon,fetchFn,{days:7});
+      okN++;
       for(const g of goodDays(fc,thr)){ const key=p.id+':'+g.date; if(notified[key]) continue; goods.push({type:'good',place:p,key,date:g.date,best:g.best,win:g.win,wind:g.wind}); }
       if(cfg.pressure!==false){
         const ev=pressureEvent(fc);
@@ -209,7 +210,7 @@ async function checkPlaces(cfg,fetchFn){
         const we=windEvent(fc,cfg.wind);
         if(we){ const cp=compassOf(we.to.dir,cfg.lang), key=p.id+':wd-'+(cp||'sp')+Math.round(we.to.wind/4)+':'+we.to.t.slice(0,10); if(!notified[key]) winds.push({type:'wind',place:p,key,we}); }
       }
-    }catch(e){}
+    }catch(e){ errs.push((p.name||p.id)+': '+(e&&e.message||e)); }
   }
   goods.sort((a,b)=>b.best-a.best);
   const top=goods.slice(0,4).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:b.best-a.best);
@@ -230,7 +231,7 @@ async function checkPlaces(cfg,fetchFn){
   items.forEach(i=>{notified[i.key]=1;});
   const kinds=(goods.length?1:0)+(press.length?1:0)+(winds.length?1:0)+(turns.length?1:0);
   const title=kinds>1?t('Ενημέρωση ψαρέματος','Fishing update'):goods.length>1?t('Καλές μέρες για ψάρεμα','Good days for fishing'):goods.length?t('Καλή μέρα για ψάρεμα','Good day for fishing'):press.length?t('Αλλαγή πίεσης','Pressure change'):turns.length?t('Καμπή πίεσης','Pressure turning point'):t('Αλλαγή ανέμου','Wind change');
-  return {items,notified,title,body:lines.concat(pl,tl,wl).join('\n')};
+  return {items,notified,title,body:lines.concat(pl,tl,wl).join('\n'),errs,okN,goodsN:goods.length,pressN:press.length,turnsN:turns.length,windsN:winds.length};
 }
 g.PF={sunMoon,hourScore,getForecast,findIdeal,message,check,goodDays,checkPlaces,dayLabel,bft,pressureEvent,windEvent,pressureTurns};
 })(typeof self!=='undefined'?self:this);
