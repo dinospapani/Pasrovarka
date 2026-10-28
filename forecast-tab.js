@@ -186,6 +186,26 @@ function pressSeries(p,key0){
 }
 var pressPlace=null, pressTd=null;
 window.addEventListener('psaro-units',function(){ if(pressPlace) { try{ pressCard(pressPlace); }catch(e){} } if(pressTd) { try{ pressCard(pressTd,{td:1}); }catch(e){} } });
+/* μετρημένη πίεση από σταθμό (METAR ή DoM) κοντά στη θέση, για σύγκριση με το μοντέλο· δεν δείχνει τίποτα αν δεν υπάρχει πρόσφατη μέτρηση κοντά */
+function measured(box,p,modelNow){
+  var SUPA='https://sgfohmqwdwtkhtrebnix.supabase.co', SKEY='sb_publishable_LGuwvrvLnAj1CF22Q6g9vg_4OImZYbA';
+  function pick(list){
+    var best=null, bd=1e9; (list||[]).forEach(function(s){
+      if(s.pres==null||!isFinite(s.lat)||!isFinite(s.lon)||Date.now()-Date.parse(s.t||0)>2*3600000) return;
+      var dx=(s.lon-p.lon)*Math.cos(p.lat*Math.PI/180)*111.2, dy=(s.lat-p.lat)*111.2, d=Math.sqrt(dx*dx+dy*dy); if(d<bd){ bd=d; best=s; } });
+    return best&&bd<=60?{s:best,d:bd}:null;
+  }
+  function show(r){
+    if(!r||!box.isConnected) return; var s=r.s, PU=window.PsaroUnits;
+    var dif=modelNow!=null?Math.round((s.pres-modelNow)*10)/10:null;
+    box.append(h('p',{class:'note',text:T('Μετρημένη πίεση: ','Measured pressure: ')+(PU&&PU.press?PU.press(s.pres):Math.round(s.pres)+' hPa')+' · '+(s.name||s.id)+' ('+s.src+', '+String(s.t).slice(11,16)+'Z, '+Math.round(r.d)+' '+T('χλμ.','km')+')'+(dif!=null?' · '+T('μοντέλο τώρα: ','model now: ')+(PU&&PU.press?PU.press(modelNow):Math.round(modelNow))+' ('+(dif>0?'+':'')+dif+' hPa)':'')}));
+  }
+  var c=lsGet('psaro-obsp',null); if(c&&Date.now()-c.t<10*60000&&c.v){ show(pick(c.v)); return; }
+  var ac=('AbortController' in window)?new AbortController():null, tm=setTimeout(function(){ if(ac) ac.abort(); },10000);
+  fetch(SUPA+'/functions/v1/smart-api',{signal:ac?ac.signal:undefined,headers:{apikey:SKEY,Authorization:'Bearer '+SKEY}}).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(j){
+    var l=Array.isArray(j)?j:[]; lsSet('psaro-obsp',{t:Date.now(),v:l}); show(pick(l));
+  }).catch(function(){}).then(function(){ clearTimeout(tm); });
+}
 function pressCard(p,o){
   o=o||{}; if(o.td) pressTd=p||null; else pressPlace=p||null;
   var bid=o.td?'tdPress':'fcPress', box=$(bid);
@@ -255,6 +275,7 @@ function pressCard(p,o){
     box.replaceChildren(h('h3',{text:TT}),svg,out,
       h('div',{class:'meta',style:'margin-top:6px',text:T('Πίεση, τελευταίες 3 ώρες: ','Pressure, last 3 h: ')+fmt(back)+' ('+verdict(back)+')'+(f3!=null?' · '+T('επόμενες 3 ώρες: ','next 3 h: ')+fmt(f3):'')+(f6!=null?' · '+T('επόμενες 6 ώρες: ','next 6 h: ')+fmt(f6):'')+wnote}),
       h('p',{class:'note',text:T('Πάνω: πίεση (μπλε). Κάτω: άνεμος (πορτοκαλί, διακεκομμένη κουκκίδα = ριπές, βέλη = προς πού πηγαίνει ο άνεμος). Συνεχής γραμμή = παρελθόν, διακεκομμένη = πρόγνωση. Ενδεικτικό, από μοντέλο, όχι από όργανο.','Top: pressure (blue). Bottom: wind (orange, dotted = gusts, arrows = where the wind is going). Solid = past, dashed = forecast. Indicative, from a model, not an instrument.')}));
+    try{ measured(box,p,pts[n].p); }catch(e){}
   }).catch(function(){ box.replaceChildren(h('h3',{text:TT}),h('p',{class:'note',text:T('Δεν φορτώθηκαν δεδομένα πίεσης και ανέμου.','Pressure and wind data did not load.')})); });
 }
 /* Το ίδιο γράφημα (πίεση και άνεμος) στην καρτέλα «Σήμερα», για τη θέση που δείχνει η Σήμερα */
