@@ -10,6 +10,7 @@ btn.setAttribute('aria-label',T('Άνεμος στον χάρτη','Wind on the 
 btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8a3 3 0 1 1-3 3"/></svg>';
 mb.appendChild(btn);
 var N=11, MODELS=[['ecmwf_ifs025','ECMWF'],['icon_global','ICON'],['gfs_global','GFS']], SEL=0, nowIdx=0, stations=null, stLayer=null, stErr=null, grid=null, hours=[], hi=0, on=false, cv=null, ctx=null, panel=null, parts=[], raf=0, loadId=0, mvT=null, last=0;
+var wxSrc='', wxAt=null; /* από πού ήρθε το πλέγμα: live (νέο από την πηγή), cache (κοινή μνήμη), stale (παλαιότερο, η πηγή δεν απαντούσε), direct (απευθείας) */
 var COLS=[[0,'#6c78d8'],[3,'#4f9fd8'],[7,'#3fc4a6'],[11,'#66d46a'],[16,'#c9dc4a'],[22,'#f2b134'],[28,'#ec6a3c'],[34,'#d6394f'],[41,'#a62a8a']];
 function col(kn){ var c=COLS[0][1]; for(var i=0;i<COLS.length;i++){ if(kn>=COLS[i][0]) c=COLS[i][1]; } return c; }
 function unit(){ try{ return window.PsaroUnits.wind(1)!==undefined; }catch(e){ return false; } }
@@ -48,6 +49,10 @@ function drawPanel(msg){
   var lab=document.createElement('div'); lab.id='ndWindLab'; lab.style.cssText='font-weight:600;font-size:13px;margin-top:4px'; lab.setAttribute('aria-live','polite'); panel.append(lab);
   if(msg){ lab.textContent=msg; return; }
   var hint=document.createElement('div'); hint.className='note'; hint.style.cssText='font-size:11px'; hint.textContent=T('Πάτα στον χάρτη για να δεις κατεύθυνση και ένταση σε οποιοδήποτε σημείο.','Tap the map to see direction and strength at any point.'); panel.append(hint);
+  if(wxSrc){ var sr=document.createElement('div'); sr.className='note'; sr.style.cssText='font-size:11px';
+    var hhmm=wxAt?new Date(wxAt).toLocaleTimeString(EN?'en-GB':'el-GR',{hour:'2-digit',minute:'2-digit'}):'';
+    sr.textContent=wxSrc==='stale'?T('Πρόγνωση από κοινή μνήμη, ώρα λήψης '+hhmm+'. Η πηγή δεν απαντούσε, τα δεδομένα μπορεί να είναι παλιά.','Forecast from shared cache, fetched '+hhmm+'. The source was not responding; data may be old.'):wxSrc==='direct'?T('Πρόγνωση απευθείας από την πηγή (η κοινή μνήμη δεν απάντησε).','Forecast straight from the source (shared cache did not respond).'):T('Πρόγνωση από κοινή μνήμη, ώρα λήψης '+hhmm+'.','Forecast from shared cache, fetched '+hhmm+'.');
+    panel.append(sr); }
   if(detOpen){
     var d=document.createElement('div'); d.style.cssText='margin-top:6px;border-top:1px solid var(--line,#8883);padding-top:6px';
     var rw=document.createElement('div'); rw.style.cssText='display:flex;gap:8px';
@@ -138,11 +143,18 @@ async function fetchGrid(url){
 /* Μοντέλα: δοκιμάζει σετ από πιο λεπτομερή σε πιο απλά. Τα ονόματα προέρχονται από τα κλειδιά της απάντησης, όχι από το αίτημα. */
 var SETS=[['ecmwf_ifs','icon_eu','icon_global','gfs_global'],['ecmwf_ifs025','icon_global','gfs_global'],[]];
 var LABEL={ecmwf_ifs:'ECMWF 9 km',ecmwf_ifs025:'ECMWF 25 km',icon_eu:'ICON-EU 7 km',icon_global:'ICON 11 km',gfs_global:'GFS 25 km',dwd_icon_eu:'ICON-EU 7 km'};
-async function modelFetch(base){
+/* Κοινή μνήμη στο Supabase (συνάρτηση wind-grid): το πλέγμα έρχεται από εκεί, όχι από το Open-Meteo απευθείας, ώστε να μη γεμίζει το όριο αιτημάτων. */
+async function fetchPx(px,set){
+  var u=(window.PSARO_WIND_URL||(SUPA+'/functions/v1/wind-grid'))+'?s='+px.s.toFixed(3)+'&n='+px.n.toFixed(3)+'&w='+px.w.toFixed(3)+'&e='+px.e.toFixed(3)+'&N='+N+'&models='+set.join(',');
+  var ac=new AbortController(), tm=setTimeout(function(){ ac.abort(); },30000);
+  try{ var r=await fetch(u,{signal:ac.signal,headers:{apikey:SKEY,Authorization:'Bearer '+SKEY}}); if(!r.ok) throw new Error('HTTP '+r.status); var j=await r.json(); if(!j||!Array.isArray(j.data)||!Array.isArray(j.lat)||!Array.isArray(j.lon)||j.N!==N) throw new Error('badproxy'); return j; } finally{ clearTimeout(tm); }
+}
+async function modelFetch(base,px){
   var err=null;
   for(var i=0;i<SETS.length;i++){
     try{
-      var url=SETS[i].length?base+'&models='+SETS[i].join(','):base, arr=await fetchGrid(url); arr=Array.isArray(arr)?arr:[arr];
+      var arr; if(px){ var pj=await fetchPx(px,SETS[i]); arr=pj.data; px.meta=pj; } else { var url=SETS[i].length?base+'&models='+SETS[i].join(','):base; arr=await fetchGrid(url); }
+      arr=Array.isArray(arr)?arr:[arr];
       var H=arr[0]&&arr[0].hourly; if(!H) throw new Error('nodata');
       var names=[]; Object.keys(H).forEach(function(k){ var m=k.match(/^wind_speed_10m_(.+)$/); if(m&&H['wind_direction_10m_'+m[1]]){ var ok=arr.every(function(p){ var a=p.hourly['wind_speed_10m_'+m[1]]; return a&&a.some(function(x){ return typeof x==='number'; }); }); if(ok) names.push({id:m[1],name:LABEL[m[1]]||m[1],sfx:'_'+m[1]}); } });
       if(!names.length){ if(H.wind_speed_10m) names=[{id:'auto',name:T('Μοντέλο','Model'),sfx:''}]; else throw new Error('nodata'); }
@@ -159,7 +171,12 @@ async function load(){
   var keepT=hours.length?hours[hi]:null, keepSc=panel?panel.scrollTop:0;
   if(!grid) drawPanel(T('Φόρτωση ανέμου…','Loading wind…'));
   try{
-    var mf=await modelFetch(base); if(id!==loadId||!on) return;
+    var px={s:s,n:n,w:w,e:e,meta:null}, mf=null, viaPx=false;
+    try{ mf=await modelFetch(base,px); viaPx=true; }catch(pe){ try{ console.warn('wind-grid',pe&&pe.message); }catch(e0){} if(/429/.test(String(pe&&pe.message))) throw pe; px=null; }
+    if(id!==loadId||!on) return;
+    if(!mf) mf=await modelFetch(base);
+    if(id!==loadId||!on) return;
+    if(viaPx&&px&&px.meta){ lat=px.meta.lat; lon=px.meta.lon; wxSrc=px.meta.cached?(px.meta.stale?'stale':'cache'):'live'; wxAt=px.meta.fetched_at; } else { wxSrc='direct'; wxAt=null; }
     var arr=mf.arr, names=mf.names; if(arr.length<N*N) throw new Error('short');
     var T0=arr[0].hourly.time, H=T0.length;
     var ms=names.map(function(nm){
