@@ -199,7 +199,7 @@ function drawStations(){
   if(stLayer){ map.removeLayer(stLayer); stLayer=null; }
   if(!on||!stations||!stations.length) return; stLayer=L.layerGroup().addTo(map);
   var b=map.getBounds(), c0=map.getCenter(), vis=stations.filter(function(x){ return b.contains([x.lat,x.lon])&&Date.now()-Date.parse(x.t||0)<3*3600000; });
-  vis.sort(function(p,q){ return dist2(p,c0)-dist2(q,c0); }); vis=vis.slice(0,30);
+  vis=dedupe(vis); vis.sort(function(p,q){ return dist2(p,c0)-dist2(q,c0); }); vis=vis.slice(0,30);
   vis.forEach(function(st){
     var rot=(st.dir==null?0:st.dir)%360, c=col(st.spd);
     var ic=L.divIcon({className:'',iconSize:[46,46],iconAnchor:[23,23],html:'<div style="width:46px;text-align:center;font:700 11px system-ui;color:#fff;text-shadow:0 1px 3px #000"><div style="width:26px;height:26px;margin:0 auto;border-radius:50%;background:'+c+';border:2px solid #fff;box-shadow:0 1px 5px #0008;display:flex;align-items:center;justify-content:center">'+((st.dir==null||!(st.spd>=1))?'<span style="font-size:16px;line-height:1">•</span>':'<svg viewBox="0 0 24 24" width="16" height="16" style="transform:rotate('+rot+'deg)"><path d="M12 3v16M6 13l6 6 6-6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>')+'</div>'+W(st.spd)+'</div>'});
@@ -207,11 +207,16 @@ function drawStations(){
     m.bindPopup('<b>'+(st.name||st.id||'')+'</b>'+(st.src?' <small>('+st.src+')</small>':'')+'<br>'+T('Μέτρηση','Observed')+': '+((st.dir!=null&&st.spd>=1)?dn(st.dir)+' '+W(st.spd):(st.spd>=1?W(st.spd)+' · '+T('μεταβλητή κατεύθυνση','variable direction'):T('άπνοια (0 κόμβοι) ή δεν δίνεται κατεύθυνση','calm (0 kn) or no direction reported')))+(st.gust?' · '+T('ριπές ','gusts ')+W(st.gust):'')+(st.t?'<br>'+String(st.t).slice(11,16)+'Z':''));
   });
 }
+function dedupe(list){ /* ίδιος τόπος από δύο πηγές (π.χ. METAR και DoM στο αεροδρόμιο): κρατά την πιο πρόσφατη παρατήρηση */
+  var out=[]; list.slice().sort(function(a,b){ return (Date.parse(b.t||0)||0)-(Date.parse(a.t||0)||0); }).forEach(function(st){
+    var dup=out.some(function(o){ var dx=(o.lon-st.lon)*Math.cos(st.lat*Math.PI/180)*111.2, dy=(o.lat-st.lat)*111.2; return dx*dx+dy*dy<1; });
+    if(!dup) out.push(st); });
+  return out; }
 function dist2(p,c){ var dx=(p.lon-(c.lng!=null?c.lng:c.lon))*Math.cos(c.lat*Math.PI/180), dy=p.lat-c.lat; return dx*dx+dy*dy; }
 function compare(){
   if(!stations||!stations.length||!grid) return [];
   var b=map.getBounds(), c=map.getCenter();
-  return stations.filter(function(x){ return b.contains([x.lat,x.lon])&&Date.now()-Date.parse(x.t||0)<3*3600000; }).sort(function(p,q){ return dist2(p,c)-dist2(q,c); }).slice(0,8)
+  return dedupe(stations.filter(function(x){ return b.contains([x.lat,x.lon])&&Date.now()-Date.parse(x.t||0)<3*3600000; })).sort(function(p,q){ return dist2(p,c)-dist2(q,c); }).slice(0,8)
     .map(function(st){ var v=sampleSrc(grid.mean,nowIdx,st.lat,st.lon); return v?{st:st,mod:v.sp,d:st.spd-v.sp}:null; }).filter(Boolean);
 }
 function seed(){
