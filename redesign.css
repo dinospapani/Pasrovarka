@@ -922,3 +922,6 @@ body.fp-spear #bDams,body.fp-spear #bSea{display:none!important}
   html body select,
   html body textarea{font-size:16px !important}
 }
+
+/* Όταν είναι ανοιχτός ο άνεμος, το φύλλο πληροφοριών (σταθμός, ψάρι) μένει πάνω από το πάνελ και όχι κάτω από αυτό */
+body.ndwind .ndbs{z-index:910;bottom:calc(84px + var(--ndwh,0px) + 8px)}

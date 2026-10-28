@@ -10,7 +10,7 @@ var wrap=document.createElement('div'); wrap.id='tdLoc'; top.parentNode.insertBe
 function el(tag,cls,txt){ var e=document.createElement(tag); if(cls) e.className=cls; if(txt!=null) e.textContent=txt; return e; }
 function places(){ try{ return window.PsaroPlaces?PsaroPlaces.list():JSON.parse(localStorage.getItem('psaro-places')||'[]'); }catch(e){ return []; } }
 function mark(p){ sel=p.gps?'gps':p.id; if(lab){ lab.textContent=p.gps?baseLabel:T('Καιρός για: ','Weather for: ')+p.name; lab.classList.toggle('viewing',!p.gps); } try{ document.dispatchEvent(new CustomEvent('psaro-viewname',{detail:p.gps?null:p.name})); }catch(e){} }
-function pick(p){ mark(p); C.viewPlace(p); render(); }
+function pick(p){ mark(p); C.viewPlace(p); render(); try{ if(window.PsaroPlaces){ if(p.gps&&PsaroPlaces.selectGps) PsaroPlaces.selectGps(); else if(PsaroPlaces.select) PsaroPlaces.select(p.id); } }catch(e){} }
 /* ώστε η αναζήτηση της αρχικής και η Πρόγνωση να δείχνουν εδώ την ίδια τοποθεσία */
 window.PsaroTodayLoc={sync:function(p){ if(!p) return; mark(p); render(); }};
 function svg(d){ var w=document.createElement('span'); w.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>'; return w.firstChild; }

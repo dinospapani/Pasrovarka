@@ -26,6 +26,7 @@ function ensure(){
   panel=document.createElement('div'); panel.id='ndWindPanel'; panel.setAttribute('role','group'); panel.setAttribute('aria-label',T('Άνεμος','Wind'));
   panel.style.cssText='position:fixed;left:10px;right:10px;bottom:calc(var(--navh,64px) + 14px);z-index:900;background:var(--card,var(--bg,#fff));color:var(--ink,#111);border:1px solid var(--line,#8886);border-radius:14px;padding:8px 10px;box-shadow:0 4px 18px #0004;max-height:42vh;overflow:auto;left:8px;right:8px';
   document.body.appendChild(panel);
+  try{ if(window.ResizeObserver) new ResizeObserver(function(){ if(panel&&panel.isConnected) document.documentElement.style.setProperty('--ndwh',Math.round(panel.getBoundingClientRect().height)+'px'); }).observe(panel); }catch(e){}
 }
 function fit(){ var s=map.getSize(), r=Math.min(window.devicePixelRatio||1,2); cv.width=s.x*r; cv.height=s.y*r; ctx.setTransform(r,0,0,r,0,0); }
 function clear(){ if(ctx){ var s=map.getSize(); ctx.clearRect(0,0,s.x,s.y); } }
@@ -39,7 +40,7 @@ function drawPanel(msg){
   var top=document.createElement('div'); top.style.cssText='display:flex;align-items:center;gap:8px';
   var pb=document.createElement('button'); pb.type='button'; pb.id='ndWindPlay'; pb.className='btn sm'; pb.style.cssText='min-width:40px;min-height:40px;flex:none;font-size:16px;padding:0'; pb.textContent=playing?'⏸':'▶'; pb.setAttribute('aria-label',playing?T('Παύση','Pause'):T('Αναπαραγωγή','Play')); pb.setAttribute('aria-pressed',String(!!playing));
   var sl=document.createElement('input'); sl.type='range'; sl.id='ndWindSl'; sl.min=0; sl.max=Math.max(0,hours.length-1); sl.value=hi; sl.style.cssText='flex:1;min-width:0'; sl.setAttribute('aria-label',T('Ώρα','Hour')); if(msg||!hours.length){ sl.disabled=true; pb.disabled=true; }
-  sl.addEventListener('input',function(){ pause(); hi=+sl.value; label(); seed(); });
+  sl.addEventListener('input',function(){ hi=+sl.value; pause(); label(); seed(); });
   pb.addEventListener('click',function(){ playing?pause():play(); });
   var tg=document.createElement('button'); tg.type='button'; tg.className='btn ghost sm'; tg.style.cssText='min-width:40px;min-height:40px;flex:none;padding:0'; tg.textContent=detOpen?'▾':'▴'; tg.setAttribute('aria-expanded',String(detOpen)); tg.setAttribute('aria-label',T('Λεπτομέρειες','Details')); tg.addEventListener('click',function(){ detOpen=!detOpen; drawPanel(); });
   var x=document.createElement('button'); x.type='button'; x.className='btn ghost sm'; x.style.cssText='min-width:40px;min-height:40px;flex:none;padding:0'; x.textContent='✕'; x.setAttribute('aria-label',T('Κλείσιμο','Close')); x.addEventListener('click',stop);
@@ -146,7 +147,7 @@ async function modelFetch(base){
       var names=[]; Object.keys(H).forEach(function(k){ var m=k.match(/^wind_speed_10m_(.+)$/); if(m&&H['wind_direction_10m_'+m[1]]){ var ok=arr.every(function(p){ var a=p.hourly['wind_speed_10m_'+m[1]]; return a&&a.some(function(x){ return typeof x==='number'; }); }); if(ok) names.push({id:m[1],name:LABEL[m[1]]||m[1],sfx:'_'+m[1]}); } });
       if(!names.length){ if(H.wind_speed_10m) names=[{id:'auto',name:T('Μοντέλο','Model'),sfx:''}]; else throw new Error('nodata'); }
       return {arr:arr,names:names};
-    }catch(e){ err=e; }
+    }catch(e){ err=e; if(/429/.test(String(e&&e.message))) break; }
   }
   throw err||new Error('fail');
 }
@@ -177,7 +178,10 @@ async function load(){
     var nowK=new Date().toISOString().slice(0,13); hi=0; for(var z2=0;z2<hours.length;z2++){ if(hours[z2].slice(0,13)<=nowK) hi=z2; } nowIdx=hi;
     if(keepT){ var ki=hours.indexOf(keepT); if(ki>=0) hi=ki; }
     drawPanel(); if(panel&&keepSc) panel.scrollTop=keepSc; seed(); if(!raf) loop(0); loadStations();
-  }catch(err){ if(id===loadId&&on){ grid=null; drawPanel(T('Ο άνεμος δεν φορτώθηκε. Έλεγξε τη σύνδεση.','Wind did not load. Check your connection.')); clear(); } }
+  }catch(err){ if(id===loadId&&on){
+    if(N>7&&!(err&&err.message==='nodata')){ N=7; grid=null; loadId++; return load(); }
+    var m=String(err&&err.message||''), lim=/429/.test(m), why=lim?T(' Το όριο της πηγής (Open-Meteo) εξαντλήθηκε, δοκίμασε ξανά σε λίγα λεπτά.',' The data source (Open-Meteo) rate limit was reached. Try again in a few minutes.'):(/abort/i.test(m)?T(' Η πηγή άργησε να απαντήσει.',' The source was too slow.'):(m?' ('+m+')':''));
+    grid=null; drawPanel(T('Ο άνεμος δεν φορτώθηκε.','Wind did not load.')+why); clear(); } }
 }
 /* Μετρήσεις σταθμών (METAR αεροδρομίων): περνούν από συνάρτηση στο Supabase, γιατί η πηγή δεν επιτρέπει κλήση απευθείας από browser. */
 var SUPA='https://sgfohmqwdwtkhtrebnix.supabase.co', SKEY='sb_publishable_LGuwvrvLnAj1CF22Q6g9vg_4OImZYbA';
@@ -198,9 +202,9 @@ function drawStations(){
   vis.sort(function(p,q){ return dist2(p,c0)-dist2(q,c0); }); vis=vis.slice(0,30);
   vis.forEach(function(st){
     var rot=(st.dir==null?0:st.dir)%360, c=col(st.spd);
-    var ic=L.divIcon({className:'',iconSize:[46,46],iconAnchor:[23,23],html:'<div style="width:46px;text-align:center;font:700 11px system-ui;color:#fff;text-shadow:0 1px 3px #000"><div style="width:26px;height:26px;margin:0 auto;border-radius:50%;background:'+c+';border:2px solid #fff;box-shadow:0 1px 5px #0008;display:flex;align-items:center;justify-content:center">'+(st.dir==null?'<span style="font-size:16px;line-height:1">•</span>':'<svg viewBox="0 0 24 24" width="16" height="16" style="transform:rotate('+rot+'deg)"><path d="M12 3v16M6 13l6 6 6-6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>')+'</div>'+W(st.spd)+'</div>'});
+    var ic=L.divIcon({className:'',iconSize:[46,46],iconAnchor:[23,23],html:'<div style="width:46px;text-align:center;font:700 11px system-ui;color:#fff;text-shadow:0 1px 3px #000"><div style="width:26px;height:26px;margin:0 auto;border-radius:50%;background:'+c+';border:2px solid #fff;box-shadow:0 1px 5px #0008;display:flex;align-items:center;justify-content:center">'+((st.dir==null||!(st.spd>=1))?'<span style="font-size:16px;line-height:1">•</span>':'<svg viewBox="0 0 24 24" width="16" height="16" style="transform:rotate('+rot+'deg)"><path d="M12 3v16M6 13l6 6 6-6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>')+'</div>'+W(st.spd)+'</div>'});
     var m=L.marker([st.lat,st.lon],{icon:ic,keyboard:false,interactive:true,title:(st.name||st.id)+' '+W(st.spd)}).addTo(stLayer);
-    m.bindPopup('<b>'+(st.name||st.id||'')+'</b>'+(st.src?' <small>('+st.src+')</small>':'')+'<br>'+T('Μέτρηση','Observed')+': '+(st.dir!=null?dn(st.dir)+' ':'')+W(st.spd)+(st.gust?' · '+T('ριπές ','gusts ')+W(st.gust):'')+(st.t?'<br>'+String(st.t).slice(11,16)+'Z':''));
+    m.bindPopup('<b>'+(st.name||st.id||'')+'</b>'+(st.src?' <small>('+st.src+')</small>':'')+'<br>'+T('Μέτρηση','Observed')+': '+((st.dir!=null&&st.spd>=1)?dn(st.dir)+' '+W(st.spd):(st.spd>=1?W(st.spd)+' · '+T('μεταβλητή κατεύθυνση','variable direction'):T('άπνοια (0 κόμβοι) ή δεν δίνεται κατεύθυνση','calm (0 kn) or no direction reported')))+(st.gust?' · '+T('ριπές ','gusts ')+W(st.gust):'')+(st.t?'<br>'+String(st.t).slice(11,16)+'Z':''));
   });
 }
 function dist2(p,c){ var dx=(p.lon-(c.lng!=null?c.lng:c.lon))*Math.cos(c.lat*Math.PI/180), dy=p.lat-c.lat; return dx*dx+dy*dy; }
@@ -233,8 +237,8 @@ function loop(ts){
 }
 function moved(){ if(!on) return; clear(); clearTimeout(mvT); mvT=setTimeout(function(){ if(!on) return; var b=map.getBounds(); if(!grid||!(b.getSouth()>=grid.lat[0]-0.001&&b.getNorth()<=grid.lat[N-1]+0.001&&b.getWest()>=grid.lon[0]-0.001&&b.getEast()<=grid.lon[N-1]+0.001)||map.getBounds().getNorth()-map.getBounds().getSouth()<(grid.lat[N-1]-grid.lat[0])/3) load(); else{ seed(); label(); } },600); }
 function onUnits(){ if(!on) return; drawPanel(); drawStations(); label(); }
-function start(){ if(on) return; on=true; ensure(); cv.style.display='block'; btn.setAttribute('aria-pressed','true'); btn.classList.add('on'); fit(); map.on('moveend zoomend resize',moved); map.getContainer().addEventListener('click',onTap,true); window.addEventListener('psaro-units',onUnits); window.addEventListener('resize',fit); load(); }
-function stop(){ pause(); on=false; loadId++; btn.setAttribute('aria-pressed','false'); btn.classList.remove('on'); map.off('moveend zoomend resize',moved); try{ map.getContainer().removeEventListener('click',onTap,true); }catch(e){} window.removeEventListener('psaro-units',onUnits); clearTap(); if(raf){ cancelAnimationFrame(raf); raf=0; } if(stLayer){ map.removeLayer(stLayer); stLayer=null; } if(cv) cv.style.display='none'; if(panel){ panel.remove(); panel=null; } clear(); parts=[]; }
+function start(){ if(on) return; on=true; document.body.classList.add('ndwind'); ensure(); cv.style.display='block'; btn.setAttribute('aria-pressed','true'); btn.classList.add('on'); fit(); map.on('moveend zoomend resize',moved); map.getContainer().addEventListener('click',onTap,true); window.addEventListener('psaro-units',onUnits); window.addEventListener('resize',fit); load(); }
+function stop(){ pause(); on=false; document.body.classList.remove('ndwind'); document.documentElement.style.removeProperty('--ndwh'); loadId++; btn.setAttribute('aria-pressed','false'); btn.classList.remove('on'); map.off('moveend zoomend resize',moved); try{ map.getContainer().removeEventListener('click',onTap,true); }catch(e){} window.removeEventListener('psaro-units',onUnits); clearTap(); if(raf){ cancelAnimationFrame(raf); raf=0; } if(stLayer){ map.removeLayer(stLayer); stLayer=null; } if(cv) cv.style.display='none'; if(panel){ panel.remove(); panel=null; } clear(); parts=[]; }
 btn.addEventListener('click',function(){ on?stop():start(); });
 window.PsaroWindMap={start:start,stop:stop,sample:sample,modelFetch:modelFetch,diffTxt:diffTxt};
 })();

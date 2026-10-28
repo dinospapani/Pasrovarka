@@ -38,7 +38,7 @@ function addPlace(name,lat,lon){
   if(!ex){ places.unshift({id:id,name:name,lat:+lat.toFixed(4),lon:+lon.toFixed(4),watch:true}); places=places.slice(0,10); }
   sel=id; save(); renderPlaces(); load(); syncNotify(); viewSel();
 }
-window.PsaroPlaces={view:function(){ viewSel(); },pick:function(n,la,lo){ addPlace(n,la,lo); },selectGps:function(){ sel='gps'; save(); renderPlaces(); },rename:function(id,n){ var q=places.filter(function(x){ return x.id===id; })[0]; if(q){ q.name=n; q.auto=false; save(); renderPlaces(); } },remove:function(id){ var was=sel===id; places=places.filter(function(p){ return p.id!==id; }); if(was) sel='gps'; save(); renderPlaces(); if(was&&!document.getElementById('tab-fc').hidden) load(); syncNotify(); },list:function(){ return places.slice(); },add:function(name,lat,lon){ var id=pid(lat,lon), ex=places.filter(function(p){ return p.id===id; })[0]; if(!ex){ places.unshift({id:id,name:name,lat:+lat.toFixed(4),lon:+lon.toFixed(4),watch:true}); places=places.slice(0,10); save(); renderPlaces(); ex=places[0]; } return ex; }};
+window.PsaroPlaces={view:function(){ viewSel(); },pick:function(n,la,lo){ addPlace(n,la,lo); },selectGps:function(){ sel='gps'; save(); renderPlaces(); },select:function(id){ if(id&&findPlace(id)){ sel=id; save(); renderPlaces(); } },rename:function(id,n){ var q=places.filter(function(x){ return x.id===id; })[0]; if(q){ q.name=n; q.auto=false; save(); renderPlaces(); } },remove:function(id){ var was=sel===id; places=places.filter(function(p){ return p.id!==id; }); if(was) sel='gps'; save(); renderPlaces(); if(was&&!document.getElementById('tab-fc').hidden) load(); syncNotify(); },list:function(){ return places.slice(); },add:function(name,lat,lon){ var id=pid(lat,lon), ex=places.filter(function(p){ return p.id===id; })[0]; if(!ex){ places.unshift({id:id,name:name,lat:+lat.toFixed(4),lon:+lon.toFixed(4),watch:true}); places=places.slice(0,10); save(); renderPlaces(); ex=places[0]; } return ex; }};
 function lpress(b,fn,tap){ /* παρατεταμένο πάτημα = διαγραφή, κανονικό = επιλογή */
   var tm=null, fired=false; function cancel(){ if(tm){ clearTimeout(tm); tm=null; } }
   b.addEventListener('pointerdown',function(){ fired=false; cancel(); tm=setTimeout(function(){ tm=null; fired=true; try{ if(navigator.vibrate) navigator.vibrate(30); }catch(e){} fn(); },650); });
@@ -120,6 +120,8 @@ function renderFc(p,f,note,t){
   $('fcName').textContent=p?p.name:'';
   $('fcSub').textContent=p&&f?('Ενημερώθηκε '+new Date(t||Date.now()).toLocaleTimeString(EN?'en-GB':'el-GR',{hour:'2-digit',minute:'2-digit'})+' · '+PsaroCoord.fmt(p.lat,p.lon)):'';
   $('fcNote').textContent=note||'';
+  try{ var ra=$('fcRadar'), sb=$('fcSub'); if(!ra&&sb){ ra=h('a',{id:'fcRadar',class:'note',target:'_blank',rel:'noopener',style:'display:block;margin:4px 0;text-decoration:underline'}); sb.after(ra); }
+    if(ra){ ra.hidden=!(p&&f); if(p) { ra.href='https://www.windy.com/-Weather-radar-radar?radar,'+(+p.lat).toFixed(3)+','+(+p.lon).toFixed(3)+',9'; ra.textContent=EN?'🌧 Live rain radar and lightning (Windy). The forecast % is a model estimate and can miss storms that are already forming.':'🌧 Ζωντανό ραντάρ βροχής και κεραυνών (Windy). Το ποσοστό βροχής της πρόγνωσης είναι εκτίμηση μοντέλου και μπορεί να χάσει καταιγίδες που ήδη σχηματίζονται.'; } } }catch(e){}
   try{ pressCard(p&&f?p:null); }catch(e){}
   var wb=$('fcWatch'), delBtn=$('plDel');
   wb.hidden=!p; delBtn.hidden=!p||!!(p&&p.gps); $('plRen').hidden=delBtn.hidden;
@@ -403,6 +405,7 @@ $('plDel').addEventListener('click',async function(){
   places=places.filter(function(p){ return p.id!==sel; }); sel='gps'; save(); renderPlaces(); load(); syncNotify(); viewSel();
 });
 document.querySelectorAll('nav.tabs button[data-tab="fc"]').forEach(function(b){ b.addEventListener('click',function(){ renderPlaces(); load(); }); });
+try{ var fcT=document.getElementById('tab-fc'), fcWas=fcT.hidden; new MutationObserver(function(){ if(fcWas&&!fcT.hidden){ renderPlaces(); load(); } fcWas=fcT.hidden; }).observe(fcT,{attributes:true,attributeFilter:['hidden']}); }catch(e){}
 document.addEventListener('psaro-cond',function(){ renderPlaces(); if(!document.getElementById('tab-fc').hidden) load(); else if(sel==='gps') { /* θα φορτώσει όταν ανοίξει */ } if(nt.on) syncNotify(true); });
 document.addEventListener('visibilitychange',function(){ if(!document.hidden) localCheck(); });
 renderPlaces(); 
