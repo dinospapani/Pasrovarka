@@ -263,5 +263,6 @@ function onUnits(){ if(!on) return; drawPanel(); drawStations(); label(); }
 function start(){ if(on) return; on=true; document.body.classList.add('ndwind'); ensure(); cv.style.display='block'; btn.setAttribute('aria-pressed','true'); btn.classList.add('on'); fit(); map.on('moveend zoomend resize',moved); map.getContainer().addEventListener('click',onTap,true); window.addEventListener('psaro-units',onUnits); window.addEventListener('resize',fit); load(); }
 function stop(){ pause(); on=false; try{ window.dispatchEvent(new Event('psaro-windstop')); }catch(e){} document.body.classList.remove('ndwind'); document.documentElement.style.removeProperty('--ndwh'); loadId++; btn.setAttribute('aria-pressed','false'); btn.classList.remove('on'); map.off('moveend zoomend resize',moved); try{ map.getContainer().removeEventListener('click',onTap,true); }catch(e){} window.removeEventListener('psaro-units',onUnits); clearTap(); if(raf){ cancelAnimationFrame(raf); raf=0; } if(stLayer){ map.removeLayer(stLayer); stLayer=null; } if(cv) cv.style.display='none'; if(panel){ panel.remove(); panel=null; } clear(); parts=[]; }
 btn.addEventListener('click',function(){ on?stop():start(); });
-window.PsaroWindMap={start:start,stop:stop,sample:sample,modelFetch:modelFetch,diffTxt:diffTxt};
+function sampleAll(lat,lon){ if(!grid) return []; var o=[]; grid.m.forEach(function(m){ var v=sampleSrc(m,hi,lat,lon); if(v) o.push({name:m.name,v:v}); }); return o; }
+window.PsaroWindMap={start:start,stop:stop,sample:sample,sampleAll:sampleAll,modelFetch:modelFetch,diffTxt:diffTxt};
 })();
