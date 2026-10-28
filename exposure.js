@@ -1,6 +1,7 @@
-/* Έκθεση ακτής ανά κατεύθυνση ανέμου (ενεργό fetch) — ΠΡΟΣΩΡΙΝΟ, ενδεικτικό.
+/* Έκθεση ακτής ανά κατεύθυνση ανέμου (ενεργό fetch) — ενδεικτικό.
    Μέθοδος: SPM/CERC, ακτίνες ανά 6° στα ±42°, ζύγισμα cos, όριο 200 km, πάνω σε raster ξηράς/θάλασσας
-   (Natural Earth 10m, κελί 0,005°). Δείχνει πόσο ανοιχτή είναι η θάλασσα για κάθε κατεύθυνση ανέμου.
+   (OpenStreetMap land polygons, κελί 0,0025° ≈ 250 m — coastgrid.js, ενημερώνεται από το coastline-sync.yml).
+   Δείχνει πόσο ανοιχτή είναι η θάλασσα για κάθε κατεύθυνση ανέμου.
    ΔΕΝ βλέπει βουνά (επιτάχυνση/σκιά ανέμου), swell, διάθλαση/περίθλαση. Σε απόσταση 1–3 km από την ακτή
    το ενεργό fetch είναι αναξιόπιστο. Η σχετική σειρά κατευθύνσεων είναι πιο αξιόπιστη από τις απόλυτες τιμές. */
 (function(){
@@ -152,6 +153,7 @@ function render(p,f){
   if(r.moved>0) warn.push(T('Το σημείο ήταν στην ξηρά, χρησιμοποιήθηκε η κοντινότερη θάλασσα ('+r.moved.toFixed(1)+' km).','The point was on land; nearest sea used ('+r.moved.toFixed(1)+' km).'));
   warn.push(T('Δεν περιλαμβάνει βουνά (επιτάχυνση ή σκιά ανέμου), swell από μακριά, διάθλαση/περίθλαση. Αν ο άνεμος της πρόγνωσης είναι λάθος, λάθος είναι και εδώ το συμπέρασμα.','Does not include mountains (wind acceleration/shadow), distant swell, refraction/diffraction. If the forecast wind is wrong, so is the conclusion here.'));
   box.appendChild(el('p',{'class':'note'},warn.join(' ')));
+  box.appendChild(el('p',{'class':'note',style:'margin:2px 0 0;font-size:11px'},T('Ακτογραμμή: © OpenStreetMap contributors (ODbL)','Coastline: © OpenStreetMap contributors (ODbL)')));
   marine(p).then(function(m){ if(m) showSwell(sw,m,r); try{ logCard(box,p,r,cd,cur,m); }catch(e){} }).catch(function(){ try{ logCard(box,p,r,cd,cur,null); }catch(e){} });
 }
 /* ---------- swell (Open-Meteo marine), μία μικρή κλήση ανά τόπο/ώρα ---------- */
