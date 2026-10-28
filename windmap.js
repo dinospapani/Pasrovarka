@@ -74,7 +74,9 @@ function drawPanel(msg){
 function tapData(ll){
   var v=sample(ll.lat,ll.lng); if(!v) return null;
   var P=pu(), kn=Math.round(v.sp), bf=P&&P.bft?P.bft(v.sp):'', main=W(v.sp), alt=(P&&P.cfg.wind==='kn')?(bf!==''?bf+' Bft':''):kn+' kn';
-  return {v:v,txt:dn(v.dir)+' '+Math.round(v.dir)+'° · '+main+(alt?' ('+alt+')':'')};
+  /* ύψος κύματος στο σημείο, όταν είναι ανοιχτό το επίπεδο «Κατάσταση θάλασσας» */
+  var wv=''; try{ var S=window.PsaroSeaState; if(S&&S.pointInfo&&document.body.classList.contains('ndsea')){ var r=S.pointInfo(ll.lat,ll.lng); if(r&&r.hs>=0){ var hx=r.hs.toFixed(1); wv=' · 🌊 ≈'+(EN?hx:hx.replace('.',','))+' m'; } } }catch(e){}
+  return {v:v,txt:dn(v.dir)+' '+Math.round(v.dir)+'° · '+main+(alt?' ('+alt+')':'')+wv};
 }
 function tapIcon(ll){
   var d=tapData(ll), body;

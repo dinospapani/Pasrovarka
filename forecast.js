@@ -213,52 +213,90 @@ const DNG=['Κυρ','Δευ','Τρί','Τετ','Πέμ','Παρ','Σάβ'], DNE=
 let DN=(typeof self!=='undefined'&&self.LANG==='en')?DNE:DNG; /* η γλώσσα ορίζεται από το cfg.lang (και ο service worker την παίρνει από εκεί) */
 function dayLabel(date){ const dt=new Date(date+'T12:00:00Z'); return DN[dt.getUTCDay()]+' '+date.slice(8)+'/'+date.slice(5,7); }
 function goodDays(fc,thr){ return fc.days.filter(d=>d.safe&&d.win&&d.best>=thr).map(d=>({date:d.date,best:d.best,win:d.win,wind:d.avgWind,wave:d.avgWave})); }
-/* cfg: {places,threshold,notified,pressure}. Επιστρέφει πάντα {items,notified,title,body}. */
+/* cfg: {places,threshold,notified,pressure,turn,wind,lang,area}. Επιστρέφει {items,notified,title,body,msgs,...}.
+   msgs = ξεχωριστή ειδοποίηση ανά γεγονός: {kind:'turn'|'pressure'|'wind'|'good', key, title, body (σύντομο), full (όλο το κείμενο), place:{name,lat,lon}, t}.
+   Πίεση (καμπές και απότομες αλλαγές): μόνο για την περιοχή ψαρέματος — cfg.area (π.χ. θέση ενεργής εξόδου), αλλιώς «Η θέση μου»,
+   αλλιώς η πρώτη τοποθεσία με ειδοποιήσεις. Καμπές: «πριν» (σε ≤3 ώρες) και «μόλις άρχισε» (έως 4 ώρες μετά), για κάθε καμπή. */
 async function checkPlaces(cfg,fetchFn){
   const thr=cfg.threshold||75, notified=Object.assign({},cfg.notified||{}), goods=[], press=[], winds=[], turns=[]; const errs=[]; let okN=0;
   const today=new Date(Date.now()-86400000).toISOString().slice(0,10);
   for(const k of Object.keys(notified)){ if(k.split(':').pop()<today) delete notified[k]; }
+  const en=cfg.lang==='en'||(typeof self!=='undefined'&&self.LANG==='en'), t=(el,e)=>en?e:el;
+  DN=en?DNE:DNG;
+  const watched=(cfg.places||[]).filter(p=>p.watch!==false&&p.lat!=null);
+  let area=cfg.area&&cfg.area.lat!=null?cfg.area:(watched.find(p=>p.gps||p.id==='gps')||watched[0]||null);
+  if(area&&!area.name) area=Object.assign({},area,{name:t('Περιοχή ψαρέματος','Fishing area')});
+  const areaKey=area?('A'+(+area.lat).toFixed(1)+','+(+area.lon).toFixed(1)):'';
+  let areaDone=false;
+  const near=(p)=>area&&Math.abs(p.lat-area.lat)<0.02&&Math.abs(p.lon-area.lon)<0.02;
+  async function doPressure(fc,pl){
+    if(areaDone) return; areaDone=true;
+    if(cfg.pressure!==false){
+      const ev=pressureEvent(fc);
+      if(ev){ const key=areaKey+':pr-'+ev.dir+':'+ev.t.slice(0,10); if(!notified[key]) press.push(Object.assign({type:'pressure',place:pl,key},ev)); }
+    }
+    if(cfg.turn){
+      for(const e of pressureTurns(fc)){
+        if(/-ahead$/.test(e.kind)) continue; /* μόνο «σε λίγο» και «μόλις άρχισε» */
+        const pk=e.kind.startsWith('peak')?'peak':'trough', ph=/-soon$/.test(e.kind)?'pre':'post';
+        const key=areaKey+':pt-'+pk+'-'+ph+'-'+String(Math.floor(+e.t.slice(11,13)/6))+':'+e.t.slice(0,10);
+        if(!notified[key]) turns.push(Object.assign({type:'turn',place:pl,key},e));
+      }
+    }
+  }
   for(const p of cfg.places||[]){
     if(p.watch===false||p.lat==null) continue;
     try{
       const fc=await getForecast(p.lat,p.lon,fetchFn,{days:7});
       okN++;
       for(const g of goodDays(fc,thr)){ const key=p.id+':'+g.date; if(notified[key]) continue; goods.push({type:'good',place:p,key,date:g.date,best:g.best,win:g.win,wind:g.wind}); }
-      if(cfg.pressure!==false){
-        const ev=pressureEvent(fc);
-        if(ev){ const key=p.id+':pr-'+ev.dir+':'+ev.t.slice(0,10); if(!notified[key]) press.push(Object.assign({type:'pressure',place:p,key},ev)); }
-      }
-      if(cfg.turn){
-        for(const e of pressureTurns(fc)){ const pred=/-(soon|ahead)$/.test(e.kind), key=p.id+':pt-'+(pred?e.kind.split('-')[0]+'-pred-'+String(Math.floor(+e.t.slice(11,13)/3)):e.kind+'-'+e.t.slice(11,13))+':'+e.t.slice(0,10); if(!notified[key]) turns.push(Object.assign({type:'turn',place:p,key},e)); }
-      }
+      if(near(p)) await doPressure(fc,{name:p.name,lat:p.lat,lon:p.lon});
       if(cfg.wind){
         const we=windEvent(fc,cfg.wind);
         if(we){ const cp=compassOf(we.to.dir,cfg.lang), key=p.id+':wd-'+(cp||'sp')+Math.round(we.to.wind/4)+':'+we.to.t.slice(0,10); if(!notified[key]) winds.push({type:'wind',place:p,key,we}); }
       }
     }catch(e){ errs.push((p.name||p.id)+': '+(e&&e.message||e)); }
   }
+  if(area&&!areaDone&&(cfg.pressure!==false||cfg.turn)){
+    try{ const fc=await getForecast(area.lat,area.lon,fetchFn,{days:3}); okN++; await doPressure(fc,{name:area.name,lat:area.lat,lon:area.lon}); }
+    catch(e){ errs.push((area.name||'area')+': '+(e&&e.message||e)); }
+  }
   goods.sort((a,b)=>b.best-a.best);
   const top=goods.slice(0,4).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:b.best-a.best);
-  const en=cfg.lang==='en'||(typeof self!=='undefined'&&self.LANG==='en'), t=(el,e)=>en?e:el;
-  DN=en?DNE:DNG;
   const lines=top.map(i=>i.place.name+': '+dayLabel(i.date)+' · '+t('δείκτης ','score ')+i.best+' · '+pad(i.win.s)+':00–'+pad((i.win.e+1)%24)+':00');
   if(goods.length>top.length) lines.push('+'+(goods.length-top.length)+t(' ακόμα',' more'));
-  const pl=press.slice(0,2).map(i=>i.place.name+': '+t('η πίεση ','pressure ')+(i.dir==='fall'?t('πέφτει','falling'):t('ανεβαίνει','rising'))+' '+i.delta+' hPa '+t('σε ','in ')+i.hours+t(' ώρες (',' h (')+i.from+'→'+i.to+'). '+(i.dir==='fall'?t('Πριν αλλάξει ο καιρός τα ψάρια συχνά τσιμπούν πιο έντονα.','Before the weather changes, fish often bite harder.'):t('Μετά από μεταβολή τα ψάρια συνήθως χρειάζονται λίγο να ξαναπιάσουν δουλειά.','After a change, fish usually need a little time to start feeding again.')));
-  const wl=winds.slice(0,2).map(i=>{ const f=i.we.from, to=i.we.to, W=v=>Math.round(v)+' kn';
-    return i.place.name+': '+t('άνεμος ','wind ')+(f.dir!=null?compassOf(f.dir,en?'en':'el')+' ':'')+W(f.wind)+' → '+to.t.slice(11,16)+' '+(to.dir!=null?compassOf(to.dir,en?'en':'el')+' ':'')+W(to.wind)+(to.gust!=null&&to.gust>=to.wind+6?' ('+t('ριπές ','gusts ')+W(to.gust)+')':''); });
-  const tl=turns.slice(0,2).map(e=>{ const hh=e.t.slice(11,16), pk=e.kind.startsWith('peak');
-    const txt={'peak-ahead':t('η πίεση αναμένεται να κορυφωθεί ('+e.p+' hPa) γύρω στις '+hh+', σε ~'+e.h+' ώρ. Μετά θα αρχίσει να πέφτει.','pressure expected to peak ('+e.p+' hPa) around '+hh+', in ~'+e.h+' h. Then it will start falling.'),
-      'trough-ahead':t('η πίεση αναμένεται να φτάσει κοιλάδα ('+e.p+' hPa) γύρω στις '+hh+', σε ~'+e.h+' ώρ. Μετά θα αρχίσει να ανεβαίνει.','pressure expected to bottom out ('+e.p+' hPa) around '+hh+', in ~'+e.h+' h. Then it will start rising.'),
-      'peak-soon':t('η πίεση φτάνει κορυφή ('+e.p+' hPa) στις '+hh+', σε ~'+e.h+' ώρ. Μετά αρχίζει να πέφτει.','pressure peaks ('+e.p+' hPa) at '+hh+', in ~'+e.h+' h. Then it starts falling.'),
-      'trough-soon':t('η πίεση φτάνει κοιλάδα ('+e.p+' hPa) στις '+hh+', σε ~'+e.h+' ώρ. Μετά αρχίζει να ανεβαίνει.','pressure bottoms out ('+e.p+' hPa) at '+hh+', in ~'+e.h+' h. Then it starts rising.'),
-      'peak-past':t('πέρασε η κορυφή ('+e.p+' hPa στις '+hh+'), η πίεση άρχισε να πέφτει.','the peak has passed ('+e.p+' hPa at '+hh+'), pressure has started falling.'),
-      'trough-past':t('πέρασε η κοιλάδα ('+e.p+' hPa στις '+hh+'), η πίεση άρχισε να ανεβαίνει.','the low has passed ('+e.p+' hPa at '+hh+'), pressure has started rising.')}[e.kind];
-    return e.place.name+': '+txt; });
+  const ptxt=i=>t('η πίεση ','pressure ')+(i.dir==='fall'?t('πέφτει','falling'):t('ανεβαίνει','rising'))+' '+i.delta+' hPa '+t('σε ','in ')+i.hours+t(' ώρες (',' h (')+i.from+'→'+i.to+t(' hPa, από ',' hPa, from ')+i.t.slice(11,16)+').';
+  const pl=press.slice(0,2).map(i=>i.place.name+': '+ptxt(i)+' '+(i.dir==='fall'?t('Πριν αλλάξει ο καιρός τα ψάρια συχνά τσιμπούν πιο έντονα.','Before the weather changes fish often bite harder.'):t('Ο καιρός συνήθως σταθεροποιείται.','The weather usually settles.')));
+  const wtxt=i=>{ const f=i.we.from, to=i.we.to, W=v=>Math.round(v)+' kn';
+    return t('άνεμος ','wind ')+(f.dir!=null?compassOf(f.dir,en?'en':'el')+' ':'')+W(f.wind)+' → '+to.t.slice(11,16)+' '+(to.dir!=null?compassOf(to.dir,en?'en':'el')+' ':'')+W(to.wind)+(to.gust!=null&&to.gust>=to.wind+6?' ('+t('ριπές ','gusts ')+W(to.gust)+')':''); };
+  const wl=winds.slice(0,2).map(i=>i.place.name+': '+wtxt(i));
+  const ttxt=e=>{ const hh=e.t.slice(11,16), p=String(e.p).replace('.',en?'.':',');
+    return {'peak-soon':t('η πίεση φτάνει κορυφή ('+p+' hPa) στις '+hh+', σε ~'+e.h+' ώρ. Μετά αρχίζει να πέφτει.','pressure peaks ('+p+' hPa) at '+hh+', in ~'+e.h+' h. Then it starts falling.'),
+      'trough-soon':t('η πίεση φτάνει κοιλάδα ('+p+' hPa) στις '+hh+', σε ~'+e.h+' ώρ. Μετά αρχίζει να ανεβαίνει.','pressure bottoms out ('+p+' hPa) at '+hh+', in ~'+e.h+' h. Then it starts rising.'),
+      'peak-past':t('πέρασε η κορυφή ('+p+' hPa στις '+hh+'), η πίεση άρχισε να πέφτει.','the peak has passed ('+p+' hPa at '+hh+'), pressure has started falling.'),
+      'trough-past':t('πέρασε η κοιλάδα ('+p+' hPa στις '+hh+'), η πίεση άρχισε να ανεβαίνει.','the low has passed ('+p+' hPa at '+hh+'), pressure has started rising.')}[e.kind]||''; };
+  const tl=turns.slice(0,2).map(e=>e.place.name+': '+ttxt(e));
   const items=goods.concat(press,winds,turns);
   items.forEach(i=>{notified[i.key]=1;});
   const kinds=(goods.length?1:0)+(press.length?1:0)+(winds.length?1:0)+(turns.length?1:0);
   const title=kinds>1?t('Ενημέρωση ψαρέματος','Fishing update'):goods.length>1?t('Καλές μέρες για ψάρεμα','Good days for fishing'):goods.length?t('Καλή μέρα για ψάρεμα','Good day for fishing'):press.length?t('Αλλαγή πίεσης','Pressure change'):turns.length?t('Καμπή πίεσης','Pressure turning point'):t('Αλλαγή ανέμου','Wind change');
-  return {items,notified,title,body:lines.concat(pl,tl,wl).join('\n'),errs,okN,goodsN:goods.length,pressN:press.length,turnsN:turns.length,windsN:winds.length};
+  /* ξεχωριστά μηνύματα */
+  const P=pl0=>pl0?{name:pl0.name,lat:pl0.lat,lon:pl0.lon}:null, msgs=[];
+  turns.forEach(e=>{ const up=e.kind.indexOf('trough')===0, pre=/-soon$/.test(e.kind), tx=ttxt(e);
+    msgs.push({kind:'turn',key:e.key,place:P(e.place),t:e.t,title:(up?'↗ ':'↘ ')+t('Καμπή πίεσης','Pressure turning point')+' · '+e.place.name,body:tx.charAt(0).toUpperCase()+tx.slice(1),
+      full:e.place.name+': '+tx+' '+(pre?t('Ειδοποίηση πριν από την καμπή.','Alert before the turning point.'):t('Ειδοποίηση μόλις άρχισε η αλλαγή.','Alert just after the change started.'))+t(' Πρόγνωση μοντέλου (Open-Meteo), όχι μέτρηση.',' Model forecast (Open-Meteo), not a measurement.')}); });
+  press.forEach(i=>{ const tx=ptxt(i);
+    msgs.push({kind:'pressure',key:i.key,place:P(i.place),t:i.t,title:(i.dir==='fall'?'📉 ':'📈 ')+t('Απότομη αλλαγή πίεσης','Sharp pressure change')+' · '+i.place.name,body:tx.charAt(0).toUpperCase()+tx.slice(1),
+      full:i.place.name+': '+tx+' '+(i.dir==='fall'?t('Πριν αλλάξει ο καιρός τα ψάρια συχνά τσιμπούν πιο έντονα. Πρόσεχε την αλλαγή καιρού.','Before the weather changes fish often bite harder. Watch for the weather change.'):t('Ο καιρός συνήθως σταθεροποιείται.','The weather usually settles.'))}); });
+  const wMax=4;
+  winds.slice(0,wMax).forEach(i=>{ const tx=wtxt(i);
+    msgs.push({kind:'wind',key:i.key,place:P(i.place),t:i.we.to.t,title:'🌬 '+t('Αλλαγή ανέμου','Wind change')+' · '+i.place.name,body:tx.charAt(0).toUpperCase()+tx.slice(1),full:i.place.name+': '+tx}); });
+  if(winds.length>wMax){ const rest=winds.slice(wMax), tx=rest.map(i=>i.place.name+': '+wtxt(i)).join('\n');
+    msgs.push({kind:'wind',key:rest.map(i=>i.key).join('|').slice(0,180),place:null,t:null,title:'🌬 '+t('Αλλαγή ανέμου σε ','Wind change at ')+rest.length+t(' ακόμα τοποθεσίες',' more places'),body:rest.map(i=>i.place.name).join(', '),full:tx}); }
+  if(goods.length){ const tx=lines.join('\n');
+    msgs.push({kind:'good',key:goods.map(i=>i.key).sort().join('|').slice(0,180),place:goods.length===1?P(goods[0].place):null,t:top[0]&&top[0].date,title:'🎣 '+(goods.length>1?t('Καλές μέρες για ψάρεμα','Good days for fishing'):t('Καλή μέρα για ψάρεμα','Good day for fishing')),
+      body:lines[0]+(lines.length>1?' · +'+(goods.length-1):''),full:goods.map(i=>i.place.name+': '+dayLabel(i.date)+' · '+t('δείκτης ','score ')+i.best+' · '+pad(i.win.s)+':00–'+pad((i.win.e+1)%24)+':00').join('\n')}); }
+  return {items,notified,title,body:lines.concat(pl,tl,wl).join('\n'),msgs,area:area?{name:area.name,lat:area.lat,lon:area.lon}:null,errs,okN,goodsN:goods.length,pressN:press.length,turnsN:turns.length,windsN:winds.length};
 }
 g.PF={sunMoon,hourScore,getForecast,findIdeal,message,check,goodDays,checkPlaces,dayLabel,bft,pressureEvent,windEvent,pressureTurns,pressureOutlook};
 })(typeof self!=='undefined'?self:this);

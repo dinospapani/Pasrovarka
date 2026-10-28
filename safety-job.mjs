@@ -187,17 +187,29 @@ export async function run({ env, fetch: F = fetch, sendMail, log = console.log, 
     for (const r of rows) {
       const upd = o => sb(`push_subs?id=eq.${encodeURIComponent(r.id)}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(o) });
       try {
-        const res = await PF.checkPlaces({ places: r.places || [], threshold: r.threshold || 75, pressure: r.pressure !== false, wind: r.wind || null, turn: r.turn === true, notified: r.state || {} }, F);
-        log(`Πρόγνωση ${String(r.id).slice(0, 6)}: τοποθεσίες=${(r.places || []).length} ok=${res.okN} καλές=${res.goodsN} πίεση=${res.pressN} καμπές=${res.turnsN} άνεμος=${res.windsN} ειδοποιήσεις=${res.items.length}` + (res.errs && res.errs.length ? ' ΣΦΑΛΜΑΤΑ: ' + res.errs.slice(0, 3).join(' | ') : ''));
-        if (res.items.length) {
-          try { await webpush.sendNotification(r.sub, JSON.stringify({ title: res.title, body: res.body }), { TTL: 6 * 3600 }); stats.fc++; }
+        // περιοχή ψαρέματος για την πίεση: η θέση της ενεργής εξόδου του χρήστη, αν υπάρχει
+        let area = null;
+        try { const tr = await sb(`safety_trips?user_id=eq.${r.user_id}&status=eq.active&last_lat=not.is.null&select=last_lat,last_lon&limit=1`); if (tr && tr[0]) area = { id: 'trip', name: 'Έξοδος τώρα', lat: +tr[0].last_lat, lon: +tr[0].last_lon }; } catch (e) { /* χωρίς έξοδο */ }
+        const res = await PF.checkPlaces({ lang: 'el', places: r.places || [], threshold: r.threshold || 75, pressure: r.pressure !== false, wind: r.wind || null, turn: r.turn === true, notified: r.state || {}, area }, F);
+        log(`Πρόγνωση ${String(r.id).slice(0, 6)}: τοποθεσίες=${(r.places || []).length} περιοχή=${res.area ? res.area.name : '-'} ok=${res.okN} καλές=${res.goodsN} πίεση=${res.pressN} καμπές=${res.turnsN} άνεμος=${res.windsN} μηνύματα=${(res.msgs || []).length}` + (res.errs && res.errs.length ? ' ΣΦΑΛΜΑΤΑ: ' + res.errs.join(' | ').slice(0, 300) : ''));
+        let gone = false, sent = 0, failed = 0;
+        for (const m of res.msgs || []) {
+          const at = new Date().toISOString();
+          const payload = { title: m.title, body: m.body, full: m.full, kind: m.kind, id: m.key, tag: 'bc-' + m.kind + '-' + m.key.slice(-40), at, place: m.place || null, t: m.t || null };
+          // ιστορικό στη βάση (για να φαίνεται στην εφαρμογή ακόμα κι αν δεν φτάσει το push)
+          try { await sb('notif_log', { method: 'POST', headers: { Prefer: 'return=minimal,resolution=ignore-duplicates' }, body: JSON.stringify({ id: (r.user_id + '|' + m.key).slice(0, 250), user_id: r.user_id, at, kind: m.kind, title: m.title, body: m.body, full: m.full, place: m.place || null, t: m.t || null }) }); }
+          catch (e) { if (!stats.nlErr) { log('notif_log: ' + e.message + ' (τρέξε το notif_log.sql)'); stats.nlErr = 1; } }
+          try { await webpush.sendNotification(r.sub, JSON.stringify(payload), { TTL: 6 * 3600 }); sent++; }
           catch (e) {
-            if (e.statusCode === 404 || e.statusCode === 410) { await sb(`push_subs?id=eq.${encodeURIComponent(r.id)}`, { method: 'DELETE' }); continue; }
-            log('Push: ' + (e.statusCode || '') + ' ' + e.message + ' ' + String(e.body || '').slice(0, 160)); await upd({ checked_at: new Date().toISOString() }); continue;
+            if (e.statusCode === 404 || e.statusCode === 410) { await sb(`push_subs?id=eq.${encodeURIComponent(r.id)}`, { method: 'DELETE' }); gone = true; break; }
+            failed++; if (failed === 1) log('Push: ' + (e.statusCode || '') + ' ' + e.message + ' ' + String(e.body || '').slice(0, 160));
           }
         }
+        if (gone) continue;
+        stats.fc += sent;
+        // η κατάσταση «στάλθηκε» αποθηκεύεται πάντα, ώστε να μην ξαναβγαίνουν τα ίδια σε κάθε έλεγχο
         await upd({ checked_at: new Date().toISOString(), state: res.notified });
-      } catch (e) { log('Forecast job: ' + e.message); }
+      } catch (e) { log('Forecast job: ' + e.message); try { await upd({ checked_at: new Date().toISOString() }); } catch (e2) { /* τίποτα */ } }
     }
   }
   // 7) Πτώση πίεσης κατά τη διάρκεια έξοδου: push και/ή Telegram στον ίδιο τον ψαρά (ενδεικτικό, από μοντέλο Open-Meteo)
@@ -221,7 +233,9 @@ export async function run({ env, fetch: F = fetch, sendMail, log = console.log, 
       if (c && c.self_chat_id != null && TG) { try { await tg('sendMessage', { chat_id: c.self_chat_id, text: '⚠ BiteCast: ' + body }); sent++; } catch (e) { log('Πίεση Telegram: ' + e.message); } }
       if (webpush) {
         const subs = await sb(`push_subs?user_id=eq.${t.user_id}&select=*`).catch(() => []);
-        for (const r of subs || []) { try { await webpush.sendNotification(r.sub, JSON.stringify({ title: 'BiteCast: πτώση πίεσης', body }), { TTL: 3600 }); sent++; } catch (e) { if (e.statusCode === 404 || e.statusCode === 410) await sb(`push_subs?id=eq.${encodeURIComponent(r.id)}`, { method: 'DELETE' }).catch(() => {}); } }
+        const at = new Date().toISOString(), key = 'trip-pa:' + t.id + ':' + at.slice(0, 13);
+        try { await sb('notif_log', { method: 'POST', headers: { Prefer: 'return=minimal,resolution=ignore-duplicates' }, body: JSON.stringify({ id: (t.user_id + '|' + key).slice(0, 250), user_id: t.user_id, at, kind: 'pressure', title: '📉 Πτώση πίεσης στην έξοδο', body, full: body, place: { name: 'Έξοδος', lat: +t.last_lat, lon: +t.last_lon }, t: at }) }); } catch (e) { /* χωρίς ιστορικό */ }
+        for (const r of subs || []) { try { await webpush.sendNotification(r.sub, JSON.stringify({ title: '📉 Πτώση πίεσης στην έξοδο', body, full: body, kind: 'pressure', id: key, tag: 'bc-trip-pa-' + at.slice(0, 13), at, place: { name: 'Έξοδος', lat: +t.last_lat, lon: +t.last_lon } }), { TTL: 3600 }); sent++; } catch (e) { if (e.statusCode === 404 || e.statusCode === 410) await sb(`push_subs?id=eq.${encodeURIComponent(r.id)}`, { method: 'DELETE' }).catch(() => {}); } }
       }
       await patch(t.id, { pa_at: new Date().toISOString() });
       if (sent) stats.pa++;

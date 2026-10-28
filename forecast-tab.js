@@ -327,6 +327,10 @@ async function subId(sub){
 async function getSub(create){
   if(!('serviceWorker' in navigator)||!('PushManager' in window)||!window.VAPID_PUBLIC) return null;
   var reg=await navigator.serviceWorker.ready, sub=await reg.pushManager.getSubscription();
+  /* αν η συνδρομή φτιάχτηκε με άλλο κλειδί VAPID, δεν θα δεχτεί ειδοποιήσεις (403): σβήσ' την και φτιάξε νέα */
+  if(sub&&create){ try{ var k=sub.options&&sub.options.applicationServerKey, want=b64u(window.VAPID_PUBLIC);
+    if(k){ var a=new Uint8Array(k), same=a.length===want.length; for(var i=0;same&&i<a.length;i++) if(a[i]!==want[i]) same=false;
+      if(!same){ try{ var cl=Cl(), oid=await subId(sub); if(cl) await cl.rest('push_subs?id=eq.'+oid,{method:'DELETE'}); }catch(e0){} await sub.unsubscribe(); sub=null; } } }catch(e){} }
   if(!sub&&create) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(window.VAPID_PUBLIC)});
   return sub;
 }
@@ -358,10 +362,11 @@ async function syncNotify(onlyIfChanged){
   var ok=await pushServer(); nt.server=ok; save(); await writeCfg();
   ntStatus(ok?'Ενεργό. Ο server ελέγχει την πρόγνωση περίπου κάθε 3 ώρες και σου στέλνει ειδοποίηση, ακόμα και με κλειστή εφαρμογή.':'Ενεργό μόνο όταν ανοίγεις την εφαρμογή (ή περιοδικά στο παρασκήνιο, αν το επιτρέπει το Android). Για ειδοποιήσεις με κλειστή εφαρμογή χρειάζεται η ρύθμιση του server.');
 }
-async function showNote(title,body){
+async function showNote(title,body,m){
+  m=m||{};
   try{
     var reg=await navigator.serviceWorker.getRegistration();
-    if(reg) await reg.showNotification(title,{body:body,tag:'psaro-ideal',icon:'icon-192.png',badge:'icon-192.png',data:{url:reg.scope}});
+    if(reg) await reg.showNotification(title,{body:body,tag:'bc-'+(m.kind||'info')+'-'+String(m.key||Date.now()).slice(-40),renotify:true,icon:'icon-192.png',badge:'icon-192.png',data:{url:reg.scope,bc:{kind:m.kind||'info',id:m.key,full:m.full||body,place:m.place||null,t:m.t||null}}});
     else new Notification(title,{body:body});
   }catch(e){ try{ new Notification(title,{body:body}); }catch(e2){} }
 }
@@ -370,7 +375,8 @@ async function localCheck(){
   try{
     var r=await PF.checkPlaces({lang:window.LANG||'el',places:cfgPlaces(),threshold:nt.threshold,pressure:nt.pressure!==false,turn:!!nt.turn,wind:wwCfg(),notified:nt.notified});
     nt.notified=r.notified; save(); await writeCfg();
-    if(r.items.length) showNote(r.title,r.body);
+    if(r.msgs&&r.msgs.length){ for(var i=0;i<r.msgs.length;i++){ var m=r.msgs[i]; await showNote(m.title,m.body,m); } }
+    else if(r.items.length) showNote(r.title,r.body);
   }catch(e){}
 }
 async function periodic(on){
