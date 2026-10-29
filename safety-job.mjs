@@ -178,7 +178,7 @@ export async function run({ env, fetch: F = fetch, sendMail, log = console.log, 
   if (PF && webpush) {
     const stale = new Date(Date.now() - 3 * 3600e3).toISOString();
     let rows = [];
-    const stale1 = new Date(Date.now() - 55 * 60e3).toISOString();
+    const stale1 = new Date(Date.now() - 14 * 60e3).toISOString(); // v31z355: καμπές πίεσης κάθε ~15 λεπτά
     try { rows = (await sb(`push_subs?or=(checked_at.is.null,checked_at.lt.${encodeURIComponent(stale)},and(turn.eq.true,checked_at.lt.${encodeURIComponent(stale1)}))&select=*`)) || []; }
     catch (e) {
       try { rows = (await sb(`push_subs?or=(checked_at.is.null,checked_at.lt.${encodeURIComponent(stale)})&select=*`)) || []; }
