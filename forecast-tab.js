@@ -173,10 +173,13 @@ function renderFc(p,f,note,t){
 }
 
 /* ---------- γράφημα πίεσης 24 ωρών (ενδεικτικό, μοντέλο Open-Meteo) ---------- */
+/* v31z354: εύρος γραφήματος πίεσης/ανέμου: 24 ώρες, 3 ή 7 ημέρες */
+var PRANGE={d1:{past:24,fut:25,lbl:['24 ώρες','24 h']},d3:{past:24,fut:72,lbl:['3 ημέρες','3 days']},d7:{past:24,fut:168,lbl:['7 ημέρες','7 days']}};
+function prKey(){ var k=lsGet('psaro-pwrange','d1'); return PRANGE[k]?k:'d1'; }
 function pressSeries(p,key0){
-  var key=key0||'psaro-fcpress2', c=lsGet(key,null);
+  var rk=prKey(), RG=PRANGE[rk], key=(key0||'psaro-fcpress2')+(rk==='d1'?'':'-'+rk), c=lsGet(key,null);
   if(c&&c.id===p.id&&Date.now()-c.t<30*60000&&c.v) return Promise.resolve(c.v);
-  var url='https://api.open-meteo.com/v1/forecast?latitude='+(+p.lat).toFixed(3)+'&longitude='+(+p.lon).toFixed(3)+'&hourly=pressure_msl,wind_speed_10m,wind_gusts_10m,wind_direction_10m&wind_speed_unit=kn&past_hours=24&forecast_hours=25&timezone=UTC';
+  var url='https://api.open-meteo.com/v1/forecast?latitude='+(+p.lat).toFixed(3)+'&longitude='+(+p.lon).toFixed(3)+'&hourly=pressure_msl,wind_speed_10m,wind_gusts_10m,wind_direction_10m&wind_speed_unit=kn&past_hours='+RG.past+'&forecast_hours='+RG.fut+'&timezone=UTC';
   var ac=new AbortController(), tm=setTimeout(function(){ ac.abort(); },10000);
   return fetch(url,{signal:ac.signal}).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(j){
     clearTimeout(tm); var H=j.hourly||{}, ts=H.time||[], out=[], now=-1;
@@ -234,8 +237,10 @@ function pressCard(p,o){
     else { var D=$('fcDays'); if(!D) return; box=h('div',{id:bid,class:'card',style:'margin:10px 0'}); D.parentNode.insertBefore(box,D); }
   }
   box.replaceChildren(); if(!p) { box.hidden=true; return; } box.hidden=false;
-  var TT=T('Πίεση και άνεμος, 24 ώρες','Pressure and wind, 24 h');
-  box.append(h('h3',{text:TT}),h('p',{class:'note',text:T('Φόρτωση…','Loading…')}));
+  var rk=prKey(), TT=T('Πίεση και άνεμος','Pressure and wind');
+  function rangeBar(){ var bar=h('div',{class:'prange',role:'group','aria-label':T('Εύρος','Range')}); Object.keys(PRANGE).forEach(function(k){ var b=h('button',{type:'button','aria-pressed':String(k===rk),text:T(PRANGE[k].lbl[0],PRANGE[k].lbl[1])}); b.addEventListener('click',function(){ lsSet('psaro-pwrange',k); pressCard(p,o); }); bar.append(b); }); return bar; }
+  function head(){ var hd=h('div',{class:'prhead'}); hd.append(h('h3',{text:TT}),rangeBar()); return hd; }
+  box.append(head(),h('p',{class:'note',text:T('Φόρτωση…','Loading…')}));
   pressSeries(p,o.td?'psaro-fcpress2t':null).then(function(v){
     var pts=v.pts, n=v.now; if(!pts.length||n<3){ throw new Error('nodata'); }
     var hasW=pts.some(function(q){ return q.w!=null; });
@@ -263,12 +268,15 @@ function pressCard(p,o){
       if(pts.some(function(q){ return q.g!=null; })) svg.append(mk('path',{d:path(function(q){ return Y2(q.g!=null?q.g:(q.w||0)); },0,N-1),fill:'none',stroke:wcol,'stroke-width':1,'stroke-dasharray':'1.5 2.5','stroke-opacity':.8}));
       svg.append(mk('path',{d:path(function(q){ return Y2(q.w||0); },0,n),fill:'none',stroke:wcol,'stroke-width':2.2,'stroke-linejoin':'round'}),mk('path',{d:path(function(q){ return Y2(q.w||0); },n,N-1),fill:'none',stroke:wcol,'stroke-width':2.2,'stroke-dasharray':'4 3','stroke-linejoin':'round'}));
       var ww=pts.map(function(q){ return q.w||0; }); iW=ww.indexOf(Math.max.apply(null,ww)); txt(X(iW),Y2(ww[iW])-4,'▲','middle',9,wcol);
-      for(var i=1;i<N-1;i+=3){ var q=pts[i]; if(q.d==null||(q.w||0)<2) continue; var g=mk('g',{transform:'translate('+X(i).toFixed(1)+' '+(wTop+H2+8)+') rotate('+Math.round(q.d)+')'}); g.append(mk('path',{d:'M0 5 L0 -5 M-3 2 L0 5 L3 2',fill:'none',stroke:wcol,'stroke-width':1.4,'stroke-linecap':'round','stroke-linejoin':'round'})); svg.append(g); }
+      var AST=N>100?12:N>60?6:3; for(var i=1;i<N-1;i+=AST){ var q=pts[i]; if(q.d==null||(q.w||0)<2) continue; var g=mk('g',{transform:'translate('+X(i).toFixed(1)+' '+(wTop+H2+8)+') rotate('+Math.round(q.d)+')'}); g.append(mk('path',{d:'M0 5 L0 -5 M-3 2 L0 5 L3 2',fill:'none',stroke:wcol,'stroke-width':1.4,'stroke-linecap':'round','stroke-linejoin':'round'})); svg.append(g); }
     }
     svg.append(mk('line',{x1:X(n),x2:X(n),y1:TP-2,y2:Ht-BT,stroke:ink,'stroke-width':1,'stroke-dasharray':'2 2'}),mk('circle',{cx:X(n),cy:Y1(pts[n].p),r:3.2,fill:ink}));
     var hrOf=function(ms){ try{ return +new Intl.DateTimeFormat('en-GB',{hour:'2-digit',hour12:false,timeZone:'Asia/Nicosia'}).format(new Date(ms))%24; }catch(e){ return new Date(ms).getUTCHours(); } };
     txt(X(n),Ht-3,T('τώρα','now'),'middle',8);
-    pts.forEach(function(q,i){ var hr=hrOf(q.t)%24; if(hr%6!==0||Math.abs(i-n)<3||i<2||i>N-3) return; svg.append(mk('line',{x1:X(i),x2:X(i),y1:Ht-BT,y2:Ht-BT+3,stroke:mut,'stroke-width':1})); txt(X(i),Ht-3,(hr<10?'0':'')+hr+':00','middle',8); });
+    var multi=N>60, dayLbl=function(ms){ try{ return new Date(ms).toLocaleDateString(window.LANG==='en'?'en-GB':'el-GR',{weekday:'short',timeZone:'Asia/Nicosia'}); }catch(e){ return ''; } };
+    pts.forEach(function(q,i){ var hr=hrOf(q.t)%24;
+      if(multi){ if(hr!==0||i<2||i>N-3) return; svg.append(mk('line',{x1:X(i),x2:X(i),y1:TP,y2:Ht-BT,stroke:mut,'stroke-opacity':.25,'stroke-width':1})); if(Math.abs(i-n)>=4) txt(X(i)+ (N>100?11:16),Ht-3,dayLbl(q.t+12*3600000),'middle',8); return; }
+      if(hr%6!==0||Math.abs(i-n)<3||i<2||i>N-3) return; svg.append(mk('line',{x1:X(i),x2:X(i),y1:Ht-BT,y2:Ht-BT+3,stroke:mut,'stroke-width':1})); txt(X(i),Ht-3,(hr<10?'0':'')+hr+':00','middle',8); });
     var pick=mk('line',{x1:0,x2:0,y1:TP-2,y2:Ht-BT,stroke:ink,'stroke-width':1.5,'stroke-opacity':.7,visibility:'hidden'}), pd1=mk('circle',{cx:0,cy:0,r:4,fill:line,stroke:'#fff','stroke-width':1.5,visibility:'hidden'}), pd2=mk('circle',{cx:0,cy:0,r:4,fill:wcol,stroke:'#fff','stroke-width':1.5,visibility:'hidden'});
     svg.append(pick,pd1,pd2);
     var fmt=function(d){ return (d>0?'+':d<0?'−':'')+Math.abs(d).toFixed(1)+' hPa'; };
@@ -292,11 +300,11 @@ function pressCard(p,o){
     var dlt=function(a,b){ return pv[b]-pv[a]; }, back=dlt(Math.max(0,n-3),n), f3=n+3<N?dlt(n,n+3):null, f6=n+6<N?dlt(n,n+6):null;
     var wnote='';
     if(hasW&&pts[n].w!=null&&n+3<N&&pts[n+3].w!=null){ var dw=pts[n+3].w-pts[n].w; wnote=' · '+T('άνεμος: ','wind: ')+PU.wind(pts[n].w)+(Math.abs(dw)>=2?' → '+PU.wind(pts[n+3].w)+' '+T('σε 3 ώρες','in 3 h'):T(' σταθερός τις επόμενες 3 ώρες',' steady for the next 3 h')); }
-    box.replaceChildren(h('h3',{text:TT}),svg,out,
+    box.replaceChildren(head(),svg,out,
       h('div',{class:'meta',style:'margin-top:6px',text:T('Πίεση, τελευταίες 3 ώρες: ','Pressure, last 3 h: ')+fmt(back)+' ('+verdict(back)+')'+(f3!=null?' · '+T('επόμενες 3 ώρες: ','next 3 h: ')+fmt(f3):'')+(f6!=null?' · '+T('επόμενες 6 ώρες: ','next 6 h: ')+fmt(f6):'')+wnote}),
       h('p',{class:'note',text:T('Πάνω: πίεση (μπλε). Κάτω: άνεμος (πορτοκαλί, διακεκομμένη κουκκίδα = ριπές, βέλη = προς πού πηγαίνει ο άνεμος). Συνεχής γραμμή = παρελθόν, διακεκομμένη = πρόγνωση. Ενδεικτικό, από μοντέλο, όχι από όργανο.','Top: pressure (blue). Bottom: wind (orange, dotted = gusts, arrows = where the wind is going). Solid = past, dashed = forecast. Indicative, from a model, not an instrument.')}));
     try{ measured(box,p,pts[n].p); }catch(e){}
-  }).catch(function(){ box.replaceChildren(h('h3',{text:TT}),h('p',{class:'note',text:T('Δεν φορτώθηκαν δεδομένα πίεσης και ανέμου.','Pressure and wind data did not load.')})); });
+  }).catch(function(){ box.replaceChildren(head(),h('p',{class:'note',text:T('Δεν φορτώθηκαν δεδομένα πίεσης και ανέμου.','Pressure and wind data did not load.')})); });
 }
 /* Το ίδιο γράφημα (πίεση και άνεμος) στην καρτέλα «Σήμερα», για τη θέση που δείχνει η Σήμερα */
 var tdBusy=null;

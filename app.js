@@ -659,6 +659,20 @@ function catchPopup(b){
 }
 function spFilt(){ try{ return lsGet('psaro-spf','')||''; }catch(e){ return ''; } }
 document.addEventListener('psaro-spfilter',function(){ try{ drawMap(); }catch(e){} });
+
+/* v31z354: σύμβολα ανά ομάδα ψαριών και ανά τύπο σημείου */
+const SYM_SVG={fish:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12c3-5 10-5.5 13.5-1.2L21 7v10l-5-3.8C12.5 17.5 5.5 17 2.5 12z"/><circle cx="7.2" cy="11" r="1.1" fill="currentColor" stroke="none"/></svg>',
+  ceph:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3 0 5 2.4 5 5.5V13H7V8.5C7 5.4 9 3 12 3z"/><path d="M8 13c0 3-1.5 5-3 7M10.5 13c0 3-.5 5.5-1.5 7.5M13.5 13c0 3 .5 5.5 1.5 7.5M16 13c0 3 1.5 5 3 7"/></svg>'};
+const FISH_GROUPS=[
+  ['ceph',/^(loligo|sepia|octopus|sepioteuthis|illex|todarodes|alloteuthis|eledone)\b/i,/καλαμ|σουπι|χταπ|θράψαλ|squid|cuttle|octopus/i],
+  ['grouper',/^(epinephelus|mycteroperca|cephalopholis|polyprion)\b/i,/σφυρίδ|ροφ|στήρα|βλάχ|grouper|wreckfish/i],
+  ['bass',/^(dicentrarchus)\b/i,/λαβρ|seabass|sea bass/i],
+  ['pelagic',/^(thunnus|euthynnus|sarda|seriola|lichia|coryphaena|scomber|auxis|pomatomus|sphyraena|trachinotus|scomberomorus|katsuwonus|xiphias)\b/i,/τόνο|παλαμ|μαγιάτικ|λίτσα|λύτσα|κυνηγ|σκουμπρ|κολι|γοφάρ|λούτζ|ξιφί|tuna|bonito|amberjack|leerfish|dolphinfish|mackerel|bluefish|barracuda|swordfish/i],
+  ['sparid',/^(diplodus|sparus|pagrus|pagellus|dentex|oblada|lithognathus|spondyliosoma|sarpa|boops|crenidens)\b/i,/σαργ|τσιπούρ|φαγκρ|λυθρίν|μουρμ|συναγρίδ|μελανούρ|σκαθάρ|σάλπα|γόπα|bream|dentex|pandora|porgy/i],
+  ['mullet',/^(mullus)\b/i,/μπαρμπούν|κουτσομούρ|red mullet|goatfish/i]];
+function fishGroup(b){ const la=(b.latin||'').trim(), nm=((b.species||'')+' '+(b.en||'')).trim(); for(const g of FISH_GROUPS){ if((la&&g[1].test(la))||(nm&&g[2].test(nm))) return g[0]; } return 'other'; }
+function spotKind(sp){ const t=(sp.type||''); return /ναυάγ|wreck/i.test(t)?'wreck':/άμμο|sand/i.test(t)?'sand':/ταμπλ|κατωφλ|drop|ledge|step/i.test(t)?'ledge':/ρεύμ|ανοιχτ|current|open/i.test(t)?'current':/λιμάν|μώλ|port|jetty|pier|harbo/i.test(t)?'port':/βράχ|ύφαλ|rock|reef/i.test(t)?'reef':'other'; }
+window.PsaroSym={fishGroup:fishGroup,spotKind:spotKind,svg:SYM_SVG};
 function drawMap(){
   if(!map) return;
   spotsG.clearLayers(); bitesG.clearLayers();
@@ -666,7 +680,7 @@ function drawMap(){
   for(const sp of Store.get('spots')){
     if(typeof sp.lat!=='number'||typeof sp.lon!=='number') continue;
     if(lsGet('psaro-showspots',true)===false&&!pick&&sp.id!==focusId) continue;
-    const m=L.marker([sp.lat,sp.lon],{icon:L.divIcon({className:'',html:'<div class="mk-spot'+(sp.id===selSpot?' sel':'')+'"></div>',iconSize:[22,22]}),title:sp.name});
+    const m=L.marker([sp.lat,sp.lon],{icon:L.divIcon({className:'',html:'<div class="mk-spot sym t-'+spotKind(sp)+(sp.id===selSpot?' sel':'')+'"></div>',iconSize:[22,22]}),title:sp.name});
     m.bindTooltip(sp.name||'',{direction:'right',offset:[10,0],className:'lbl'});
     m.bindPopup(()=>h('div',{class:'pop'},h('b',{text:sp.name||'Χωρίς όνομα'}),h('div',{class:'meta',text:[sp.type,sp.depth!=null?sp.depth+' m':null].filter(Boolean).join(' · ')}),sp.notes?h('div',{class:'meta',text:sp.notes}):null,
       h('div',{class:'meta mono',text:PsaroCoord.fmt(sp.lat,sp.lon)}),
@@ -683,7 +697,7 @@ function drawMap(){
     if(typeof b.lat!=='number'||typeof b.lon!=='number') continue;
     if(reviewSet&&!tripActive()&&!reviewSet.has(b.id)) continue;
     if(lsGet('psaro-showbites',true)===false&&!reviewSet&&b.id!==focusId) continue;
-    const m=L.marker([b.lat,b.lon],{icon:L.divIcon({className:'',html:'<div class="mk-fish'+(b.photo?' ph':'')+(b.rel?' rel':'')+'">🐟</div>',iconSize:[30,30]}),title:b.species||''});
+    const m=L.marker([b.lat,b.lon],{icon:L.divIcon({className:'',html:'<div class="mk-fish sym g-'+fishGroup(b)+(b.photo?' ph':'')+(b.rel?' rel':'')+'">'+SYM_SVG[fishGroup(b)==='ceph'?'ceph':'fish']+'</div>',iconSize:[30,30]}),title:b.species||''});
     m.bindPopup(()=>catchPopup(b),{minWidth:200,maxWidth:250,className:'fishpopw'});
     m.on('popupopen',e=>{const pu=e.popup, im=pu.getElement().querySelector('img.pimg');
       /* το παράθυρο ψαριού μπαίνει στο κέντρο του χάρτη, και ξανά όταν φορτώσει η φωτογραφία */
@@ -1932,7 +1946,7 @@ $('expBtn').addEventListener('click',async()=>{
     const bites=Store.raw('bites'), photos={};
     for(const b of bites) for(const k of phKeys(b)){ try{const bl=await Photos.get(k); if(bl) photos[k]=await blobToDataUrl(bl);}catch(e){} }
     for(const tk of Store.raw('tackle')) if(tk.photo){ try{ const bl=await Photos.get('tk-'+tk.id); if(bl) photos['tk-'+tk.id]=await blobToDataUrl(bl); }catch(e){} }
-    const data={app:'psarovarka',v:2,spots:Store.get('spots'),trips:Store.get('trips'),bites:bites,tackle:Store.raw('tackle'),gear:(window.PsaroGear?window.PsaroGear.state().items:[]),photos:photos};
+    const data={app:'psarovarka',v:2,spots:Store.get('spots'),trips:Store.get('trips'),bites:bites,tackle:Store.raw('tackle'),gear:(window.PsaroGear?window.PsaroGear.state().items:[]),boat:(window.PsaroBoat?window.PsaroBoat.data():null),photos:photos};
     const a=h('a',{href:URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'})),download:'psarovarka-'+nicosiaToday()+'.json'});
     document.body.append(a); a.click(); a.remove(); try{ window.PsaroCore.lsSet('psaro-lastbackup',Date.now()); }catch(e){}
   }catch(e){ $('impMsg').textContent='Η εξαγωγή απέτυχε.'; }
@@ -1944,6 +1958,7 @@ $('impFile').addEventListener('change',async e=>{
     const d=JSON.parse(await f.text()); let n=0;
     for(const k of ['spots','trips','bites','tackle']) for(const it of (Array.isArray(d[k])?d[k]:[])) if(it&&typeof it==='object'){await Store.save(k,it);n++;}
     if(Array.isArray(d.gear)&&window.PsaroGear) n+=window.PsaroGear.import(d.gear);
+    if(d.boat&&typeof d.boat==='object'&&window.PsaroBoat){ window.PsaroBoat.load(d.boat); n++; }
     const ph=d.photos&&typeof d.photos==='object'?d.photos:{};
     for(const id in ph){ try{ const bl=await (await fetch(ph[id])).blob(); await Photos.put(id,bl); }catch(err){} }
     $('impMsg').textContent=n+' εγγραφές εισήχθησαν.'; try{ toast(window.LANG==='en'?'Restored '+n+' records.':'Επαναφέρθηκαν '+n+' εγγραφές.'); }catch(e2){}
@@ -2084,5 +2099,5 @@ document.addEventListener('visibilitychange',()=>{
 });
 setInterval(()=>{ if(document.visibilityState==='visible'&&navigator.onLine!==false) refreshConditions(); },10*60*1000);
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
-Object.assign(window.PsaroCore,{tripStamp:tripStamp,utcOff:utcOff,matchSp:matchSp,dispName:dispName,shownName:shownName,openRodSheet:()=>openSheet(),reviewTrip:reviewTrip,endReview:endReview,speciesDB:()=>DB,pickSpecies:sp=>{ $('bSpecies').value=shownName(sp); curLatin=sp.la; try{updateLaw();}catch(e){} $('bSpecies').dispatchEvent(new Event('change',{bubbles:true})); }});
+Object.assign(window.PsaroCore,{openSpotForm:(p,sp)=>openSpotForm(p||{},sp),tripStamp:tripStamp,utcOff:utcOff,matchSp:matchSp,dispName:dispName,shownName:shownName,openRodSheet:()=>openSheet(),reviewTrip:reviewTrip,endReview:endReview,speciesDB:()=>DB,pickSpecies:sp=>{ $('bSpecies').value=shownName(sp); curLatin=sp.la; try{updateLaw();}catch(e){} $('bSpecies').dispatchEvent(new Event('change',{bubbles:true})); }});
 })();

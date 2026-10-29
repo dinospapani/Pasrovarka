@@ -404,17 +404,9 @@ function render(){
   r2.append(btn(T('Βρες λιμάνι','Find port'),'',function(){ fixNow(function(p){ offerHome(p,'').then(function(){ render(); }); },function(){ C.toast(T('Δεν βρέθηκε θέση GPS.','No GPS fix.')); }); }));
   if(S.home) r2.append(btn(T('Καθαρισμός','Clear'),'',function(){ S.home=null; save(); autoStop(); render(); rt(); })); body.append(r2);
   row(T('Γραμμή επιστροφής στον χάρτη','Return strip on map'),T('Η γραμμή «🏠 απόσταση · ώρα · ⛽» πάνω αριστερά κατά την έξοδο. Κράτα την πατημένη για να κρυφτεί. Οι ειδοποιήσεις μένουν ενεργές.','The “🏠 distance · time · ⛽” strip during a trip. Long-press it to hide. Alerts stay on.'),sw(S.chip!==false,function(){ S.chip=(S.chip===false); save(); render(); rt(); }));
-  sec(T('Σκάφος και καύσιμο','Boat and fuel'));
-  row(T('Ταχύτητα πλεύσης (kn)','Cruise speed (kn)'),T('Για τον υπολογισμό ώρας επιστροφής.','Used for the return-time estimate.'),num(S.cruise,'15',function(v){ S.cruise=v>0?v:15; }));
-  row(T('Ρεζερβουάρ (L)','Tank (L)'),null,num(S.tank,'',function(v){ S.tank=v; if(v>0&&!S.fuel) S.fuel={L:v,t:Date.now()}; }));
-  row(T('Κατανάλωση (L/ώρα)','Burn (L/h)'),T('Μέση κατανάλωση σε πορεία.','Average burn while running.'),num(S.burn,'',function(v){ S.burn=v; }));
-  row(T('Εφεδρεία (%)','Reserve (%)'),null,num(S.reserve,'20',function(v){ S.reserve=v==null?20:v; }));
-  row(T('Καύσιμο τώρα (L)','Fuel now (L)'),S.fuel?T('Εκτίμηση ~','Estimate ~')+Math.round(S.fuel.L)+' L':T('Μετά τον ανεφοδιασμό βάλε τα λίτρα.','Enter litres after refuelling.'),num(S.fuel?Math.round(S.fuel.L):'', 'L',function(v){ if(v!=null) S.fuel={L:v,t:Date.now()}; }));
+  sec(T('Σκάφος','Boat'));
+  row(T('Σκάφος, κινητήρας, καύσιμο, λήξεις','Boat, engine, fuel, expiry dates'),T('Όλα τα στοιχεία της βάρκας είναι πλέον στο Προφίλ › Βάρκα.','All boat details are now in Profile › Boat.'),btn(T('Άνοιγμα','Open'),'acc',function(){ P.hidden=true; if(window.PsaroBoat) window.PsaroBoat.open(); }));
   row(T('Δαχτυλίδι αυτονομίας','Range ring'),T('Στον χάρτη, γύρω από το λιμάνι, κατά την έξοδο.','On the map around the port during a trip.'),sw(S.ring,function(){ S.ring=!S.ring; save(); render(); rt(); }));
-  sec(T('Κινητήρας','Engine'));
-  row(T('Ώρες κινητήρα','Engine hours'),T('Προστίθενται κατά προσέγγιση από τις εξόδους.','Added approximately from your trips.'),num(S.eng.h,'0',function(v){ S.eng.h=v||0; }));
-  row(T('Service κάθε (ώρες)','Service every (h)'),T('Τελευταίο στις ','Last at ')+S.eng.last+' h',num(S.eng.every,'100',function(v){ S.eng.every=v||0; }));
-  row(T('Έγινε service','Service done'),null,btn(T('Τώρα','Now'),'',function(){ S.eng.last=S.eng.h; save(); render(); }));
   sec(T('Αυτόματα','Automatic'));
   row(T('Προτάσεις έναρξης και λήξης','Start and end suggestions'),T('Ρωτά όταν φεύγεις από το λιμάνι ή γυρίζεις. Χρησιμοποιεί GPS όσο η εφαρμογή είναι ανοιχτή.','Asks when you leave or return to the port. Uses GPS while the app is open.'),sw(S.auto,function(){ S.auto=!S.auto; save(); if(S.auto) autoStart(); else autoStop(); render(); }));
   sec(T('Πλοήγηση «Πηγαίνω εκεί»','“Go there” navigation'));
@@ -433,6 +425,6 @@ function openPanel(){ render(); P.hidden=false; }
   var r=el('div','sprow'), x=el('div','sptx'); x.append(el('b','',T('Λιμάνι και σκάφος','Port and boat')),el('span','',S.home?T('Λιμάνι ορισμένο','Port set')+(S.tank?' · '+S.tank+' L':''):T('Όρισε λιμάνι, καύσιμο και αυτόματες προτάσεις.','Set port, fuel and automatic suggestions.')));
   r.append(x,btn(T('Άνοιγμα','Open'),'acc',openPanel)); r.dataset.k='port'; return r;
 });
-window.PsaroSmart={setHome:function(h){ S.home={lat:h.lat,lon:h.lon,name:h.name}; delete S.homeNo; delete S.homeBack; save(); autoStop(); autoStart(); rt(); },state:function(){ return S; },rt:rt,heat:heat,lastYear:lastYear,openPanel:openPanel,findPort:findPort,portsNear:portsNear,offerHome:offerHome,badIn:badIn,weekly:weekly};
+window.PsaroSmart={save:function(){ save(); rt(); },setHome:function(h){ S.home={lat:h.lat,lon:h.lon,name:h.name}; delete S.homeNo; delete S.homeBack; save(); autoStop(); autoStart(); rt(); },state:function(){ return S; },rt:rt,heat:heat,lastYear:lastYear,openPanel:openPanel,findPort:findPort,portsNear:portsNear,offerHome:offerHome,badIn:badIn,weekly:weekly};
 autoStart();
 })();

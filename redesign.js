@@ -37,7 +37,7 @@ if(mode==='old') return;
 /* ---- νέα εμφάνιση ---- */
 var mb=document.querySelector('.mapbtns'), box=mb&&mb.parentNode; if(!mb||!box) return;
 document.body.classList.add('nd');
-var G={layers:['bLayer','bSea','bDepthMap','bSeaState','bWind','bWindSt','bZones','bNav','bMpa','bPorts','bDams','bHot','bOffline'],actions:['bQuick','bGear','bSpotPick','bTools']};
+var G={layers:['bLayer','bSea','bDepthMap','bSeaState','bWind','bWindSt','bZones','bNav','bMpa','bPorts','bDams','bHot','bOffline'],actions:['bQuick','bSpotPick','bScan','bGear','bTools']};
 var TITLE={layers:T('Στρώματα','Layers'),actions:T('Ενέργειες','Actions'),safety:T('Ασφάλεια και θάλασσα','Safety and sea')};
 var SUB={layers:T('Τι φαίνεται πάνω στο χάρτη','What shows on the map'),actions:T('Καταγραφή, εργαλεία και σημεία','Record, gear and spots'),safety:T('Λειτουργούν με GPS και ανοιχτή εφαρμογή. Δεν είναι ναυτικό όργανο.','Work with GPS and the app open. Not a navigation instrument.')};
 function groupOf(id){ for(var k in G) if(G[k].indexOf(id)>=0) return k; return 'actions'; }
@@ -62,9 +62,18 @@ function zLeg(){
   [[Z.nofish,T('Απαγόρευση αλιείας','No fishing')],[Z.noentry,T('Ούτε διέλευση σκαφών','No boats allowed')],[Z.season,T('Εποχικός περιορισμός','Seasonal')]].forEach(function(x){ var sp=el('span'); var i=el('i'); i.style.color=x[0]; i.style.background=x[0]+'44'; sp.append(i,document.createTextNode(x[1])); zl.append(sp); });
   return zl;
 }
+/* v31z354: υπόμνημα συμβόλων ψαριών και σημείων */
+var sl=null;
+function symLeg(){
+  if(sl) return sl; sl=el('div','ndsymleg');
+  function grp(title,rows,sq){ var h=el('b',null,title); sl.append(h); rows.forEach(function(r){ var sp=el('span'), i=el('i',sq?'sq':''); i.style.color=r[0]; sp.append(i,document.createTextNode(r[1])); sl.append(sp); }); }
+  grp(T('Ψάρια','Fish'),[['#8d5a2b',T('Σφυρίδες, ροφοί','Groupers')],['#3f78a8',T('Λαβράκια','Sea bass')],['#c59a12',T('Σαργοί, τσιπούρες, φαγκριά','Breams, dentex')],['#1d55c4',T('Πελαγικά (τόνος, μαγιάτικο, λίτσα)','Pelagics (tuna, amberjack)')],['#d9472b',T('Μπαρμπούνια','Red mullet')],['#8e44ad',T('Καλαμάρια, σουπιές, χταπόδια','Squid, cuttlefish, octopus')],['#2b8c7a',T('Άλλα','Other')]]);
+  grp(T('Σημεία','Spots'),[['#b5532c',T('Βράχια / ύφαλος','Rocks / reef')],['#d9b44a',T('Άμμος','Sand')],['#37474f',T('Ναυάγιο','Wreck')],['#6d4c9f',T('Ταμπλά','Ledge')],['#1e88c9',T('Ρεύμα / ανοιχτά','Current / open')],['#2e7d4f',T('Λιμάνι / μώλος','Port / jetty')],['#e8743b',T('Άλλο','Other')]],true);
+  return sl;
+}
 function syncTg(){ Array.prototype.forEach.call(tgRow.children,function(b){ b.setAttribute('aria-pressed',String(C.lsGet(b.dataset.k,true)!==false)); }); }
 function open(g){
-  if(g==='layers'){ lists.layers.insertBefore(secA,lists.layers.firstChild); lists.layers.append(secB); lists.layers.append(tgRow); lists.layers.append(zLeg()); syncTg(); }
+  if(g==='layers'){ lists.layers.insertBefore(secA,lists.layers.firstChild); lists.layers.append(secB); lists.layers.append(tgRow); lists.layers.append(zLeg()); lists.layers.append(symLeg()); syncTg(); }
   Object.keys(lists).forEach(function(k){ lists[k].hidden=(k!==g); });
   ttl.textContent=TITLE[g]; sub.textContent=SUB[g]; panel.setAttribute('aria-label',TITLE[g]);
   sheet.dataset.g=g; ed.hidden=(g==='safety'); sheet.hidden=false; document.body.classList.add('ndopen'); try{ done.focus({preventScroll:true}); }catch(e){}

@@ -172,9 +172,10 @@ function maintCheck(){
   var now=Date.now(); M.items.forEach(function(it){ var s=mstat(it); if(s.lv!=='bad'&&s.lv!=='warn') return; if(M.sent[it.id]&&now-M.sent[it.id]<7*86400000) return; M.sent[it.id]=now; msave();
     var t='🔧 '+it.name, b=s.lv==='bad'?T('Εκπρόθεσμο.','Overdue.'):T('Πλησιάζει η ώρα.','Coming due.'); try{ if(window.PsaroSea&&window.PsaroSea.notify) window.PsaroSea.notify(t,b); else C.toast(t+' · '+b); }catch(e){} });
 }
-function maintUI(box){
+function maintUI(box,rr){
+  var render=rr||render0;
   box.append(el('div','smsec',T('Συντήρηση σκάφους','Boat maintenance')));
-  box.append(el('div','sptx',T('Ώρες κινητήρα: ','Engine hours: ')+Math.round(engH()*10)/10+' h '+T('(από τις εξόδους, στο ⚓ Λιμάνι και σκάφος)','(from your trips; edit in ⚓ Port and boat)')));
+  box.append(el('div','sptx',T('Ώρες κινητήρα: ','Engine hours: ')+Math.round(engH()*10)/10+' h '+T('(από τις εξόδους· διόρθωση στην καρτέλα Βάρκα)','(from your trips; edit in the Boat tab)')));
   M.items.forEach(function(it){
     var s=mstat(it), r=el('div','mtrow '+s.lv), x=el('div','sptx'); x.append(el('b','',it.name),el('span','',s.tx));
     var b=btn(T('Έγινε','Done'),'acc',function(){ it.last={h:engH(),t:Date.now()}; delete M.sent[it.id]; msave(); render(); });
@@ -187,6 +188,7 @@ function maintUI(box){
   var add=el('div','sprow'); add.append(btn(T('+ Νέο στοιχείο','+ New item'),'',function(){ window.PsaroAsk.prompt&&window.PsaroAsk.prompt(T('Όνομα στοιχείου συντήρησης','Maintenance item name'),{title:T('Νέο στοιχείο','New item')}).then(function(v){ v=(v||'').trim(); if(!v) return; M.items.push({id:'m'+Date.now().toString(36),name:v.slice(0,60),h:0,mo:12,last:null}); msave(); render(); }); })); box.append(add);
 }
 
+window.PsaroMaint={ui:function(box,rr){ maintUI(box,rr); },check:function(){ maintCheck(); },engH:function(){ return engH(); }};
 /* ---------- 7: κόστος ανά σεζόν ---------- */
 function costOf(t){ var c=t&&t.cost; return c?(+c.fuel||0)+(+c.bait||0)+(+c.other||0):0; }
 function costUI(box){
@@ -244,6 +246,7 @@ P.querySelector('b').textContent=T('Αναλύσεις και αρχείο','Ins
 var body=P.querySelector('.spbody'), card0=P.querySelector('.spcard');
 P.querySelector('.spx').addEventListener('click',function(){ P.hidden=true; }); P.addEventListener('click',function(e){ if(e.target===P) P.hidden=true; });
 var focus=null, view=null;
+function render0(){ return render.apply(this,arguments); }
 function render(showAll){ if(showAll===true) view=null; body.replaceChildren(); var sec={}, only=view; ['moon','cost','maint','export'].forEach(function(k){ if(only&&k!==only) return; sec[k]=el('div'); sec[k].dataset.k=k; body.append(sec[k]); });
   if(sec.moon) moonStats(sec.moon); if(sec.cost) costUI(sec.cost); if(sec.maint) maintUI(sec.maint); if(sec.export) exportUI(sec.export);
   if(only){ body.append(btn(T('Όλες οι αναλύσεις (κόστος, συντήρηση, εξαγωγή)','All insights (cost, maintenance, export)'),'',function(){ render(true); })); }
