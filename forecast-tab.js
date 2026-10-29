@@ -221,6 +221,9 @@ function turnCard(f){
   if(o.last) box.append(h('p',{style:'margin:3px 0;font-size:13px',text:T('Πριν ','')+(EN?'':hrs(o.last.hours)+': ')+(o.last.kind==='peak'?T('κορυφή ','peak '):T('κοιλάδα ','trough '))+PU.press(o.last.p)+' ('+hh(o.last.t)+') → '+(o.last.kind==='peak'?T('ξεκίνησε πτώση','falling since'):T('ξεκίνησε άνοδος','rising since'))+(EN?', '+hrs(o.last.hours)+' ago':'')}));
   if(o.next) box.append(h('p',{style:'margin:3px 0;font-size:13px',text:T('Επόμενη καμπή: ','Next turning point: ')+(o.next.kind==='peak'?T('κορυφή ','peak '):T('κοιλάδα ','trough '))+PU.press(o.next.p)+' '+T('στις ','at ')+hh(o.next.t)+' ('+T('σε ','in ')+hrs(o.next.hours)+') → '+(o.next.kind==='peak'?T('μετά ξεκινά πτώση','then falling'):T('μετά ξεκινά άνοδος','then rising'))}));
   else box.append(h('p',{style:'margin:3px 0;font-size:13px',text:T('Δεν προβλέπεται καμπή στην πρόγνωση που φορτώθηκε.','No turning point in the loaded forecast.')}));
+  /* v31z351: πότε να περιμένεις ειδοποίηση καμπής */
+  if(o.next){ var ah=new Date(Date.parse(o.next.t)-3*3600e3), pre=('0'+ah.getHours()).slice(-2)+':'+('0'+ah.getMinutes()).slice(-2);
+    var on2=nt.on&&nt.turn; box.append(h('p',{class:'note',style:'margin:4px 0 0;font-weight:600',text:on2?T('🔔 Ειδοποίηση καμπής: από ~','🔔 Turning-point alert: from ~')+pre+T(' (έως 3 ώρες πριν) και ξανά μόλις αρχίσει η αλλαγή.',' (up to 3 hours before) and again just after the change starts.'):T('🔕 Οι ειδοποιήσεις καμπής είναι κλειστές. Άνοιξε «Ειδοποίησέ με για καλές μέρες» και «…στις καμπές της πίεσης» πιο κάτω.','🔕 Turning-point alerts are off. Turn on "Notify me about good days" and "…at pressure turning points" below.')})); }
   box.append(h('p',{class:'note',text:T('Εκτίμηση από το μοντέλο πρόγνωσης (λειασμένη), όχι μέτρηση. Καμπές μικρότερες από 0,3 hPa δεν υπολογίζονται.','Model estimate (smoothed), not a measurement. Turns below 0.3 hPa are ignored.')}));
 }
 function pressCard(p,o){
@@ -402,7 +405,15 @@ $('ntTest').addEventListener('click',async function(){
   if(!('Notification' in window)){ ntStatus('Ο browser δεν υποστηρίζει ειδοποιήσεις.'); return; }
   var p=Notification.permission==='granted'?'granted':await Notification.requestPermission();
   if(p!=='granted'){ ntStatus('Δεν δόθηκε άδεια ειδοποιήσεων.'); return; }
-  await showNote('Δοκιμή ειδοποίησης','Οι ειδοποιήσεις του BiteCast δουλεύουν.'); ntStatus('Στάλθηκε δοκιμαστική ειδοποίηση.');
+  await showNote(T('Δοκιμή ειδοποίησης','Test notification'),T('Οι ειδοποιήσεις του BiteCast δουλεύουν σε αυτό το κινητό.','BiteCast notifications work on this phone.')); ntStatus(T('Στάλθηκε τοπική δοκιμή. Έλεγχος server…','Local test sent. Checking the server…'));
+  /* v31z351: και δοκιμή από τον server (ίδιος δρόμος με τις ειδοποιήσεις πίεσης/ανέμου) */
+  var cl=Cl(); if(!cl||!cl.fn){ ntStatus(T('Τοπική δοκιμή OK. Για δοκιμή server χρειάζεται σύνδεση λογαριασμού.','Local test OK. A server test needs you to be signed in.')); return; }
+  try{
+    var r=await cl.fn('quick-processor',{action:'test',lang:EN?'en':'el'});
+    if(!r||!r.ok){ ntStatus(T('Server: ','Server: ')+((r&&r.error)||'?')); return; }
+    var lc=r.last_check?new Date(r.last_check).toLocaleTimeString(EN?'en-GB':'el-GR',{hour:'2-digit',minute:'2-digit'}):T('ποτέ','never');
+    ntStatus(r.subs?(T('Server: στάλθηκε σε ','Server: sent to ')+r.sent+'/'+r.subs+T(' συσκευές',' devices')+(r.err?' ('+r.err+')':'')+T(' · τελευταίος έλεγχος ',' · last check ')+lc+T(' · καμπές πίεσης: ',' · pressure turns: ')+(r.turn?T('ναι','on'):T('όχι','off'))):T('Server: δεν υπάρχει εγγραφή ειδοποιήσεων για αυτόν τον λογαριασμό. Άνοιξε «Ειδοποίησέ με για καλές μέρες».','Server: no notification subscription for this account. Turn on "Notify me about good days".'));
+  }catch(e){ ntStatus(/400/.test(String(e&&e.message))?T('Τοπική δοκιμή OK. Η δοκιμή server θέλει νέα έκδοση της συνάρτησης quick-processor.','Local test OK. The server test needs the updated quick-processor function.'):T('Τοπική δοκιμή OK. Ο server δεν απάντησε: ','Local test OK. The server did not answer: ')+(e&&e.message||'')); }
 });
 if(nt.on) ntStatus(nt.server?T('Ενεργό (server).','Active (server).'):T('Ενεργό.','Active.'));
 

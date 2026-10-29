@@ -85,6 +85,6 @@ window.PsaroHist={fetch:fetchHist,range:fetchRange,keys:KEYS,empty:empty};
       }).catch(function(){}).then(function(){ setTimeout(next,350); });
     })();
   });
-  r.append(x,bt); return r;
+  r.append(x,bt); r.dataset.k='wxold'; return r;
 });
 })();

@@ -23,9 +23,11 @@ function getFix(cb,fail){
 
 /* ---------- κουμπιά στον χάρτη ---------- */
 var bMob=document.createElement('button'); bMob.type='button'; bMob.id='bMob'; bMob.className='mbtn mob'; bMob.setAttribute('aria-label',T('Άνθρωπος στη θάλασσα (MOB)','Man overboard (MOB)')); bMob.title=bMob.getAttribute('aria-label'); bMob.innerHTML='<b>MOB</b>';
-var bTools=document.createElement('button'); bTools.type='button'; bTools.id='bTools'; bTools.className='mbtn'; bTools.setAttribute('aria-label',T('Εργαλεία θάλασσας','Sea tools')); bTools.title=bTools.getAttribute('aria-label');
+var bTools=document.createElement('button'); bTools.type='button'; bTools.id='bTools'; bTools.className='mbtn'; bTools.setAttribute('aria-label',T('Άγκυρα και MOB','Anchor and MOB')); bTools.title=bTools.getAttribute('aria-label');
 bTools.innerHTML=ic('<circle cx="12" cy="5" r="2.2"/><path d="M12 7.2V21M8 11h8"/><path d="M4 14c0 4 3.6 7 8 7s8-3 8-7"/>');
-(mb.parentNode||document.body).appendChild(bMob); mb.appendChild(bTools); /* v31z63: το MOB μένει σταθερά κάτω δεξιά, έξω από τη στήλη που σκρολάρει */
+var bOff=document.createElement('button'); bOff.type='button'; bOff.id='bOffline'; bOff.className='mbtn'; bOff.setAttribute('aria-label',T('Χάρτης εκτός σύνδεσης','Offline map')); bOff.title=bOff.getAttribute('aria-label');
+bOff.innerHTML=ic('<path d="M12 3v11M7.5 9.5 12 14l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>');
+(mb.parentNode||document.body).appendChild(bMob); mb.appendChild(bTools); mb.appendChild(bOff); /* v31z63: το MOB μένει σταθερά κάτω δεξιά, έξω από τη στήλη που σκρολάρει */
 
 /* ---------- MOB ---------- */
 var mobs=C.lsGet('psaro-mob',[]); if(!Array.isArray(mobs)) mobs=[];
@@ -212,12 +214,44 @@ var body=panel.querySelector('.spbody');
 function row(title,desc,ctl){ var r=document.createElement('div'); r.className='sprow'; var t=document.createElement('div'); t.className='sptx'; var b=document.createElement('b'); b.textContent=title; var s=document.createElement('span'); s.textContent=desc||''; t.append(b,s); r.append(t); if(ctl) r.append(ctl); return r; }
 function btn(txt,cls,fn){ var b=document.createElement('button'); b.type='button'; b.className='spb '+(cls||''); b.textContent=txt; b.addEventListener('click',fn); return b; }
 function sw(on,fn){ var b=document.createElement('button'); b.type='button'; b.className='spsw'; b.setAttribute('role','switch'); b.setAttribute('aria-checked',String(!!on)); b.addEventListener('click',fn); return b; }
+
+/* v31z351: τα εργαλεία μοιράζονται εκεί που ανήκουν. «sea» = Ενέργειες (άγκυρα, οθόνη, MOB), «map» = Στρώματα (χάρτης εκτός σύνδεσης),
+   «set»/«data» = κάρτες στις Ρυθμίσεις του Προφίλ. Τα «Ψάρια/Σημεία στον χάρτη» είναι μόνο στα Στρώματα (όχι διπλά). */
+var MODES={sea:['anchor','wake','mob'],map:['offline'],set:['wxal','voice','port'],data:['wxold','wxfill','insights']};
+var MTITLE={sea:T('Άγκυρα και MOB','Anchor and MOB'),map:T('Χάρτης εκτός σύνδεσης','Offline map')};
+var cardSet=null, cardData=null;
+function mkCard(id,title,note){
+  var c=document.createElement('div'); c.id=id; c.className='card setcard seacard';
+  var h=document.createElement('h3'); h.textContent=title; c.append(h);
+  if(note){ var p=document.createElement('p'); p.className='note'; p.textContent=note; c.append(p); }
+  var b=document.createElement('div'); b.className='spbody'; c.append(b); c._b=b; return c;
+}
+function setCardsLive(){
+  var ps=$('pSettings'); if(!ps) return false;
+  if(!cardSet){ cardSet=mkCard('seaSetCard',T('Ειδοποιήσεις, φωνή και σκάφος','Alerts, voice and boat')); cardData=mkCard('seaDataCard',T('Δεδομένα ψαριών','Catch data'),T('Συμπληρώνει καιρό, πίεση και άνεμο σε ψάρια που καταγράφηκαν χωρίς αυτά.','Fills in weather, pressure and wind for catches logged without them.')); }
+  if(!cardSet.isConnected) ps.appendChild(cardSet); if(!cardData.isConnected) ps.appendChild(cardData);
+  return !!(ps.getClientRects().length);
+}
+function putter(){
+  var mode=panel.dataset.mode||'sea', want=MODES[mode]||MODES.sea, bufP=[], bufS=[], bufD=[];
+  return function(k,r){
+    if(k===null){
+      if(!panel.hidden){ body.replaceChildren.apply(body,bufP); var tt=panel.querySelector('.sphead b'); if(tt) tt.textContent=MTITLE[mode]||MTITLE.sea; }
+      if(cardSet){ cardSet._b.replaceChildren.apply(cardSet._b,bufS); cardData._b.replaceChildren.apply(cardData._b,bufD); cardData.hidden=!bufD.length; }
+      return;
+    }
+    if(!r) return;
+    if(want.indexOf(k)>=0) bufP.push(r);
+    else if(MODES.set.indexOf(k)>=0) bufS.push(r);
+    else if(MODES.data.indexOf(k)>=0) bufD.push(r);
+  };
+}
 function renderPanel(){
-  if(panel.hidden) return; body.replaceChildren();
+  var cardsOn=setCardsLive(); if(panel.hidden&&!cardsOn) return; var put=putter();
   var d=null; if(an){ var f=window.PsaroTrack&&window.PsaroTrack.fix&&window.PsaroTrack.fix(); if(f&&f.lat!=null) d=Math.round(distM(an.lat,an.lon,f.lat,f.lon)); }
-  body.append(row(T('Συναγερμός άγκυρας','Anchor alarm'),an?(T('Ενεργός · ακτίνα ','On · radius ')+an.r+' m'+(d!=null?' · '+T('τώρα ','now ')+d+' m':'')):T('Ηχεί αν το σκάφος απομακρυνθεί από το σημείο που ρίχνεις άγκυρα.','Sounds if the boat drifts away from where you anchored.'),an?btn(T('Σταμάτημα','Stop'),'danger',anOff):btn(T('Ενεργοποίηση','Start'),'acc',anOn)));
-  body.append(row(T('Οθόνη αναμμένη','Keep screen on'),T('Κατά την έξοδο και με ενεργό συναγερμό άγκυρας.','During a trip and while the anchor alarm is on.'),sw(C.lsGet('psaro-wake',true),function(){ C.lsSet('psaro-wake',!C.lsGet('psaro-wake',true)); wlSync(); renderPanel(); })));
-  body.append(row(T('Ειδοποιήσεις καιρού','Weather alerts'),T('Όταν δυναμώνει ο άνεμος ή το κύμα, και πριν από καλή ώρα ψαρέματος.','When wind or waves pick up, and before a good fishing window.'),sw(alertsOn(),function(){ var v=!alertsOn(); C.lsSet('psaro-wxal',v); if(v){ askNotif(); setTimeout(wxTick,500); } renderPanel(); })));
+  put('anchor',row(T('Συναγερμός άγκυρας','Anchor alarm'),an?(T('Ενεργός · ακτίνα ','On · radius ')+an.r+' m'+(d!=null?' · '+T('τώρα ','now ')+d+' m':'')):T('Ηχεί αν το σκάφος απομακρυνθεί από το σημείο που ρίχνεις άγκυρα.','Sounds if the boat drifts away from where you anchored.'),an?btn(T('Σταμάτημα','Stop'),'danger',anOff):btn(T('Ενεργοποίηση','Start'),'acc',anOn)));
+  put('wake',row(T('Οθόνη αναμμένη','Keep screen on'),T('Κατά την έξοδο και με ενεργό συναγερμό άγκυρας.','During a trip and while the anchor alarm is on.'),sw(C.lsGet('psaro-wake',true),function(){ C.lsSet('psaro-wake',!C.lsGet('psaro-wake',true)); wlSync(); renderPanel(); })));
+  put('wxal',row(T('Ειδοποιήσεις καιρού','Weather alerts'),T('Όταν δυναμώνει ο άνεμος ή το κύμα, και πριν από καλή ώρα ψαρέματος.','When wind or waves pick up, and before a good fishing window.'),sw(alertsOn(),function(){ var v=!alertsOn(); C.lsSet('psaro-wxal',v); if(v){ askNotif(); setTimeout(wxTick,500); } renderPanel(); })));
   var rec=C.lsGet('psaro-offl',[]), tiles=rec.reduce(function(a,r){ return a+(r.n||0); },0), p=plan();
   var info=dl.run?(T('Κατεβαίνει… ','Downloading… ')+dl.done+'/'+dl.total):(rec.length?(rec.length+T(' περιοχές · ',' areas · ')+tiles+T(' πλακίδια',' tiles')):T('Κατέβασε την περιοχή που βλέπεις για να δουλεύει χωρίς σήμα.','Download the area you see so it works without signal.'));
   var ctl=document.createElement('div'); ctl.className='spctl';
@@ -226,13 +260,18 @@ function renderPanel(){
   var r=row(T('Χάρτης εκτός σύνδεσης','Offline map'),info,ctl);
   if(!dl.run){ var s=document.createElement('span'); s.className='spest'; s.textContent=p.ok?(T('Τώρα: ~','Now: ~')+p.n+T(' πλακίδια, ζουμ ',' tiles, zoom ')+p.z0+'–'+p.z1+' ('+(p.lay==='osm'?T('οδικός','street'):T('δορυφορικός','satellite'))+(p.sea?' + '+T('σήματα','marks'):'')+')'):T('Η περιοχή είναι πολύ μεγάλη. Κάνε μεγέθυνση.','Area too large. Zoom in.'); r.querySelector('.sptx').append(s); }
   else { var pb=document.createElement('div'); pb.className='sppb'; var pi=document.createElement('i'); pi.style.width=Math.round(dl.done/Math.max(1,dl.total)*100)+'%'; pb.append(pi); r.querySelector('.sptx').append(pb); }
-  body.append(r);
+  put('offline',r);
   var mrow=row('MOB',mobs.length?(mobs.length+T(' σημ. στον χάρτη',' marks on the map')):T('Κουμπί MOB στον χάρτη κατά την έξοδο: ένα πάτημα σημειώνει τη θέση και ξεκινά πλοήγηση προς αυτήν.','MOB button on the map during a trip: one tap marks the spot and starts navigating to it.'),mobs.length?btn(T('Καθαρισμός','Clear'),'',function(){ mobs=[]; C.lsSet('psaro-mob',mobs); drawMob(); renderPanel(); }):null);
-  body.append(mrow);
-  (window.PsaroSeaRows||[]).forEach(function(fn){ try{ var r=fn(); if(r) body.append(r); }catch(e){} });
+  put('mob',mrow);
+  (window.PsaroSeaRows||[]).forEach(function(fn){ try{ var r=fn(); if(r&&r.dataset&&r.dataset.k) put(r.dataset.k,r); }catch(e){} });
+  put(null);
 }
-function openP(){ panel.hidden=false; renderPanel(); }
-bTools.addEventListener('click',openP);
+function openP(mode){ panel.dataset.mode=(typeof mode==='string'&&MODES[mode])?mode:'sea'; panel.hidden=false; renderPanel(); }
+bTools.addEventListener('click',function(){ openP('sea'); });
+bOff.addEventListener('click',function(){ openP('map'); });
+/* οι κάρτες στις Ρυθμίσεις ανανεώνονται όταν ανοίγει το Προφίλ */
+setInterval(function(){ if(setCardsLive()&&panel.hidden&&!document.hidden){ var ps=$('pSettings'); if(ps&&ps.getClientRects().length&&!ps.contains(document.activeElement)) renderPanel(); } },4000);
+setTimeout(function(){ if(setCardsLive()) renderPanel(); },3000);
 panel.querySelector('.spx').addEventListener('click',function(){ panel.hidden=true; });
 panel.addEventListener('click',function(e){ if(e.target===panel) panel.hidden=true; });
 setInterval(function(){ if(!panel.hidden&&an) renderPanel(); },5000);

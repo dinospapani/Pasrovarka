@@ -353,22 +353,9 @@ setTimeout(importShare,1500); window.addEventListener('hashchange',function(){ s
 (window.PsaroSeaRows=window.PsaroSeaRows||[]).push(function(){
   var r=el('div','sprow'), x=el('div','sptx'); x.append(el('b','',T('Γλώσσα φωνητικής καταγραφής','Voice input language')),el('span','',T('Για τα ονόματα των ψαριών. Τώρα: ','For fish names. Now: ')+(vlang()==='en-US'?'English':'Ελληνικά')));
   var bt=el('button','spb acc',vlang()==='en-US'?'Ελληνικά':'English'); bt.type='button'; bt.addEventListener('click',function(){ C.lsSet('psaro-vlang',vlang()==='en-US'?'el-GR':'en-US'); x.lastChild.textContent=T('Για τα ονόματα των ψαριών. Τώρα: ','For fish names. Now: ')+(vlang()==='en-US'?'English':'Ελληνικά'); bt.textContent=vlang()==='en-US'?'Ελληνικά':'English'; });
-  r.append(x,bt); return r;
+  r.append(x,bt); r.dataset.k='voice'; return r;
 });
-(window.PsaroSeaRows=window.PsaroSeaRows||[]).push(function(){
-  var r=el('div','sprow'), x=el('div','sptx'); function on(){ return C.lsGet('psaro-showbites',true)!==false; }
-  x.append(el('b','',T('Ψάρια στον χάρτη','Fish on the map')),el('span','',T('Εμφάνιση των σημείων που έπιασες και χωρίς ενεργή έξοδο.','Show where you caught fish even without an active trip.')));
-  var bt=el('button','spb '+(on()?'acc':''),on()?T('Ναι','On'):T('Όχι','Off')); bt.type='button';
-  bt.addEventListener('click',function(){ C.lsSet('psaro-showbites',!on()); bt.textContent=on()?T('Ναι','On'):T('Όχι','Off'); bt.className='spb '+(on()?'acc':''); if(C.bitesVis) C.bitesVis(); });
-  r.append(x,bt); return r;
-});
-(window.PsaroSeaRows=window.PsaroSeaRows||[]).push(function(){
-  var r=el('div','sprow'), x=el('div','sptx'); function on(){ return C.lsGet('psaro-showspots',true)!==false; }
-  x.append(el('b','',T('Σημεία (waypoints) στον χάρτη','Spots (waypoints) on the map')),el('span','',T('Εμφάνιση των αποθηκευμένων σημείων σου. Δεν διαγράφονται όταν τα κρύβεις.','Show your saved spots. Hiding them does not delete them.')));
-  var bt=el('button','spb '+(on()?'acc':''),on()?T('Ναι','On'):T('Όχι','Off')); bt.type='button';
-  bt.addEventListener('click',function(){ C.lsSet('psaro-showspots',!on()); bt.textContent=on()?T('Ναι','On'):T('Όχι','Off'); bt.className='spb '+(on()?'acc':''); if(C.spotsVis) C.spotsVis(); });
-  r.append(x,bt); return r;
-});
+/* v31z351: «Ψάρια/Σημεία στον χάρτη» υπάρχουν μόνο στα Στρώματα (ήταν διπλά εδώ). */
 window.PsaroCards={fish:function(b){ preview(fishCard(b),'bitecast-fish.png',''); },trip:function(t){ preview(tripCard(t),'bitecast-trip.png',''); },year:function(y){ preview(yearCard(y),'bitecast-'+y+'.png',''); },sum:openSum,parse:parseVoice,yearData:yearData,enc:enc,dec:dec,importShare:importShare};
 window.PsaroVoice={parse:parseVoice};
 })();

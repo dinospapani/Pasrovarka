@@ -187,7 +187,7 @@ function ensure(b){ if(b&&eligible(b)) enqueue(b,true); }
       fetchWx(b.lat,b.lon,C.biteMs(b)).then(function(wx){ return save(b,wx?{wx:wx,wxNA:false}:{wxNA:true}).then(function(){ if(wx) done++; }); }).catch(function(){}).then(function(){ setTimeout(next,400); });
     })();
   });
-  r.append(x,bt); return r;
+  r.append(x,bt); r.dataset.k='wxfill'; return r;
 });
 
 window.PsaroBiteWx={slot:slot,ensure:ensure,fetch:fetchWx,moon:moonAt};

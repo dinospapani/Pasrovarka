@@ -37,7 +37,7 @@ if(mode==='old') return;
 /* ---- νέα εμφάνιση ---- */
 var mb=document.querySelector('.mapbtns'), box=mb&&mb.parentNode; if(!mb||!box) return;
 document.body.classList.add('nd');
-var G={layers:['bLayer','bSeaState','bSea','bPorts','bDepthMap','bZones','bNav','bDams','bHot'],actions:['bQuick','bGear','bSpotPick'],safety:['bTools']};
+var G={layers:['bLayer','bSea','bDepthMap','bSeaState','bWind','bWindSt','bZones','bNav','bMpa','bPorts','bDams','bHot','bOffline'],actions:['bQuick','bGear','bSpotPick','bTools']};
 var TITLE={layers:T('Στρώματα','Layers'),actions:T('Ενέργειες','Actions'),safety:T('Ασφάλεια και θάλασσα','Safety and sea')};
 var SUB={layers:T('Τι φαίνεται πάνω στο χάρτη','What shows on the map'),actions:T('Καταγραφή, εργαλεία και σημεία','Record, gear and spots'),safety:T('Λειτουργούν με GPS και ανοιχτή εφαρμογή. Δεν είναι ναυτικό όργανο.','Work with GPS and the app open. Not a navigation instrument.')};
 function groupOf(id){ for(var k in G) if(G[k].indexOf(id)>=0) return k; return 'actions'; }
@@ -55,9 +55,16 @@ var secA=el('div','ndsec',T('Στρώματα χάρτη','Map layers')), secB=e
 var TG=[['psaro-showbites',T('Ψάρια','Fish'),function(){ if(C.bitesVis) C.bitesVis(); }],['psaro-showmiss',T('Χαμένα','Lost'),function(){ document.dispatchEvent(new Event('psaro-spfilter')); }],['psaro-showspots',T('Σημεία μου','My spots'),function(){ if(C.spotsVis) C.spotsVis(); }]];
 TG.forEach(function(t){ var b=el('button','ndtog'); b.innerHTML='<i></i><span></span>'; b.lastChild.textContent=t[1]; b.type='button'; function sync(){ b.setAttribute('aria-pressed',String(C.lsGet(t[0],true)!==false)); } sync();
   b.addEventListener('click',function(){ C.lsSet(t[0],C.lsGet(t[0],true)===false); sync(); t[2](); }); b.dataset.k=t[0]; tgRow.append(b); });
+/* v31z351: υπόμνημα για τα χρώματα των απαγορευμένων περιοχών */
+var zl=null;
+function zLeg(){
+  if(zl) return zl; zl=el('div','ndzleg'); var Z=window.PsaroZoneCols||{noentry:'#9f1239',nofish:'#e02020',season:'#e8890c'};
+  [[Z.nofish,T('Απαγόρευση αλιείας','No fishing')],[Z.noentry,T('Ούτε διέλευση σκαφών','No boats allowed')],[Z.season,T('Εποχικός περιορισμός','Seasonal')]].forEach(function(x){ var sp=el('span'); var i=el('i'); i.style.color=x[0]; i.style.background=x[0]+'44'; sp.append(i,document.createTextNode(x[1])); zl.append(sp); });
+  return zl;
+}
 function syncTg(){ Array.prototype.forEach.call(tgRow.children,function(b){ b.setAttribute('aria-pressed',String(C.lsGet(b.dataset.k,true)!==false)); }); }
 function open(g){
-  if(g==='layers'){ lists.layers.insertBefore(secA,lists.layers.firstChild); lists.layers.append(secB); lists.layers.append(tgRow); syncTg(); }
+  if(g==='layers'){ lists.layers.insertBefore(secA,lists.layers.firstChild); lists.layers.append(secB); lists.layers.append(tgRow); lists.layers.append(zLeg()); syncTg(); }
   Object.keys(lists).forEach(function(k){ lists[k].hidden=(k!==g); });
   ttl.textContent=TITLE[g]; sub.textContent=SUB[g]; panel.setAttribute('aria-label',TITLE[g]);
   sheet.dataset.g=g; ed.hidden=(g==='safety'); sheet.hidden=false; document.body.classList.add('ndopen'); try{ done.focus({preventScroll:true}); }catch(e){}
@@ -95,7 +102,9 @@ var KEEP={bLoc:1,bToolsCfg:1};
 function adopt(b){
   if(!b||!b.classList||!b.classList.contains('mbtn')||KEEP[b.id]) return;
   var lab=b.getAttribute('aria-label')||b.title||b.id; try{ if(window.PsaroTr) lab=window.PsaroTr(lab); }catch(e){} b.dataset.nd=lab;
-  lists[groupOf(b.id)].append(b);
+  var g=groupOf(b.id), ord=G[g]||[], i=ord.indexOf(b.id), lst=lists[g], nx=null;
+  if(i>=0) nx=[].slice.call(lst.children).find(function(c){ return ord.indexOf(c.id)>i; })||null;
+  if(nx) lst.insertBefore(b,nx); else lst.append(b); /* v31z351: σειρά όπως στη λίστα G */
 }
 Array.prototype.slice.call(mb.querySelectorAll('.mbtn')).forEach(adopt);
 new MutationObserver(function(ms){ ms.forEach(function(m){ Array.prototype.forEach.call(m.addedNodes,adopt); }); }).observe(mb,{childList:true});
@@ -106,8 +115,7 @@ var tools=el('div','ndtools'); tools.setAttribute('role','group'); tools.setAttr
 function nb(label,icon,fn,host){ var b=el('button','ndb'); b.type='button'; b.innerHTML=icon+'<span></span>'; b.lastChild.textContent=label; b.addEventListener('click',fn); (host||bar).append(b); return b; }
 nb(T('Στρώματα','Layers'),IC.layers,function(){ open('layers'); },tools);
 nb(T('Ενέργειες','Actions'),IC.actions,function(){ open('actions'); },tools);
-nb(T('Ασφάλεια','Safety'),IC.safety,function(){ open('safety'); },tools);
-nb(T('Θέση','Position'),IC.me,function(){ var l=$('bLoc'); if(l) l.click(); },tools);
+nb(T('Θέση','Position'),IC.me,function(){ var l=$('bLoc'); if(l) l.click(); },tools).classList.add('ndpos'); /* v31z351: χωρίς «Ασφάλεια»· τα εργαλεία της πήγαν σε Ενέργειες, Στρώματα και Ρυθμίσεις */
 /* NU/CU/HU: ο προσανατολισμός του χάρτη ως εργαλείο της μπάρας (μόνο κατά την έξοδο), χρησιμοποιεί το ίδιο κουμπί #bOrient */
 var orb=nb('NU',SVG+'<circle cx="12" cy="12" r="8.500"/><path d="m15.500 8.500-2 5-5 2 2-5z"/></svg>',function(){ var x=$('bOrient'); if(x) x.click(); });
 orb.classList.add('ndorient'); orb.setAttribute('aria-label',T('Προσανατολισμός χάρτη','Map orientation'));
@@ -364,7 +372,8 @@ box.insertBefore(tools,bar.nextSibling);
         else if(c.id==='appVer'||c.tagName==='P') g.ver.push(c);
         else if(id==='unitsCard'||c.querySelector('#pGpsChk')) g.pref.push(c);
         else if(id==='pContacts') g.safe.push(c);
-        else if(id==='dgCard') g.data.push(c);
+        else if(id==='dgCard'||id==='seaDataCard') g.data.push(c);
+        else if(id==='seaSetCard') g.pref.push(c);
         else if(t.indexOf('ai')===0||t.indexOf('fish')>-1||t.indexOf('claude')>-1||c.querySelector('input[type=password]')&&/api|key/i.test(c.textContent)&&!/account|λογαριασμ/i.test(t)) g.adv.push(c);
         else g.acc.push(c);
       });
@@ -887,7 +896,7 @@ box.insertBefore(tools,bar.nextSibling);
     sheet=document.createElement('div'); sheet.className='ndbs'; sheet.setAttribute('role','dialog'); sheet.setAttribute('aria-modal','false'); sheet.hidden=true;
     sheet.innerHTML='<div class="ndbsg" aria-hidden="true"><i></i></div><button type="button" class="ndbsx" aria-label="'+T('Κλείσιμο','Close')+'">✕</button><div class="ndbsb"></div>';
     document.body.appendChild(sheet); body=sheet.querySelector('.ndbsb');
-    sheet.querySelector('.ndbsx').addEventListener('click',close);
+    sheet.querySelector('.ndbsx').addEventListener('click',function(){ close(); try{ window.dispatchEvent(new Event('psaro-bsx')); }catch(e){} });
     var g=sheet.querySelector('.ndbsg'), y0=null, h0=0, moved=false;
     g.addEventListener('pointerdown',function(e){ y0=e.clientY; h0=sheet.getBoundingClientRect().height; moved=false; sheet.style.transition='none'; try{ g.setPointerCapture(e.pointerId); }catch(x){} });
     g.addEventListener('pointermove',function(e){ if(y0==null) return; var dy=y0-e.clientY; if(Math.abs(dy)>3) moved=true; sheet.style.height=Math.max(60,Math.min(maxH(),h0+dy))+'px'; });

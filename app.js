@@ -451,7 +451,7 @@ function initMap(){
   const wmsU='https://ows.emodnet-bathymetry.eu/wms', depthC=L.tileLayer.wms(wmsU,{layers:'emodnet:mean_multicolour',format:'image/png',transparent:true,opacity:.6,version:'1.3.0',attribution:'EMODnet Bathymetry'}), depthK=L.tileLayer.wms(wmsU,{layers:'emodnet:contours',format:'image/png',transparent:true,version:'1.3.0',attribution:'EMODnet Bathymetry'});
   let dm=+lsGet('psaro-depth',0)||0;
   const applyDepth=()=>{ [depthC,depthK].forEach(l=>{ if(map.hasLayer(l)) map.removeLayer(l); }); if(dm===1) depthC.addTo(map); if(dm===2&&!(window.PsaroDense&&window.PsaroDense.on())) depthK.addTo(map); if(map.hasLayer(seaL)) seaL.bringToFront(); $('bDepthMap').setAttribute('aria-pressed',String(dm!==0)); $('bDepthMap').title=['Βάθη θάλασσας: κλειστά','Βάθη θάλασσας: χρώματα','Βάθη θάλασσας: γραμμές βάθους'][dm]; try{ window.dispatchEvent(new CustomEvent('psaro-depthmode',{detail:{dm:dm}})); }catch(e){} };
-  window.PsaroDepthRefresh=applyDepth; window.PsaroDepthMode=()=>dm;
+  window.PsaroDepthRefresh=applyDepth; window.PsaroDepthMode=()=>dm; window.PsaroDepthLayers={c:depthC,k:depthK};
   applyDepth();
   const DSTEP=['std','5','10','20'], DNAME=(window.LANG==='en')?['Depth: off','Depth: colour shading','Depth: contour lines (standard)','Depth: contour lines every 5 m','Depth: contour lines every 10 m','Depth: contour lines every 20 m']:['Βάθη: κλειστά','Βάθη: χρώματα','Βάθη: γραμμές (στάνταρ)','Βάθη: γραμμές κάθε 5 m','Βάθη: γραμμές κάθε 10 m','Βάθη: γραμμές κάθε 20 m'];
   $('bDepthMap').addEventListener('click',()=>{
@@ -481,7 +481,8 @@ function initMap(){
   $('mapHintX').addEventListener('click',()=>{const was=pick; endPick(); if(was==='bite') openSheet(); if(was==='fc') switchTab('fc'); if(was==='today') switchTab('today');});
   zonesG=L.layerGroup();
   for(const z of ZONES){
-    L.polygon(z.p,{color:'#e02020',weight:2,fillColor:'#e02020',fillOpacity:.22,interactive:false}).addTo(zonesG); /* οι ζώνες δεν «κλέβουν» το πάτημα: οι πληροφορίες τους εμφανίζονται στο μενού του σημείου */
+    const zs=zoneStyle(z);
+    L.polygon(z.p,{color:zs.c,weight:zs.w,dashArray:zs.dash||null,fillColor:zs.c,fillOpacity:zs.fo,interactive:false}).addTo(zonesG); /* οι ζώνες δεν «κλέβουν» το πάτημα: οι πληροφορίες τους εμφανίζονται στο μενού του σημείου */
   }
   const zOn=lsGet('psaro-zones',true); if(zOn) zonesG.addTo(map); $('bZones').setAttribute('aria-pressed',String(!!zOn));
   $('bZones').addEventListener('click',()=>{
@@ -489,7 +490,7 @@ function initMap(){
     $('bZones').setAttribute('aria-pressed',String(on)); lsSet('psaro-zones',on);
   });
   spotsG=L.layerGroup().addTo(map); bitesG=L.layerGroup();
-  const bitesVis=()=>{ if(!map||!bitesG) return; const on=tripActive()||!!reviewSet||lsGet('psaro-showbites',true)!==false; bitesVisRef=bitesVis; window.PsaroCore.bitesVis=bitesVis; if(on&&!map.hasLayer(bitesG)) bitesG.addTo(map); if(!on&&map.hasLayer(bitesG)){ map.closePopup(); map.removeLayer(bitesG); } };
+  const bitesVis=()=>{ if(!map||!bitesG) return; const on=!!reviewSet||lsGet('psaro-showbites',true)!==false; /* v31z351: ο διακόπτης «Ψάρια» ισχύει και κατά την έξοδο */ bitesVisRef=bitesVis; window.PsaroCore.bitesVis=bitesVis; if(on&&!map.hasLayer(bitesG)) bitesG.addTo(map); if(!on&&map.hasLayer(bitesG)){ map.closePopup(); map.removeLayer(bitesG); } };
   const spotsVis=()=>{ if(!map||!spotsG) return; const on=lsGet('psaro-showspots',true)!==false||!!pick; window.PsaroCore.spotsVis=spotsVis; if(on&&!map.hasLayer(spotsG)) spotsG.addTo(map); if(!on&&map.hasLayer(spotsG)){ map.closePopup(); map.removeLayer(spotsG); } };
   setTimeout(spotsVis,100); setInterval(spotsVis,2000);
   window.addEventListener('psaro-sess',bitesVis); setTimeout(bitesVis,300); setTimeout(bitesVis,1500); setInterval(bitesVis,3000);
@@ -582,7 +583,25 @@ function startPick(mode){
   switchTab('map');
 }
 function endPick(){ pick=null; $('mapHint').hidden=true; document.body.classList.remove('picking'); }
+/* v31z351: χρώμα ζώνης ανάλογα με τον περιορισμό (από το κείμενο του διατάγματος).
+   Σκούρο κόκκινο: απαγορεύεται και η διέλευση σκαφών · κόκκινο: απαγορεύεται η αλιεία · πορτοκαλί: εποχικός περιορισμός. */
+const ZONE_COL={noentry:'#9f1239',nofish:'#e02020',season:'#e8890c'};
+function zoneKind(z){ const d=(z&&z.d)||''; if(/\d{1,2}\/\d{1,2}\s*(μέχρι|έως|-)\s*\d{1,2}\/\d{1,2}/.test(d)&&!/ολόχρονα/.test(d)) return 'season'; if(/διέλευση/.test(d)&&!/διέλευση σκαφών επιτρέπεται/.test(d)) return 'noentry'; return 'nofish'; }
+function zoneStyle(z){ const k=zoneKind(z); return {k:k,c:ZONE_COL[k],w:k==='noentry'?2.6:2,fo:k==='noentry'?.30:k==='season'?.18:.22,dash:k==='season'?'6 5':null}; }
+window.PsaroZoneStyle=zoneStyle; window.PsaroZoneCols=ZONE_COL;
+/* v31z351: «Στον χάρτη» από λίστα (έξοδοι, ψάρια, σημεία): το ✕ γυρίζει στην ίδια καρτέλα και στο ίδιο σημείο της λίστας */
+let retTo=null;
+function markReturn(){ const cur=['today','fc','log','guide'].find(n=>{ const e=$('tab-'+n); return e&&!e.hidden; }); const pr=$('profile'), prOpen=!!(pr&&!pr.hidden); retTo=cur||prOpen?{tab:cur||null,y:window.scrollY,prof:prOpen?{y:(pr.querySelector('.pbody,.sheet-in,.pbox')||pr).scrollTop}:null}:null; if(prOpen) pr.hidden=true; }
+function goBack(){ const r=retTo; retTo=null; if(!r) return false; if(r.tab) switchTab(r.tab); const go=()=>{ window.scrollTo(0,r.y); if(r.prof){ const pr=$('profile'); if(pr){ pr.hidden=false; const sc=pr.querySelector('.pbody,.sheet-in,.pbox')||pr; sc.scrollTop=r.prof.y; } } }; requestAnimationFrame(go); setTimeout(go,150); return true; }
+function backBar(text){ const en=window.LANG==='en'; let bar=$('reviewBar');
+  if(!bar){ bar=h('div',{id:'reviewBar',class:'rvbar'},h('span',{class:'rvtx'}),h('button',{type:'button',class:'rvx','aria-label':en?'Close':'Κλείσιμο',text:'✕',onclick:endReview})); document.querySelector('.mapbox').appendChild(bar); }
+  bar.querySelector('.rvtx').textContent=text; bar.hidden=false; return bar; }
 function showOnMap(lat,lon,id){
+  const fromList=!!(document.querySelector('#tab-map[hidden]'))||!!($('profile')&&!$('profile').hidden);
+  if(fromList){ markReturn(); backOnly=true; const b=Store.get('bites').find(x=>x.id===id)||(Store.misses?Store.misses().find(x=>x.id===id):null), sp=Store.get('spots').find(x=>x.id===id), en=window.LANG==='en'; backBar(b?((b.n?'#'+b.n+' ':'')+(b.species||(en?'Fish':'Ψάρι'))+(b.date?' · '+b.date.slice(8,10)+'/'+b.date.slice(5,7):'')):sp?sp.name||(en?'Spot':'Σημείο'):(en?'On the map':'Στον χάρτη')); }
+  return showOnMap0(lat,lon,id);
+}
+function showOnMap0(lat,lon,id){
   switchTab('map'); if(!map) return;
   map.flyTo([lat,lon],Math.max(map.getZoom(),13));
   const m=markerById[id]; if(m) setTimeout(()=>m.openPopup(),800);
@@ -763,7 +782,8 @@ function tripEff(t,all){
   });
   return {count:n,kg:Math.round(kg*10)/10,species:Object.keys(sp).sort((a,b)=>sp[b]-sp[a])[0]||'',miss:mi,pn:pn,pkg:Math.round(pkg*10)/10};
 }
-let reviewSet=null, bitesVisRef=null;
+let reviewSet=null, bitesVisRef=null, backOnly=false;
+window.addEventListener('psaro-bsx',()=>{ if(backOnly&&!reviewSet&&retTo) endReview(); }); /* v31z351: το ✕ του φύλλου γυρίζει κι αυτό στη λίστα */
 function tripBitesOf(t){
   const all=Store.get('trips');
   if(!t.startMs||!t.endMs||t.manual) return Store.get('bites').filter(b=>b.date===t.date&&(!b.trip||b.trip===t.id||b.trip===t.sid));
@@ -777,13 +797,15 @@ function tripBitesOf(t){
   });
 }
 function endReview(){
-  if(!reviewSet) return; reviewSet=null; const bar=$('reviewBar'); if(bar) bar.hidden=true;
+  if(backOnly&&!reviewSet){ backOnly=false; const b0=$('reviewBar'); if(b0) b0.hidden=true; if(map) map.closePopup(); try{ if(window.PsaroSheet&&window.PsaroSheet.close) window.PsaroSheet.close(); }catch(e){} goBack(); return; }
+  if(!reviewSet) return; reviewSet=null; backOnly=false; const bar=$('reviewBar'); if(bar) bar.hidden=true;
   try{ if(window.PsaroTrack&&window.PsaroTrack.hide) window.PsaroTrack.hide(); }catch(e){}
   if(map) map.closePopup(); drawMap(); if(bitesVisRef) bitesVisRef();
+  goBack();
 }
 function reviewTrip(t){
   const en=window.LANG==='en', list=tripBitesOf(t).filter(b=>typeof b.lat==='number'&&typeof b.lon==='number');
-  switchTab('map'); if(!map) return;
+  if(!tripActive()) markReturn(); switchTab('map'); if(!map) return;
   if(tripActive()){ toast(en?'A trip is in progress. All your fish are already shown.':'Έξοδος σε εξέλιξη. Τα ψάρια σου φαίνονται ήδη όλα.'); return; }
   reviewSet=new Set(list.map(b=>b.id)); drawMap(); if(bitesVisRef) bitesVisRef(); else if(!map.hasLayer(bitesG)) bitesG.addTo(map);
   const hasTrack=t.track&&t.track.length>1; try{ if(window.PsaroTrack&&window.PsaroTrack.hide) window.PsaroTrack.hide(); }catch(e){}
@@ -797,7 +819,7 @@ function reviewTrip(t){
 }
 function reviewBites(list,text){
   const en=window.LANG==='en'; list=list.filter(b=>typeof b.lat==='number'&&typeof b.lon==='number');
-  switchTab('map'); if(!map) return;
+  if(!tripActive()&&list.length) markReturn(); switchTab('map'); if(!map) return;
   if(tripActive()){ toast(en?'A trip is in progress. All your fish are already shown.':'Έξοδος σε εξέλιξη. Τα ψάρια σου φαίνονται ήδη όλα.'); return; }
   if(!list.length){ toast(en?'No fish with a location match these filters.':'Κανένα ψάρι με θέση δεν ταιριάζει με αυτά τα φίλτρα.'); return; }
   reviewSet=new Set(list.map(b=>b.id)); drawMap(); if(bitesVisRef) bitesVisRef(); else if(!map.hasLayer(bitesG)) bitesG.addTo(map);
@@ -1586,12 +1608,13 @@ async function fetchConditions(lat,lon){
   const c=w.value.current||{}, hp=(w.value.hourly&&w.value.hourly.pressure_msl)||[];
   const press=numOrNull(c.pressure_msl), old=numOrNull(hp[0]);
   let ptrend=null;
-  if(press!=null&&old!=null&&hp.length>=3){const d=press-old; ptrend=d<=-3?'fast':d<=-1?'slow':d>=1?'rise':'stable';}
+  let pd3=null;
+  if(press!=null&&old!=null&&hp.length>=3){const d=press-old; pd3=Math.round(d*10)/10; ptrend=d<=-3?'fast':d<=-1?'slow':d>=1?'rise':'stable';}
   const cc=numOrNull(c.cloud_cover), ws=numOrNull(c.wind_speed_10m), wd=numOrNull(c.wind_direction_10m);
   const mc=m.status==='fulfilled'?(m.value.current||{}):{};
   const uo=numOrNull(w.value.utc_offset_seconds);
   const tide=m.status==='fulfilled'?tideFrom(m.value):null;
-  return {tide:tide,lat:lat,lon:lon,utc:uo==null?null:Math.round(uo/60),tzn:(typeof w.value.timezone==='string'&&/^[A-Za-z_]+\/[A-Za-z_\/+-]+$/.test(w.value.timezone))?w.value.timezone:null,temp:numOrNull(c.temperature_2m),press:press==null?null:Math.round(press),ptrend:ptrend,
+  return {tide:tide,lat:lat,lon:lon,utc:uo==null?null:Math.round(uo/60),tzn:(typeof w.value.timezone==='string'&&/^[A-Za-z_]+\/[A-Za-z_\/+-]+$/.test(w.value.timezone))?w.value.timezone:null,temp:numOrNull(c.temperature_2m),press:press==null?null:Math.round(press),ptrend:ptrend,pd3:pd3,
     wind:ws==null?null:Math.round(ws),windDir:wd==null?null:dirName(wd),windDeg:wd,
     cur:numOrNull(mc.ocean_current_velocity)==null?null:Math.round(mc.ocean_current_velocity*0.539957*100)/100,curDir:numOrNull(mc.ocean_current_direction),waveDir:numOrNull(mc.wave_direction),
     cloud:cc==null?null:cc<20?'clear':cc<70?'part':'over',
@@ -1902,7 +1925,7 @@ function switchTab(t2){
   document.body.classList.toggle('mapfull',t2==='map');
   if(t2==='map'){ const nv=document.querySelector('nav.tabs'); if(nv) document.documentElement.style.setProperty('--navh',nv.offsetHeight+'px'); if(map) setTimeout(()=>{ map.invalidateSize(); fitMap(); },60); }
 }
-document.querySelectorAll('nav.tabs button[data-tab]').forEach(b=>b.addEventListener('click',()=>{ let t=b.dataset.tab; if(t==='fc'&&(!$('tab-today').hidden||!$('tab-fc').hidden)) return; if(t==='fc'&&lsGet('psaro-wxsub','today')==='today') t='today'; switchTab(t); }));
+document.querySelectorAll('nav.tabs button[data-tab]').forEach(b=>b.addEventListener('click',()=>{ if(retTo){ retTo=null; backOnly=false; const rb=$('reviewBar'); if(rb&&!reviewSet) rb.hidden=true; } let t=b.dataset.tab; if(t==='fc'&&(!$('tab-today').hidden||!$('tab-fc').hidden)) return; if(t==='fc'&&lsGet('psaro-wxsub','today')==='today') t='today'; switchTab(t); }));
 document.querySelectorAll('.tabseg button').forEach(b=>b.addEventListener('click',()=>{ lsSet('psaro-wxsub',b.dataset.go); switchTab(b.dataset.go); }));
 document.body.classList.toggle('mapfull',!$('tab-map').hidden);
 const today=nicosiaToday();

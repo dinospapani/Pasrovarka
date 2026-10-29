@@ -431,7 +431,7 @@ function render(){
 function openPanel(){ render(); P.hidden=false; }
 (window.PsaroSeaRows=window.PsaroSeaRows||[]).push(function(){
   var r=el('div','sprow'), x=el('div','sptx'); x.append(el('b','',T('Λιμάνι και σκάφος','Port and boat')),el('span','',S.home?T('Λιμάνι ορισμένο','Port set')+(S.tank?' · '+S.tank+' L':''):T('Όρισε λιμάνι, καύσιμο και αυτόματες προτάσεις.','Set port, fuel and automatic suggestions.')));
-  r.append(x,btn(T('Άνοιγμα','Open'),'acc',openPanel)); return r;
+  r.append(x,btn(T('Άνοιγμα','Open'),'acc',openPanel)); r.dataset.k='port'; return r;
 });
 window.PsaroSmart={setHome:function(h){ S.home={lat:h.lat,lon:h.lon,name:h.name}; delete S.homeNo; delete S.homeBack; save(); autoStop(); autoStart(); rt(); },state:function(){ return S; },rt:rt,heat:heat,lastYear:lastYear,openPanel:openPanel,findPort:findPort,portsNear:portsNear,offerHome:offerHome,badIn:badIn,weekly:weekly};
 autoStart();

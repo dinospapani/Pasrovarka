@@ -252,7 +252,7 @@ function openPanel(k){ focus=k||null; view=k||null; render(); P.hidden=false; }
 window.PsaroOpenExport=function(){ var sp=$('seaPanel'); if(sp) sp.hidden=true; openPanel('export'); };
 (window.PsaroSeaRows=window.PsaroSeaRows||[]).push(function(){
   var r=el('div','sprow'), x=el('div','sptx'); x.append(el('b','',T('Αναλύσεις και αρχείο','Insights and archive')),el('span','',T('Σελήνη, κόστος ανά κιλό, συντήρηση, εξαγωγή δεδομένων','Moon, cost per kg, maintenance, data export')));
-  r.append(x,btn(T('Άνοιγμα','Open'),'acc',function(){ var sp=$('seaPanel'); if(sp) sp.hidden=true; openPanel(); })); return r;
+  r.append(x,btn(T('Άνοιγμα','Open'),'acc',function(){ var sp=$('seaPanel'); if(sp) sp.hidden=true; openPanel(); })); r.dataset.k='insights'; return r;
 });
 
 /* ---------- εκκίνηση ---------- */

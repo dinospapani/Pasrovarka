@@ -925,3 +925,29 @@ body.fp-spear #bDams,body.fp-spear #bSea{display:none!important}
 
 /* Όταν είναι ανοιχτός ο άνεμος, το φύλλο πληροφοριών (σταθμός, ψάρι) μένει πάνω από το πάνελ και όχι κάτω από αυτό */
 body.ndwind .ndbs{z-index:910;bottom:calc(84px + var(--ndwh,0px) + 8px)}
+
+/* v31z351: δεξιά μπάρα με 3 κουμπιά (Στρώματα, Ενέργειες, Θέση): η «Θέση» πιάνει όλο το πλάτος */
+body.nd .ndtools .ndb.ndpos{grid-column:1/-1}
+/* v31z351: «Στον χάρτη» από λίστα: η γραμμή επιστροφής πάνω αριστερά, να μην κρύβεται από το φύλλο του ψαριού */
+body.nd .rvbar{top:calc(84px + env(safe-area-inset-top,0px));bottom:auto;left:12px;transform:none;max-width:calc(100% - 136px);z-index:905}
+body.nd.ontrip .rvbar{top:calc(var(--ndtop,72px) + 96px)}
+/* v31z351: κατά την έξοδο, χρονόμετρο και «σπίτι» στοιχισμένα στην αριστερή άκρη, το ένα κάτω από το άλλο */
+body.nd .ndlive{left:12px!important;right:auto;transform:none!important;top:calc(84px + env(safe-area-inset-top,0px));max-width:calc(100% - 92px)}
+body.nd .rtchip{left:12px;top:calc(84px + env(safe-area-inset-top,0px));z-index:806}
+body.nd:has(#rtChip:not([hidden])) .ndlive{top:calc(128px + env(safe-area-inset-top,0px))}
+body.nd.ndtoolsopen .ndlive{max-width:calc(100% - 136px)}
+/* v31z351: κάρτες εργαλείων μέσα στις Ρυθμίσεις */
+.seacard .spbody{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.seacard .sprow{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.seacard .sptx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.seacard .sptx span{font-size:13px;color:var(--muted)}
+/* v31z351: υπόμνημα χρωμάτων απαγορευμένων περιοχών στα Στρώματα */
+body.nd .ndzleg{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);padding:2px 2px 0}
+body.nd .ndzleg span{display:inline-flex;align-items:center;gap:6px}
+body.nd .ndzleg i{width:16px;height:11px;border-radius:3px;border:2px solid currentColor;flex:none}
+html body.ontrip.nd .rtchip{top:calc(var(--ndtop,72px) + var(--dth,0px))}
+html body.ontrip.nd .ndlive{top:calc(var(--ndtop,72px) + var(--dth,0px))}
+html body.ontrip.nd:has(#rtChip:not([hidden])) .ndlive{top:calc(var(--ndtop,72px) + var(--dth,0px) + 44px)}
+html body.ontrip.nd .rvbar{top:calc(var(--ndtop,72px) + var(--dth,0px) + 92px)}
+/* v31z351: όταν φαίνεται το κάτω πλαίσιο (κατάσταση θάλασσας / άνεμος), η κάρτα «Σήμερα» και το βελάκι της κρύβονται, να μη φαίνονται από κάτω */
+body.nd:not(.ontrip):has(#ndMapDock:not([hidden])) .ndcard,body.nd:not(.ontrip):has(#ndMapDock:not([hidden])) .ndshowc{display:none!important}
