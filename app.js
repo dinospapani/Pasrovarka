@@ -535,6 +535,24 @@ function initMap(){
     }).catch(()=>{ if(tapPop===pop) wxBox.textContent=en2?'Weather did not load':'Ο καιρός δεν φορτώθηκε'; });
   });
   map.on('popupclose',e=>{ if(e.popup===tapPop&&tapM){ map.removeLayer(tapM); tapM=null; } });
+  /* v31z352: παρατεταμένο πάτημα στον χάρτη = γρήγορη καταγραφή σε εκείνο το σημείο (και από στεριά, χωρίς έξοδο) */
+  map.on('contextmenu',e=>{
+    if(pick) return; try{ if(e.originalEvent) e.originalEvent.preventDefault(); }catch(x){}
+    const ll=e.latlng.wrap(), lat=+ll.lat.toFixed(5), lon=+ll.lng.toFixed(5), en=window.LANG==='en';
+    try{ if(navigator.vibrate) navigator.vibrate(25); }catch(x){}
+    const ic=d=>{const n='http://www.w3.org/2000/svg',sv=document.createElementNS(n,'svg');sv.setAttribute('viewBox','0 0 24 24');sv.setAttribute('class','pi');const pa=document.createElementNS(n,'path');pa.setAttribute('d',d);sv.append(pa);return sv;};
+    const act=(cls,d,txt,fn)=>h('button',{class:'pact '+cls,type:'button',onclick:()=>{ map.closePopup(); fn(); }},ic(d),h('span',{text:txt}));
+    const FISH='M3 12c3-5.5 10-6 14-1.5l4-3.5v10l-4-3.5C13 17.5 6 17.5 3 12z', PIN='M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z M12 7v6 M9 10h6';
+    const box=h('div',{class:'pop pmap'},
+      h('div',{class:'pcoord'},ic('M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z M12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z'),h('div',{},h('span',{class:'mono',text:PsaroCoord.fmt(lat,lon)}),h('span',{class:'pdepth',text:en?'Quick save here':'Γρήγορη καταγραφή εδώ'}))),
+      act('acc',FISH,en?'Fish here':'Ψάρι εδώ',()=>quickAt(lat,lon,false)),
+      act('',FISH,en?'Lost fish here':'Χαμένο εδώ',()=>quickAt(lat,lon,true)),
+      act('',PIN,en?'Save spot here':'Σημείο εδώ',()=>spotAt(lat,lon)),
+      act('','M4 6h16M4 12h16M4 18h10',en?'Full bite form':'Πλήρης καταγραφή',()=>{ pickedPt={lat:lat,lon:lon}; $('bLocMode').value='pick'; syncLoc(); openSheet(); }));
+    if(tapM){ map.removeLayer(tapM); tapM=null; }
+    const pop=L.popup({className:'pmapw',minWidth:200,maxWidth:260,autoPan:false}).setLatLng(ll).setContent(box); tapPop=pop; pop.openOn(map);
+    tapM=L.marker(ll,{icon:L.divIcon({className:'',html:'<div class="tapdot"></div>',iconSize:[22,22]}),interactive:false,keyboard:false,zIndexOffset:1500}).addTo(map);
+  });
   try{ map.getContainer().addEventListener('pointerdown',()=>{ followPause=Date.now()+20000; },{passive:true,capture:true}); }catch(e){}
   if(cond&&cond.lat!=null) setYou(cond.lat,cond.lon);
   checkZoneHere();
@@ -689,7 +707,7 @@ function drawMap(){
     if(reviewSet&&!tripActive()) continue;
     const en=window.LANG==='en';
     const mm=L.marker([b.lat,b.lon],{icon:L.divIcon({className:'',html:'<div class="mk-fish mk-miss">✕</div>',iconSize:[26,26]}),title:en?'Lost bite':'Χάθηκε'});
-    mm.bindPopup(()=>h('div',{class:'pop'},h('b',{text:en?'Lost bite ✕':'Χάθηκε ✕'}),h('div',{class:'meta mono',text:(b.date||'')+' '+(b.time||'')}),(b.bait||b.tech)?h('div',{class:'meta',text:[b.bait,b.tech].filter(Boolean).join(' · ')}):null,tkLine(b)?h('div',{class:'meta',text:tkLine(b)}):null,h('div',{class:'meta mono',text:PsaroCoord.fmt(b.lat,b.lon)}),h('div',{class:'row pbtns',style:'margin-top:6px'},h('button',{class:'btn sm ghost',type:'button',text:en?'Delete':'Διαγραφή',onclick:()=>{ window.PsaroAsk(en?'Delete this lost bite?':'Να διαγραφεί αυτή η αστοχία;',{title:en?'Delete lost bite':'Διαγραφή αστοχίας',ok:en?'Delete':'Διαγραφή',cancel:en?'Cancel':'Άκυρο',danger:true}).then(ok=>{ if(!ok) return; Store.remove('bites',b.id).then(()=>{ try{ map.closePopup(); }catch(e){} toast(en?'Deleted.':'Διαγράφηκε.'); }).catch(()=>{}); }); }}))),{minWidth:150,maxWidth:230});
+    mm.bindPopup(()=>h('div',{class:'pop'},h('b',{text:en?'Lost bite ✕':'Χάθηκε ✕'}),h('div',{class:'meta mono',text:(b.date||'')+' '+(b.time||'')}),(b.bait||b.tech)?h('div',{class:'meta',text:[b.bait,b.tech].filter(Boolean).join(' · ')}):null,tkLine(b)?h('div',{class:'meta',text:tkLine(b)}):null,h('div',{class:'meta mono',text:PsaroCoord.fmt(b.lat,b.lon)}),missCond(b)?h('div',{class:'meta',text:missCond(b)}):null,window.PsaroBiteWx?window.PsaroBiteWx.slot(b):null,h('div',{class:'row pbtns',style:'margin-top:6px'},h('button',{class:'btn sm ghost',type:'button',text:en?'Delete':'Διαγραφή',onclick:()=>{ window.PsaroAsk(en?'Delete this lost bite?':'Να διαγραφεί αυτή η αστοχία;',{title:en?'Delete lost bite':'Διαγραφή αστοχίας',ok:en?'Delete':'Διαγραφή',cancel:en?'Cancel':'Άκυρο',danger:true}).then(ok=>{ if(!ok) return; Store.remove('bites',b.id).then(()=>{ try{ map.closePopup(); }catch(e){} toast(en?'Deleted.':'Διαγράφηκε.'); }).catch(()=>{}); }); }}))),{minWidth:150,maxWidth:230});
     mm.addTo(bitesG);
   }
   if(pendM){map.removeLayer(pendM);pendM=null;}
@@ -1293,7 +1311,7 @@ $('biteForm').addEventListener('submit',async e=>{
     if(editing){ if(tsel!==(editing.trip||'')){ if(tsel){ rec.trip=tsel; rec.n=nextN(tsel); } else { delete rec.trip; delete rec.n; } } }
     else if(tsel){ rec.trip=tsel; rec.n=nextN(tsel); }
     const id=await Store.save('bites',rec);
-    try{ if(window.PsaroBiteWx&&!rec.miss) window.PsaroBiteWx.ensure(Object.assign({},rec,{id:id})); }catch(e){}
+    try{ if(window.PsaroBiteWx) window.PsaroBiteWx.ensure(Object.assign({},rec,{id:id})); }catch(e){} /* v31z352: και τα χαμένα κρατούν πίεση/άνεμο ±30 λεπτά */
     try{ if(editing&&(editing.trip||'')!==(rec.trip||'')){ await recountTrip(editing.trip); await recountTrip(rec.trip); } else if(!editing&&tsel) await recountTrip(tsel); else if(editing&&rec.trip&&(!!editing.rel!==!!rec.rel||editing.kg!==rec.kg)) await recountTrip(rec.trip); }catch(e){}
     if(phDirty){ try{ const oldKeys=editing?phKeys(editing):[]; const n=photoBlobs.length; for(let pi=0;pi<n;pi++) await Photos.put(pi===0?id:id+'~'+pi,photoBlobs[pi]); for(const k of oldKeys){ const m=k.indexOf('~'); const idx=m<0?0:+k.slice(m+1); if(idx>=n) await Photos.del(k); } }catch(err){ await Store.save('bites',Object.assign({},rec,{id:id,photo:!!(editing&&editing.photo),xph:editing?editing.xph:undefined})); toast('Η φωτογραφία δεν αποθηκεύτηκε.'); } }
     resetSheet(); closeSheet();
@@ -1341,12 +1359,33 @@ async function quickRec(miss){
     try{ if(window.PsaroTackle){ const L=PsaroTackle.last(); if(L.ids.length){ rec.tk=L.ids; if(Object.keys(L.w).length) rec.tkw=L.w; if(Object.keys(L.h).length) rec.tkh=L.h; if(Object.keys(L.s).length) rec.tks=L.s; } } }catch(e){}
     tripStamp(rec,!!miss);
     const id=await Store.save('bites',rec);
-    try{ if(window.PsaroBiteWx&&!rec.miss) window.PsaroBiteWx.ensure(Object.assign({},rec,{id:id})); }catch(e){}
+    try{ if(window.PsaroBiteWx) window.PsaroBiteWx.ensure(Object.assign({},rec,{id:id})); }catch(e){} /* v31z352: και τα χαμένα κρατούν πίεση/άνεμο ±30 λεπτά */
     const live=document.body.classList.contains('ontrip');
     if(miss) toast(en?'Miss logged ✕':'Καταγράφηκε αστοχία ✕');
     else { toast(en?'Fish logged 🐟 Add the species later from Log → Bites → Edit.':'Ψάρι καταγράφηκε 🐟 Πρόσθεσε είδος αργότερα από Ημερολόγιο → Τσιμπήματα → Επεξεργασία.'); if(has&&!live&&$('tab-map').hidden===false) showOnMap(c.lat,c.lon,id); }
   }catch(e){ toast(en?'Not saved. Try again.':'Δεν αποθηκεύτηκε. Δοκίμασε ξανά.'); }
   finally{ btn.disabled=false; quickBusy=false; }
+}
+/* v31z352: γρήγορο ψάρι/χαμένο σε σημείο του χάρτη, με καιρό εκείνου του σημείου */
+async function quickAt(lat,lon,miss){
+  const en=window.LANG==='en'; let c={};
+  try{ c=await fetchConditions(lat,lon)||{}; }catch(e){ c={}; }
+  try{
+    const rec={date:nicosiaToday(),time:fmt(nicosiaNowMin()),tz:utcOff(),species:'',latin:'',bait:'',tech:'',depth:null,kg:null,len:null,press:c.press!=null?c.press:null,notes:'',
+      ptrend:c.ptrend||null,wind:c.wind!=null?c.wind:null,wdeg:c.windDeg!=null?Math.round(c.windDeg):null,wave:c.wave!=null?Math.round(c.wave*10)/10:null,cloud:c.cloud||null,temp:c.temp!=null?c.temp:null,sst:c.sst!=null?c.sst:null,tide:c.tide?c.tide.st:null,
+      place:'',lat:lat,lon:lon,photo:false,src:miss?'miss-map':'map'};
+    if(miss) rec.miss=true;
+    try{ if(window.PsaroTackle){ const Lt=PsaroTackle.last(); if(Lt.ids.length){ rec.tk=Lt.ids; if(Object.keys(Lt.w).length) rec.tkw=Lt.w; if(Object.keys(Lt.h).length) rec.tkh=Lt.h; if(Object.keys(Lt.s).length) rec.tks=Lt.s; } } }catch(e){}
+    tripStamp(rec,!!miss);
+    const id=await Store.save('bites',rec);
+    try{ if(window.PsaroBiteWx) window.PsaroBiteWx.ensure(Object.assign({},rec,{id:id})); }catch(e){}
+    toast(miss?(en?'Lost fish logged here ✕':'Καταγράφηκε χαμένο εδώ ✕'):(en?'Fish logged here 🐟 Add the species later from Log → Bites.':'Ψάρι καταγράφηκε εδώ 🐟 Βάλε είδος αργότερα από Ημερολόγιο → Τσιμπήματα.'));
+  }catch(e){ toast(en?'Not saved. Try again.':'Δεν αποθηκεύτηκε. Δοκίμασε ξανά.'); }
+}
+async function spotAt(lat,lon){
+  const en=window.LANG==='en', d=new Date(), nm=(en?'Spot ':'Σημείο ')+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+  try{ const id=await Store.save('spots',{name:nm,type:$('sType').options[0].value,lat:lat,lon:lon,depth:null,notes:''}); selSpot=id; toast(en?'Spot saved. Tap it to rename.':'Αποθηκεύτηκε σημείο. Πάτα πάνω του για όνομα.'); }
+  catch(e){ toast(en?'Not saved. Try again.':'Δεν αποθηκεύτηκε. Δοκίμασε ξανά.'); }
 }
 const quickBite=()=>quickRec(false);
 $('bQuick').addEventListener('click',quickBite);
@@ -1365,6 +1404,7 @@ function spfSet(v){ lsSet('psaro-spf',v||''); syncSpf(); try{ renderBites(); ren
 window.addEventListener('storage',e=>{ if(e.key==='psaro-spf') syncSpf(); });
 window.PsaroSpf={get:spfGet,set:v=>spfSet(v)};
 const biteSortGet=sortSel('bites',[['new',T2('Νεότερα πρώτα','Newest first')],['old',T2('Παλαιότερα πρώτα','Oldest first')],['kg',T2('Βαρύτερα','Heaviest')],['len',T2('Μεγαλύτερο μήκος','Longest')],['sp',T2('Είδος (Α–Ω)','Species (A–Z)')]],'new',()=>renderBites(),$('biteList'));
+function missCond(b){ const en=window.LANG==='en'; return [b.wind!=null?PU.wind(b.wind)+wdTxt(b):null,b.wave!=null?PU.wave(b.wave)+(en?' wave':' κύμα'):null,b.press!=null?PU.press(b.press):null,b.ptrend?PT[b.ptrend]:null,MOON_LBL[biteMoon(b)]].filter(Boolean).join(' · '); }
 function renderMisses(){
   const L=$('missList'); if(!L) return; L.replaceChildren();
   const en=window.LANG==='en';
@@ -1376,13 +1416,14 @@ function renderMisses(){
     del.addEventListener('click',()=>{ window.PsaroAsk(T2('Να διαγραφεί αυτή η αστοχία;','Delete this lost bite?'),{title:T2('Διαγραφή αστοχίας','Delete lost bite'),ok:T2('Διαγραφή','Delete'),cancel:T2('Άκυρο','Cancel'),danger:true}).then(ok=>{ if(ok) Store.remove('bites',b.id).catch(()=>{}); }); });
     const acts=[del];
     if(typeof b.lat==='number') acts.unshift(h('button',{class:'btn ghost sm',type:'button',text:T2('Χάρτης','Map'),onclick:()=>showOnMap(b.lat,b.lon,b.id)}));
-    const cd=[b.wind!=null?PU.wind(b.wind)+wdTxt(b):null,b.wave!=null?PU.wave(b.wave)+(en?' wave':' κύμα'):null,b.press!=null?PU.press(b.press):null,b.ptrend?PT[b.ptrend]:null].filter(Boolean).join(' · ');
+    const cd=[b.wind!=null?PU.wind(b.wind)+wdTxt(b):null,b.wave!=null?PU.wave(b.wave)+(en?' wave':' κύμα'):null,b.press!=null?PU.press(b.press):null,b.ptrend?PT[b.ptrend]:null,MOON_LBL[biteMoon(b)],b.temp!=null?Math.round(b.temp)+'°C':null,b.sst!=null?(en?'sea ':'θάλασσα ')+Math.round(b.sst)+'°C':null,b.hist?(en?'estimate':'εκτίμηση'):null].filter(Boolean).join(' · ');
     const td=nicosiaToday(), dd=b.date===td?T2('Σήμερα','Today'):(b.date?b.date.slice(8,10)+'/'+b.date.slice(5,7):'');
     L.append(h('div',{class:'item bite'},
       h('div',{class:'ihead'},h('b',{class:'ititle',text:'✕ '+T2('Χάθηκε','Lost')}),h('span',{class:'when mono',text:[dd,b.time].filter(Boolean).join(' · ')})),
       h('div',{class:'meta',text:[b.bait,b.tech,b.depth!=null&&b.depth!==''?b.depth+' m':null,(typeof b.lat==='number'?PsaroCoord.fmt(b.lat,b.lon):null)].filter(Boolean).join(' · ')||'—'}),
       tkLine(b)?h('div',{class:'meta',text:tkLine(b)}):null,
       cd?h('div',{class:'meta',text:cd}):null,
+      window.PsaroBiteWx?window.PsaroBiteWx.slot(b):null,
       h('div',{class:'acts'},acts)));
   }
 }
@@ -1415,7 +1456,7 @@ function renderBites(){
       sz?h('div',{class:'isz',text:sz+(b.rel?(window.LANG==='en'?' · ↩ Catch & release':' · ↩ Αφέθηκε'):'')}):(b.rel?h('div',{class:'isz',text:(window.LANG==='en'?'↩ Catch & release':'↩ Αφέθηκε')}):null),
       h('div',{class:'meta',text:[b.gearName,b.bait,b.tech,b.depth!=null?b.depth+' m βάθος':null,where].filter(Boolean).join(' · ')}),
       tkLine(b)?h('div',{class:'meta',text:tkLine(b)}):null,
-      h('div',{class:'meta',text:cd}),window.PsaroBiteWx&&!b.miss?window.PsaroBiteWx.slot(b):null,img,
+      h('div',{class:'meta',text:cd}),window.PsaroBiteWx?window.PsaroBiteWx.slot(b):null,img,
       h('div',{class:'acts'},acts)));
   }
   try{ renderMisses(); }catch(e){}

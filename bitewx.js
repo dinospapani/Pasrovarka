@@ -172,7 +172,7 @@ function ensure(b){ if(b&&eligible(b)) enqueue(b,true); }
 
 /* ---------- μαζική συμπλήρωση (ρυθμίσεις θάλασσας) ---------- */
 (window.PsaroSeaRows=window.PsaroSeaRows||[]).push(function(){
-  function todo(){ return (C.Store.get('bites')||[]).filter(function(b){ return eligible(b)&&!b.gear&&!b.miss&&!valid(b)&&!b.wxNA; }); }
+  function todo(){ return ((C.Store.raw?C.Store.raw('bites'):C.Store.get('bites'))||[]).filter(function(b){ return eligible(b)&&!b.gear&&!valid(b)&&!b.wxNA; }); }
   var r=document.createElement('div'); r.className='sprow'; var x=document.createElement('div'); x.className='sptx';
   var b1=document.createElement('b'); b1.textContent=T('Πίεση και άνεμος γύρω από τα ψάρια','Pressure and wind around catches');
   var sp=document.createElement('span'); function txt(){ var n=todo().length; sp.textContent=n?T('Υπάρχουν '+n+' ψάρια με θέση χωρίς γράφημα πίεσης και ανέμου ±30 λεπτά. Θα συμπληρωθούν με εκτίμηση μοντέλου.','There are '+n+' catches with a position but no pressure/wind chart (±30 min). They will be filled with a model estimate.'):T('Όλα τα ψάρια με θέση έχουν τα στοιχεία.','All catches with a position have the data.'); }

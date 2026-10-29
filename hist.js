@@ -67,7 +67,7 @@ window.PsaroHist={fetch:fetchHist,range:fetchRange,keys:KEYS,empty:empty};
 /* ---- μαζική συμπλήρωση παλιών ψαριών (ρυθμίσεις θάλασσας) ---- */
 (window.PsaroSeaRows=window.PsaroSeaRows||[]).push(function(){
   var C=window.PsaroCore; if(!C||!C.Store||!C.biteMs) return null;
-  function todo(){ return (C.Store.get('bites')||[]).filter(function(b){ return typeof b.lat==='number'&&typeof b.lon==='number'&&(empty(b)||suspect(b,C.biteMs(b))||(b.tide==null&&!b.tideNA)||(b.wdeg==null&&!b.wdegNA))&&C.biteMs(b)<Date.now()-90*60000; }); }
+  function todo(){ return ((C.Store.raw?C.Store.raw('bites'):C.Store.get('bites'))||[]).filter(function(b){ return typeof b.lat==='number'&&typeof b.lon==='number'&&(empty(b)||suspect(b,C.biteMs(b))||(b.tide==null&&!b.tideNA)||(b.wdeg==null&&!b.wdegNA))&&C.biteMs(b)<Date.now()-90*60000; }); }
   var r=document.createElement('div'); r.className='sprow'; var x=document.createElement('div'); x.className='sptx';
   var b1=document.createElement('b'); b1.textContent=T('Καιρός παλιών ψαριών','Weather for older catches');
   var sp=document.createElement('span'); function txt(){ var n=todo().length; sp.textContent=n?T('Υπάρχουν '+n+' ψάρια με θέση που δεν έχουν καιρό ή έχουν καιρό άλλης ώρας. Θα ενημερωθούν με εκτίμηση ιστορικού (καιρός και στάθμη θάλασσας).','There are '+n+' catches with a position and no weather, or with weather from another time. They will be updated with a historical estimate.'):T('Όλα τα ψάρια με θέση έχουν καιρό.','All catches with a position already have weather.'); }

@@ -59,9 +59,12 @@ async function pollTg(){
 var extOK=true;
 async function pushTrip(){
   var s=load(), cl=Cl(); if(!s.id||!cl) return;
+  /* v31z352: έξοδος χωρίς ειδοποίηση επαφής: τίποτα στον server, εκτός αν πατηθεί SOS */
+  if(s.noAlert&&!s.sosAt){ srvMsg(''); return; }
   var base={id:s.id,user_name:cl.name()||'',route:s.route||'',due_at:new Date(s.due).toISOString(),status:s.active?'active':'done',
     last_lat:s.last?s.last.lat:null,last_lon:s.last?s.last.lon:null,last_at:s.last?new Date(s.last.t).toISOString():null};
-  var ext=Object.assign({},base,{battery:battPct(),hb_at:new Date().toISOString(),silence_min:s.sil||0});
+  if(s.noAlert&&s.sosAt){ base.start_sent=true; } /* με SOS σε έξοδο χωρίς ειδοποιήσεις: μόνο το SOS, όχι μήνυμα «ξεκίνησε» */
+  var ext=Object.assign({},base,{battery:battPct(),hb_at:new Date().toISOString(),silence_min:s.noAlert?0:(s.sil||0)});
   var H={Prefer:'resolution=merge-duplicates,return=minimal'};
   try{
     try{ if(!extOK) throw new Error('base'); await cl.rest('safety_trips',{method:'POST',headers:H,body:JSON.stringify(ext)}); }
@@ -164,7 +167,7 @@ function render(){
   if(on){
     $('sfInfo').textContent=(late(s)?'Η επιστροφή ήταν στις ':'Επιστροφή στις ')+hm(s.due)+' · διάρκεια '+dur(Date.now()-s.start);
     $('sfLast').textContent=s.last?('Τελευταία γνωστή θέση: '+hm(s.last.t)+' · '+PsaroCoord.fmt(s.last.lat,s.last.lon)):'Δεν έχει καταγραφεί θέση ακόμα.';
-    $('sfMon').textContent='Παρακολούθηση: '+(s.sil?'έλεγχος αν χαθεί το σήμα μετά από '+s.sil+' λεπτά, ':'')+'ειδοποίηση επαφής αν περάσει η ώρα επιστροφής, και αν η μπαταρία πέσει κάτω από 10%.';
+    $('sfMon').textContent=s.noAlert?(window.LANG==='en'?'Your safety contact is not notified on this trip. The SOS button still sends your position.':'Η επαφή ασφαλείας δεν ειδοποιείται σε αυτή την έξοδο. Το SOS στέλνει κανονικά τη θέση σου.'):'Παρακολούθηση: '+(s.sil?'έλεγχος αν χαθεί το σήμα μετά από '+s.sil+' λεπτά, ':'')+'ειδοποίηση επαφής αν περάσει η ώρα επιστροφής, και αν η μπαταρία πέσει κάτω από 10%.';
   } else {
     var d=load(); $('sfNoC').hidden=hasContact(d); silNote(d);
     if(!$('sfTime').value){ var t=new Date(Date.now()+C.utcMin()*60000+4*3600000); $('sfTime').value=('0'+t.getUTCHours()).slice(-2)+':'+('0'+t.getUTCMinutes()).slice(-2); }
@@ -186,10 +189,11 @@ function snap0(){ var c=C.getCond(); return c?{lat:c.lat,lon:c.lon,press:c.press
 function start(){
   var d=load(), time=$('sfTime').value;
   if(!time){ $('sfMsg').textContent='Βάλε ώρα επιστροφής.'; return; }
-  var s=Object.assign({},d,{active:true,id:'trip-'+Date.now().toString(36),route:$('sfRoute').value.trim(),due:localMinToMs(time),autoExt:0,sosAt:0,pgStart:0,pgEnd:0,last:null,start:Date.now(),startDate:C.nicosiaToday(),cond0:snap0(),sil:+$('sfSil').value||0,synced:undefined});
+  var s=Object.assign({},d,{active:true,id:'trip-'+Date.now().toString(36),route:$('sfRoute').value.trim(),due:localMinToMs(time),autoExt:0,sosAt:0,pgStart:0,pgEnd:0,last:null,start:Date.now(),startDate:C.nicosiaToday(),cond0:snap0(),sil:+$('sfSil').value||0,noAlert:!!($('sfNotify')&&!$('sfNotify').checked),synced:undefined});
   save(s); $('sfMsg').textContent=''; render(); closeSheet();
   pushContact().then(function(){ return trackPos(); }).then(function(){ pushTrip(); });
   clearInterval(timer); timer=setInterval(tick,60000);
+  if(s.noAlert){ toast(window.LANG==='en'?'Have a good trip! Your contact will not be notified on this trip (SOS still works).':'Καλή έξοδος! Η επαφή σου δεν θα ειδοποιηθεί σε αυτή την έξοδο (το SOS λειτουργεί).'); return; }
   toast(window.LANG==='en'?(hasContact(d)?'Have a good trip! Your contact has been notified.':'Have a good trip! You have no safety contact, so you only get a reminder on your phone.'):(hasContact(d)?'Καλή έξοδος! Η επαφή σου ενημερώθηκε.':'Καλή έξοδος! Δεν έχεις επαφή ασφαλείας, θα έχεις μόνο υπενθύμιση στο κινητό.'));
 }
 function summary(s){
