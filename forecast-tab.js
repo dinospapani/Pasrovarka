@@ -223,8 +223,8 @@ function turnCard(f){
   else box.append(h('p',{style:'margin:3px 0;font-size:13px',text:T('Δεν προβλέπεται καμπή στην πρόγνωση που φορτώθηκε.','No turning point in the loaded forecast.')}));
   /* v31z351: πότε να περιμένεις ειδοποίηση καμπής */
   if(o.next){ var ah=new Date(Date.parse(o.next.t)-3*3600e3), pre=('0'+ah.getHours()).slice(-2)+':'+('0'+ah.getMinutes()).slice(-2);
-    var on2=nt.on&&nt.turn; box.append(h('p',{class:'note',style:'margin:4px 0 0;font-weight:600',text:on2?T('🔔 Ειδοποίηση καμπής: από ~','🔔 Turning-point alert: from ~')+pre+T(' (έως 3 ώρες πριν) και ξανά μόλις αρχίσει η αλλαγή.',' (up to 3 hours before) and again just after the change starts.'):T('🔕 Οι ειδοποιήσεις καμπής είναι κλειστές. Άνοιξε «Ειδοποίησέ με για καλές μέρες» και «…στις καμπές της πίεσης» πιο κάτω.','🔕 Turning-point alerts are off. Turn on "Notify me about good days" and "…at pressure turning points" below.')})); }
-  box.append(h('p',{class:'note',text:T('Εκτίμηση από το μοντέλο πρόγνωσης (λειασμένη), όχι μέτρηση. Καμπές μικρότερες από 0,3 hPa δεν υπολογίζονται.','Model estimate (smoothed), not a measurement. Turns below 0.3 hPa are ignored.')}));
+    var on2=nt.on&&nt.turn; box.append(h('p',{class:'note',style:'margin:4px 0 0;font-weight:600',text:on2?T('🔔 Ειδοποίηση καμπής: από ~','🔔 Turning-point alert: from ~')+pre+T(' (έως 3 ώρες πριν) και ξανά μόλις αρχίσει η αλλαγή (έως 6 ώρες μετά).',' (up to 3 hours before) and again as soon as the change starts (up to 6 hours after).'):T('🔕 Οι ειδοποιήσεις καμπής είναι κλειστές. Άνοιξε «Ειδοποίησέ με για καλές μέρες» και «…στις καμπές της πίεσης» πιο κάτω.','🔕 Turning-point alerts are off. Turn on "Notify me about good days" and "…at pressure turning points" below.')})); }
+  box.append(h('p',{class:'note',text:T('Εκτίμηση από το μοντέλο πρόγνωσης (λειασμένη), όχι μέτρηση. Καμπή = πορεία τουλάχιστον 0,3 hPa και μετά αντιστροφή από 0,1 hPa.','Model estimate (smoothed), not a measurement. Turn = a move of at least 0.3 hPa, then a reversal from 0.1 hPa.')}));
 }
 function pressCard(p,o){
   o=o||{}; if(o.td) pressTd=p||null; else pressPlace=p||null;

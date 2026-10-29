@@ -162,7 +162,15 @@ function windEvent(fc,w){
 }
 /* Σημεία καμπής της πίεσης (κορυφή/κοιλάδα) σε λείανση 3 σημείων. Επιστρέφει γεγονότα:
    {kind:'peak-soon'|'trough-soon'|'peak-past'|'trough-past', t, p, h}. "soon" = σε ≤3 ώρες, "ahead" = σε 4–24 ώρες, "past" = ξεκίνησε η πτώση/άνοδος τις τελευταίες ≤4 ώρες (επιβεβαιωμένη ≥0.1 hPa). */
-const TURN_PROM=0.3; /* ελάχιστο εύρος καμπής (hPa) για να μετρηθεί σαν κορυφή/κοιλάδα */
+const TURN_PROM=0.3; /* η προηγούμενη πορεία (άνοδος πριν από κορυφή, πτώση πριν από κοιλάδα) πρέπει να είναι τουλάχιστον τόσο */
+const TURN_REV=0.1;  /* v31z351: η αντιστροφή μετά την καμπή μετρά από 0,1 hPa (όχι 0,3), ώστε η ειδοποίηση να έρχεται μόλις αρχίσει η αλλαγή */
+/* καμπή: πριν από αυτήν πορεία ≥0,3 hPa (μέσα σε 6 ώρες) και μετά αντιστροφή ≥0,1 hPa */
+function turnOk(s,i,isMax){
+  const lo=Math.max(0,i-6), hi=Math.min(s.length-1,i+6), pre=s.slice(lo,i+1), post=s.slice(i,hi+1);
+  const before=isMax?s[i]-Math.min.apply(null,pre):Math.max.apply(null,pre)-s[i];
+  const after=isMax?s[i]-Math.min.apply(null,post):Math.max.apply(null,post)-s[i];
+  return before>=TURN_PROM-1e-6&&after>=TURN_REV-1e-6;
+}
 function pressureTurns(fc){
   const hs=[]; fc.days.forEach(d=>d.hours.forEach(h=>{ if(h.p!=null) hs.push(h); }));
   hs.sort((a,b)=>a.t<b.t?-1:1);
@@ -171,17 +179,15 @@ function pressureTurns(fc){
   const now=fc.nowLocal.slice(0,13); let n0=-1; hs.forEach((h,i)=>{ if(h.t.slice(0,13)<=now) n0=i; });
   if(n0<0) return [];
   const out=[];
-  for(let i=Math.max(3,n0-4);i<=Math.min(s.length-3,n0+24);i++){
+  for(let i=Math.max(3,n0-6);i<=Math.min(s.length-3,n0+24);i++){
     let isMax=true,isMin=true;
     for(let k=-2;k<=2;k++){ if(!k) continue; if(s[i+k]>s[i]) isMax=false; if(s[i+k]<s[i]) isMin=false; if(s[i+k]===s[i]&&k<0){ isMax=false; isMin=false; } }
     if(!isMax&&!isMin) continue;
-    const lo=Math.max(0,i-6), hi=Math.min(s.length-1,i+6);
-    const win=s.slice(lo,hi+1), prom=isMax?s[i]-Math.min.apply(null,win):Math.max.apply(null,win)-s[i];
-    if(prom<TURN_PROM) continue;
+    if(!turnOk(s,i,isMax)) continue;
     const ahead=i-n0, base={t:hs[i].t,p:Math.round(s[i]*10)/10,h:Math.abs(ahead)};
     if(ahead>0&&ahead<=3) out.push(Object.assign({kind:isMax?'peak-soon':'trough-soon'},base));
     else if(ahead>3) out.push(Object.assign({kind:isMax?'peak-ahead':'trough-ahead'},base));
-    else if(ahead<=0&&ahead>=-4){ const mv=isMax?s[i]-s[n0]:s[n0]-s[i]; if(ahead<0&&mv>=0.1) out.push(Object.assign({kind:isMax?'peak-past':'trough-past'},base)); }
+    else if(ahead<=0&&ahead>=-6){ const mv=isMax?s[i]-s[n0]:s[n0]-s[i]; if(ahead<0&&mv>=TURN_REV-1e-6) out.push(Object.assign({kind:isMax?'peak-past':'trough-past'},base)); }
   }
   return out;
 }
@@ -198,9 +204,7 @@ function pressureOutlook(fc){
     let isMax=true,isMin=true;
     for(let k=-2;k<=2;k++){ if(!k) continue; if(s[i+k]>s[i]) isMax=false; if(s[i+k]<s[i]) isMin=false; if(s[i+k]===s[i]&&k<0){ isMax=false; isMin=false; } }
     if(!isMax&&!isMin) continue;
-    const lo=Math.max(0,i-6), hi=Math.min(s.length-1,i+6), win=s.slice(lo,hi+1);
-    const prom=isMax?s[i]-Math.min.apply(null,win):Math.max.apply(null,win)-s[i];
-    if(prom<TURN_PROM) continue;
+    if(!turnOk(s,i,isMax)) continue;
     ex.push({kind:isMax?'peak':'trough',t:hs[i].t,p:Math.round(s[i]*10)/10,i});
   }
   const next=ex.filter(e=>e.i>n0)[0]||null, last=ex.filter(e=>e.i<=n0).pop()||null;
