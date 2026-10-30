@@ -84,7 +84,7 @@ function take(){
   if(t&&t.id===s.id&&t.pts.length>1&&t.m>=100){
     var tr=simplify(t.pts.map(function(p){ return [p[0],p[1]]; }),6), eps=6;
     while(tr.length>400&&eps<400){ eps*=1.6; tr=simplify(tr,eps); }
-    out={km:Math.round(t.m/100)/10,track:tr.map(function(p){ return [+p[0].toFixed(5),+p[1].toFixed(5)]; })};
+    out={km:Math.round(t.m/100)/10,moving:(window.PP&&window.PP.movingFrom?window.PP.movingFrom(t.pts):undefined),track:tr.map(function(p){ return [+p[0].toFixed(5),+p[1].toFixed(5)]; })};
   }
   stop(); store(null);
   if(layer){ layer.clearLayers(); line=dot=null; }

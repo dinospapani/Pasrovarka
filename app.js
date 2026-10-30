@@ -91,9 +91,9 @@ function personal(){
   try{
     if(!window.PP) return P;
     const m=window.PP.build(Store.get('trips'),Store.act(),{utcMin:utcOff(),misses:Store.misses?Store.misses():[]});
-    P.n=m.C; P.enough=m.ready; P.on=m.ready&&lsGet('psaro-pm',true)!==false; P.model=m; if(!m.ready) return P;
+    P.n=m.C; P.enough=m.ready; P.on=m.useful&&lsGet('psaro-pm',true)!==false; P.model=m; if(!m.ready) return P; /* v31z365: μόνο αν ο έλεγχος δεν δείχνει ότι είναι χειρότερο από τον μέσο όρο */
     const pt=x=>Math.round(clamp(Math.log(x)*10,-6,10)), F=m.factors;
-    for(let k=0;k<24;k++) P.hour[k]=pt(F.block[Math.floor(k/3)].m);
+    P.light=F.block.map(x=>pt(x.m)); /* v31z365: φως (νύχτα, αυγή, πρωί, μεσημέρι, απόγευμα, σούρουπο) */
     ['fast','slow','stable','rise'].forEach((k,i)=>{ if(F.ptrend[i]&&F.ptrend[i].h>0) P.press[k]=pt(F.ptrend[i].m); });
     for(let k=0;k<8;k++) P.moon[k]=pt(F.moon[Math.round(k/2)%4].m);
   }catch(e){}
@@ -125,7 +125,7 @@ function compute(){
     const dMin=near(sm.min,Math.min(circDist(t,sm.mrise),circDist(t,sm.mset)));
     if(dMin<=30) b+=3;
     if(t>=660&&t<=900) b-=4;
-    hours.push(clamp(Math.round(base+b+(P.on?P.hour[hr]:0)),5,98));
+    hours.push(clamp(Math.round(base+b+(P.on&&P.light?P.light[window.PP.phaseOf(hr*60+30,sm.rise,sm.set)]:0)),5,98));
   }
   const day=clamp(Math.round(base),5,98);
   return {date,wind,wave,sm,factors,hours,day,P:P,pmAdj:pmAdj};
@@ -276,7 +276,7 @@ function renderToday(){
   const P=c.P;
   if(P.enough){
     const row=h('div',{class:'fx'},h('div',{class:'fxh'},h('b',{text:'Δικό σου ιστορικό'}),h('span',{class:'mono',text:P.n+' τσιμπήματα'}),h('span',{class:'fxc '+(!P.on?'mid':c.pmAdj>=2?'good':c.pmAdj<=-3?'bad':'mid'),text:P.on?(c.pmAdj>0?'+':'')+c.pmAdj:'Κλειστό'})),
-      h('div',{class:'note',text:'Δείχνει πότε και με ποια πίεση ή σελήνη σου έχουν τσιμπήσει στο παρελθόν. Δεν ξέρει πότε δεν ψάρεψες, οπότε είναι ένδειξη και όχι κανόνας.'}));
+      h('div',{class:'note',text:(window.LANG==='en'?'Bites per hour fished in each condition (light, moon, pressure, wind), counting trips with no fish; travel above '+window.PP.MOVE_KN+' kn does not count. ':'Τσιμπήματα ανά ώρα ψαρέματος σε κάθε συνθήκη (φως, σελήνη, πίεση, άνεμος), μαζί με τις εξόδους χωρίς ψάρι· η πλεύση πάνω από '+window.PP.MOVE_KN+' κόμβους δεν μετρά. ')+(P.model&&P.model.valid?(P.model.valid.gain>0?(window.LANG==='en'?'Checked on trips it had not seen: '+Math.round(P.model.valid.gain*100)+'% better than your average.':'Έλεγχος σε εξόδους που δεν είδε: '+Math.round(P.model.valid.gain*100)+'% καλύτερο από τον μέσο όρο σου.'):(window.LANG==='en'?'Checked on trips it had not seen: not better than your average yet, so it is off.':'Έλεγχος σε εξόδους που δεν είδε: δεν είναι ακόμα καλύτερο από τον μέσο όρο σου, γι’ αυτό είναι κλειστό.')):(window.LANG==='en'?'Not yet checked (needs 10 trips).':'Δεν έχει ελεγχθεί ακόμα (χρειάζονται 10 έξοδοι).'))}));
     const cb=h('input',{type:'checkbox',id:'pmOn'}); cb.checked=P.on; cb.addEventListener('change',()=>{lsSet('psaro-pm',cb.checked);renderToday();});
     row.append(h('label',{class:'chk',style:'border:0'},cb,h('span',{text:'Χρήση του ιστορικού μου στον βαθμό'})));
     fx.insertBefore(row,dt);

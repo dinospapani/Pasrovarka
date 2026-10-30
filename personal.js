@@ -1,58 +1,102 @@
 /* Προσωπική πρόγνωση: μαθαίνει από τις έξοδες (ώρες ψαρέματος) και τα τσιμπήματα του χρήστη.
-   Καθαρές συναρτήσεις, χωρίς DOM· δουλεύει και σε node. */
+   Καθαρές συναρτήσεις, χωρίς DOM· δουλεύει και σε node.
+   v31z365: κάθε έξοδος μοιράζεται σε κομμάτια 10 λεπτών, το καθένα με τις δικές του συνθήκες:
+   - φως (νύχτα, αυγή, πρωί, μεσημέρι, απόγευμα, σούρουπο) σε σχέση με την ανατολή/δύση εκείνης της μέρας, όχι με το ρολόι
+   - σελήνη, πίεση και άνεμος της ώρας (condH από το Open-Meteo, αλλιώς οι συνθήκες της αρχής)
+   - ο χρόνος πλεύσης (GPS πάνω από ~9 κόμβους, s.moving) δεν μετρά ως ψάρεμα· το τρόλινγκ (κάτω από 9 κόμβους) μετρά
+   Και έλεγχος: προβλέπει το μοντέλο τις εξόδους που δεν είδε καλύτερα από τον μέσο όρο; (validate) */
 (function(g){
 'use strict';
 const SYN=29.530588853, REF=Date.UTC(2000,0,6,18,14), K=4;           // K = «εικονικές» ώρες πριν εμπιστευτούμε τα δεδομένα
 const NEED={hours:15,sessions:6,catches:10};
+const ADV={sessions:50};                                              // από εδώ και πάνω έχει νόημα πιο προχωρημένη ανάλυση
 const moonOf=ms=>{let a=((ms-REF)/86400000)%SYN; if(a<0)a+=SYN; return Math.floor(a/SYN*4+0.5)%4;};
-const windCls=w=>w==null?null:w<8?0:w<=14?1:2;
+const windCls=w=>w==null||isNaN(w)?null:w<8?0:w<=14?1:2;
 const PTS=['fast','slow','stable','rise'];
 const biteMs=(b,utcMin)=>{ if(!b||!b.date||!b.time) return null; const [y,m,d]=b.date.split('-').map(Number), [hh,mm]=b.time.split(':').map(Number); return Date.UTC(y,m-1,d,hh,mm)-utcMin*60000; };
 function sessionsOf(trips){ return (trips||[]).filter(t=>t&&t.startMs&&t.endMs&&t.endMs>t.startMs&&(t.endMs-t.startMs)>=10*60000&&(t.endMs-t.startMs)<=16*3600000); }
-const LV={block:8,moon:4,ptrend:4,wind:3};
-function build(trips,bites,opt){
-  const utcMin=(opt&&opt.utcMin)||0, S=sessionsOf(trips);
+/* φως: 0 νύχτα, 1 αυγή (ανατολή ±90′), 2 πρωί, 3 μεσημέρι (μέσο της μέρας ±60′), 4 απόγευμα, 5 σούρουπο (δύση ±90′) */
+const LV={block:6,moon:4,ptrend:4,wind:3};
+function phaseOf(m,rise,set){
+  if(rise==null||set==null){ rise=360; set=1080; }
+  m=((m%1440)+1440)%1440; const noon=(rise+set)/2;
+  if(Math.abs(m-rise)<=90) return 1; if(Math.abs(m-set)<=90) return 5;
+  if(m<rise-90||m>set+90) return 0;
+  if(Math.abs(m-noon)<=60) return 3;
+  return m<noon?2:4;
+}
+const sunCache={};
+function sunTimes(dateStr,lat,lon,tzMin){
+  if(lat==null||lon==null||!(g.PF&&g.PF.sunMoon)) return {rise:360,set:1080};
+  const k=dateStr+'|'+(+lat).toFixed(1)+'|'+(+lon).toFixed(1)+'|'+tzMin; if(sunCache[k]) return sunCache[k];
+  try{ const s=g.PF.sunMoon(dateStr,+lat,+lon,tzMin); return (sunCache[k]={rise:s.rise,set:s.set}); }catch(e){ return {rise:360,set:1080}; }
+}
+/* φάση φωτός για μια στιγμή (ms) σε μια θέση */
+function phaseAt(ms,lat,lon,utcMin){ const loc=new Date(ms+utcMin*60000), ds=loc.toISOString().slice(0,10), st=sunTimes(ds,lat,lon,utcMin); return phaseOf(loc.getUTCHours()*60+loc.getUTCMinutes(),st.rise,st.set); }
+const MOVE_KN=9;
+/* μία έξοδος → κομμάτια 10 λεπτών με τις συνθήκες τους, και τα τσιμπήματα με τις δικές τους */
+function prepOne(s,bites,misses,utcMin){
+  const lat=s.lat!=null?s.lat:(s.cond0&&s.cond0.lat), lon=s.lon!=null?s.lon:(s.cond0&&s.cond0.lon);
+  const win=x=>x.ms!=null&&x.ms>=s.startMs-600000&&x.ms<=s.endMs+600000;
+  const inS=s.manual?[]:(bites||[]).map(b=>({b,ms:biteMs(b,utcMin)})).filter(win);
+  const inM=s.manual?[]:(misses||[]).map(b=>({b,ms:biteMs(b,utcMin)})).filter(win);
+  const cH={}; if(Array.isArray(s.condH)) s.condH.forEach(r=>{ if(Array.isArray(r)) cH[r[0]]={pt:r[1],w:r[2]}; });
+  const cd0=s.cond0||{}, hasH=!s.manual&&Object.keys(cH).length>0;
+  const cond=ms=>{ const r=hasH?cH[Math.floor(ms/3600000)]:null; return r?{ptrend:r.pt,wind:windCls(r.w)}:{ptrend:PTS.indexOf(cd0.ptrend),wind:windCls(cd0.wind)}; };
+  const ev=inS.concat(inM).map(x=>{ const ms=Math.min(Math.max(x.ms,s.startMs),s.endMs-1), q=cond(ms), bp=PTS.indexOf(x.b.ptrend), bw=windCls(x.b.wind!=null?+x.b.wind:null);
+    return {ms,f:{block:phaseAt(ms,lat,lon,utcMin),moon:moonOf(ms),ptrend:bp>=0?bp:q.ptrend,wind:bw!=null?bw:q.wind}}; });
+  const mv=Array.isArray(s.moving)?s.moving.filter(m=>Array.isArray(m)&&!ev.some(e=>e.ms>=m[0]&&e.ms<=m[1])):[]; /* πλεύση χωρίς τσίμπημα */
+  const sl=[]; let hrs=0, mvH=0;
+  for(let t=s.startMs;t<s.endMs;t+=600000){ const dh=Math.min(600000,s.endMs-t)/3600000, mid=t+dh*1800000;
+    if(mv.some(m=>mid>=m[0]&&mid<=m[1])){ mvH+=dh; continue; }
+    const q=cond(mid); sl.push({dh,f:{block:phaseAt(mid,lat,lon,utcMin),moon:moonOf(mid),ptrend:q.ptrend,wind:q.wind}}); hrs+=dh; }
+  const manualC=s.manual?Math.max(0,+s.count||0):0;
+  return {id:s.id,manual:!!s.manual,sl,ev,hrs,mvH,catches:s.manual?manualC:inS.length,bitesAll:s.manual?manualC:ev.length};
+}
+function prepare(trips,bites,opt){ const utcMin=(opt&&opt.utcMin)||0; return sessionsOf(trips).map(s=>prepOne(s,bites,opt&&opt.misses,utcMin)); }
+function aggregate(P){
   const T={}; for(const k in LV) T[k]=Array.from({length:LV[k]},()=>({h:0,c:0}));
-  let H=0,C=0;
-  for(const s of S){
-    const hrs=(s.endMs-s.startMs)/3600000;
-    const win=x=>x.ms!=null&&x.ms>=s.startMs-600000&&x.ms<=s.endMs+600000;
-    const inS=s.manual?[]:(bites||[]).map(b=>({b,ms:biteMs(b,utcMin)})).filter(win);
-    /* v31z363: και τα τσιμπήματα που χάθηκαν μετρούν ως δραστηριότητα ψαριών (για το πότε τσιμπούν), όχι ως ψάρια */
-    const inM=s.manual?[]:((opt&&opt.misses)||[]).map(b=>({b,ms:biteMs(b,utcMin)})).filter(win);
-    const cAll=s.manual?Math.max(0,+s.count||0):inS.length+inM.length;
-    H+=hrs; C+=s.manual?cAll:inS.length; const c=cAll;
-    const bh=new Array(8).fill(0); // ώρες ανά τρίωρο, μοιράζουμε τον χρόνο ανά 10 λεπτά
-    /* v31z364: πίεση και άνεμος ώρα με ώρα (s.condH, από το Open-Meteo για τη θέση και τις ώρες της εξόδου)· αλλιώς οι συνθήκες της αρχής */
-    const cH={}; if(Array.isArray(s.condH)) s.condH.forEach(r=>{ if(Array.isArray(r)) cH[r[0]]={pt:r[1],w:r[2]}; });
-    const cd0=s.cond0||{}, at=ms=>{ const r=cH[Math.floor(ms/3600000)]; return r?{pi:r.pt,wi:windCls(r.w)}:{pi:PTS.indexOf(cd0.ptrend),wi:windCls(cd0.wind)}; };
-    const hasH=!s.manual&&Object.keys(cH).length>0;
-    for(let t=s.startMs;t<s.endMs;t+=600000){ const loc=new Date(t+utcMin*60000), dh=Math.min(600000,s.endMs-t)/3600000; bh[Math.floor(loc.getUTCHours()/3)]+=dh;
-      if(hasH){ const q=at(t); if(q.pi>=0) T.ptrend[q.pi].h+=dh; if(q.wi!=null) T.wind[q.wi].h+=dh; } }
-    bh.forEach((v,i)=>{ T.block[i].h+=v; if(s.manual&&hrs>0) T.block[i].c+=c*v/hrs; });
-    inS.concat(inM).forEach(x=>{ const loc=new Date(Math.min(Math.max(x.ms,s.startMs),s.endMs-1)+utcMin*60000); T.block[Math.floor(loc.getUTCHours()/3)].c++; });
-    const mi=moonOf((s.startMs+s.endMs)/2); T.moon[mi].h+=hrs; T.moon[mi].c+=c;
-    if(hasH){
-      /* κάθε τσίμπημα μετρά με τις συνθήκες της ώρας του: πρώτα ό,τι καταγράφηκε στο ίδιο το ψάρι, αλλιώς η ώρα από το condH */
-      inS.concat(inM).forEach(x=>{ const q=at(x.ms), bp=PTS.indexOf(x.b.ptrend), bw=windCls(x.b.wind!=null?+x.b.wind:null), pi=bp>=0&&T.ptrend[bp].h>0?bp:q.pi, wi=bw!=null&&T.wind[bw].h>0?bw:q.wi;
-        if(pi>=0) T.ptrend[pi].c++; if(wi!=null) T.wind[wi].c++; });
-    } else {
-      const cd=s.cond0||{}; const pi=PTS.indexOf(cd.ptrend); if(pi>=0){ T.ptrend[pi].h+=hrs; T.ptrend[pi].c+=c; }
-      const wi=windCls(cd.wind); if(wi!=null){ T.wind[wi].h+=hrs; T.wind[wi].c+=c; }
-    }
+  let H=0,C=0,CA=0,MV=0;
+  for(const p of P){
+    H+=p.hrs; C+=p.catches; CA+=p.bitesAll; MV+=p.mvH;
+    for(const x of p.sl) for(const k in LV){ const i=x.f[k]; if(i!=null&&i>=0) T[k][i].h+=x.dh; }
+    if(p.manual){ if(p.hrs>0) for(const x of p.sl) for(const k in LV){ const i=x.f[k]; if(i!=null&&i>=0) T[k][i].c+=p.bitesAll*x.dh/p.hrs; } }
+    else for(const e of p.ev) for(const k in LV){ const i=e.f[k]; if(i!=null&&i>=0) T[k][i].c++; }
   }
-  let CA=0; for(const k of T.moon) CA+=k.c; /* όλα τα τσιμπήματα (ψάρια + χαμένα) */
-  const r0=H>0?CA/H:0;
-  const factors={};
-  for(const k in T) factors[k]=T[k].map((x,i)=>{ const rate=(x.c+K*r0)/(x.h+K); return {i,h:x.h,c:x.c,rate:x.h?x.c/x.h:null,m:r0>0?rate/r0:1}; });
-  const progress={hours:H,sessions:S.length,catches:C,need:NEED};
-  const ready=H>=NEED.hours&&S.length>=NEED.sessions&&C>=NEED.catches;
-  return {r0,factors,progress,ready,H,C,S:S.length};
+  return {T,H,C,CA,MV,S:P.length};
+}
+function factorsOf(A){
+  const r0=A.H>0?A.CA/A.H:0, factors={};
+  for(const k in A.T) factors[k]=A.T[k].map((x,i)=>{ const rate=(x.c+K*r0)/(x.h+K); return {i,h:x.h,c:x.c,rate:x.h?x.c/x.h:null,m:r0>0?rate/r0:1}; });
+  return {r0,factors};
+}
+/* αναμενόμενα τσιμπήματα σε μια έξοδο με ένα μοντέλο (ρυθμός × πολλαπλασιαστές κάθε συνθήκης) */
+function expected(M,p){ let mu=0; for(const x of p.sl){ let m=1; for(const k in LV){ const i=x.f[k]; if(i!=null&&i>=0&&M.factors[k][i]) m*=M.factors[k][i].m; } mu+=x.dh*M.r0*m; } return mu; }
+function dev(y,mu){ mu=Math.max(mu,1e-6); return 2*((y>0?y*Math.log(y/mu):0)-(y-mu)); }
+/* έλεγχος σε εξόδους που το μοντέλο δεν είδε (5 ομάδες): απόκλιση Poisson μοντέλου και απλού μέσου όρου. gain>0 = καλύτερο από τον μέσο όρο. */
+function validate(P){
+  const Q=P.filter(p=>!p.manual&&p.hrs>0.2); if(Q.length<10) return null;
+  const F=5; let dM=0,dB=0;
+  for(let f=0;f<F;f++){
+    const tr=Q.filter((_,i)=>i%F!==f), te=Q.filter((_,i)=>i%F===f); if(!te.length||!tr.length) continue;
+    const A=aggregate(tr), M=factorsOf(A); if(!(M.r0>0)) continue;
+    for(const p of te){ dM+=dev(p.bitesAll,expected(M,p)); dB+=dev(p.bitesAll,p.hrs*M.r0); }
+  }
+  if(!(dB>0)) return {n:Q.length,devModel:dM,devBase:dB,gain:0}; /* ο μέσος όρος εξηγεί ήδη τα πάντα: τίποτα να κερδίσει */
+  return {n:Q.length,devModel:dM,devBase:dB,gain:(dB-dM)/dB};
+}
+function build(trips,bites,opt){
+  const P=prepare(trips,bites,opt), A=aggregate(P), M=factorsOf(A);
+  const progress={hours:A.H,sessions:A.S,catches:A.C,need:NEED,moving:A.MV,adv:ADV};
+  const ready=A.H>=NEED.hours&&A.S>=NEED.sessions&&A.C>=NEED.catches;
+  const v=ready?validate(P):null;
+  return {r0:M.r0,factors:M.factors,progress,ready,H:A.H,C:A.C,S:A.S,valid:v,
+    useful:ready&&(!v||v.gain>0), advReady:A.S>=ADV.sessions};
 }
 function score(model,x){
   if(!model||!model.ready) return null;
   let l=0; const F=model.factors;
-  if(x.hr!=null) l+=Math.log(F.block[Math.floor(x.hr/3)].m);
+  if(x.hr!=null) l+=Math.log(F.block[phaseOf(x.hr*60+30,x.rise,x.set)].m);
   if(x.f!=null) l+=Math.log(F.moon[Math.floor(x.f*4+0.5)%4].m);
   const pi=PTS.indexOf(x.ptrend); if(pi>=0) l+=Math.log(F.ptrend[pi].m);
   const wi=windCls(x.wind); if(wi!=null) l+=Math.log(F.wind[wi].m);
@@ -61,7 +105,7 @@ function score(model,x){
 /* day = ημέρα του PF.getForecast (με day.f, day.rise, day.set). Επιστρέφει {best,win,hours} μόνο για ασφαλείς ώρες φωτός. */
 function day(model,d,nowHourKey){
   if(!model||!model.ready) return null;
-  const hours=d.hours.map(h=>({t:h.t,hr:h.hr,safe:h.safe,score:score(model,{hr:h.hr,f:d.f,ptrend:h.ptrend,wind:h.wind})}));
+  const hours=d.hours.map(h=>({t:h.t,hr:h.hr,safe:h.safe,score:score(model,{hr:h.hr,rise:d.rise,set:d.set,f:d.f,ptrend:h.ptrend,wind:h.wind})}));
   const dl=h=>{const t=h.hr*60+30; return d.rise==null||(t>=d.rise-60&&t<=d.set+60);};
   const cand=hours.filter(h=>h.safe&&dl(h)&&(!nowHourKey||h.t>=nowHourKey));
   if(!cand.length) return {best:0,win:null,hours,safe:false};
@@ -70,6 +114,17 @@ function day(model,d,nowHourKey){
   const win=groups.sort((a,b)=>(b.e-b.s)-(a.e-a.s))[0]||null;
   return {best,win,hours,safe:true};
 }
-g.PP={build,score,day,sessionsOf,moonOf,NEED,biteMs};
+/* διαστήματα πλεύσης από μια διαδρομή GPS με χρόνους [[lat,lon,ms],…]: ταχύτητα πάνω από MOVE_KN για τουλάχιστον 2 λεπτά */
+function movingFrom(pts){
+  if(!Array.isArray(pts)||pts.length<2) return [];
+  const R=6371000, r=Math.PI/180, d=(a,b)=>{ const dLa=(b[0]-a[0])*r, dLo=(b[1]-a[1])*r, x=Math.sin(dLa/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dLo/2)**2; return 2*R*Math.asin(Math.min(1,Math.sqrt(x))); };
+  const out=[]; let cur=null;
+  for(let i=1;i<pts.length;i++){ const a=pts[i-1], b=pts[i], dt=(b[2]-a[2])/1000; if(!(dt>0)) continue;
+    const kn=d(a,b)/dt*1.94384, fast=kn>=MOVE_KN&&dt<=30*60;
+    if(fast){ if(cur&&a[2]-cur[1]<=3*60000) cur[1]=b[2]; else { cur=[a[2],b[2]]; out.push(cur); } } }
+  return out.filter(m=>m[1]-m[0]>=2*60000);
+}
+const LIGHT_EL=['Νύχτα','Αυγή','Πρωί','Μεσημέρι','Απόγευμα','Σούρουπο'], LIGHT_EN=['Night','Dawn','Morning','Midday','Afternoon','Dusk'];
+g.PP={build,score,day,sessionsOf,moonOf,NEED,ADV,biteMs,phaseOf,phaseAt,movingFrom,validate,prepare,LIGHT_EL,LIGHT_EN,MOVE_KN};
 if(typeof module!=='undefined') module.exports=g.PP;
 })(typeof window!=='undefined'?window:globalThis);

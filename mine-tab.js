@@ -7,12 +7,12 @@ var T=function(el,en){ return EN?en:el; };
 var last={place:null,fc:null}, seg='gen';
 var DAYS=EN?['Sun','Mon','Tue','Wed','Thu','Fri','Sat']:['Κυρ','Δευ','Τρί','Τετ','Πέμ','Παρ','Σάβ'];
 var LAB={
-  block:function(i){ return pad(i*3)+'–'+pad((i*3+3)%24); },
+  block:function(i){ return (EN?PP.LIGHT_EN:PP.LIGHT_EL)[i]; }, /* v31z365: φως, σε σχέση με ανατολή/δύση */
   moon:function(i){ return [T('Νέα σελήνη','New moon'),T('Α΄ τέταρτο','First quarter'),T('Πανσέληνος','Full moon'),T('Δ΄ τέταρτο','Last quarter')][i]; },
   ptrend:function(i){ return [T('Πέφτει απότομα','Falling fast'),T('Πέφτει αργά','Falling slowly'),T('Σταθερή','Steady'),T('Ανεβαίνει','Rising')][i]; },
   wind:function(i){ return [T('Ήπιος (έως 3 Bft)','Light (up to 3 Bft)'),T('Μέτριος (3–4 Bft)','Moderate (3–4 Bft)'),T('Δυνατός (5+ Bft)','Strong (5+ Bft)')][i]; }
 };
-var TITLE={block:T('Ώρα της ημέρας','Time of day'),moon:T('Φεγγάρι','Moon'),ptrend:T('Τάση πίεσης','Pressure trend'),wind:T('Άνεμος','Wind')};
+var TITLE={block:T('Φως (ανατολή/δύση)','Light (sunrise/sunset)'),moon:T('Φεγγάρι','Moon'),ptrend:T('Τάση πίεσης','Pressure trend'),wind:T('Άνεμος','Wind')};
 function model(){ return PP.build(C.Store.get('trips'),C.Store.act(),{utcMin:C.utcMin(),misses:(C.Store.misses?C.Store.misses():[])}); }
 function pct(v,n){ return Math.max(0,Math.min(100,Math.round(v/n*100))); }
 function prog(label,v,n,unit){
@@ -23,6 +23,12 @@ function statusCard(m){
   c.append(h('h3',{text:T('Η προσωπική πρόγνωση','Your personal forecast')}));
   c.append(h('p',{class:'note',text:T('Μαθαίνει από τις εξόδους σου (ώρες που ψάρευες) και από όσα έπιασες, όχι μόνο από τα τσιμπήματα. Χωρίς τις ώρες που δεν έπιασες δεν μπορεί να ξέρει τι δουλεύει.','It learns from your trips (hours fished) and what you caught, not just the bites. Without the hours when you caught nothing it cannot know what works.')}));
   c.append(prog(T('Ώρες ψαρέματος','Hours fished'),p.hours,N.hours,' h'),prog(T('Έξοδοι','Trips'),p.sessions,N.sessions),prog(T('Τσιμπήματα','Bites'),p.catches,N.catches));
+  /* v31z365: χρόνος πλεύσης που δεν μέτρησε, έλεγχος σε εξόδους που δεν είδε, και πότε έχει νόημα πιο προχωρημένη ανάλυση */
+  if(p.moving>0.05) c.append(h('p',{class:'note',style:'margin:8px 0 0',text:T('Δεν μέτρησαν ως ψάρεμα ','Not counted as fishing: ')+(Math.round(p.moving*10)/10)+T(' ώρες πλεύσης (GPS πάνω από '+PP.MOVE_KN+' κόμβους). Το τρόλινγκ κάτω από αυτή την ταχύτητα μετρά.',' h of travel (GPS above '+PP.MOVE_KN+' kn). Trolling below that speed counts.')}));
+  if(m.ready){ var v=m.valid; c.append(h('p',{class:'note',style:'margin:8px 0 0;font-weight:600',text:!v?T('Έλεγχος: χρειάζονται τουλάχιστον 10 έξοδοι για να ελεγχθεί αν προβλέπει καλύτερα από τον μέσο όρο σου.','Check: at least 10 trips are needed to test whether it predicts better than your average.')
+    :v.gain>0?T('✓ Έλεγχος σε '+v.n+' εξόδους που δεν είδε: προβλέπει '+Math.round(v.gain*100)+'% καλύτερα από τον μέσο όρο σου. Χρησιμοποιείται στον βαθμό.','✓ Checked on '+v.n+' trips it had not seen: '+Math.round(v.gain*100)+'% better than your average. Used in the score.')
+    :T('✗ Έλεγχος σε '+v.n+' εξόδους που δεν είδε: δεν προβλέπει καλύτερα από τον μέσο όρο σου ακόμα, γι’ αυτό δεν αλλάζει τον βαθμό. Συνέχισε να καταγράφεις εξόδους.','✗ Checked on '+v.n+' trips it had not seen: not better than your average yet, so it does not change the score. Keep logging trips.')})); }
+  c.append(h('p',{class:'note',style:'margin:8px 0 0',text:m.advReady?T('📊 Έχεις '+p.sessions+' εξόδους: αρκετές για πιο προχωρημένη ανάλυση (Poisson regression, χωριστά ανά τεχνική και περιοχή). Ζήτα την όταν θέλεις.','📊 You have '+p.sessions+' trips: enough for a more advanced analysis (Poisson regression, separately per technique and area). Ask for it when you like.'):T('Πιο προχωρημένη ανάλυση (ανά τεχνική και περιοχή) θα έχει νόημα από '+PP.ADV.sessions+' εξόδους (τώρα '+p.sessions+').','A more advanced analysis (per technique and area) will make sense from '+PP.ADV.sessions+' trips (now '+p.sessions+').')}));
   c.append(h('p',{class:'note',style:'margin:8px 0 0',text:m.ready?T('Έτοιμη: υπάρχουν αρκετά δεδομένα. Παραμένει ενδεικτική και βελτιώνεται όσο προσθέτεις εξόδους.','Ready: there is enough data. It stays indicative and improves as you add trips.'):T('Δεν έχει αρκετά δεδομένα ακόμα. Ξεκίνα έξοδο με το «▶ Έξοδος» ή πρόσθεσε παλιές εξόδους παρακάτω.','Not enough data yet. Start a trip with “▶ Trip” or add past trips below.')}));
   return c;
 }

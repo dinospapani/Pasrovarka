@@ -26,7 +26,7 @@ function collect(){
     if(!b.species) return; var e=kbOf(b.species,b.latin), key=e?e.n:norm(b.species).replace(/\s*\(.*$/,'');
     var o=by[key]||(by[key]={key:key,kb:e,name:e?e.n:String(b.species).replace(/\s*\(.*$/,''),n:0,bites:[]});
     var ms=PP.biteMs(b,utc); o.n++; total++;
-    o.bites.push({b:b,hr:b.time?+b.time.slice(0,2):null,moon:ms!=null?PP.moonOf(ms):null,month:b.date?+b.date.slice(5,7)-1:null,pt:PTS.indexOf(b.ptrend),w:windCls(b.wind),tide:b.tide||null,sst:b.sst,tech:b.tech||'',bait:b.bait||'',depth:b.depth,lat:b.lat,lon:b.lon,kg:+b.kg||0});
+    o.bites.push({b:b,ph:(ms!=null?PP.phaseAt(ms,b.lat,b.lon,utc):null),hr:b.time?+b.time.slice(0,2):null,moon:ms!=null?PP.moonOf(ms):null,month:b.date?+b.date.slice(5,7)-1:null,pt:PTS.indexOf(b.ptrend),w:windCls(b.wind),tide:b.tide||null,sst:b.sst,tech:b.tech||'',bait:b.bait||'',depth:b.depth,lat:b.lat,lon:b.lon,kg:+b.kg||0});
   });
   /* Δεδομένα φίλου: ξεχωριστά, χωρίς χρόνο προσπάθειας, μόνο ως εποχιακή ένδειξη. */
   var ext={}; try{ ((window.PsaroExt&&window.PsaroExt.use())||[]).forEach(function(r){ if(!r.sp) return; var e=kbOf(r.sp,''), key=e?e.n:norm(r.sp).replace(/\s*\(.*$/,''); var o=ext[key]||(ext[key]={n:0,m:[0,0,0,0,0,0,0,0,0,0,0,0]}); o.n++; if(r.month!=null) o.m[r.month]++; }); }catch(e){}
@@ -42,7 +42,7 @@ function dataL(D,o,x){
   if(!D.H||D.H<2||!o||o.n<2) return 0;
   var F=D.model.factors, r=o.n/D.H, L=0;
   function lv(k,i,get){ if(i==null||i<0||!F[k][i]) return; var c=0; o.bites.forEach(function(q){ if(get(q)===i) c++; }); var m=((c+K*r)/(F[k][i].h+K))/r; L+=Math.log(m); }
-  lv('block',Math.floor(x.hr/3),function(q){ return q.hr==null?null:Math.floor(q.hr/3); });
+  lv('block',PP.phaseOf(x.hr*60+30,x.rise,x.set),function(q){ return q.ph; }); /* v31z365: φως, όχι ρολόι */
   lv('moon',x.moon,function(q){ return q.moon; });
   lv('ptrend',PTS.indexOf(x.pt),function(q){ return q.pt; });
   lv('wind',x.wc,function(q){ return q.w; });
@@ -98,7 +98,7 @@ function slotX(){
   var d=f.days[Math.min(sel.day,f.days.length-1)], hr=sel.hr;
   var hs=d.hours.filter(function(q){ return q.hr===hr; })[0]||d.hours[0]; if(!hs) return null;
   var wx=d.wx||{};
-  return {d:d,h:hs,x:{hr:hs.hr,month:+d.date.slice(5,7)-1,moon:Math.floor(d.f*4+0.5)%4,pt:hs.ptrend,wc:windCls(hs.wind),sst:wx.sst!=null?wx.sst:null,wind:hs.wind,wave:hs.wave,tide:hs.tide||null}};
+  return {d:d,h:hs,x:{rise:d.rise,set:d.set,hr:hs.hr,month:+d.date.slice(5,7)-1,moon:Math.floor(d.f*4+0.5)%4,pt:hs.ptrend,wc:windCls(hs.wind),sst:wx.sst!=null?wx.sst:null,wind:hs.wind,wave:hs.wave,tide:hs.tide||null}};
 }
 function defaultHr(f){
   if(!f||!f.nowLocal) return 17; var n=+f.nowLocal.slice(11,13); return sel.day===0?Math.min(23,n+1):17;
@@ -187,7 +187,7 @@ function whenWhere(D){
     f.days.forEach(function(d){
       var wx=d.wx||{}, base={month:+d.date.slice(5,7)-1,moon:Math.floor(d.f*4+0.5)%4,sst:wx.sst!=null?wx.sst:null};
       var hrs=d.hours.filter(function(q){ return q.safe&&(d.date>f.nowLocal.slice(0,10)||q.t>=f.nowLocal.slice(0,13)+':00'); }).map(function(q){
-        var x={hr:q.hr,month:base.month,moon:base.moon,sst:base.sst,pt:q.ptrend,wc:windCls(q.wind)}; var L=lscore(D,e,o,x); return {hr:q.hr,L:L,idx:clamp(Math.round(50+38*Math.tanh(0.9*L)),5,95)}; });
+        var x={rise:d.rise,set:d.set,hr:q.hr,month:base.month,moon:base.moon,sst:base.sst,pt:q.ptrend,wc:windCls(q.wind)}; var L=lscore(D,e,o,x); return {hr:q.hr,L:L,idx:clamp(Math.round(50+38*Math.tanh(0.9*L)),5,95)}; });
       if(!hrs.length) return; var best=Math.max.apply(null,hrs.map(function(q){ return q.idx; })), thr=best-6, g=[],cur=null;
       hrs.forEach(function(q){ if(q.idx>=thr){ if(cur&&cur.e===q.hr-1) cur.e=q.hr; else { cur={s:q.hr,e:q.hr}; g.push(cur); } } });
       var win=g.sort(function(a,b){ return (b.e-b.s)-(a.e-a.s); })[0]; res.push({d:d,best:best,win:win});
@@ -201,8 +201,8 @@ function whenWhere(D){
   /* συνθήκες που δουλεύουν */
   if(o&&o.n>=4&&D.H>=2){
     var F=D.model.factors, r0=o.n/D.H, lines=[];
-    var LB={block:function(i){ return pad(i*3)+'–'+pad((i*3+3)%24); },moon:function(i){ return MOON[i]; },ptrend:function(i){ return PTL[PTS[i]]; },wind:function(i){ return [T('ήπιος άνεμος','light wind'),T('μέτριος άνεμος','moderate wind'),T('δυνατός άνεμος','strong wind')][i]; }};
-    var G={block:function(q){ return q.hr==null?null:Math.floor(q.hr/3); },moon:function(q){ return q.moon; },ptrend:function(q){ return q.pt; },wind:function(q){ return q.w; }};
+    var LB={block:function(i){ return (EN?PP.LIGHT_EN:PP.LIGHT_EL)[i]; },moon:function(i){ return MOON[i]; },ptrend:function(i){ return PTL[PTS[i]]; },wind:function(i){ return [T('ήπιος άνεμος','light wind'),T('μέτριος άνεμος','moderate wind'),T('δυνατός άνεμος','strong wind')][i]; }};
+    var G={block:function(q){ return q.ph; },moon:function(q){ return q.moon; },ptrend:function(q){ return q.pt; },wind:function(q){ return q.w; }};
     Object.keys(G).forEach(function(k){ var best=null; F[k].forEach(function(fx,i){ var cnt=0; o.bites.forEach(function(q){ if(G[k](q)===i) cnt++; }); if(!fx.h||cnt<2) return; var m=((cnt+K*r0)/(fx.h+K))/r0; if(m>=1.25&&(!best||m>best.m)) best={i:i,m:m}; }); if(best) lines.push(LB[k](best.i)); });
     if(lines.length){ c.append(h('div',{class:'label',style:'margin-top:12px',text:T('Οι συνθήκες που σου δουλεύουν','Conditions that work for you')})); c.append(h('p',{style:'margin:4px 0 0',text:lines.join(' · ')})); }
   }
