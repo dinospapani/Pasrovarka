@@ -158,9 +158,12 @@ function decorateTrips(){
   var trips; try{ trips=C.Store.get('trips'); }catch(e){ return; }
   Array.prototype.forEach.call(L.querySelectorAll('.item[data-tid]'),function(item){
     var old=item.querySelector('.nbxd'); var tr=trips.find(function(t){ return t.id===item.dataset.tid; }); if(!tr||!tr.date) return;
-    var arr=forDay(tr.date); if(old&&old.dataset.n===String(arr.length)) return; if(old) old.remove(); if(!arr.length) return;
+    var arr=forDay(tr.date), inTrip=!!(tr.startMs&&tr.endMs&&tr.endMs>tr.startMs);
+    /* v31z370: μόνο όσες ήρθαν μέσα στις ώρες της εξόδου (με 30′ περιθώριο πριν την έναρξη) */
+    if(inTrip) arr=arr.filter(function(x){ var t=+new Date(x.at); return !isNaN(t)&&t>=tr.startMs-1800000&&t<=tr.endMs; });
+    if(old&&old.dataset.n===String(arr.length)) return; if(old) old.remove(); if(!arr.length) return;
     var d=el('details','trdet nbxd'); d.dataset.n=String(arr.length);
-    d.append(el('summary',null,'🔔 '+T('Ειδοποιήσεις εκείνης της ημέρας','Alerts that day')+' ('+arr.length+')'));
+    d.append(el('summary',null,'🔔 '+(inTrip?T('Ειδοποιήσεις στη διάρκεια της εξόδου','Alerts during the trip'):T('Ειδοποιήσεις εκείνης της ημέρας','Alerts that day'))+' ('+arr.length+')'));
     arr.slice().reverse().forEach(function(x){ var r=el('div','nbr'); var b=el('b',null,hmOf(x.at)+' · '+x.title); r.append(b,document.createElement('br'),document.createTextNode(x.full||x.body||'')); d.append(r); });
     var host=item.firstElementChild||item; host.append(d);
   });

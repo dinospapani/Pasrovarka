@@ -354,11 +354,7 @@ function importShare(){
 })();
 setTimeout(importShare,1500); window.addEventListener('hashchange',function(){ setTimeout(importShare,300); });
 
-(window.PsaroSeaRows=window.PsaroSeaRows||[]).push(function(){
-  var r=el('div','sprow'), x=el('div','sptx'); x.append(el('b','',T('Γλώσσα φωνητικής καταγραφής','Voice input language')),el('span','',T('Για τα ονόματα των ψαριών. Τώρα: ','For fish names. Now: ')+(vlang()==='en-US'?'English':'Ελληνικά')));
-  var bt=el('button','spb acc',vlang()==='en-US'?'Ελληνικά':'English'); bt.type='button'; bt.addEventListener('click',function(){ C.lsSet('psaro-vlang',vlang()==='en-US'?'el-GR':'en-US'); x.lastChild.textContent=T('Για τα ονόματα των ψαριών. Τώρα: ','For fish names. Now: ')+(vlang()==='en-US'?'English':'Ελληνικά'); bt.textContent=vlang()==='en-US'?'Ελληνικά':'English'; });
-  r.append(x,bt); r.dataset.k='voice'; return r;
-});
+/* v31z370: η γλώσσα φωνητικής καταγραφής ρυθμίζεται μόνο στο Profile › Τύπος ψαρέματος (ήταν διπλή εδώ). */
 /* v31z351: «Ψάρια/Σημεία στον χάρτη» υπάρχουν μόνο στα Στρώματα (ήταν διπλά εδώ). */
 window.PsaroCards={fish:function(b){ preview(fishCard(b),'bitecast-fish.png',''); },trip:function(t){ preview(tripCard(t),'bitecast-trip.png',''); },year:function(y){ preview(yearCard(y),'bitecast-'+y+'.png',''); },sum:openSum,parse:parseVoice,yearData:yearData,enc:enc,dec:dec,importShare:importShare};
 window.PsaroVoice={parse:parseVoice};

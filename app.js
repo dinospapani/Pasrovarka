@@ -605,6 +605,10 @@ function startPick(mode){
   pick=mode; $('mapHint').hidden=false; document.body.classList.add('picking');
   $('mapHintTxt').textContent=mode==='fc'?'Πάτα στον χάρτη για πρόγνωση σε αυτό το σημείο':mode==='today'?'Πάτα στον χάρτη για τον καιρό σε αυτό το σημείο':mode==='place'?(window.LANG==='en'?'Tap the map to choose where you will fish':'Πάτα στον χάρτη εκεί που θα ψαρέψεις'):mode==='spot'?'Πάτα στον χάρτη για το νέο σημείο':'Πάτα στον χάρτη εκεί που έπιασες';
   switchTab('map');
+  /* v31z370: ο χάρτης ανοίγει στο σημείο της τρέχουσας πρόγνωσης (ή στη θέση σου), όχι όπου είχε μείνει */
+  setTimeout(()=>{ try{ const c=window.PsaroCore&&window.PsaroCore.getCond&&window.PsaroCore.getCond(), N=window.PsaroNav;
+    const ll=c&&c.lat!=null?[+c.lat,+c.lon]:(N&&N.lat!=null?[+N.lat,+N.lon]:null);
+    if(map&&ll){ map.invalidateSize(); map.setView(ll,Math.max(10,Math.min(map.getZoom(),13))); } }catch(e){} },120);
 }
 function endPick(){ pick=null; $('mapHint').hidden=true; document.body.classList.remove('picking'); }
 /* v31z351: χρώμα ζώνης ανάλογα με τον περιορισμό (από το κείμενο του διατάγματος).
@@ -2217,6 +2221,9 @@ async function autoDepth(silent){
   b.style.margin='6px 0'; b.addEventListener('click',()=>autoDepth(false));
   lab.parentNode.insertBefore(b,lab.nextSibling);
   window.addEventListener('psaro-needdepth',()=>{ if(inp.value==='') autoDepth(true); });
+  /* v31z370: το βάθος συμπληρώνεται μόνο του όταν ανοίγει η φόρμα ψαριού (το κουμπί δεν χρειάζεται πια) */
+  b.hidden=true;
+  const sh=$('sheet'); if(sh) new MutationObserver(()=>{ if(!sh.hidden&&inp.value==='') setTimeout(()=>{ if(inp.value==='') autoDepth(true); },400); }).observe(sh,{attributes:true,attributeFilter:['hidden']});
 })();
 
 Object.assign(window.PsaroCore,{resizeImage:resizeImage,biteMs:biteMs,quick:()=>quickRec(false),quickMiss:()=>quickRec(true),map:()=>map,h:h,$:$,fmt:fmt,pad:pad,nicosiaToday:nicosiaToday,nicosiaNowMin:nicosiaNowMin,getPosition:getPosition,getCond:()=>cond,depthAt:(la,lo)=>depthLookup(la,lo),getViewCond:()=>viewCond||cond,compute:()=>compute(),showOnMap:showOnMap,lsGet:lsGet,lsSet:lsSet,switchTab:switchTab,utcMin:()=>utcOff()});

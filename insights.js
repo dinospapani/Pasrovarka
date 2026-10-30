@@ -184,7 +184,7 @@ function maintUI(box,rr){
   M.items.forEach(function(it){
     var s=mstat(it), r=el('div','mtrow '+s.lv), x=el('div','sptx'); x.append(el('b','',it.name),el('span','',s.tx));
     var b=btn(T('Έγινε','Done'),'acc',function(){ it.last={h:engH(),t:Date.now()}; delete M.sent[it.id]; msave(); render(); });
-    var d=el('details','mtdet'); d.append(el('summary','',T('Διάστημα','Interval')));
+    var d=el('details','mtdet'); var iv=[]; if(it.h) iv.push(it.h+' h'); if(it.mo) iv.push(it.mo+T(' μήνες',' months')); d.append(el('summary','',T('Διάστημα: ','Interval: ')+(iv.length?iv.join(T(' ή ',' or ')):T('δεν έχει οριστεί','not set'))));
     var h=el('input','sminp'); h.type='number'; h.min='0'; h.value=it.h||''; h.placeholder='h'; h.addEventListener('change',function(){ it.h=+h.value||0; msave(); render(); });
     var m=el('input','sminp'); m.type='number'; m.min='0'; m.value=it.mo||''; m.placeholder=T('μήνες','months'); m.addEventListener('change',function(){ it.mo=+m.value||0; msave(); render(); });
     var del=btn(T('Διαγραφή','Delete'),'',function(){ M.items=M.items.filter(function(q){ return q!==it; }); msave(); render(); });

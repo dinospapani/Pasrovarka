@@ -98,7 +98,7 @@ function slotX(){
   var d=f.days[Math.min(sel.day,f.days.length-1)], hr=sel.hr;
   var hs=d.hours.filter(function(q){ return q.hr===hr; })[0]||d.hours[0]; if(!hs) return null;
   var wx=d.wx||{};
-  return {d:d,h:hs,x:{rise:d.rise,set:d.set,hr:hs.hr,month:+d.date.slice(5,7)-1,moon:Math.floor(d.f*4+0.5)%4,pt:hs.ptrend,wc:windCls(hs.wind),sst:wx.sst!=null?wx.sst:null,wind:hs.wind,wave:hs.wave,tide:hs.tide||null}};
+  return {d:d,h:hs,x:{rise:d.rise,set:d.set,hr:hs.hr,month:+d.date.slice(5,7)-1,moon:Math.floor(d.f*4+0.5)%4,mf:d.f,pt:hs.ptrend,wc:windCls(hs.wind),sst:wx.sst!=null?wx.sst:null,wind:hs.wind,wave:hs.wave,tide:hs.tide||null}};
 }
 function defaultHr(f){
   if(!f||!f.nowLocal) return 17; var n=+f.nowLocal.slice(11,13); return sel.day===0?Math.min(23,n+1):17;
@@ -118,7 +118,10 @@ function condLine(S){
   if(x.wave!=null) p.push(T('κύμα ','wave ')+x.wave.toFixed(1)+' m');
   p.push(T('πίεση ','pressure ')+(PTL[x.pt]||'–'));
   if(x.sst!=null) p.push(T('θάλασσα ','sea ')+Math.round(x.sst)+'°C');
-  p.push(MOON[x.moon]);
+  /* v31z370: η ετικέτα από την ακριβή φάση (8 φάσεις + φωτισμός), όχι από την ομάδα των 4 που χρησιμοποιεί η στατιστική */
+  if(x.mf!=null){ var PH8=[T('Νέα σελήνη','New moon'),T('Αύξουσα μηνίσκος','Waxing crescent'),T('Α΄ τέταρτο','First quarter'),T('Αύξουσα κυρτή','Waxing gibbous'),T('Πανσέληνος','Full moon'),T('Φθίνουσα κυρτή','Waning gibbous'),T('Δ΄ τέταρτο','Last quarter'),T('Φθίνουσα μηνίσκος','Waning crescent')];
+    p.push(T('σελήνη ','moon ')+PH8[Math.floor(x.mf*8+0.5)%8].toLowerCase()+' '+Math.round((1-Math.cos(2*Math.PI*x.mf))/2*100)+'%'); }
+  else p.push(MOON[x.moon]);
   return p.join(' · ');
 }
 var KTR={'Βυθού':'Bottom fishing','Ζωντανό δόλωμα':'Live bait','Τρόλινγκ':'Trolling','Άλλο':'Other','γαρίδα':'shrimp','ζωντανή γαρίδα':'live shrimp','ζωντανή σαρδέλα':'live sardine','ζωντανό καλαμάρι':'live squid','ζωντανό σκαθάρι':'live beetle','ζωντανό ψαράκι':'live small fish','κάβουρας':'crab','καλαμάρι':'squid','καλαμαριέρα':'squid jig','καλαμαριέρα (ζαλάκι)':'squid jig (zalaki)','κολιός':'chub mackerel','μικρό ψάρι':'small fish','μπουκιά':'chum ball','μύδι':'mussel','πάστα':'paste','πράσινα φύκια':'green algae','σαμπίκι':'sabiki','σαρδέλα':'sardine','σκουλήκι':'worm','σουπιά':'cuttlefish','τεχνητό':'artificial lure','ψωμί':'bread'};

@@ -32,7 +32,8 @@ function compute(){
   var extra=0, extraKg=0;
   trips.forEach(function(t){ if((!t.startMs||t.manual)&&t.date&&!bd[t.date]){ extra+=+t.count||0; extraKg+=+t.kg||0; } });
   kg+=extraKg;
-  var c=bites.length+extra, m=miss.length;
+  var nb=0; bites.forEach(function(b){ nb+=C.bc?C.bc(b):1; });   /* v31z370: ψάρια, όχι καταχωρίσεις (μια καταχώριση μπορεί να έχει πολλά ψάρια) */
+  var c=nb+extra, m=miss.length;
   return {c:c,m:m,succ:m>0?Math.round(c/(c+m)*100):null,ms:ms,days:Object.keys(days).length,sp:Object.keys(sp).length,kg:Math.round(kg*10)/10,
     rate:ms>=1800000?Math.round(sessCatch/(ms/3600000)*10)/10:null,big:big};
 }
