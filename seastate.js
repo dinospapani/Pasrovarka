@@ -150,7 +150,7 @@ function loadRegion(bounds){
   if(REG&&covers(REG,bounds)&&Date.now()-REG.at<3600000&&!REG.retry) return REG.p;
   /* v31z388: οι τελευταίες περιοχές μένουν στη μνήμη, ώστε πήγαινε-έλα στον χάρτη να μην ξαναζητά από το Open-Meteo */
   var old=(window.__ndSeaRegs||[]).filter(function(x){ return covers(x,bounds)&&Date.now()-x.at<3600000&&!x.retry; })[0]; if(old){ REG=old; return old.p; }
-  var b=regionFor(bounds), R={b:b,at:Date.now(),wind:null,waves:[]}, NP=lattice(b,25), WP=lattice(b,49);
+  var b=regionFor(bounds), R={b:b,at:Date.now(),t0:Date.now(),done:false,wind:null,waves:[]}, NP=lattice(b,25), WP=lattice(b,49);
   var pw=getJ('https://api.open-meteo.com/v1/forecast?'+latQ(NP)+'&hourly=wind_speed_10m,wind_direction_10m&wind_speed_unit=kn&past_hours=24&forecast_hours=49&timezone=UTC')
     .then(function(j){ var a=arrOf(j); if(!a||a.length!==NP.nla*NP.nlo||!a[0].hourly) return; R.wind={L:NP,t:a[0].hourly.time,sp:a.map(function(p){ return (p.hourly&&p.hourly.wind_speed_10m)||[]; }),dir:a.map(function(p){ return (p.hourly&&p.hourly.wind_direction_10m)||[]; })}; })
     .catch(function(){ R.retry=true; });
@@ -179,7 +179,7 @@ function loadRegion(bounds){
   /* ένα-ένα τα μοντέλα, για να μη χτυπάμε το όριο αιτημάτων ανά λεπτό */
   /* v31z386: το τρίτο μοντέλο (EWAM) ζητιέται μόνο αν δεν φόρτωσαν τα δύο πρώτα, για να μη χτυπάμε το όριο αιτημάτων ανά λεπτό (HTTP 429) */
   var pm=WAVE_MODELS.reduce(function(pr,m,i){ return pr.then(function(){ if(i>=2&&R.waves.length>=2) return; return waveModel(m[0],m[1]); }); },Promise.resolve());
-  R.p=Promise.all([pw,pm]).then(function(){ if(!R.waves.length) return waveModel('',T('Open-Meteo (αυτόματο)','Open-Meteo (auto)')); }).then(function(){ if(R.retry) R.at=Date.now()-3300000; R.retry=false; R.waves.sort(function(x,y){ return WAVE_MODELS.findIndex(function(m){ return m[0]===x.id; })-WAVE_MODELS.findIndex(function(m){ return m[0]===y.id; }); }); return R; });
+  R.p=Promise.all([pw,pm]).then(function(){ if(!R.waves.length) return waveModel('',T('Open-Meteo (αυτόματο)','Open-Meteo (auto)')); }).then(function(){ if(R.retry) R.at=Date.now()-3300000; R.retry=false; R.waves.sort(function(x,y){ return WAVE_MODELS.findIndex(function(m){ return m[0]===x.id; })-WAVE_MODELS.findIndex(function(m){ return m[0]===y.id; }); }); R.done=true; return R; },function(){ R.done=true; return R; });
   REG=R; var rs=window.__ndSeaRegs=(window.__ndSeaRegs||[]).filter(function(x){ return x!==R; }); rs.unshift(R); if(rs.length>4) rs.length=4; return R.p;
 }
 /* IDW σε κόμβους πλέγματος με τιμή */
@@ -380,6 +380,8 @@ function draw(){
   if(pend.length){ status(T('Φόρτωση περιοχής…','Loading area…')); Promise.all(pend.map(loadTile)).then(later); if(vt.every(function(k){ return !TL[k]||TL[k].st!=='ok'; })) return; }
   var W=window.PsaroWindMap; if(!W||!W.sample){ status(T('Ο χάρτης ανέμου δεν είναι διαθέσιμος.','The wind map is not available.')); return; }
   var bd=map.getBounds(); if(!covers(REG,bd)||(REG&&Date.now()-REG.at>3600000)) loadRegion(bd).then(function(){ PREP=null; later(); });
+  /* v31z389: μέχρι να έρθουν τα μοντέλα κύματος (έως ~20″) δεν ζωγραφίζεται προσωρινή εικόνα, για να μην «πηδάει» ο χάρτης από τη μία στην άλλη */
+  if(REG&&!REG.done&&!REG.waves.length&&Date.now()-REG.t0<20000){ status(T('Φόρτωση μοντέλων κύματος…','Loading wave models…')); setTimeout(later,1500); return; }
   var P=prepNow(), X=window.PsaroExposure, land=(X&&X.isLand)?X.isLand:null;
   var s=bd.getSouth(), n=bd.getNorth(), w=bd.getWest(), e=bd.getEast(), M=4;
   var r0=Math.floor((LAT_TOP-n)/STEP)-M, r1=Math.floor((LAT_TOP-s)/STEP)+M, c0=Math.floor((w-LON_LEFT)/STEP)-M, c1=Math.floor((e-LON_LEFT)/STEP)+M;
