@@ -1523,7 +1523,7 @@ box.insertBefore(tools,bar.nextSibling);
     var c=C.getCond&&C.getCond()||{}, kn=function(v){ return v==null?null:v/1.852; };
     var wv=c.wave, wd=c.wind;
     var vis=null; if(wv!=null||wd!=null){ var sc=(wv||0)*2+(wd||0)/15; vis=sc<0.8?T('Καλή','Good'):sc<1.6?T('Μέτρια','Fair'):T('Κακή','Poor'); }
-    var tiles=[[wv!=null?(PU&&PU.wave?PU.wave(wv):nf(wv,1)+' m'):'–',T('κύμα','waves')],[c.cur!=null?nf(kn(c.cur),1)+' kn':'–',T('ρεύμα','current')],[c.sst!=null?Math.round(c.sst)+'°':'–',T('νερό','water')],[vis||'–',T('ορατότητα*','visibility*')]];
+    var tiles=[[wv!=null?(PU&&PU.wave?PU.wave(wv):nf(wv,1)+' m'):'–',T('κύμα','waves')],[c.cur!=null?nf(kn(c.cur),1)+' kn':'–',T('ρεύμα','current')],[vis||'–',T('ορατότητα*','visibility*')]];
     var sig=JSON.stringify(tiles); if(w.dataset.sig!==sig){ w.dataset.sig=sig; w.replaceChildren(); var g=E('div','ndspg'); tiles.forEach(function(t){ var d=E('div',''); d.append(E('b','',t[0]),E('span','',t[1])); g.appendChild(d); }); w.append(g,E('small','',T('* εκτίμηση από κύμα και άνεμο','* estimate from waves and wind'))); }
     var live=document.querySelector('.ndlive:not([hidden])'), r0=box.getBoundingClientRect();
     if(live){ var r=live.getBoundingClientRect(); w.style.top=Math.round(r.bottom-r0.top+8)+'px'; }

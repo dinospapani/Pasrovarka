@@ -1261,7 +1261,7 @@ body.ndphone #pSettings>*:not(.ndphsel){display:none!important}
 /* Ψαροντούφεκο στην έξοδο */
 .ndspbar{display:none}
 body.nd.ontrip .ndspbar:not([hidden]){position:absolute;left:12px;right:12px;top:130px;z-index:825;display:flex;flex-direction:column;gap:4px;padding:8px 10px;border-radius:16px;background:color-mix(in srgb,#0e1c26 88%,transparent);color:#e8eef2}
-.ndspg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));text-align:center;gap:4px}
+.ndspg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));text-align:center;gap:4px}
 .ndspg div{display:flex;flex-direction:column}.ndspg b{font-size:15px}.ndspg span{font-size:11px;color:#93a4b1}
 .ndspbar small{font-size:10.5px;color:#93a4b1}
 .ndbuoy,.nddivep{display:none}
