@@ -1064,3 +1064,81 @@ box.insertBefore(tools,bar.nextSibling);
   window.addEventListener('psaro-fprof',function(){ setTimeout(all,100); });
   var n=0, iv=setInterval(function(){ n++; if(document.getElementById('sfForm')&&document.getElementById('stats')){ clearInterval(iv); init(); } else if(n>40) clearInterval(iv); },500);
 })();
+
+/* v31z368 · Έξοδος: MOB και SOS σε ομάδα «Κίνδυνος» πάνω αριστερά, μακριά από τα κουμπιά ψαριού, και τα δύο με παρατεταμένο πάτημα.
+   «Χάθηκε» σε ουδέτερο χρώμα. Ψαροντούφεκο: «Ψάρι / Χαμένη βολή / Είδα». */
+(function(){
+  var EN=window.LANG==='en', T=function(el,en){ return EN?en:el; }, C=window.PsaroCore;
+  var $=function(i){ return document.getElementById(i); };
+  var HOLD=1500;
+  function prof(){ try{ return localStorage.getItem('psaro-fprof')||'boat'; }catch(e){ return 'boat'; } }
+  function trip(){ try{ return window.PsaroTrip&&window.PsaroTrip.state&&window.PsaroTrip.state(); }catch(e){ return null; } }
+  function holdify(b,fire,msg){
+    var tm=null, done=false;
+    function stop(){ clearTimeout(tm); tm=null; b.classList.remove('holding'); }
+    b.addEventListener('pointerdown',function(){ done=false; stop(); b.classList.add('holding'); tm=setTimeout(function(){ done=true; stop(); try{ navigator.vibrate&&navigator.vibrate([60,40,60]); }catch(e){} fire(); },HOLD); });
+    ['pointerup','pointerleave','pointercancel'].forEach(function(ev){ b.addEventListener(ev,function(){ if(tm){ stop(); if(ev==='pointerup'&&!done&&C&&C.toast) C.toast(msg); } }); });
+    b.addEventListener('contextmenu',function(e){ e.preventDefault(); });
+    b.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); fire(); } });
+  }
+  function danger(){
+    var box=document.querySelector('.mapbox'), mob=document.querySelector('.ndb.ndmob'), sos=document.querySelector('.ndb.ndsos');
+    if(!box||!mob||!sos||$('ndDanger')) return !!$('ndDanger');
+    /* SOS: αντικατάσταση με αντίγραφο χωρίς το απλό πάτημα, και ενεργοποίηση μόνο με κράτημα 1,5 δευτ. */
+    var s2=sos.cloneNode(true); sos.replaceWith(s2); sos=s2;
+    sos.setAttribute('aria-label',T('SOS: ειδοποίηση κινδύνου, κράτα πατημένο','SOS: distress alert, press and hold'));
+    holdify(sos,function(){ var x=$('sosBtn'); if(x) x.click(); },T('Κράτα πατημένο το SOS 1,5 δευτ.','Hold SOS for 1.5 s'));
+    var g=document.createElement('div'); g.id='ndDanger'; g.className='nddanger'; g.setAttribute('role','group'); g.setAttribute('aria-label',T('Κίνδυνος','Emergency'));
+    var h=document.createElement('span'); h.className='nddh'; h.textContent=T('ΚΙΝΔΥΝΟΣ','EMERGENCY'); g.appendChild(h);
+    [mob,sos].forEach(function(b){ b.classList.remove('ndfloat','ndfl','ndfr'); g.appendChild(b); });
+    var n=document.createElement('span'); n.className='nddn'; n.textContent=T('κράτα','hold'); g.appendChild(n);
+    box.appendChild(g); return true;
+  }
+  /* θέση: ακριβώς κάτω από τη λωρίδα της εξόδου (ή τη μπάρα καιρού) */
+  function place(){
+    var g=$('ndDanger'), box=document.querySelector('.mapbox'); if(!g||!box) return;
+    var r0=box.getBoundingClientRect(), y=0;
+    ['.ndlive:not([hidden])','.ndwx','.ndsearch'].some(function(q){ var e=document.querySelector(q); if(e&&e.offsetParent){ var r=e.getBoundingClientRect(); if(r.height){ y=r.bottom-r0.top; return true; } } return false; });
+    g.style.top=Math.max(80,Math.round(y+12))+'px';
+  }
+  /* Ψαροντούφεκο: «Είδα» (ψάρι που είδες αλλά δεν χτύπησες), με θέση και ώρα */
+  var SK='psaro-seen';
+  function seenAll(){ try{ return JSON.parse(localStorage.getItem(SK)||'[]')||[]; }catch(e){ return []; } }
+  function seenN(){ var s=trip(); if(!s||!s.start) return 0; return seenAll().filter(function(x){ return x.start===s.start; }).length; }
+  window.PsaroSeen={count:seenN,all:seenAll};
+  var EYE='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  function seenBtn(){
+    var w=$('fishBtns'); if(!w||$('fbSeen')) return;
+    var b=document.createElement('button'); b.type='button'; b.id='fbSeen'; b.className='fb fbs';
+    b.setAttribute('aria-label',T('Είδα ψάρι (χωρίς βολή)','Saw a fish (no shot)'));
+    b.innerHTML=EYE+'<b id="fbSeenN">0</b>';
+    b.addEventListener('click',function(){
+      var s=trip(); if(!s||!s.start) return; var N=window.PsaroNav, a=seenAll();
+      a.push({u:Date.now(),start:s.start,lat:N&&N.lat!=null?+N.lat.toFixed(5):null,lon:N&&N.lon!=null?+N.lon.toFixed(5):null});
+      if(a.length>2000) a=a.slice(-2000);
+      try{ localStorage.setItem(SK,JSON.stringify(a)); }catch(e){}
+      try{ navigator.vibrate&&navigator.vibrate(25); }catch(e){}
+      upd(); if(C&&C.toast) C.toast(T('Καταγράφηκε: είδα ψάρι','Logged: fish seen'));
+    });
+    var bc=$('fbCatch'); if(bc) w.insertBefore(b,bc); else w.appendChild(b);
+  }
+  /* ετικέτες κάτω από τα κουμπιά ψαριού, ανάλογα με τον τύπο ψαρέματος */
+  function cap(id,t){ var b=$(id); if(!b) return; var c=b.querySelector('.fbcap'); if(!c){ c=document.createElement('span'); c.className='fbcap'; b.appendChild(c); } if(c.textContent!==t) c.textContent=t; }
+  function upd(){
+    var sp=prof()==='spear';
+    if(sp) seenBtn();
+    var sb=$('fbSeen'); if(sb){ sb.hidden=!sp; var n=$('fbSeenN'); if(n) n.textContent=seenN(); }
+    cap('fbCatch',sp?T('Ψάρι','Fish'):T('Έπιασα','Caught'));
+    cap('fbMiss',sp?T('Χαμένη βολή','Missed shot'):T('Χάθηκε','Lost'));
+    cap('fbSeen',T('Είδα','Seen'));
+    var bc=$('fbCatch'), bm=$('fbMiss');
+    if(bc) bc.setAttribute('aria-label',sp?T('Ψάρι (κράτα για διαγραφή του τελευταίου)','Fish (hold to delete the last one)'):T('Έπιασα ψάρι (κράτα για διαγραφή του τελευταίου)','Caught a fish (hold to delete the last one)'));
+    if(bm) bm.setAttribute('aria-label',sp?T('Χαμένη βολή (κράτα για διαγραφή της τελευταίας)','Missed shot (hold to delete the last one)'):T('Τσίμπησε αλλά χάθηκε (κράτα για διαγραφή του τελευταίου)','Bite but lost (hold to delete the last one)'));
+    /* λωρίδα εξόδου: «στο νερό · 1 ψάρι · 3 είδα» */
+    var ls=document.querySelector('.ndlive:not([hidden]) .ndls>span:first-child');
+    if(sp&&ls){ var k=0; try{ k=window.PsaroTrip.counts().n||0; }catch(e){} var t=T('στο νερό · ','in water · ')+k+' '+(k===1?T('ψάρι','fish'):T('ψάρια','fish'))+' · '+seenN()+' '+T('είδα','seen'); if(ls.textContent!==t) ls.textContent=t; }
+    place();
+  }
+  var n=0, iv=setInterval(function(){ n++; if(danger()||n>60){ clearInterval(iv); upd(); } },500);
+  setInterval(upd,1000); window.addEventListener('resize',place); window.addEventListener('psaro-fprof',upd);
+})();
