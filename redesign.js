@@ -1338,6 +1338,9 @@ box.insertBefore(tools,bar.nextSibling);
   var n=0, iv=setInterval(function(){ n++; var pbtn=$('profBtn');
     if(pbtn&&build()){ clearInterval(iv);
       pbtn.addEventListener('click',function(){ setTimeout(showHome,0); });
+      /* v31z403: αν το Profile ανοίξει από αλλού (π.χ. μετά από ενημέρωση ή επαναφόρτωση), δείχνει τη λίστα και όχι την παλιά όψη με καρτέλες */
+      try{ var prf=$('profile'); if(prf){ var chk=function(){ if(!prf.hidden&&!document.body.classList.contains('ndphon')) setTimeout(function(){ if(!prf.hidden&&!document.body.classList.contains('ndphon')) showHome(); },60); };
+        new MutationObserver(chk).observe(prf,{attributes:true,attributeFilter:['hidden']}); chk(); } }catch(e){}
       window.addEventListener('psaro-pview',function(){ if(!home) return; inHome=false; home.hidden=true; back.hidden=false; });
       moveAlerts();
     } else if(n>40) clearInterval(iv); },500);
