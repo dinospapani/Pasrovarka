@@ -1016,7 +1016,7 @@ box.insertBefore(tools,bar.nextSibling);
     boat:[['Σωσίβια για όλους','Lifejackets for everyone'],['Φορτισμένο κινητό / VHF','Charged phone / VHF'],['Εφεδρικό καύσιμο','Spare fuel'],['Άγκυρα και σχοινί','Anchor and rope'],['Πυρσοί / φακός','Flares / torch'],['Φάρμακα και νερό','First aid and water']],
     shore:[['Παπούτσια με πρόσφυση','Non-slip shoes'],['Φορτισμένο κινητό','Charged phone'],['Έλεγχος κύματος στα βράχια','Check the swell on the rocks'],['Είπα σε κάποιον πού πάω','Told someone where I am going'],['Νερό και αντηλιακό','Water and sunscreen'],['Φακός','Torch']],
     lake:[['Φορτισμένο κινητό','Charged phone'],['Είπα σε κάποιον πού πάω','Told someone where I am going'],['Νερό και αντηλιακό','Water and sunscreen'],['Σωσίβιο αν βγαίνω με βάρκα','Lifejacket if on a boat'],['Έλεγξα τους κανονισμούς του φράγματος','Checked the dam rules']],
-    spear:[['Σημαδούρα / πλωτήρας με σημαία','Dive float with flag'],['Συνοδός ή ενημέρωση επαφής','Buddy or contact informed'],['Μαχαίρι','Knife'],['Ρολόι / χρονόμετρο','Watch / timer'],['Χωρίς υπεραερισμό, χωρίς μοναχική κατάδυση','No hyperventilation, never dive alone']]
+    spear:[['Άδεια ψαροντουφέκου σε ισχύ (λήγει 31/12)','Valid spearfishing licence (expires 31/12)'],['Μακριά από περιοχές κολύμβησης (κόκκινες σημαδούρες)','Away from swimming areas (red buoys)'],['Σημαδούρα / πλωτήρας με σημαία','Dive float with flag'],['Συνοδός ή ενημέρωση επαφής','Buddy or contact informed'],['Μαχαίρι','Knife'],['Ρολόι / χρονόμετρο','Watch / timer'],['Χωρίς υπεραερισμό, χωρίς μοναχική κατάδυση','No hyperventilation, never dive alone']]
   };
   function checklist(){
     var f=document.getElementById('sfForm'), b=document.getElementById('sfStart');
@@ -1043,7 +1043,7 @@ box.insertBefore(tools,bar.nextSibling);
     btn.onclick=function(){
       var now=Date.now(), lim=Math.max(20,+el.querySelector('#ndDl').value||90);
       tm.lim=lim;
-      if(!tm.on){ tm.on=true; if(tm.lastSurf) tm.surfInt=(now-tm.lastSurf)/1000; tm.t0=now; tm.warned=false; btn.textContent=T('▲ Επιφάνεια','▲ Surfaced'); }
+      if(!tm.on){ tm.on=true; try{ var st0=(window.PsaroTrip.state()||{}).start||0, dk='psaro-dives-'+st0; localStorage.setItem(dk,String((+localStorage.getItem(dk)||0)+1)); }catch(e){} if(tm.lastSurf) tm.surfInt=(now-tm.lastSurf)/1000; tm.t0=now; tm.warned=false; btn.textContent=T('▲ Επιφάνεια','▲ Surfaced'); }
       else { tm.on=false; tm.lastDive=(now-tm.t0)/1000; tm.lastSurf=now; btn.textContent=T('▼ Κατάδυση','▼ Dive'); }
       if(!tm.iv) tm.iv=setInterval(tick,500); tick();
     };
@@ -1417,8 +1417,9 @@ box.insertBefore(tools,bar.nextSibling);
   function insights(){
     var ls=$('l-stats'); if(!ls||ls.hidden||!C||!C.Store||insBusy) return; insBusy=true;
     try{
-      var allT=C.Store.get('trips')||[], trips=allT.filter(inR), bites=(C.Store.act?C.Store.act():C.Store.get('bites')).filter(inR), miss=(C.Store.misses?C.Store.misses():[]).filter(inR);
-      var sig=[trips.length,bites.length,miss.length,(window.PsaroRange&&JSON.stringify(window.PsaroRange.get&&window.PsaroRange.get('log')))||'',(C.lsGet&&C.lsGet('psaro-range-log',''))||''].join('|')+'|'+allT.length;
+      var fm=prof()==='spear'?'spear':'rod', ff=function(x){ return ((x&&x.prof)==='spear'?'spear':'rod')===fm; };
+      var allT=C.Store.get('trips')||[], trips=allT.filter(inR).filter(ff), bites=(C.Store.act?C.Store.act():C.Store.get('bites')).filter(inR).filter(ff), miss=(C.Store.misses?C.Store.misses():[]).filter(inR).filter(ff);
+      var sig=[fm,trips.length,bites.length,miss.length,(window.PsaroRange&&JSON.stringify(window.PsaroRange.get&&window.PsaroRange.get('log')))||'',(C.lsGet&&C.lsGet('psaro-range-log',''))||''].join('|')+'|'+allT.length;
       var box=$('ndIns'); if(box&&sig===insSig&&box.parentNode===ls) return; insSig=sig;
       if(!box){ box=E('div','ndins'); box.id='ndIns'; } if(box.parentNode!==ls||ls.firstChild!==box) ls.insertBefore(box,ls.firstChild);
       box.replaceChildren();
@@ -1426,8 +1427,8 @@ box.insertBefore(tools,bar.nextSibling);
       var fish=0, kg=0, sp={}; bites.forEach(function(b){ var n=C.bc?C.bc(b):1; fish+=n; kg+=b.rel?0:(+b.kg||0); var s=(b.species||'').trim(); if(s) sp[s]=(sp[s]||0)+n; });
       var m=miss.length, hrs=ms/3600000, rate=hrs>=0.5?sess/hrs:null;
       var k=E('div','ndikpi');
-      [[String(trips.length),T('έξοδοι','trips')+(hrs?' · '+nf(hrs,1)+T(' ώρες',' h'):'')],[String(fish),T('ψάρια','fish')+(kg?' · '+nf(kg,1)+' kg':'')],
-       [String(m),T('χάθηκαν','lost')+(fish+m?' · '+Math.round(fish/(fish+m)*100)+'% '+T('πιάστηκαν','landed'):'')],[rate==null?'–':nf(rate,2),T('ψάρια / ώρα','fish / hour')]].forEach(function(x){ var c=E('div','ndik'); c.append(E('b','',x[0]),E('span','',x[1])); k.appendChild(c); });
+      [[String(trips.length),T('έξοδοι','trips')+(hrs?' · '+nf(hrs,1)+(fm==='spear'?T(' ώρες στο νερό',' h in water'):T(' ώρες',' h')):'')],[String(fish),T('ψάρια','fish')+(kg?' · '+nf(kg,1)+' kg':'')],
+       [String(m),(fm==='spear'?T('χαμένες βολές','missed shots'):T('χάθηκαν','lost'))+(fish+m?' · '+Math.round(fish/(fish+m)*100)+'% '+(fm==='spear'?T('εύστοχες','on target'):T('πιάστηκαν','landed')):'')],[rate==null?'–':nf(rate,2),fm==='spear'?T('ψάρια / ώρα στο νερό','fish / hour in water'):T('ψάρια / ώρα','fish / hour')]].forEach(function(x){ var c=E('div','ndik'); c.append(E('b','',x[0]),E('span','',x[1])); k.appendChild(c); });
       box.appendChild(k);
       var PP=window.PP, mdl=null; try{ if(PP) mdl=PP.build(allT,C.Store.act(),{utcMin:C.utcMin(),misses:(C.Store.misses?C.Store.misses():[])}); }catch(e){}
       if(mdl&&mdl.progress){
@@ -1668,9 +1669,54 @@ box.insertBefore(tools,bar.nextSibling);
 /* v31z374 · Ψαροντούφεκο: όταν ανοίγει η φόρμα, το «Catch & release» και τα «πολλά μαζί» μένουν πάντα κλειστά */
 (function(){
   var sh=document.getElementById('sheet'); if(!sh) return;
-  function fix(){ var sp=false; try{ sp=localStorage.getItem('psaro-fprof')==='spear'; }catch(e){} if(!sp||sh.hidden) return;
-    ['bRel','bMulti'].forEach(function(id){ var c=document.getElementById(id); if(c&&c.checked){ c.checked=false; c.dispatchEvent(new Event('change',{bubbles:true})); } });
+  function fix(){ var sp=false; try{ sp=localStorage.getItem('psaro-fprof')==='spear'; }catch(e){} if(sh.hidden) return;
+    /* v31z375: παλιό ψάρι από καλάμι που ανοίγει για αλλαγή: η φόρμα μένει όπως ήταν (δόλωμα, catch & release, τεχνική) */
+    var rec=window.PsaroEditRec, spForm=sp&&(!rec||rec.prof==='spear'); document.body.classList.toggle('ndspform',spForm);
+    var tc0=document.getElementById('bTech'); if(rec&&rec.tech&&tc0&&tc0.value!==rec.tech){ var o=document.createElement('option'); o.value=rec.tech; o.textContent=rec.tech; tc0.appendChild(o); tc0.value=rec.tech; }
+    if(!spForm) return;
+    if(!rec) ['bRel','bMulti'].forEach(function(id){ var c=document.getElementById(id); if(c&&c.checked){ c.checked=false; c.dispatchEvent(new Event('change',{bubbles:true})); } });
     var t=document.getElementById('bTitle'); if(t&&/τσίμπημα|bite/i.test(t.textContent)) t.textContent=window.LANG==='en'?'New fish':'Νέο ψάρι';
     var tc=document.getElementById('bTech'); if(tc&&!tc.value&&tc.options.length) tc.selectedIndex=0; }
   new MutationObserver(function(){ setTimeout(fix,50); }).observe(sh,{attributes:true,attributeFilter:['hidden']});
+})();
+
+/* ===================== v31z375 · Ψαροντούφεκο σε όλη την εφαρμογή ===================== */
+(function(){
+  var EN=window.LANG==='en';
+  function prof(){ try{ return localStorage.getItem('psaro-fprof')||'boat'; }catch(e){ return 'boat'; } }
+  function fam(p){ return p==='spear'?'spear':'rod'; }
+  /* 1. Η προσωπική πρόγνωση, ο σύμβουλος και ο έλεγχος του βαθμού μαθαίνουν χωριστά για ψαροντούφεκο και για καλάμι.
+        Καταγραφές χωρίς τύπο (παλιές) μετράνε ως καλάμι. */
+  function patch(){
+    var PP=window.PP; if(!PP||PP._ndFam) return !!PP; PP._ndFam=true;
+    function flt(list){ var f=fam(prof()); return (list||[]).filter(function(x){ return fam(x&&x.prof)===f; }); }
+    function wrap(fn){ return function(trips,bites,opt){ var o=Object.assign({},opt||{}); if(o.misses) o.misses=flt(o.misses); return fn.call(PP,flt(trips),flt(bites),o); }; }
+    if(PP.build) PP.build=wrap(PP.build); if(PP.calib) PP.calib=wrap(PP.calib);
+    return true;
+  }
+  var n=0, iv=setInterval(function(){ n++; if(patch()||n>40) clearInterval(iv); },300); patch();
+  window.addEventListener('psaro-fprof',function(){ try{ window.dispatchEvent(new Event('psaro-range')); }catch(e){} });
+
+  /* 2. Λέξεις στο ψαροντούφεκο: «ψάρια» αντί για «τσιμπήματα», «χαμένες βολές» αντί για «χάθηκαν», «στο νερό» αντί για «στη θάλασσα» */
+  var EL=[[/Τσιμπήματα εκείνης της ημέρας/g,'Ψάρια εκείνης της ημέρας'],[/Τσίμπησαν και χάθηκαν/g,'Χαμένες βολές'],[/Ώρες που τσίμπησε/g,'Ώρες που έπιασες'],
+    [/τσιμπήματα ανά ώρα/g,'ψάρια ανά ώρα'],[/Τσιμπήματα/g,'Ψάρια'],[/τσιμπήματα/g,'ψάρια'],[/Τσίμπημα/g,'Ψάρι'],[/τσίμπημα/g,'ψάρι'],
+    [/(\d+) χαμένα(?![α-ωά-ώ])/g,'$1 χαμένες βολές'],[/χάθηκαν/g,'χαμένες βολές'],[/Ώρες στη θάλασσα/g,'Ώρες στο νερό'],[/ώρες στη θάλασσα/g,'ώρες στο νερό']];
+  var ENL=[[/Bites that day/g,'Fish that day'],[/Bites lost/g,'Missed shots'],[/\bbites\b/g,'fish'],[/\bBites\b/g,'Fish'],[/\bbite\b/g,'fish'],[/(\d+) miss\b/g,'$1 missed shots'],[/Hours at sea/g,'Hours in water']];
+  function words(){
+    if(prof()!=='spear') return; var R=EN?ENL:EL;
+    ['tab-log','profile','fcMine','ndIns'].forEach(function(id){ var root=document.getElementById(id); if(!root||root.hidden||!root.offsetParent&&id!=='profile') return; if(id==='profile'&&root.hidden) return;
+      var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:function(t){ var p=t.parentNode; if(!p) return 2; var tg=p.tagName; if(tg==='SCRIPT'||tg==='STYLE'||tg==='TEXTAREA'||tg==='OPTION'||p.isContentEditable) return 2; return /[Ττ]σίμπ|[Ττ]σιμπ|χαμένα|χάθηκαν|στη θάλασσα|[Bb]ite|miss\b|at sea/.test(t.nodeValue)?1:2; }}), t, list=[];
+      while((t=w.nextNode())) list.push(t);
+      list.forEach(function(t){ var v=t.nodeValue; R.forEach(function(r){ v=v.replace(r[0],r[1]); }); if(v!==t.nodeValue) t.nodeValue=v; });
+    });
+  }
+  window.ndEvery(words,1500);
+
+  /* 3. Στατιστικά: στο ψαροντούφεκο τα κουτιά λένε «χαμένες βολές», «ψάρια / ώρα στο νερό» και δείχνουν μόνο εξόδους με ψαροντούφεκο */
+  function kpiWords(){
+    var box=document.getElementById('ndIns'); if(!box) return; var sp=prof()==='spear';
+    var t=box.querySelector('.ndkind'); if(!t){ t=document.createElement('div'); t.className='ndisep ndkind'; box.insertBefore(t,box.firstChild); }
+    var lab=sp?(EN?'Spearfishing':'Ψαροντούφεκο'):(EN?'Rod and line':'Καλάμι'); if(t.textContent!==lab) t.textContent=lab;
+  }
+  window.ndEvery(kpiWords,1500);
 })();

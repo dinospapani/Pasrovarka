@@ -44,17 +44,21 @@ async function draw(t,e){
     x.save(); x.translate(W/2-9*15,y+6); x.scale(15,15); x.lineWidth=1.1; x.lineCap='round'; x.lineJoin='round'; x.strokeStyle='rgba(255,255,255,.34)'; x.fillStyle='rgba(255,255,255,.34)';
     x.beginPath(); x.arc(12,4.6,1.7,0,Math.PI*2); x.stroke(); x.stroke(new Path2D('M12 6.3V15a4.2 4.2 0 01-8.4 0v-3M1.7 13.4l1.9-1.9 1.9 1.9')); x.restore(); y+=300;
   }
-  x.fillStyle='#fff'; x.font='700 56px '+FONT; x.fillText(fit(x,t.spot||T('Έξοδος για ψάρεμα','Fishing trip'),W-120),60,y); y+=84;
+  x.fillStyle='#fff'; x.font='700 56px '+FONT; x.fillText(fit(x,t.spot||(t.prof==='spear'?T('Ψαροντούφεκο','Spearfishing'):T('Έξοδος για ψάρεμα','Fishing trip')),W-120),60,y); y+=84;
   var dur=(t.startMs&&t.endMs)?C.fmtDur(t.endMs-t.startMs-(t.pauseMs||0)):'';
   var tot=e.count+(e.miss||0), succ=e.miss>0?Math.round(e.count/tot*100)+'%':'';
-  var cells=[[String(e.count),T('Ψάρια','Catches')],[String(e.miss||0),'Miss'],[(e.kg||0).toFixed(1),'kg'],[dur||'–',T('Χρόνος','Time')]];
+  /* v31z375: έξοδος με ψαροντούφεκο: ψάρια, χαμένες βολές, «είδα», χρόνος στο νερό, βουτιές, σημαδούρα */
+  var spear=t.prof==='spear', seenN=0, dives=0, buoy=false;
+  if(spear){ try{ seenN=((window.PsaroSeen&&window.PsaroSeen.all())||[]).filter(function(q){ return q.start===t.startMs; }).length; dives=+localStorage.getItem('psaro-dives-'+t.startMs)||0; buoy=localStorage.getItem('psaro-buoy-'+t.startMs)==='1'; }catch(er){} }
+  var cells=spear?[[String(e.count),T('Ψάρια','Fish')],[String(e.miss||0),T('Χαμένες βολές','Missed shots')],[String(seenN),T('Είδα','Seen')],[dur||'–',T('Στο νερό','In water')]]
+    :[[String(e.count),T('Ψάρια','Catches')],[String(e.miss||0),'Miss'],[(e.kg||0).toFixed(1),'kg'],[dur||'–',T('Χρόνος','Time')]];
   var cw=(W-120-3*20)/4, spl=await speciesLines(t);
   cells.forEach(function(c,i){ var cx=60+i*(cw+20); x.fillStyle='rgba(255,255,255,.14)'; rr(x,cx,y,cw,150,26); x.fill();
     x.fillStyle='#fff'; x.textAlign='center'; x.font='700 56px '+FONT; x.fillText(fit(x,c[0],cw-16),cx+cw/2,y+22); x.font='400 26px '+FONT; x.globalAlpha=.8; x.fillText(c[1],cx+cw/2,y+100); x.globalAlpha=1; x.textAlign='left'; });
   y+=185;
   spl.slice(0,4).forEach(function(r){ x.fillStyle='#fff'; x.font='600 42px '+FONT; x.fillText(fit(x,r,W-120),60,y); y+=64; });
   if(spl.length) y+=12;
-  var line2=[succ?T('Επιτυχία ','Success ')+succ:''].filter(Boolean).join('  ·  ');
+  var line2=(spear?[succ?T('Εύστοχες βολές ','Shots on target ')+succ:'',dives?dives+T(' βουτιές',' dives'):'',(e.kg?(e.kg).toFixed(1)+' kg':''),buoy?T('Σημαδούρα ✓','Float ✓'):'']:[succ?T('Επιτυχία ','Success ')+succ:'']).filter(Boolean).join('  ·  ');
   if(line2){ x.fillStyle='#fff'; x.font='500 34px '+FONT; x.fillText(fit(x,line2,W-120),60,y); y+=56; }
   var c0=t.cond0||{}, cd=[c0.wind!=null?c0.wind+' kn':'',c0.wave!=null?(+c0.wave).toFixed(1)+' m '+T('κύμα','wave'):'',c0.press!=null?c0.press+' hPa':'',c0.sst!=null?Math.round(c0.sst)+'°C '+T('θάλασσα','sea'):''].filter(Boolean).join('  ·  ');
   if(cd){ x.fillStyle='rgba(255,255,255,.78)'; x.font='400 30px '+FONT; x.fillText(fit(x,cd,W-120),60,y); }

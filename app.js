@@ -1250,7 +1250,7 @@ function openSheet(){
 }
 function closeSheet(keep){ $('sheet').hidden=true; $('bSug').hidden=true; if(editRec&&keep!==true) resetSheet(); }
 function resetSheet(){
-  $('biteForm').reset(); photoBlob=null; photoBlobs=[]; phDirty=false; renderPrevs(); curLatin=''; pickedPt=null; sheetFresh=true; editRec=null; pressTouched=false;
+  $('biteForm').reset(); photoBlob=null; photoBlobs=[]; phDirty=false; renderPrevs(); curLatin=''; pickedPt=null; sheetFresh=true; editRec=null; window.PsaroEditRec=null; pressTouched=false;
   $('bPrev').hidden=true; $('bPrevX').hidden=true; $('bAI').hidden=true; $('bAIOut').replaceChildren(); $('bAIMsg').textContent=''; $('bLaw').textContent=''; $('bErr').textContent=''; multiSync();
   try{ if(window.PsaroTackle) PsaroTackle.mount($('bTackle'),'last'); }catch(e){}
 }
@@ -1382,7 +1382,7 @@ $('biteForm').addEventListener('submit',async e=>{
   btn.disabled=false; btn.textContent='Αποθήκευση';
 });
 function editBite(b){
-  resetSheet(); editRec=b; sheetFresh=false;
+  resetSheet(); editRec=b; window.PsaroEditRec=b; sheetFresh=false;
   $('bWhen').value=(b.date||nicosiaToday())+'T'+(b.time||'12:00');
   $('bSpecies').value=(window.LANG==='en'&&window.spName)?window.spName(b.species||''):(b.species||''); curLatin=b.latin||'';
   $('bBait').value=b.bait||''; $('bTech').value=b.tech||''; try{ if(window.PsaroTackle) PsaroTackle.mount($('bTackle'),b.tk||[],b.tkw||{},b.tkh||{},b.tks||{}); }catch(e){}
@@ -1877,6 +1877,9 @@ function updateLaw(){
   if(lat==='Thunnus thynnus') msgs.push('⚠ Ο κόκκινος τόνος απαγορεύεται να κρατηθεί. Ελευθέρωσέ τον (δευτερογενής πηγή).');
   if(lat==='Xiphias gladius') msgs.push('⚠ Ο ξιφίας δεν επιτρέπεται ως ερασιτεχνικό αλίευμα (δευτερογενής πηγή).');
   if(lat==='Lagocephalus sceleratus') msgs.push('⚠ Τοξικός. Μην τον φας και μην τον δώσεις.');
+  /* v31z375: ψαροντούφεκο. Μόνο ό,τι βρέθηκε σε δημοσιευμένες πηγές· οι λεπτομέρειες πρέπει να ελέγχονται στο ΤΑΘΕ. */
+  const spf=(()=>{ try{ return localStorage.getItem('psaro-fprof')==='spear'; }catch(e){ return false; } })(), en0=window.LANG==='en', spn=strip($('bSpecies').value||'');
+  if(/καρχαρ|γαλεο|σκυλοψαρ|σαλαχ|τρυγον|βατοσ|shark|\bray\b|skate|stingray/i.test(spn)) msgs.push(en0?'⚠ Sharks and rays are not allowed as recreational catch: release them (secondary source).':'⚠ Καρχαρίες και σαλάχια δεν επιτρέπονται ως ερασιτεχνικό αλίευμα: ελευθέρωσέ τα (δευτερογενής πηγή).');
   if(lat==='Thunnus alalunga'){ const mo=+(($('bWhen').value||'').slice(5,7)); if(mo===3||mo===10||mo===11) msgs.push('⚠ Πιθανή κλειστή περίοδος μακρύπτερου (1–31 Μαρτίου, 1 Οκτ.–30 Νοεμβρίου). Έλεγξε με το ΤΑΘΕ.'); }
   { const m=$('bLocMode').value; let p=null;
     if(m==='auto'&&cond&&cond.lat!=null) p=[cond.lat,cond.lon];
@@ -1887,7 +1890,8 @@ function updateLaw(){
   let kg=$('bRel').checked?0:(+$('bKg').value||0); const since=Date.now()-86400000;
   for(const b of Store.get('bites')) if(b.kg&&!b.rel&&!(editRec&&b.id===editRec.id)&&biteMs(b)>=since) kg+=+b.kg;
   if($('bRel').checked) msgs.push('Catch & release: δεν μετράει στο όριο των κιλών.');
-  if(kg>0) msgs.push('Καταγεγραμμένα τις τελευταίες 24 ώρες: '+kg.toFixed(1)+' kg. Όριο από σκάφος: 10 kg και 1 ψάρι οποιουδήποτε βάρους.'+(kg>10?' ⚠ Πάνω από το όριο, αν τα κρατάς όλα.':''));
+  if(kg>0) msgs.push('Καταγεγραμμένα τις τελευταίες 24 ώρες: '+kg.toFixed(1)+' kg. '+(spf?'Το όριο των 10 kg ανά 24 ώρες ισχύει για ψάρεμα από σκάφος· για ψαροντούφεκο έλεγξε το ισχύον όριο με το ΤΑΘΕ.':'Όριο από σκάφος: 10 kg και 1 ψάρι οποιουδήποτε βάρους.'+(kg>10?' ⚠ Πάνω από το όριο, αν τα κρατάς όλα.':'')));
+  if(spf) msgs.push('Ψαροντούφεκο: χρειάζεται άδεια σε ισχύ (λήγει 31/12). Όχι μέσα σε περιοχές κολύμβησης (κόκκινες σημαδούρες) και θαλάσσιες προστατευόμενες περιοχές.');
   out.textContent=msgs.join(' ');
 }
 $('biteForm').addEventListener('input',updateLaw);

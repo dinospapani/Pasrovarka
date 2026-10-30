@@ -1287,6 +1287,6 @@ body.ndphon #profile .phead>#pAvatar,body.ndphon #profile .phead>#pAvatar+div{di
 .ndrun{min-height:52px;border:2px solid #fff;border-radius:18px;background:transparent;color:#fff;font:inherit;font-size:16px;font-weight:600}
 
 /* v31z374 · Φόρμα ψαριού στο ψαροντούφεκο: χωρίς catch & release, «πολλά μαζί», δόλωμα και τερματικό */
-body.fp-spear #biteForm label:has(#bRel),body.fp-spear #biteForm label:has(#bMulti),body.fp-spear #bMultiBox,
-body.fp-spear #biteForm label:has(#bBait),body.fp-spear #bChipsBait,body.fp-spear #bTerm,body.fp-spear #bTerm+*:not(div),
-body.fp-spear #bTackleWrap>span:nth-of-type(2),body.fp-spear #bTkW,body.fp-spear #bTkSug{display:none!important}
+body.ndspform #biteForm label:has(#bRel),body.ndspform #biteForm label:has(#bMulti),body.ndspform #bMultiBox,
+body.ndspform #biteForm label:has(#bBait),body.ndspform #bChipsBait,body.ndspform #bTerm,body.ndspform #bTerm+*:not(div),
+body.ndspform #bTackleWrap>span:nth-of-type(2),body.ndspform #bTkW,body.ndspform #bTkSug{display:none!important}
