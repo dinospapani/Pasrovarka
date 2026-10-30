@@ -1300,3 +1300,18 @@ body.ndspform #bTackleWrap>span:nth-of-type(2),body.ndspform #bTkW,body.ndspform
 #fcHead .fckick,#fcHead #fcName,#fcHead #fcSub,#ndFcLoc{display:none!important}
 #fcHead .fchead{align-items:center}
 #tab-fc #plCard{display:none!important}
+
+/* v31z378 */
+.ndlocb svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ndlocb span{overflow:hidden;text-overflow:ellipsis}
+.ndlocb i{font-style:normal;font-size:13px;opacity:.8}
+#liveBox .h2top .label{display:none!important}
+#liveBox #liveSub{display:none!important}
+/* Πρόγνωση: πάνω κάρτα σε μία γραμμή κουμπιών, χωρίς μετονομασία/διαγραφή τοποθεσίας */
+#fcHead #plRen,#fcHead #plDel,#fcHead>.row:has(#plRen){display:none!important}
+#fcHead .fchead{display:flex!important;flex-wrap:wrap;align-items:center;gap:8px}
+#fcHead .fcid{order:2;flex:1 1 100%;min-width:0}
+#fcHead .fcid #fcRadar{margin:2px 0 0!important;font-size:13px}
+#fcHead .fcact{order:1;display:flex!important;flex-direction:row!important;gap:8px;width:100%}
+#fcHead .fcact .btn{flex:1 1 0;min-height:44px;margin:0!important}
+#fcHead .fcbest{margin-top:10px}

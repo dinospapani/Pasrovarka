@@ -1730,11 +1730,20 @@ box.insertBefore(tools,bar.nextSibling);
     var w=document.getElementById('tdLoc'); if(!w||!w.offsetParent&&!w.classList.contains('ndlocc')) return;
     var b=document.getElementById('ndLocBtn');
     if(!b){ b=document.createElement('button'); b.type='button'; b.id='ndLocBtn'; b.className='ndlocb';
+      /* v31z378: εικονίδιο SVG και ξεχωριστό κείμενο, ώστε να μην αναβοσβήνει (πριν το 📍 άλλαζε συνέχεια από άλλο κομμάτι της εφαρμογής) */
+      b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0113 0c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg><span></span><i aria-hidden="true"></i>';
       b.addEventListener('click',function(){ open=!open; paint(); if(open){ var i=w.querySelector('input'); if(i) setTimeout(function(){ try{ i.focus({preventScroll:true}); }catch(e){} },50); } });
       w.parentNode.insertBefore(b,w); }
     var c=cur(w); if(last&&c!==last) open=false; last=c;
     paint();
-    function paint(){ w.classList.toggle('ndlocc',!open); b.setAttribute('aria-expanded',String(open)); var t='📍 '+cur(w)+(open?'  ▴':'  ▾'); if(b.textContent!==t) b.textContent=t; }
+    function paint(){ w.classList.toggle('ndlocc',!open); b.setAttribute('aria-expanded',String(open)); var sp=b.querySelector('span'), ar=b.querySelector('i'), t=cur(w), a2=open?'▴':'▾'; if(sp&&sp.textContent!==t) sp.textContent=t; if(ar&&ar.textContent!==a2) ar.textContent=a2; }
+    /* σύντομη γραμμή ενημέρωσης: «Ενημερώθηκε 11:34» αντί για τις συντεταγμένες δύο φορές */
+    var ls0=document.getElementById('liveSub'), ns=document.getElementById('ndLiveSub');
+    if(ls0){ if(!ns){ ns=document.createElement('div'); ns.id='ndLiveSub'; ns.className='note'; ls0.after(ns); }
+      var v=ls0.textContent||'', m, out=v;
+      if((m=/^(Ενημερώθηκε|Updated)\s+([^·]+?)\s*·/.exec(v))) out=m[1]+' '+m[2].trim();
+      else if((m=/^(Καιρός για|Weather for) .*? · (\d{1,2}:\d{2})/.exec(v))) out=(EN?'Updated ':'Ενημερώθηκε ')+m[2];
+      if(ns.textContent!==out) ns.textContent=out; }
   }
   window.ndEvery(tick,700); setTimeout(tick,800);
   document.addEventListener('click',function(e){ if(e.target&&e.target.closest&&e.target.closest('#tdLoc .chip')){ open=false; setTimeout(tick,120); } },true);
