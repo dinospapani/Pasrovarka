@@ -121,3 +121,41 @@ svg.pwc{width:100%;height:auto}
 .pwc .dot{fill:var(--surface);stroke:var(--accent);stroke-width:2.2}
 .pw .hline{margin:6px 0 0}
 .pwl .k3::before{width:10px;height:10px;border-radius:3px;background:#9b8cf0;opacity:.5}
+/* ανά ώρα */
+.hch{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 8px}
+.hch h2{margin:0;font-size:19px;font-weight:700}
+.hbars{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;align-items:end;height:110px}
+.hb{height:calc(var(--v)*100%);min-height:8px;border:0;padding:0;border-radius:4px 4px 2px 2px;background:color-mix(in srgb,var(--ink-3) 45%,transparent)}
+.hb.best{background:var(--accent)}
+.hb.moon{background:#9b8cf0}
+.hb.bad{background:color-mix(in srgb,var(--poor) 55%,transparent)}
+.hb.past{opacity:.45}
+.hb.sel{outline:2.5px solid var(--ink);outline-offset:1px;opacity:1}
+.hbw .axis{padding:4px 0 0}
+.hleg{display:flex;gap:14px;margin:8px 0 2px;font-size:12.5px;color:var(--ink-2);flex-wrap:wrap}
+.hleg .k{display:inline-flex;align-items:center;gap:6px}
+.hleg .k::before{content:"";width:9px;height:9px;border-radius:3px}
+.hleg .best::before{background:var(--accent)}.hleg .moon::before{background:#9b8cf0}.hleg .bad::before{background:color-mix(in srgb,var(--poor) 55%,transparent)}
+.hsel{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:12px 0 2px;padding-top:12px;border-top:1px solid var(--line)}
+.hsel b{font-size:22px;font-weight:760}
+.hsel .hs{font-weight:700;color:var(--good)}
+.hsel.lv-fair .hs{color:var(--fair)}.hsel.lv-poor .hs{color:var(--poor)}
+.hsel .hu{color:var(--poor);font-size:14px;font-weight:600}
+/* πίεση, άνεμος, σελήνη (με παρελθόν και πρόγνωση) */
+.pwc .gl{stroke:var(--line);stroke-width:1}
+.pwc .pl{stroke:var(--sea);stroke-width:2.4}
+.pwc .pl.fut{stroke-dasharray:4 4}
+.pwc .wa{fill:var(--accent);opacity:.12}
+.pwc .wl{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linejoin:round}
+.pwc .wl.fut{stroke-dasharray:4 4}
+.pwc .gl2{fill:none;stroke:var(--accent);stroke-width:1.2;stroke-dasharray:1.5 3;opacity:.8}
+.pwc .arr{fill:var(--accent);font-size:11px;font-weight:700}
+.pwc .hl{fill:var(--ink-2);font-size:9px}
+.pwc .axh{fill:var(--ink-2);font-weight:650;font-size:10.5px}
+.pwc .axh.wk{fill:var(--accent)}.pwc .axh.mk{fill:#8c7be8}
+.pwc .nd{fill:var(--sea);stroke:var(--surface);stroke-width:1.5}
+.pwc .dot.w{stroke:var(--accent)}
+.pwl .k1::before{background:var(--sea)!important}
+.pwl .k2::before{width:14px!important;height:3px!important;background:var(--accent)!important;opacity:1!important}
+.hb{min-height:0}
+.pwh .seg button{flex:none;overflow:visible;text-overflow:clip}
