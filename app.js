@@ -634,7 +634,7 @@ function showOnMap0(lat,lon,id){
   if(id) setFocus(id);
   followPause=Date.now()+5*60000; /* κατά την έξοδο ο χάρτης δεν γυρίζει αμέσως στη βάρκα */
   setTimeout(()=>map.flyTo([lat,lon],Math.max(map.getZoom(),15)),120);
-  const m=markerById[id]; if(m) setTimeout(()=>m.openPopup(),800);
+  setTimeout(()=>{ const m=markerById[id]; if(m) m.openPopup(); },800);
 }
 function sharePlace(name,lat,lon){
   const en=window.LANG==='en', txt=(name||'')+'\n'+PsaroCoord.fmt(lat,lon)+'\nhttps://maps.google.com/?q='+lat.toFixed(5)+','+lon.toFixed(5);
@@ -730,11 +730,29 @@ function drawMap(){
           window.PsaroAsk(sp.name||'',{title:en?'Delete this spot?':'Διαγραφή σημείου',ok:en?'Delete':'Διαγραφή',cancel:en?'Cancel':'Άκυρο',danger:true}).then(ok=>{ if(ok){ Store.remove('spots',sp.id).catch(()=>{}); toast(en?'Deleted.':'Διαγράφηκε.'); } }); }}))));
     m.addTo(spotsG); markerById[sp.id]=m;
   }
+  const visB=[];
   for(const b of Store.get('bites')){
     if(spFilt()&&b.species!==spFilt()) continue;
     if(typeof b.lat!=='number'||typeof b.lon!=='number') continue;
     if(reviewSet&&!tripActive()&&!reviewSet.has(b.id)) continue;
     if(lsGet('psaro-showbites',true)===false&&!reviewSet&&b.id!==focusId) continue;
+    visB.push(b);
+  }
+  hotDraw(visB);
+  /* Χαμένα ψάρια (αστοχίες): μικρό ✕ στη θέση που τσίμπησαν */
+  for(const b of (Store.misses?Store.misses():[])){
+    if(spFilt()||(lsGet('psaro-showmiss',true)===false&&b.id!==focusId)) continue;
+    if(typeof b.lat!=='number'||typeof b.lon!=='number') continue;
+    if(reviewSet&&!tripActive()) continue;
+    const en=window.LANG==='en';
+    const mm=L.marker([b.lat,b.lon],{icon:L.divIcon({className:'',html:'<div class="mk-fish mk-miss">✕</div>',iconSize:[26,26]}),title:en?'Lost bite':'Χάθηκε'});
+    mm.bindPopup(()=>h('div',{class:'pop'},h('b',{text:en?'Lost bite ✕':'Χάθηκε ✕'}),h('div',{class:'meta mono',text:(b.date||'')+' '+(b.time||'')}),(b.bait||b.tech)?h('div',{class:'meta',text:[b.bait,b.tech].filter(Boolean).join(' · ')}):null,tkLine(b)?h('div',{class:'meta',text:tkLine(b)}):null,h('div',{class:'meta mono',text:PsaroCoord.fmt(b.lat,b.lon)}),missCond(b)?h('div',{class:'meta',text:missCond(b)}):null,window.PsaroBiteWx?window.PsaroBiteWx.slot(b):null,h('div',{class:'row pbtns',style:'margin-top:6px'},h('button',{class:'btn sm ghost',type:'button',text:en?'Delete':'Διαγραφή',onclick:()=>{ window.PsaroAsk(en?'Delete this lost bite?':'Να διαγραφεί αυτή η αστοχία;',{title:en?'Delete lost bite':'Διαγραφή αστοχίας',ok:en?'Delete':'Διαγραφή',cancel:en?'Cancel':'Άκυρο',danger:true}).then(ok=>{ if(!ok) return; Store.remove('bites',b.id).then(()=>{ try{ map.closePopup(); }catch(e){} toast(en?'Deleted.':'Διαγράφηκε.'); }).catch(()=>{}); }); }}))),{minWidth:150,maxWidth:230});
+    mm.addTo(bitesG); markerById[b.id]=mm;
+  }
+  if(pendM){map.removeLayer(pendM);pendM=null;}
+  if(pending) pendM=L.circleMarker([pending.lat,pending.lon],{radius:10,color:'#d8431c',weight:3,fillOpacity:.15}).addTo(map);
+}
+function fishMarker(b){
     const m=L.marker([b.lat,b.lon],{icon:L.divIcon({className:'',html:'<div class="mk-fish sym g-'+fishGroup(b)+(b.photo?' ph':'')+(b.rel?' rel':'')+(b.prof==='lake'?' src-lake':b.prof==='spear'?' src-spear':'')+'">'+SYM_SVG[fishGroup(b)==='ceph'?'ceph':'fish']+'</div>',iconSize:[30,30]}),title:b.species||''});
     m.bindPopup(()=>catchPopup(b),{minWidth:200,maxWidth:250,className:'fishpopw'});
     m.on('popupopen',e=>{const pu=e.popup, im=pu.getElement().querySelector('img.pimg');
@@ -755,19 +773,139 @@ function drawMap(){
       el.addEventListener('click',e=>{ if(held){ held=false; e.stopPropagation(); e.preventDefault(); } },true);
     });
     m.addTo(bitesG); markerById[b.id]=m;
+    return m;
+}
+/* ---------- v31z400: ψαρότοποι (hotspots) ----------
+   Ψάρια με το ίδιο όνομα σημείου (σε απόσταση έως 1 km) γίνονται πάντα μία ομάδα. Τα υπόλοιπα ενώνονται όταν
+   πέφτουν το ένα πάνω στο άλλο στην οθόνη (≤ 30 px στο τρέχον zoom). Ομάδα: μεγαλύτερο/σκουρότερο σημάδι με αριθμό,
+   ★ αν υπάρχει ψάρι τις τελευταίες 30 μέρες. Πάτημα: κάρτα σημείου (Ψάρια · Πότε · Τώρα). Παρατεταμένο: άπλωμα. */
+let spiderG=null, hotWired=false;
+function hotWire(){ if(hotWired||!map) return; hotWired=true; let t=null;
+  map.on('zoomend',()=>{ clearTimeout(t); t=setTimeout(()=>{ try{ if(!map._popup||!map.hasLayer(map._popup)) drawMap(); }catch(e){} },80); });
+  map.on('click',()=>unspider()); }
+function unspider(){ if(spiderG&&map){ map.removeLayer(spiderG); spiderG=null; } }
+function hotDraw(list){
+  hotWire(); unspider();
+  const solo=[], G=[], z=map.getZoom(), px=b=>map.project([b.lat,b.lon],z);
+  for(const b of list){
+    if(b.id===focusId){ solo.push(b); continue; }
+    let g=null;
+    if(b.place){ g=G.find(x=>x.name===b.place&&haversine(x.lat0,x.lon0,b.lat,b.lon)<=1); }
+    if(!g){ const p=px(b); g=G.find(x=>{ const q=map.project([x.lat0,x.lon0],z); return Math.hypot(q.x-p.x,q.y-p.y)<=30&&(!x.name||!b.place||x.name===b.place); }); }
+    if(!g){ g={name:b.place||'',lat0:b.lat,lon0:b.lon,bs:[]}; G.push(g); }
+    if(!g.name&&b.place) g.name=b.place; g.bs.push(b);
   }
-  /* Χαμένα ψάρια (αστοχίες): μικρό ✕ στη θέση που τσίμπησαν */
-  for(const b of (Store.misses?Store.misses():[])){
-    if(spFilt()||(lsGet('psaro-showmiss',true)===false&&b.id!==focusId)) continue;
-    if(typeof b.lat!=='number'||typeof b.lon!=='number') continue;
-    if(reviewSet&&!tripActive()) continue;
-    const en=window.LANG==='en';
-    const mm=L.marker([b.lat,b.lon],{icon:L.divIcon({className:'',html:'<div class="mk-fish mk-miss">✕</div>',iconSize:[26,26]}),title:en?'Lost bite':'Χάθηκε'});
-    mm.bindPopup(()=>h('div',{class:'pop'},h('b',{text:en?'Lost bite ✕':'Χάθηκε ✕'}),h('div',{class:'meta mono',text:(b.date||'')+' '+(b.time||'')}),(b.bait||b.tech)?h('div',{class:'meta',text:[b.bait,b.tech].filter(Boolean).join(' · ')}):null,tkLine(b)?h('div',{class:'meta',text:tkLine(b)}):null,h('div',{class:'meta mono',text:PsaroCoord.fmt(b.lat,b.lon)}),missCond(b)?h('div',{class:'meta',text:missCond(b)}):null,window.PsaroBiteWx?window.PsaroBiteWx.slot(b):null,h('div',{class:'row pbtns',style:'margin-top:6px'},h('button',{class:'btn sm ghost',type:'button',text:en?'Delete':'Διαγραφή',onclick:()=>{ window.PsaroAsk(en?'Delete this lost bite?':'Να διαγραφεί αυτή η αστοχία;',{title:en?'Delete lost bite':'Διαγραφή αστοχίας',ok:en?'Delete':'Διαγραφή',cancel:en?'Cancel':'Άκυρο',danger:true}).then(ok=>{ if(!ok) return; Store.remove('bites',b.id).then(()=>{ try{ map.closePopup(); }catch(e){} toast(en?'Deleted.':'Διαγράφηκε.'); }).catch(()=>{}); }); }}))),{minWidth:150,maxWidth:230});
-    mm.addTo(bitesG); markerById[b.id]=mm;
-  }
-  if(pendM){map.removeLayer(pendM);pendM=null;}
-  if(pending) pendM=L.circleMarker([pending.lat,pending.lon],{radius:10,color:'#d8431c',weight:3,fillOpacity:.15}).addTo(map);
+  solo.forEach(fishMarker);
+  for(const g of G){ if(g.bs.length===1){ fishMarker(g.bs[0]); continue; }
+    /* όνομα μόνο αν όλα τα ψάρια είναι στο ίδιο σημείο· αλλιώς «Περιοχή» με τα ονόματα */
+    const nm=[...new Set(g.bs.map(b=>b.place||''))]; g.mixed=nm.length>1; g.places=nm.filter(Boolean); if(g.mixed) g.name='';
+    hotMarker(g); }
+}
+function bCount(bs){ return bs.reduce((a,b)=>a+(bc(b)||1),0); }
+function hotMarker(g){
+  const bs=g.bs, n=bCount(bs), lat=bs.reduce((a,b)=>a+b.lat,0)/bs.length, lon=bs.reduce((a,b)=>a+b.lon,0)/bs.length;
+  g.lat=lat; g.lon=lon;
+  const gc={}; bs.forEach(b=>{ const k=fishGroup(b); gc[k]=(gc[k]||0)+1; }); const top=Object.keys(gc).sort((a,b)=>gc[b]-gc[a])[0];
+  const recent=bs.some(b=>Date.now()-biteMs(b)<30*86400000), lv=n>=20?4:n>=10?3:n>=5?2:1, sz=Math.round(32+Math.min(18,6*Math.log2(n)));
+  const html='<div class="mk-hot lv'+lv+'" style="width:'+sz+'px;height:'+sz+'px">'+(SYM_SVG[top]||SYM_SVG.fish)+'<b>'+n+'</b>'+(recent?'<i>★</i>':'')+'</div>';
+  const m=L.marker([lat,lon],{icon:L.divIcon({className:'',html:html,iconSize:[sz,sz]}),title:(g.name?g.name+' · ':'')+n,zIndexOffset:100+n});
+  m.bindTooltip((g.name?g.name+' · ':'')+n+(window.LANG==='en'?' fish':' ψάρια'),{direction:'right',offset:[sz/2,0],className:'lbl'});
+  m.bindPopup(()=>hotCard(g),{minWidth:260,maxWidth:320,className:'fishpopw hotpopw'});
+  m.on('add',()=>{ const el=m.getElement(); if(!el||el.dataset.lp) return; el.dataset.lp='1'; let t=null,held=false,x0=0,y0=0;
+    el.addEventListener('pointerdown',e=>{ held=false; x0=e.clientX; y0=e.clientY; clearTimeout(t); t=setTimeout(()=>{ held=true; try{ if(navigator.vibrate) navigator.vibrate(25); }catch(x){} spider(g); },450); });
+    el.addEventListener('pointermove',e=>{ if(Math.abs(e.clientX-x0)+Math.abs(e.clientY-y0)>12) clearTimeout(t); });
+    ['pointerup','pointercancel','pointerleave'].forEach(ev=>el.addEventListener(ev,()=>clearTimeout(t)));
+    el.addEventListener('contextmenu',e=>e.preventDefault());
+    el.addEventListener('click',e=>{ if(held){ held=false; e.stopPropagation(); e.preventDefault(); } },true); });
+  m.addTo(bitesG); bs.forEach(b=>{ markerById[b.id]=m; });
+  return m;
+}
+/* άπλωμα: τα ψάρια της ομάδας σε κύκλο γύρω της */
+function spider(g){
+  unspider(); map.closePopup(); spiderG=L.layerGroup().addTo(map);
+  const z=map.getZoom(), c=map.project([g.lat,g.lon],z), bs=g.bs.slice().sort((a,b)=>biteMs(b)-biteMs(a)).slice(0,24), N=bs.length, R=Math.max(46,N*7);
+  bs.forEach((b,i)=>{ const an=-Math.PI/2+i*2*Math.PI/N, p=L.point(c.x+R*Math.cos(an),c.y+R*Math.sin(an)), ll=map.unproject(p,z);
+    L.polyline([[g.lat,g.lon],ll],{color:'#fff',weight:1.5,opacity:.85,interactive:false}).addTo(spiderG);
+    const m=fishMarker(Object.assign({},b,{lat:ll.lat,lon:ll.lng})); bitesG.removeLayer(m); m.addTo(spiderG); markerById[b.id]=m; });
+}
+const DNs=()=>window.LANG==='en'?['Sun','Mon','Tue','Wed','Thu','Fri','Sat']:['Κυρ','Δευ','Τρι','Τετ','Πέμ','Παρ','Σάβ'];
+function bLabel(b){ const d=new Date((b.date||'2000-01-01')+'T12:00:00Z'); return DNs()[d.getUTCDay()]+' '+d.getUTCDate()+'/'+(d.getUTCMonth()+1)+'/'+String(d.getUTCFullYear()).slice(2)+(b.time?' '+b.time:''); }
+function openBite(b){
+  if(!map) return; map.closePopup();
+  const p=L.popup({minWidth:200,maxWidth:250,className:'fishpopw'}).setLatLng([b.lat,b.lon]).setContent(catchPopup(b)).openOn(map);
+  setTimeout(()=>{ try{ const im=p.getElement().querySelector('img.pimg'); if(im&&b.photo) loadPhoto(b.id,im); }catch(e){} },30);
+}
+function hotCard(g){
+  const en=window.LANG==='en', T2=(a,b)=>en?b:a, bs=g.bs.slice().sort((a,b)=>biteMs(b)-biteMs(a)), n=bCount(bs);
+  const kg=Math.round(bs.reduce((a,b)=>a+(+b.kg||0),0)*10)/10, sp={}; bs.forEach(b=>{ const k=b.species||T2('Άγνωστο','Unknown'); sp[k]=(sp[k]||0)+(bc(b)||1); });
+  const spT=Object.keys(sp).sort((a,b)=>sp[b]-sp[a]).slice(0,4).map(k=>k+' ×'+sp[k]).join(', ');
+  const box=h('div',{class:'pop hotcard'});
+  box.append(h('b',{text:(g.name||(g.mixed?T2('Περιοχή','Area'):T2('Ψαρότοπος','Fishing spot')))+' · '+n+T2(' ψάρια',' fish')}),h('div',{class:'meta',text:[kg?T2('Σύνολο ','Total ')+kg+' kg':null,spT].filter(Boolean).join(' · ')}));
+  if(g.mixed) box.append(h('div',{class:'meta',text:(g.places.length?g.places.join(', ')+' '+T2('και άλλα σημεία','and other spots'):T2('Διάφορα σημεία','Several spots'))+' · '+T2('μεγέθυνε για να χωρίσουν','zoom in to separate them')}));
+  const tabs=h('div',{class:'hottabs',role:'tablist'}), body=h('div',{class:'hotbody'});
+  const TB=[['fish',T2('Ψάρια','Fish')],['when',T2('Πότε','When')],['now',T2('Τώρα','Now')]];
+  const show=k=>{ [].forEach.call(tabs.children,x=>x.setAttribute('aria-selected',String(x.dataset.k===k))); body.replaceChildren(); if(k==='fish') hotFish(body,bs); else if(k==='when') hotWhen(body,bs); else hotNow(body,g,bs); };
+  TB.forEach(t=>{ const b=h('button',{type:'button',role:'tab',text:t[1]}); b.dataset.k=t[0]; b.addEventListener('click',e=>{ e.stopPropagation(); show(t[0]); }); tabs.append(b); });
+  box.append(tabs,body); show('fish');
+  const sp0=g.mixed?null:Store.get('spots').find(x=>x.name&&x.name===g.name&&haversine(x.lat,x.lon,g.lat,g.lon)<=1);
+  box.append(h('div',{class:'row pbtns',style:'margin-top:8px'},
+    h('button',{class:'btn acc sm',type:'button',text:T2('Τσίμπημα εδώ','Bite here'),onclick:()=>{ map.closePopup(); if(sp0){ pickedPt=null; $('bLocMode').value='spot'; syncLoc(); $('bSpot').value=sp0.id; } else { pickedPt={lat:g.lat,lon:g.lon}; $('bLocMode').value='pick'; syncLoc(); } openSheet(); }}),
+    h('button',{class:'btn sm',type:'button',text:T2('Στείλε','Send'),onclick:()=>sharePlace(g.name||'',g.lat,g.lon)})));
+  return box;
+}
+function hotFish(body,bs){
+  const en=window.LANG==='en', ls=h('div',{class:'hotlist'});
+  bs.slice(0,60).forEach(b=>{
+    const nn=bc(b), row=h('button',{type:'button',class:'hotrow'});
+    if(b.photo){ const im=h('img',{class:'hotth',alt:''}); im.hidden=true; row.append(im); setTimeout(()=>{ try{ loadPhoto(b.id,im); }catch(e){} },20); } else { const ic=h('span',{class:'hotth hotsym'}); ic.innerHTML=SYM_SVG[fishGroup(b)]||SYM_SVG.fish; row.append(ic); }
+    row.append(h('span',{class:'hottx'},h('b',{text:(b.species||(en?'Unknown':'Άγνωστο'))+(nn>1?' ×'+nn:'')+(b.kg?' · '+b.kg+' kg':'')+(b.rel?' ↩':'')}),h('small',{text:bLabel(b)+(b.bait?' · '+b.bait:'')})));
+    row.addEventListener('click',e=>{ e.stopPropagation(); openBite(b); }); ls.append(row); });
+  if(bs.length>60) ls.append(h('div',{class:'meta',text:'+'+(bs.length-60)}));
+  body.append(ls);
+}
+function bars(vals,labels,hl){
+  const mx=Math.max(1,...vals), w=h('div',{class:'hotbars'});
+  vals.forEach((v,i)=>{ const c=h('div',{class:'hb'+(hl===i?' on':'')}); const f=h('i'); f.style.height=Math.round(v/mx*100)+'%'; c.append(f,h('span',{text:labels[i]||''})); c.title=(labels[i]||i)+': '+v; w.append(c); });
+  return w;
+}
+function hotWhen(body,bs){
+  const en=window.LANG==='en', T2=(a,b)=>en?b:a, M=new Array(12).fill(0), H=new Array(8).fill(0), tot=bs.length;
+  bs.forEach(b=>{ const w=bc(b)||1; if(b.date) M[+b.date.slice(5,7)-1]+=w; if(b.time) H[Math.floor(+b.time.slice(0,2)/3)]+=w; });
+  const ML=en?['J','F','M','A','M','J','J','A','S','O','N','D']:['Ι','Φ','Μ','Α','Μ','Ι','Ι','Α','Σ','Ο','Ν','Δ'];
+  body.append(h('div',{class:'ds-over hoth',text:T2('Μήνες','Months')}),bars(M,ML,new Date().getMonth()));
+  body.append(h('div',{class:'ds-over hoth',text:T2('Ώρες','Hours')}),bars(H,['00','03','06','09','12','15','18','21'],Math.floor(new Date().getHours()/3)));
+  const cnt=(f)=>{ const o={}; let k=0; bs.forEach(b=>{ const v=f(b); if(v==null||v==='') return; k++; o[v]=(o[v]||0)+1; }); const top=Object.keys(o).sort((a,b)=>o[b]-o[a])[0]; return top==null?null:{v:top,n:o[top],k:k}; };
+  const L2=[];
+  const pt=cnt(b=>b.ptrend); if(pt&&pt.k>=2) L2.push(T2('Πίεση: ','Pressure: ')+(PT[pt.v]||pt.v).toLowerCase()+' ('+pt.n+'/'+pt.k+')');
+  const mo=cnt(b=>b.date?biteMoon(b):null); if(mo&&mo.k>=2) L2.push(T2('Σελήνη: ','Moon: ')+MOON_LBL[mo.v].toLowerCase()+' ('+mo.n+'/'+mo.k+')');
+  const ws=bs.filter(b=>b.wind!=null).map(b=>PU&&PU.bft?PU.bft(b.wind):bft(b.wind)); if(ws.length>=2){ ws.sort((a,b)=>a-b); L2.push(T2('Άνεμος: ','Wind: ')+(ws[0]===ws[ws.length-1]?ws[0]:ws[0]+'–'+ws[ws.length-1])+' Bft'); }
+  const D8=en?['N','NE','E','SE','S','SW','W','NW']:['Β','ΒΑ','Α','ΝΑ','Ν','ΝΔ','Δ','ΒΔ'], wd=cnt(b=>b.wdeg!=null?D8[Math.round(b.wdeg/45)%8]:null); if(wd&&wd.k>=2) L2.push(T2('Διεύθυνση: ','Direction: ')+wd.v+' ('+wd.n+'/'+wd.k+')');
+  const wv=bs.filter(b=>b.wave!=null).map(b=>+b.wave); if(wv.length>=2){ wv.sort((a,b)=>a-b); L2.push(T2('Κύμα: ','Waves: ')+PU.wave(wv[0])+(wv[wv.length-1]!==wv[0]?' – '+PU.wave(wv[wv.length-1]):'')); }
+  const ss=bs.filter(b=>b.sst!=null).map(b=>+b.sst); if(ss.length>=2){ ss.sort((a,b)=>a-b); L2.push(T2('Νερό: ','Water: ')+PU.temp(ss[0])+(Math.round(ss[ss.length-1])!==Math.round(ss[0])?' – '+PU.temp(ss[ss.length-1]):'')); }
+  const bt=cnt(b=>(b.bait||'').trim()||null); if(bt&&bt.k>=2) L2.push(T2('Δόλωμα: ','Bait: ')+bt.v+' ('+bt.n+'/'+bt.k+')');
+  body.append(h('div',{class:'ds-over hoth',text:T2('Συνθήκες που επαναλαμβάνονται','Recurring conditions')}));
+  if(L2.length) L2.forEach(t=>body.append(h('div',{class:'hotln',text:t}))); else body.append(h('div',{class:'meta',text:T2('Χρειάζονται τουλάχιστον 2 ψάρια με καταγεγραμμένες συνθήκες.','At least 2 fish with recorded conditions are needed.')}));
+}
+async function hotNow(body,g,bs){
+  const en=window.LANG==='en', T2=(a,b)=>en?b:a;
+  body.append(h('div',{class:'meta',text:T2('Φόρτωση πρόγνωσης…','Loading forecast…')}));
+  let fc=null; try{ fc=await window.PF.getForecast(g.lat,g.lon,undefined,{days:7}); }catch(e){}
+  body.replaceChildren(); if(!fc||!fc.days){ body.append(h('div',{class:'meta',text:T2('Η πρόγνωση δεν φορτώθηκε.','The forecast did not load.')})); return; }
+  const cand=bs.filter(b=>b.wind!=null||b.wave!=null||b.ptrend), sim=window.PsaroSim&&window.PsaroSim.score;
+  const hr=b=>{ const m=/^(\d{1,2})/.exec(b.time||''); return m?Math.min(23,+m[1]):7; };
+  body.append(h('div',{class:'ds-over hoth',text:T2('Επόμενες μέρες','Next days')}));
+  const ls=h('div',{class:'hotdays'}), DN=DNs();
+  ls.append(h('div',{class:'hotday hothead'},h('span',{text:''}),h('span',{class:'hds',text:T2('βαθμός','score')}),h('span',{class:'hdm',text:T2('ομοιότ.','similar')})));
+  fc.days.slice(0,7).forEach((d,i)=>{
+    let best=null; if(sim) cand.forEach(b=>{ const hh=d.hours&&d.hours.find(x=>x.hr===hr(b)); if(!hh) return; const s=sim(b,hh,d.f); if(s!=null&&(!best||s>best.s)) best={s:s,b:b,h:hr(b)}; });
+    const dt=new Date(d.date+'T12:00:00Z'), nm=i===0?T2('Σήμερα','Today'):i===1?T2('Αύριο','Tomorrow'):DN[dt.getUTCDay()]+' '+dt.getUTCDate()+'/'+(dt.getUTCMonth()+1);
+    const r=h('div',{class:'hotday'+(best&&best.s>=0.8?' good':'')+(d.safe===false?' unsafe':'')});
+    r.append(h('span',{class:'hdn',text:nm}),h('span',{class:'hds',text:d.safe===false?T2('επικίνδυνο','unsafe'):String(d.best!=null?d.best:'–')}),h('span',{class:'hdm',text:best?Math.round(best.s*100)+'%':'–'}),
+      h('small',{text:best?T2('σαν ','like ')+bLabel(best.b).split(' ').slice(0,2).join(' ')+' '+String(best.h).padStart(2,'0')+':00':''}));
+    ls.append(r); });
+  body.append(ls);
+  if(!cand.length) body.append(h('div',{class:'meta',text:T2('Για ομοιότητα χρειάζονται ψάρια με καταγεγραμμένες συνθήκες (άνεμος, κύμα, πίεση).','Similarity needs fish with recorded conditions (wind, waves, pressure).')}));
+  else body.append(h('div',{class:'meta',text:T2('Ομοιότητα: σελήνη, άνεμος, διεύθυνση, κύμα, πίεση, νερό, την ίδια ώρα. Πράσινο = 80% και πάνω.','Similarity: moon, wind, direction, waves, pressure, water, same hour. Green = 80% or more.')}));
 }
 let editSpot=null;
 function openSpotForm(p,sp){
