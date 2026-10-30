@@ -2226,7 +2226,7 @@ async function autoDepth(silent){
   const sh=$('sheet'); if(sh) new MutationObserver(()=>{ if(!sh.hidden&&inp.value==='') setTimeout(()=>{ if(inp.value==='') autoDepth(true); },400); }).observe(sh,{attributes:true,attributeFilter:['hidden']});
 })();
 
-Object.assign(window.PsaroCore,{resizeImage:resizeImage,biteMs:biteMs,quick:()=>quickRec(false),quickMiss:()=>quickRec(true),map:()=>map,h:h,$:$,fmt:fmt,pad:pad,nicosiaToday:nicosiaToday,nicosiaNowMin:nicosiaNowMin,getPosition:getPosition,getCond:()=>cond,depthAt:(la,lo)=>depthLookup(la,lo),getViewCond:()=>viewCond||cond,compute:()=>compute(),showOnMap:showOnMap,lsGet:lsGet,lsSet:lsSet,switchTab:switchTab,utcMin:()=>utcOff()});
+Object.assign(window.PsaroCore,{tripEff:tripEff,fmtDur:fmtDur,resizeImage:resizeImage,biteMs:biteMs,quick:()=>quickRec(false),quickMiss:()=>quickRec(true),map:()=>map,h:h,$:$,fmt:fmt,pad:pad,nicosiaToday:nicosiaToday,nicosiaNowMin:nicosiaNowMin,getPosition:getPosition,getCond:()=>cond,depthAt:(la,lo)=>depthLookup(la,lo),getViewCond:()=>viewCond||cond,compute:()=>compute(),showOnMap:showOnMap,lsGet:lsGet,lsSet:lsSet,switchTab:switchTab,utcMin:()=>utcOff()});
 Store.init();
 if(cond){ applyConditions(cond); } else { $('liveMain').textContent='Δεν υπάρχουν δεδομένα καιρού ακόμα.'; }
 refreshConditions();
