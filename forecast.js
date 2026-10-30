@@ -8,6 +8,40 @@ const SYN=29.530588853, REF=Date.UTC(2000,0,6,18,14);
 const circDist=(a,b)=>{const d=Math.abs(a-b)%1440;return Math.min(d,1440-d);};
 /* offset (λεπτά) της Κύπρου για μια συγκεκριμένη μέρα, ώστε να μετράει η αλλαγή ώρας μέσα στην πρόγνωση */
 function nicOffAt(date,fallback,zone){ try{ var p=new Intl.DateTimeFormat('en-US',{timeZone:zone||'Asia/Nicosia',timeZoneName:'shortOffset'}).formatToParts(new Date(date+'T12:00:00Z')).find(function(x){ return x.type==='timeZoneName'; }).value, m=/GMT([+-])(\d+)(?::(\d+))?/.exec(p); if(m) return (m[1]==='-'?-1:1)*(parseInt(m[2],10)*60+(m[3]?parseInt(m[3],10):0)); if(p==='GMT'||p==='UTC') return 0; }catch(e){} return fallback; }
+/* v31z361: ακριβής θέση σελήνης (σειρά χαμηλής ακρίβειας του Meeus, ~0,3°) αντί για την παλιά προσέγγιση από τη φάση.
+   Δίνει ώρες μεσουρανήματος (σελήνη από πάνω), αντιμεσουρανήματος (από κάτω), ανατολής και δύσης με ακρίβεια λίγων λεπτών. */
+const RD=Math.PI/180;
+const jdD=ms=>ms/86400000+2440587.5-2451545;
+function sunLon(d){ const M=(357.529+0.98560028*d)*RD; return (M/RD+1.9148*Math.sin(M)+0.02*Math.sin(2*M)+180+102.9372)*RD; }
+function moonEq(d){ const T0=d/36525;
+  const L=218.32+481267.881*T0+6.29*Math.sin((135.0+477198.87*T0)*RD)-1.27*Math.sin((259.3-413335.36*T0)*RD)+0.66*Math.sin((235.7+890534.22*T0)*RD)+0.21*Math.sin((269.9+954397.74*T0)*RD)-0.19*Math.sin((357.5+35999.05*T0)*RD)-0.11*Math.sin((186.5+966404.03*T0)*RD);
+  const B=5.13*Math.sin((93.3+483202.02*T0)*RD)+0.28*Math.sin((228.2+960400.89*T0)*RD)-0.28*Math.sin((318.3+6003.15*T0)*RD)-0.17*Math.sin((217.6-407332.21*T0)*RD);
+  const lam=L*RD, b=B*RD, e=(23.4393-3.6e-7*d)*RD;
+  return {ra:Math.atan2(Math.sin(lam)*Math.cos(e)-Math.tan(b)*Math.sin(e),Math.cos(lam)),dec:Math.asin(Math.sin(b)*Math.cos(e)+Math.cos(b)*Math.sin(e)*Math.sin(lam)),lam}; }
+/* ύψος σελήνης (μοίρες, γεωκεντρικό) */
+function moonAlt(ms,lat,lon){ const d=jdD(ms), m=moonEq(d), H=(280.46061837+360.98564736629*d)*RD+lon*RD-m.ra;
+  return Math.asin(Math.sin(lat*RD)*Math.sin(m.dec)+Math.cos(lat*RD)*Math.cos(m.dec)*Math.cos(H))/RD; }
+/* φάση: 0 = νέα, 0,5 = πανσέληνος· φωτισμός 0–1 */
+function moonPhase(ms){ const d=jdD(ms), el=((moonEq(d).lam-sunLon(d))/RD%360+360)%360; return {f:el/360,illum:(1-Math.cos(el*RD))/2}; }
+/* γεγονότα σελήνης μεταξύ ms0 και ms1: rise, set, upper (από πάνω), lower (από κάτω). Ανατολή/δύση στο +0,125° (γεωκεντρικό, με διάθλαση και παράλλαξη). */
+function moonEvents(ms0,ms1,lat,lon){
+  const step=10*60000, H0=0.125, out=[]; let a0=moonAlt(ms0-step,lat,lon), a1=moonAlt(ms0,lat,lon);
+  for(let t=ms0;t<ms1;t+=step){
+    const a2=moonAlt(t+step,lat,lon);
+    if((a1-H0)*(a2-H0)<=0&&a1!==a2){ const k=(H0-a1)/(a2-a1); if(k>=0&&k<1) out.push({type:a2>a1?'rise':'set',t:t+k*step}); }
+    if((a1>=a0&&a1>a2)||(a1<=a0&&a1<a2)){ const den=a0-2*a1+a2, x=den?0.5*(a0-a2)/den:0; out.push({type:a1>a0||a1>a2?'upper':'lower',t:t+x*step,alt:a1}); }
+    a0=a1; a1=a2;
+  }
+  return out.sort((x,y)=>x.t-y.t);
+}
+/* περίοδοι solunar (Knight): κύριες ±45′ γύρω από σελήνη πάνω/κάτω, δευτερεύουσες ±30′ γύρω από ανατολή/δύση */
+const SOL_MAJ=45, SOL_MIN=30;
+function solunarPeriods(ms0,ms1,lat,lon){
+  return moonEvents(ms0-3*3600000,ms1+3*3600000,lat,lon).map(e=>{
+    const maj=e.type==='upper'||e.type==='lower', w=(maj?SOL_MAJ:SOL_MIN)*60000;
+    return {kind:maj?'major':'minor',ev:e.type,t:e.t,s:e.t-w,e:e.t+w};
+  }).filter(p=>p.e>=ms0&&p.s<=ms1);
+}
 function sunMoon(dateStr,lat,lon,tz){
   const [y,m,d]=dateStr.split('-').map(Number);
   const noonUtc=Date.UTC(y,m-1,d,12);
@@ -18,16 +52,25 @@ function sunMoon(dateStr,lat,lon,tz){
   const cosH=Math.cos(90.833*Math.PI/180)/(Math.cos(la)*Math.cos(dec))-Math.tan(la)*Math.tan(dec);
   const H=Math.acos(clamp(cosH,-1,1))*180/Math.PI;
   const noon=720-4*lon-eq+tz, rise=720-4*(lon+H)-eq+tz, set=720-4*(lon-H)-eq+tz;
-  let age=((noonUtc-tz*60000-REF)/86400000)%SYN; if(age<0) age+=SYN;
-  const f=age/SYN, transit=((noon+f*1440)%1440+1440)%1440;
-  return {rise,set,f,transit,anti:(transit+745)%1440,mrise:((transit-373)%1440+1440)%1440,mset:(transit+373)%1440};
+  /* v31z361: σελήνη από ακριβή υπολογισμό. Λεπτά από τα μεσάνυχτα της τοπικής μέρας (μπορεί <0 ή >1440 για περιόδους που περνούν τα μεσάνυχτα) */
+  const ms0=Date.UTC(y,m-1,d)-tz*60000, ph=moonPhase(ms0+12*3600000), mm=t=>(t-ms0)/60000;
+  const per=solunarPeriods(ms0,ms0+86400000,lat,lon), pick=(k)=>{ const e=per.find(p=>p.ev===k&&p.t>=ms0&&p.t<ms0+86400000); return e?((mm(e.t)%1440)+1440)%1440:null; };
+  return {rise,set,f:ph.f,illum:ph.illum,ms0,
+    maj:per.filter(p=>p.kind==='major').map(p=>mm(p.t)), min:per.filter(p=>p.kind==='minor').map(p=>mm(p.t)), periods:per,
+    transit:pick('upper'),anti:pick('lower'),mrise:pick('rise'),mset:pick('set')};
 }
+/* απόσταση (λεπτά) της ώρας t από την πιο κοντινή περίοδο μιας λίστας */
+const nearMin=(t,arr)=>{ let b=1e9; for(const x of arr||[]) b=Math.min(b,Math.abs(t-x)); return b; };
 function hourScore(sm,hr,w){
   const wind=w.wind, wave=w.wave==null?0.5:w.wave;
   /* προφίλ ψαρέματος: προσαρμογή βαρών (εκτίμηση, όχι επικυρωμένη). Στο service worker δεν υπάρχει localStorage, άρα ισχύει «βάρκα». */
   let prof=w.prof; if(!prof){ try{ prof=typeof localStorage!=='undefined'?localStorage.getItem('psaro-fprof'):null; }catch(e){ prof=null; } }
-  let base=50+Math.round(Math.cos(4*Math.PI*sm.f)*8);
-  base+={slow:8,stable:3,rise:0,fast:-4}[w.ptrend||'stable'];
+  /* v31z361: η σελήνη μετρά λιγότερο (μελέτες: επίδραση 5–10% σε κάποια είδη, καμία σε άλλα) */
+  let base=50+Math.round(Math.cos(4*Math.PI*sm.f)*4);
+  /* v31z362: η πίεση μετρά ελάχιστα. Οι μελέτες δεν βρίσκουν σταθερή επίδραση στο τσίμπημα (πέρκα: καμία· ανασκόπηση Stoner 2004:
+     κύριοι παράγοντες θερμοκρασία, φως, ρεύμα, τροφή). Μικρό +1 στην άνοδο (crappie: περισσότερη κίνηση σε άνοδο, Guy 1992)
+     και −2 στην απότομη πτώση (συνήθως έρχεται κακοκαιρία). Το προσωπικό μοντέλο προσαρμόζει από τα δικά σου ψάρια. */
+  base+={slow:3,stable:3,rise:4,fast:1}[w.ptrend||'stable'];
   if(prof==='shore'){        /* στεριά: αντέχει λίγο περισσότερο άνεμο, αλλά το δυνατό κύμα στην ακτή είναι επικίνδυνο */
     base+=wind<5?2:wind<=14?4:wind<=20?-2:wind<=27?-12:-25;
     base+=wave<=0.5?3:wave<=1?1:wave<=1.5?-5:wave<=2?-16:-28;
@@ -46,8 +89,10 @@ function hourScore(sm,hr,w){
   if(w.rain!=null&&w.rain>=70) base-=2;
   const t=hr*60+30; let b=0;
   const dTw=Math.min(circDist(t,sm.rise),circDist(t,sm.set)); if(dTw<=75) b+=14*(1-dTw/75);
-  const dMaj=Math.min(circDist(t,sm.transit),circDist(t,sm.anti)); if(dMaj<=60) b+=10;
-  const dMin=Math.min(circDist(t,sm.mrise),circDist(t,sm.mset)); if(dMin<=30) b+=5;
+  /* v31z361: περίοδοι Knight από ακριβείς ώρες σελήνης: κύρια ±45′ +6 (μισό έως ±75′), δευτερεύουσα ±30′ +3 */
+  const dMaj=sm.maj?nearMin(t,sm.maj):1e9, dMin=sm.min?nearMin(t,sm.min):1e9;
+  if(dMaj<=SOL_MAJ) b+=6; else if(dMaj<=SOL_MAJ+30) b+=3;
+  if(dMin<=SOL_MIN) b+=3;
   if(t>=660&&t<=900) b-=4;
   return clamp(Math.round(base+b),5,98);
 }
@@ -335,5 +380,5 @@ async function checkPlaces(cfg,fetchFn){
       body:lines[0]+(lines.length>1?' · +'+(goods.length-1):''),full:goods.map(i=>i.place.name+': '+dayLabel(i.date)+' · '+t('δείκτης ','score ')+i.best+' · '+pad(i.win.s)+':00–'+pad((i.win.e+1)%24)+':00').join('\n')}); }
   return {items,notified,title,body:lines.concat(pl,tl,wl).join('\n'),msgs,area:area?{name:area.name,lat:area.lat,lon:area.lon}:null,errs,okN,goodsN:goods.length,pressN:press.length,turnsN:turns.length,windsN:winds.length};
 }
-g.PF={pressureRise,sunMoon,hourScore,getForecast,findIdeal,message,check,goodDays,checkPlaces,dayLabel,bft,pressureEvent,windEvent,pressureTurns,pressureOutlook};
+g.PF={moonAlt,moonEvents,moonPhase,solunarPeriods,pressureRise,sunMoon,hourScore,getForecast,findIdeal,message,check,goodDays,checkPlaces,dayLabel,bft,pressureEvent,windEvent,pressureTurns,pressureOutlook};
 })(typeof self!=='undefined'?self:this);

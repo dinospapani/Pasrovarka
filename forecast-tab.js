@@ -239,14 +239,16 @@ function pressCard(p,o){
     else { var D=$('fcDays'); if(!D) return; box=h('div',{id:bid,class:'card',style:'margin:10px 0'}); D.parentNode.insertBefore(box,D); }
   }
   box.replaceChildren(); if(!p) { box.hidden=true; return; } box.hidden=false;
-  var rk=prKey(), TT=T('Πίεση και άνεμος','Pressure and wind');
+  var rk=prKey(), TT=(window.PF&&window.PF.moonAlt)?T('Πίεση, άνεμος και σελήνη','Pressure, wind and moon'):T('Πίεση και άνεμος','Pressure and wind');
   function rangeBar(){ var bar=h('div',{class:'prange',role:'group','aria-label':T('Εύρος','Range')}); Object.keys(PRANGE).forEach(function(k){ var b=h('button',{type:'button','aria-pressed':String(k===rk),text:T(PRANGE[k].lbl[0],PRANGE[k].lbl[1])}); b.addEventListener('click',function(){ lsSet('psaro-pwrange',k); pressCard(p,o); }); bar.append(b); }); return bar; }
   function head(){ var hd=h('div',{class:'prhead'}); hd.append(h('h3',{text:TT}),rangeBar()); return hd; }
   box.append(head(),h('p',{class:'note',text:T('Φόρτωση…','Loading…')}));
   pressSeries(p,o.td?'psaro-fcpress2t':null).then(function(v){
     var pts=v.pts, n=v.now; if(!pts.length||n<3){ throw new Error('nodata'); }
     var hasW=pts.some(function(q){ return q.w!=null; });
-    var ns='http://www.w3.org/2000/svg', W=320, L=6, R=26, TP=8, H1=84, GAP=22, H2=hasW?78:0, AR=hasW?14:0, BT=16, Ht=TP+H1+(hasW?GAP+H2+AR:0)+BT;
+    /* v31z361: τρίτο κομμάτι, σελήνη: ύψος της (πάνω από τον ορίζοντα), κύριες και δευτερεύουσες περίοδοι (Knight) */
+    var PFm=window.PF, hasM=!!(PFm&&PFm.moonAlt&&PFm.solunarPeriods&&p.lat!=null&&p.lon!=null), MG=hasM?20:0, H3=hasM?40:0;
+    var ns='http://www.w3.org/2000/svg', W=320, L=6, R=26, TP=8, H1=84, GAP=22, H2=hasW?78:0, AR=hasW?14:0, BT=16, Ht=TP+H1+(hasW?GAP+H2+AR:0)+MG+H3+BT;
     var mk=function(tag,attrs){ var e=document.createElementNS(ns,tag); Object.keys(attrs).forEach(function(k){ e.setAttribute(k,attrs[k]); }); return e; };
     var cs=getComputedStyle(document.documentElement), line=(cs.getPropertyValue('--sea')||'#2b7a8c').trim()||'#2b7a8c', mut=(cs.getPropertyValue('--muted')||'#6b7c86').trim()||'#6b7c86', ink=(cs.getPropertyValue('--ink')||'#0c2b3a').trim()||'#0c2b3a', wcol='#e8743b';
     var N=pts.length, X=function(i){ return L+(W-L-R)*i/(N-1); };
@@ -272,6 +274,28 @@ function pressCard(p,o){
       var ww=pts.map(function(q){ return q.w||0; }); iW=ww.indexOf(Math.max.apply(null,ww)); txt(X(iW),Y2(ww[iW])-4,'▲','middle',9,wcol);
       var AST=N>100?12:N>60?6:3; for(var i=1;i<N-1;i+=AST){ var q=pts[i]; if(q.d==null||(q.w||0)<2) continue; var g=mk('g',{transform:'translate('+X(i).toFixed(1)+' '+(wTop+H2+8)+') rotate('+Math.round(q.d)+')'}); g.append(mk('path',{d:'M0 5 L0 -5 M-3 2 L0 5 L3 2',fill:'none',stroke:wcol,'stroke-width':1.4,'stroke-linecap':'round','stroke-linejoin':'round'})); svg.append(g); }
     }
+    var mcol='#d6a93a', MPER=[], mTop=TP+H1+(hasW?GAP+H2+AR:0)+MG, mBot=mTop+H3;
+    var tw=null; /* σούρουπο/αυγή για «σύμπτωση» */
+    if(hasM){
+      var t0=pts[0].t, t1=pts[N-1].t, Xt=function(ms){ return L+(W-L-R)*(ms-t0)/(t1-t0); }, clipX=function(x){ return Math.max(L,Math.min(W-R,x)); };
+      MPER=PFm.solunarPeriods(t0,t1,+p.lat,+p.lon);
+      txt(L,mTop-4,T('Σελήνη','Moon'),'start',8,mcol);
+      svg.append(mk('line',{x1:L,x2:W-R,y1:mBot,y2:mBot,stroke:mut,'stroke-opacity':.35,'stroke-width':1}));
+      MPER.forEach(function(q){ var x0=clipX(Xt(q.s)), x1=clipX(Xt(q.e)); if(x1-x0<0.5) return;
+        svg.append(mk('rect',{x:x0.toFixed(1),y:mTop,width:(x1-x0).toFixed(1),height:H3,fill:mcol,'fill-opacity':q.kind==='major'?.38:.17,rx:2})); });
+      /* ύψος σελήνης: 0° στη βάση, 90° στην κορυφή του κομματιού· κάτω από τον ορίζοντα δεν σχεδιάζεται */
+      var steps=Math.min(240,(N-1)*2), dM='', on=false;
+      for(var k=0;k<=steps;k++){ var ms=t0+(t1-t0)*k/steps, a=PFm.moonAlt(ms,+p.lat,+p.lon), xx=Xt(ms).toFixed(1);
+        if(a>0){ var yy=(mBot-H3*Math.min(1,a/90)).toFixed(1); dM+=(on?'L':'M'+xx+' '+mBot+' L')+xx+' '+yy+' '; on=true; } else if(on){ dM+='L'+xx+' '+mBot+' '; on=false; } }
+      if(on) dM+='L'+Xt(t1).toFixed(1)+' '+mBot;
+      if(dM) svg.append(mk('path',{d:dM,fill:mcol,'fill-opacity':.12,stroke:mcol,'stroke-width':1.4,'stroke-linejoin':'round'}));
+      MPER.forEach(function(q){ var x=Xt(q.t); if(x<L||x>W-R) return; txt(x,mTop+(q.kind==='major'?9:H3-3),q.ev==='upper'?'▲':q.ev==='lower'?'▼':q.ev==='rise'?'↑':'↓','middle',8,mcol); });
+      try{ tw=[]; var dd={}; var tzOf=function(ms){ try{ var o=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Nicosia',timeZoneName:'shortOffset'}).formatToParts(new Date(ms)).find(function(x){ return x.type==='timeZoneName'; }).value, m=/GMT([+-]\d+)(?::(\d+))?/.exec(o); return m?(+m[1])*60+(m[2]?(m[1][0]==='-'?-1:1)*(+m[2]):0):120; }catch(e){ return 120; } };
+        pts.forEach(function(q){ var tz=tzOf(q.t), ds=new Date(q.t+tz*60000).toISOString().slice(0,10); if(dd[ds]) return; dd[ds]=1; var sm=PFm.sunMoon(ds,+p.lat,+p.lon,tz); var b0=Date.parse(ds+'T00:00:00Z')-tz*60000; tw.push(b0+sm.rise*60000,b0+sm.set*60000); }); }catch(e){ tw=null; }
+    }
+    var moonAt=function(ms){ if(!hasM) return null; var best=null; MPER.forEach(function(q){ if(ms>=q.s&&ms<=q.e&&(!best||q.kind==='major')) best=q; }); return best; };
+    var twNear=function(q){ return !!(tw&&tw.some(function(x){ return Math.abs(x-q.t)<=90*60000; })); };
+    var mLbl=function(q){ return (q.kind==='major'?T('κύρια','major'):T('δευτερεύουσα','minor'))+' ('+(q.ev==='upper'?T('σελήνη από πάνω','moon overhead'):q.ev==='lower'?T('σελήνη από κάτω','moon underfoot'):q.ev==='rise'?T('ανατολή σελήνης','moonrise'):T('δύση σελήνης','moonset'))+')'; };
     svg.append(mk('line',{x1:X(n),x2:X(n),y1:TP-2,y2:Ht-BT,stroke:ink,'stroke-width':1,'stroke-dasharray':'2 2'}),mk('circle',{cx:X(n),cy:Y1(pts[n].p),r:3.2,fill:ink}));
     var hrOf=function(ms){ try{ return +new Intl.DateTimeFormat('en-GB',{hour:'2-digit',hour12:false,timeZone:'Asia/Nicosia'}).format(new Date(ms))%24; }catch(e){ return new Date(ms).getUTCHours(); } };
     txt(X(n),Ht-3,T('τώρα','now'),'middle',8);
@@ -293,18 +317,31 @@ function pressCard(p,o){
       pd1.setAttribute('cx',X(i)); pd1.setAttribute('cy',Y1(pv[i])); pd1.setAttribute('visibility','visible');
       if(hasW&&pts[i].w!=null){ pd2.setAttribute('cx',X(i)); pd2.setAttribute('cy',Y2(pts[i].w)); pd2.setAttribute('visibility','visible'); } else pd2.setAttribute('visibility','hidden');
       var a=Math.max(0,i-3), b=Math.min(N-1,i+3), tl=(b>a)?(pv[b]-pv[a])/(b-a)*3:0;
-      out.textContent=hhmm(pts[i].t)+(i>n?' ('+T('πρόγνωση','forecast')+')':'')+' · '+PU.press(pv[i])+' · '+T('τάση ','trend ')+fmt(tl)+T('/3ω','/3h')+' ('+verdict(tl)+')'+wtxt(pts[i])+(i===iHi?' ▲':i===iLo?' ▼':'');
+      var mq=moonAt(pts[i].t+1800000);
+      out.textContent=hhmm(pts[i].t)+(i>n?' ('+T('πρόγνωση','forecast')+')':'')+' · '+PU.press(pv[i])+' · '+T('τάση ','trend ')+fmt(tl)+T('/3ω','/3h')+' ('+verdict(tl)+')'+wtxt(pts[i])+(i===iHi?' ▲':i===iLo?' ▼':'')+(hasM?' · '+T('σελήνη: ','moon: ')+(mq?mLbl(mq)+(twNear(mq)?T(', μαζί με αυγή/σούρουπο ★',', with dawn/dusk ★'):''):T('εκτός περιόδου','no period')):'');
     }
     var drag=false;
     svg.addEventListener('pointerdown',function(e){ drag=true; try{ svg.setPointerCapture(e.pointerId); }catch(x){} at(e); });
     svg.addEventListener('pointermove',function(e){ if(drag||e.pointerType==='mouse') at(e); });
     svg.addEventListener('pointerup',function(){ drag=false; }); svg.addEventListener('pointercancel',function(){ drag=false; });
     var dlt=function(a,b){ return pv[b]-pv[a]; }, back=dlt(Math.max(0,n-3),n), f3=n+3<N?dlt(n,n+3):null, f6=n+6<N?dlt(n,n+6):null;
+    function moonLine(){
+      if(!hasM) return null;
+      var ph=PFm.moonPhase(pts[n].t), EM=['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘'], idx=Math.round(ph.f*8)%8;
+      var strong=ph.illum<0.1||ph.illum>0.9, now=pts[n].t;
+      var up=MPER.filter(function(q){ return q.e>=now; }).slice(0,4);
+      var hm=function(ms){ try{ return new Date(ms).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:'Asia/Nicosia'}); }catch(e){ return ''; } };
+      var dk=function(ms){ try{ return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Nicosia'}).format(new Date(ms)); }catch(e){ return new Date(ms).toISOString().slice(0,10); } }, dl=function(ms){ return dk(ms)===dk(now)?'':T('αύριο ','tomorrow '); };
+      var parts=up.map(function(q){ return dl(q.s)+hm(q.s)+'–'+hm(q.e)+' '+(q.kind==='major'?T('κύρια','major'):T('δευτ.','minor'))+(twNear(q)?' ★':''); });
+      var cur=moonAt(now);
+      return h('div',{class:'meta',style:'margin-top:6px',text:EM[idx]+' '+T('Σελήνη ','Moon ')+Math.round(ph.illum*100)+'%'+(strong?T(' (κοντά σε νέα σελήνη/πανσέληνο: ισχυρότερες μέρες κατά τη θεωρία)',' (near new/full moon: stronger days per the theory)'):'')+' · '+(cur?T('Τώρα: ','Now: ')+mLbl(cur)+' · ':'')+T('Επόμενες ώρες σελήνης: ','Next moon times: ')+(parts.join(', ')||'—')+(parts.some(function(x){ return /★/.test(x); })?T(' · ★ = μαζί με αυγή ή σούρουπο (η καλύτερη ώρα)',' · ★ = together with dawn or dusk (best time)'):'')});
+    }
     var wnote='';
     if(hasW&&pts[n].w!=null&&n+3<N&&pts[n+3].w!=null){ var dw=pts[n+3].w-pts[n].w; wnote=' · '+T('άνεμος: ','wind: ')+PU.wind(pts[n].w)+(Math.abs(dw)>=2?' → '+PU.wind(pts[n+3].w)+' '+T('σε 3 ώρες','in 3 h'):T(' σταθερός τις επόμενες 3 ώρες',' steady for the next 3 h')); }
     box.replaceChildren(head(),svg,out,
       h('div',{class:'meta',style:'margin-top:6px',text:T('Πίεση, τελευταίες 3 ώρες: ','Pressure, last 3 h: ')+fmt(back)+' ('+verdict(back)+')'+(f3!=null?' · '+T('επόμενες 3 ώρες: ','next 3 h: ')+fmt(f3):'')+(f6!=null?' · '+T('επόμενες 6 ώρες: ','next 6 h: ')+fmt(f6):'')+wnote}),
-      h('p',{class:'note',text:T('Πάνω: πίεση (μπλε). Κάτω: άνεμος (πορτοκαλί, διακεκομμένη κουκκίδα = ριπές, βέλη = προς πού πηγαίνει ο άνεμος). Συνεχής γραμμή = παρελθόν, διακεκομμένη = πρόγνωση. Ενδεικτικό, από μοντέλο, όχι από όργανο.','Top: pressure (blue). Bottom: wind (orange, dotted = gusts, arrows = where the wind is going). Solid = past, dashed = forecast. Indicative, from a model, not an instrument.')}));
+      moonLine(),
+      h('p',{class:'note',text:T('Πάνω: πίεση (μπλε). Κάτω: άνεμος (πορτοκαλί, διακεκομμένη κουκκίδα = ριπές, βέλη = προς πού πηγαίνει ο άνεμος). Συνεχής γραμμή = παρελθόν, διακεκομμένη = πρόγνωση. Ενδεικτικό, από μοντέλο, όχι από όργανο.','Top: pressure (blue). Bottom: wind (orange, dotted = gusts, arrows = where the wind is going). Solid = past, dashed = forecast. Indicative, from a model, not an instrument.')+(hasM?T(' Σελήνη (χρυσό): καμπύλη = ύψος της πάνω από τον ορίζοντα, σκούρα ζώνη = κύρια περίοδος (σελήνη από πάνω ▲ ή από κάτω ▼, ±45′), ανοιχτή ζώνη = δευτερεύουσα (ανατολή ↑ ή δύση ↓, ±30′), κατά τη θεωρία Solunar του J. A. Knight. Η θεωρία δεν έχει επιβεβαιωθεί επιστημονικά· οι μελέτες βρίσκουν μικρή ή καμία επίδραση, γι’ αυτό στον δείκτη μετρά λίγο.',' Moon (gold): curve = its height above the horizon, dark band = major period (moon overhead ▲ or underfoot ▼, ±45′), light band = minor (moonrise ↑ or moonset ↓, ±30′), per J. A. Knight’s Solunar theory. The theory is not scientifically confirmed; studies find small or no effect, so it counts little in the score.'):'')}));
     try{ measured(box,p,pts[n].p); }catch(e){}
   }).catch(function(){ box.replaceChildren(head(),h('p',{class:'note',text:T('Δεν φορτώθηκαν δεδομένα πίεσης και ανέμου.','Pressure and wind data did not load.')})); });
 }

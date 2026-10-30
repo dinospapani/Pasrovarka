@@ -22,7 +22,7 @@ function s(tag,attrs,text){
   return e;
 }
 const pad=n=>String(n).padStart(2,'0');
-const fmt=m=>{m=((Math.round(m)%1440)+1440)%1440;return pad(Math.floor(m/60))+':'+pad(m%60);};
+const fmt=m=>{if(m==null||isNaN(m)) return '—'; m=((Math.round(m)%1440)+1440)%1440;return pad(Math.floor(m/60))+':'+pad(m%60);};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function lsGet(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -61,7 +61,11 @@ function sunMoon(dateStr){
   const f=age/SYN;
   const illum=(1-Math.cos(2*Math.PI*f))/2;
   const transit=((noon+f*1440)%1440+1440)%1440;
-  return {noon,rise,set,age,f,illum,transit,anti:(transit+745)%1440,mrise:((transit-373)%1440+1440)%1440,mset:(transit+373)%1440};
+  const out={noon,rise,set,age,f,illum,transit,anti:(transit+745)%1440,mrise:((transit-373)%1440+1440)%1440,mset:(transit+373)%1440};
+  /* v31z361: ακριβείς ώρες σελήνης και περίοδοι solunar από το forecast.js (ίδιος υπολογισμός με την Πρόγνωση και τον server) */
+  try{ if(window.PF&&window.PF.sunMoon){ const pm=window.PF.sunMoon(dateStr,lat,lon,tz);
+    Object.assign(out,{f:pm.f,illum:pm.illum,age:pm.f*SYN,transit:pm.transit,anti:pm.anti,mrise:pm.mrise,mset:pm.mset,maj:pm.maj,min:pm.min,periods:pm.periods}); } }catch(e){}
+  return out;
 }
 function moonName(f){
   const i=Math.floor(((f*8)+0.5))%8;
@@ -100,9 +104,9 @@ function compute(){
   const press=$('dPress').value, cloud=$('dCloud').value;
   const sm=sunMoon(date);
   const factors=[];
-  const moon=Math.round(Math.cos(4*Math.PI*sm.f)*8);
+  const moon=Math.round(Math.cos(4*Math.PI*sm.f)*4); /* v31z361: ίδια βάρη με το forecast.js */
   factors.push(['Φάση σελήνης',moon]);
-  const pv={slow:8,stable:3,rise:0,fast:-4}[press]; factors.push(['Πίεση',pv]);
+  const pv={slow:3,stable:3,rise:4,fast:1}[press]; /* v31z362: ίδια με το forecast.js */ factors.push(['Πίεση',pv]);
   const wv=wind<5?2:wind<=12?4:wind<=18?-3:wind<=25?-12:-25; factors.push(['Άνεμος',wv]);
   const cv=wave<=0.5?3:wave<=1?0:wave<=1.5?-6:wave<=2?-15:-25; factors.push(['Κύμα',cv]);
   const clv={clear:0,part:2,over:4}[cloud]; factors.push(['Ουρανός',clv]);
@@ -114,10 +118,11 @@ function compute(){
     const t=hr*60+30; let b=0;
     const dTw=Math.min(circDist(t,sm.rise),circDist(t,sm.set));
     if(dTw<=75) b+=14*(1-dTw/75);
-    const dMaj=Math.min(circDist(t,sm.transit),circDist(t,sm.anti));
-    if(dMaj<=60) b+=10;
-    const dMin=Math.min(circDist(t,sm.mrise),circDist(t,sm.mset));
-    if(dMin<=30) b+=5;
+    const near=(arr,alt)=>arr?arr.reduce((m,x)=>Math.min(m,Math.abs(t-x)),1e9):alt;
+    const dMaj=near(sm.maj,Math.min(circDist(t,sm.transit),circDist(t,sm.anti)));
+    if(dMaj<=45) b+=6; else if(dMaj<=75) b+=3;
+    const dMin=near(sm.min,Math.min(circDist(t,sm.mrise),circDist(t,sm.mset)));
+    if(dMin<=30) b+=3;
     if(t>=660&&t<=900) b-=4;
     hours.push(clamp(Math.round(base+b+(P.on?P.hour[hr]:0)),5,98));
   }
