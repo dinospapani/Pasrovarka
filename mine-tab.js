@@ -95,10 +95,24 @@ function compareCard(m){
   if(m.ready) c.append(h('p',{class:'note',style:'margin:8px 0 0',text:(tot?T('Συμφωνούν στο παράθυρο ώρας σε ','They agree on the time window on ')+agree+'/'+tot+T(' ημέρες. ',' days. '):'')+T('Η προσωπική κλίμακα έχει μέσο όρο 50 (ο συνηθισμένος ρυθμός σου), οπότε δεν συγκρίνεται αριθμητικά με τη γενική: κοίτα τις ώρες. Όπου διαφωνούν, η προσωπική δείχνει ό,τι έχει πετύχει σε σένα.','The personal scale averages 50 (your usual rate), so it is not numerically comparable with the general one: compare the hours. Where they differ, the personal one shows what has worked for you.')}));
   return c;
 }
+/* v31z366: ο γενικός βαθμός της εφαρμογής στην πράξη: τσιμπήματα ανά ώρα ψαρέματος ανά ζώνη βαθμού */
+function calibCard(){
+  var cb=PP.calib(C.Store.get('trips'),C.Store.act(),{utcMin:C.utcMin(),misses:(C.Store.misses?C.Store.misses():[])}), c=h('div',{class:'card'});
+  c.append(h('h3',{text:T('Ο βαθμός της εφαρμογής στην πράξη','The app’s score in practice')}));
+  c.append(h('p',{class:'note',style:'margin:0 0 6px',text:T('Στην αρχή κάθε εξόδου κρατιέται ο βαθμός που έδινε η εφαρμογή για κάθε ώρα. Εδώ φαίνεται πόσα τσιμπήματα την ώρα είχες όταν ο βαθμός ήταν χαμηλός, μέτριος ή υψηλός.','At the start of each trip the app keeps the score it gave for each hour. Here you see your bites per hour when the score was low, medium or high.')}));
+  var mx=Math.max.apply(null,cb.bins.map(function(b){ return b.rate||0; }).concat([0.01]));
+  cb.bins.forEach(function(b,i){ var lb=[T('Βαθμός κάτω από 60','Score below 60'),T('Βαθμός 60–79','Score 60–79'),T('Βαθμός 80+','Score 80+')][i];
+    c.append(h('div',{class:'bar'},h('span',{text:lb}),h('div',{class:'t'},h('i',{style:'width:'+Math.round((b.rate||0)/mx*100)+'%'})),h('span',{class:'n',text:b.h>0?(Math.round(b.rate*100)/100)+T('/ώρα','/h')+' · '+(Math.round(b.h*10)/10)+T(' ώρ.',' h'):'—'}))); });
+  var v=!cb.ok?T('Χρειάζονται τουλάχιστον 6 έξοδοι με τον βαθμό καταγεγραμμένο και 5 ώρες ψαρέματος σε χαμηλό και σε υψηλό βαθμό (τώρα: ','Needs at least 6 trips with the score recorded and 5 fishing hours at both low and high scores (now: ')+cb.n+T(' έξοδοι).',' trips).')
+    :cb.ratio===Infinity?'✓ '+T('Είχες τσιμπήματα μόνο στις ώρες με υψηλό βαθμό, καθόλου κάτω από 60. Ο βαθμός βοηθά.','You had bites only at well-scored hours, none below 60. The score helps.'):cb.ratio>=1.3?'✓ '+T('Στις ώρες με βαθμό 80+ είχες ','At hours scored 80+ you had ')+Math.round(cb.ratio*10)/10+T(' φορές τα τσιμπήματα των ωρών κάτω από 60. Ο βαθμός βοηθά.',' times the bites of hours below 60. The score helps.')
+    :'✗ '+T('Δεν φαίνεται ουσιαστική διαφορά ανάμεσα σε υψηλό και χαμηλό βαθμό ακόμα. Για τα δικά σου νερά ο γενικός βαθμός ίσως δεν βοηθά· βασίσου περισσότερο στην προσωπική πρόγνωση.','No real difference between high and low scores yet. For your waters the general score may not help; rely more on your personal forecast.');
+  c.append(h('p',{class:'note',style:'margin:8px 0 0;font-weight:600',text:v}));
+  return c;
+}
 function render(){
   root.replaceChildren();
   var m=model();
-  root.append(statusCard(m),compareCard(m));
+  root.append(statusCard(m),calibCard(),compareCard(m));
   if(m.ready) root.append(patternsCard(m));
   var l=listCard(); if(l) root.append(l);
   root.append(formCard());

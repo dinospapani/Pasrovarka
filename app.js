@@ -2094,6 +2094,33 @@ async function tripPressBrief(){
   }catch(e){}
 }
 window.addEventListener('psaro-sess',()=>setTimeout(tripPressBrief,2500)); setTimeout(tripPressBrief,6000);
+/* v31z366: ο γενικός βαθμός που έδινε η εφαρμογή για κάθε ώρα, κρατημένος στην αρχή της εξόδου (scoreH=[[ώρα UTC/3600000, βαθμός]]).
+   Μετά συγκρίνεται με τα τσιμπήματα ανά ώρα ψαρέματος (PP.calib), για να φαίνεται αν ο βαθμός βοηθά πραγματικά. */
+async function tripScoreSnap(){
+  try{
+    const st=window.PsaroTrip&&window.PsaroTrip.state&&window.PsaroTrip.state(); if(!st||!st.active||!st.id) return;
+    const cur=lsGet('psaro-tscore',null); if(cur&&cur.id===st.id) return;
+    const fx=window.PsaroTrack&&window.PsaroTrack.fix&&window.PsaroTrack.fix(), la=fx?fx.lat:(cond&&cond.lat), lo=fx?fx.lon:(cond&&cond.lon); if(la==null||lo==null||!window.PF) return;
+    const fc=await window.PF.getForecast(+la,+lo,undefined,{days:2}), out=[];
+    fc.days.forEach(d=>d.hours.forEach(x=>{ const hu=Math.floor((Date.parse(x.t+':00Z')-fc.tz*60000)/3600000); if(x.score!=null) out.push([hu,x.score]); }));
+    lsSet('psaro-tscore',{id:st.id,h:out,sp:lsGet('psaro-advsp','')||''});
+  }catch(e){}
+}
+window.addEventListener('psaro-sess',()=>setTimeout(tripScoreSnap,4000)); setTimeout(tripScoreSnap,8000);
+window.addEventListener('psaro-tripend',e=>{ setTimeout(()=>{ try{ const id=e.detail&&e.detail.id, t=id&&Store.get('trips').find(x=>x.id===id), sc=lsGet('psaro-tscore',null);
+  if(t&&sc&&Array.isArray(sc.h)&&(t.sid===sc.id||!t.sid)){ const lo=Math.floor(t.startMs/3600000), hi=Math.floor(t.endMs/3600000); const h=sc.h.filter(r=>r[0]>=lo&&r[0]<=hi);
+    if(h.length) Store.save('trips',Object.assign({},t,{scoreH:h,scoreSp:sc.sp||undefined})); lsSet('psaro-tscore',null); } }catch(x){} },2500); });
+/* v31z366: βάθος από τον χάρτη (EMODnet) σε κάθε ψάρι ή χαμένο τσίμπημα με θέση και χωρίς βάθος. Στο παρασκήνιο, λίγα κάθε φορά. depthSrc:'chart' = από χάρτη, όχι από βυθόμετρο. */
+let depthBusy=false, depthTm=null; const depthTried=new Set(); /* χωρίς απάντηση: ξαναδοκιμάζει σε επόμενο άνοιγμα, όχι αμέσως */
+async function fillDepths(){
+  if(depthBusy||!navigator.onLine) return; depthBusy=true;
+  try{ const list=(Store.raw?Store.raw('bites'):Store.get('bites')).filter(b=>typeof b.lat==='number'&&typeof b.lon==='number'&&(b.depth==null||b.depth==='')&&!depthTried.has(b.id)).slice(0,12);
+    for(const b of list){ let d=null; try{ d=await depthLookup(b.lat,b.lon); }catch(e){}
+      const cur=(Store.raw?Store.raw('bites'):Store.get('bites')).find(x=>x.id===b.id); if(!cur||(cur.depth!=null&&cur.depth!=='')) continue;
+      depthTried.add(b.id); if(d!=null&&d>0) await Store.save('bites',Object.assign({},cur,{depth:d,depthSrc:'chart'})); await new Promise(r=>setTimeout(r,1200)); } }
+  catch(e){} finally{ depthBusy=false; }
+}
+setTimeout(fillDepths,25000); Store.on('bites',()=>{ clearTimeout(depthTm); depthTm=setTimeout(fillDepths,8000); });
 /* v31z364: πίεση και άνεμος ώρα με ώρα για κάθε έξοδο (Open-Meteo, για τη θέση και το διάστημα της εξόδου), ώστε το προσωπικό μοντέλο
    να μετρά τις ώρες ψαρέματος με τις πραγματικές συνθήκες κάθε ώρας και όχι μόνο της αρχής. Αποθηκεύεται στην έξοδο ως condH=[[ώρα UTC/3600000, τάση 0–3, άνεμος kn]].
    Τάση πίεσης όπως παντού: αλλαγή 3 ωρών, ≤−3 απότομη πτώση, ≤−1 αργή πτώση, ≥+1 άνοδος, αλλιώς σταθερή. Μόνο για εξόδους των τελευταίων ~85 ημερών (όριο του Open-Meteo). */

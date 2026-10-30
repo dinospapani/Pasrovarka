@@ -124,7 +124,26 @@ function movingFrom(pts){
     if(fast){ if(cur&&a[2]-cur[1]<=3*60000) cur[1]=b[2]; else { cur=[a[2],b[2]]; out.push(cur); } } }
   return out.filter(m=>m[1]-m[0]>=2*60000);
 }
+/* v31z366: έλεγχος του γενικού βαθμού. Για εξόδους με scoreH (ο βαθμός που έδινε η εφαρμογή στην αρχή), τσιμπήματα ανά ώρα ψαρέματος
+   σε τρεις ζώνες βαθμού: κάτω από 60, 60–79, 80 και πάνω. Η πλεύση (s.moving) δεν μετρά. */
+const CB=[[0,60],[60,80],[80,101]];
+function calib(trips,bites,opt){
+  const utcMin=(opt&&opt.utcMin)||0, all=(bites||[]).concat((opt&&opt.misses)||[]), B=CB.map(r=>({lo:r[0],hi:r[1],h:0,c:0})); let n=0;
+  for(const s of sessionsOf(trips)){
+    if(s.manual||!Array.isArray(s.scoreH)||!s.scoreH.length) continue; const sc={}; s.scoreH.forEach(r=>{ if(Array.isArray(r)) sc[r[0]]=r[1]; });
+    const bin=ms=>{ const v=sc[Math.floor(ms/3600000)]; if(v==null) return -1; return B.findIndex(b=>v>=b.lo&&v<b.hi); };
+    const ev=all.map(b=>biteMs(b,utcMin)).filter(ms=>ms!=null&&ms>=s.startMs-600000&&ms<=s.endMs+600000);
+    const mv=Array.isArray(s.moving)?s.moving.filter(m=>!ev.some(e=>e>=m[0]&&e<=m[1])):[]; let used=false;
+    for(let t=s.startMs;t<s.endMs;t+=600000){ const dh=Math.min(600000,s.endMs-t)/3600000, mid=t+dh*1800000; if(mv.some(m=>mid>=m[0]&&mid<=m[1])) continue; const i=bin(mid); if(i>=0){ B[i].h+=dh; used=true; } }
+    ev.forEach(ms=>{ const i=bin(Math.min(Math.max(ms,s.startMs),s.endMs-1)); if(i>=0) B[i].c++; });
+    if(used) n++;
+  }
+  B.forEach(b=>{ b.rate=b.h>0?b.c/b.h:null; });
+  /* συμπέρασμα μόνο με αρκετά δεδομένα: τουλάχιστον 5 ώρες στη χαμηλή και στην υψηλή ζώνη */
+  const lo=B[0], hi=B[2], ok=n>=6&&lo.h>=5&&hi.h>=5;
+  return {n,bins:B,ok,ratio:ok&&lo.rate>0?hi.rate/lo.rate:(ok&&hi.rate>0?Infinity:null)};
+}
 const LIGHT_EL=['Νύχτα','Αυγή','Πρωί','Μεσημέρι','Απόγευμα','Σούρουπο'], LIGHT_EN=['Night','Dawn','Morning','Midday','Afternoon','Dusk'];
-g.PP={build,score,day,sessionsOf,moonOf,NEED,ADV,biteMs,phaseOf,phaseAt,movingFrom,validate,prepare,LIGHT_EL,LIGHT_EN,MOVE_KN};
+g.PP={calib,build,score,day,sessionsOf,moonOf,NEED,ADV,biteMs,phaseOf,phaseAt,movingFrom,validate,prepare,LIGHT_EL,LIGHT_EN,MOVE_KN};
 if(typeof module!=='undefined') module.exports=g.PP;
 })(typeof window!=='undefined'?window:globalThis);

@@ -134,10 +134,11 @@ function renderFc(p,f,note,t){
   f.days.forEach(function(d){ if(d.safe&&(!bestD||d.best>bestD.best)) bestD=d; });
   (function(){ var bx=$('fcBest'); bx.replaceChildren();
     if(!bestD){ bx.classList.add('none'); bx.append(h('span',{class:'fcbn',text:'Καμία ασφαλής μέρα στο εύρος της πρόγνωσης.'})); return; }
-    bx.classList.remove('none');
+    bx.classList.remove('none'); bx.style.flexWrap='wrap';
     var tone=bestD.best>=75?'good':bestD.best>=60?'warn':'bad';
     bx.append(h('div',{class:'fcbtx'},h('span',{class:'fcbl',text:'Καλύτερη μέρα'}),h('b',{class:'fcbd',text:dl(bestD.date)}),bestD.win?h('span',{class:'fcbw',text:pad(bestD.win.s)+':00–'+pad((bestD.win.e+1)%24)+':00'}):null),
-      h('div',{class:'fcbs '+tone},h('b',{text:String(bestD.best)}),h('span',{text:'Δείκτης'})));
+      h('div',{class:'fcbs '+tone},h('b',{text:String(bestD.best)}),h('span',{text:'Δείκτης'})),
+      h('span',{class:'fcbconf',style:'flex-basis:100%;font-size:12px;opacity:.8',text:T('Βεβαιότητα: ','Confidence: ')+(function(){ var q=confOf(bestD,today); return q.txt+(q.why?' · '+q.why:''); })()}));
   })();
   f.days.forEach(function(d){
     var dt=new Date(d.date+'T12:00:00Z'), w=d.wx||{};
@@ -160,6 +161,7 @@ function renderFc(p,f,note,t){
       tileEl('Πίεση',w.pStart!=null?PU.press(w.pEnd)+' '+(w.pEnd-w.pStart>=1.5?'↑':w.pEnd-w.pStart<=-1.5?'↓':'→'):'–'),
       tileEl('Κύμα',w.waveMax!=null?PU.wave(w.waveAvg)+' ('+(EN?'up to ':'έως ')+PU.wave(w.waveMax)+')'+(w.period?' · '+Math.round(w.period)+' s':''):'–'),
       tileEl('Θάλασσα',w.sst!=null?PU.temp(w.sst,1):'–'),
+      tileEl(T('Βεβαιότητα','Confidence'),(function(){ var q=confOf(d,today); return q.txt+(q.why?' ('+q.why+')':''); })()),
       tileEl('Σελήνη',Math.round(w.illum*100)+'%'),
       tileEl('Ανατολή / Δύση',fmtMin(w.rise)+' / '+fmtMin(w.set)),
       tileEl('Καλύτερο παράθυρο',d.safe&&d.win?pad(d.win.s)+':00–'+pad((d.win.e+1)%24)+':00':'–'));
@@ -366,6 +368,13 @@ function todayPress(){
   setTimeout(todayPress,2500); setInterval(function(){ if(!document.hidden) todayPress(); },60000);
 })();
 /* ---------- ειδοποιήσεις ---------- */
+/* v31z366: πόσο να εμπιστεύεσαι τον βαθμό μιας μέρας. Η πρόγνωση καιρού χάνει ακρίβεια με τις μέρες (σήμερα/αύριο: υψηλή, 2–3 μέρες: μέτρια, 4+: χαμηλή),
+   και πέφτει ένα επίπεδο όταν ο άνεμος ή το κύμα είναι κοντά στο όριο ασφάλειας (μικρή αλλαγή της πρόγνωσης αλλάζει το αν βγαίνεις). */
+function confOf(d,today){
+  var lead=Math.round((Date.parse(d.date+'T12:00:00Z')-Date.parse(today+'T12:00:00Z'))/86400000), lv=lead<=1?2:lead<=3?1:0, w=d.wx||{};
+  var edge=(w.windMax!=null&&Math.abs(w.windMax-14)<=2)||(w.waveMax!=null&&Math.abs(w.waveMax-0.9)<=0.15); if(edge&&lv>0) lv--;
+  return {lv:lv,txt:[T('χαμηλή','low'),T('μέτρια','medium'),T('υψηλή','high')][lv],why:(lead<=1?'':lead<=3?T('πρόγνωση 2–3 ημερών','2–3 days ahead'):T('πρόγνωση 4+ ημερών','4+ days ahead'))+(edge?((lead>1?' · ':'')+T('άνεμος ή κύμα κοντά στο όριο','wind or waves near the limit')):'')};
+}
 /* v31z363: επιλογή είδους-στόχου πάνω από τις μέρες: ο βαθμός προσαρμόζεται στο είδος (θερμοκρασία θάλασσας, και για καλαμάρι/ξιφία κανόνες από μελέτες) */
 function spPick(show){
   var D=$('fcDays'); if(!D) return; var box=$('fcSpPick');

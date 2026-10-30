@@ -26,7 +26,7 @@ function collect(){
     if(!b.species) return; var e=kbOf(b.species,b.latin), key=e?e.n:norm(b.species).replace(/\s*\(.*$/,'');
     var o=by[key]||(by[key]={key:key,kb:e,name:e?e.n:String(b.species).replace(/\s*\(.*$/,''),n:0,bites:[]});
     var ms=PP.biteMs(b,utc); o.n++; total++;
-    o.bites.push({b:b,ph:(ms!=null?PP.phaseAt(ms,b.lat,b.lon,utc):null),hr:b.time?+b.time.slice(0,2):null,moon:ms!=null?PP.moonOf(ms):null,month:b.date?+b.date.slice(5,7)-1:null,pt:PTS.indexOf(b.ptrend),w:windCls(b.wind),tide:b.tide||null,sst:b.sst,tech:b.tech||'',bait:b.bait||'',depth:b.depth,lat:b.lat,lon:b.lon,kg:+b.kg||0});
+    o.bites.push({depth:b.depth,b:b,ph:(ms!=null?PP.phaseAt(ms,b.lat,b.lon,utc):null),hr:b.time?+b.time.slice(0,2):null,moon:ms!=null?PP.moonOf(ms):null,month:b.date?+b.date.slice(5,7)-1:null,pt:PTS.indexOf(b.ptrend),w:windCls(b.wind),tide:b.tide||null,sst:b.sst,tech:b.tech||'',bait:b.bait||'',depth:b.depth,lat:b.lat,lon:b.lon,kg:+b.kg||0});
   });
   /* Δεδομένα φίλου: ξεχωριστά, χωρίς χρόνο προσπάθειας, μόνο ως εποχιακή ένδειξη. */
   var ext={}; try{ ((window.PsaroExt&&window.PsaroExt.use())||[]).forEach(function(r){ if(!r.sp) return; var e=kbOf(r.sp,''), key=e?e.n:norm(r.sp).replace(/\s*\(.*$/,''); var o=ext[key]||(ext[key]={n:0,m:[0,0,0,0,0,0,0,0,0,0,0,0]}); o.n++; if(r.month!=null) o.m[r.month]++; }); }catch(e){}
@@ -206,6 +206,12 @@ function whenWhere(D){
     Object.keys(G).forEach(function(k){ var best=null; F[k].forEach(function(fx,i){ var cnt=0; o.bites.forEach(function(q){ if(G[k](q)===i) cnt++; }); if(!fx.h||cnt<2) return; var m=((cnt+K*r0)/(fx.h+K))/r0; if(m>=1.25&&(!best||m>best.m)) best={i:i,m:m}; }); if(best) lines.push(LB[k](best.i)); });
     if(lines.length){ c.append(h('div',{class:'label',style:'margin-top:12px',text:T('Οι συνθήκες που σου δουλεύουν','Conditions that work for you')})); c.append(h('p',{style:'margin:4px 0 0',text:lines.join(' · ')})); }
   }
+  /* v31z366: βάθη όπου το πιάνεις (όλη τη χρονιά και αυτή την εποχή, ±1 μήνας). Βάθη από βυθόμετρο ή από τον χάρτη EMODnet. */
+  if(o){ var mo=+C.nicosiaToday().slice(5,7)-1, dAll=[], dSea=[]; o.bites.forEach(function(q){ var dv=q.depth!=null&&q.depth!==''?+q.depth:null; if(dv==null||!(dv>0)) return; dAll.push(dv); if(q.month!=null&&Math.min((q.month-mo+12)%12,(mo-q.month+12)%12)<=1) dSea.push(dv); });
+    var rng=function(a){ a=a.slice().sort(function(x,y){ return x-y; }); var q1=a[Math.floor((a.length-1)*0.25)], q3=a[Math.ceil((a.length-1)*0.75)], md=a[Math.floor((a.length-1)/2)]; return q1+'–'+q3+' m ('+T('συνήθως ','typically ')+md+' m, '+a.length+T(' ψάρια',' fish')+')'; };
+    if(dAll.length>=3){ c.append(h('div',{class:'label',style:'margin-top:12px',text:T('Βάθη όπου το πιάνεις','Depths where you catch it')}));
+      c.append(h('p',{style:'margin:4px 0 0',text:T('Όλη τη χρονιά: ','All year: ')+rng(dAll)+(dSea.length>=3?' · '+T('Αυτή την εποχή: ','This season: ')+rng(dSea):'')}));
+      c.append(h('p',{class:'note',style:'margin:2px 0 0',text:T('Από βυθόμετρο ή από τον χάρτη βαθών EMODnet (ενδεικτικό κοντά στην ακτή).','From your sounder or the EMODnet depth chart (indicative near the coast).')})); } }
   /* σημεία */
   var cells={};
   if(o) o.bites.forEach(function(q){ if(typeof q.lat!=='number'||typeof q.lon!=='number') return; var k=q.lat.toFixed(2)+','+q.lon.toFixed(2), z=cells[k]||(cells[k]={n:0,la:0,lo:0,kg:0}); z.n++; z.la+=q.lat; z.lo+=q.lon; z.kg+=q.kg; });

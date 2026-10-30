@@ -280,13 +280,17 @@ var MIC='<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"
   var w=$('fishBtns'); if(!w) return; var b=el('button','fb fbmic'); b.type='button'; b.id='fbMic'; b.setAttribute('aria-label',T('Φωνητική καταγραφή ψαριού','Voice catch log')); b.innerHTML=MIC;
   w.insertBefore(b,w.children[1]||null);
   b.addEventListener('click',function(){
+    var t0=Date.now(); /* v31z366: η στιγμή που πάτησες το μικρόφωνο είναι η ώρα του ψαριού */
     listen(function(alts){
+      /* v31z366: «χάθηκε», «έφυγε», «lost» → καταγραφή χαμένου τσιμπήματος αμέσως */
+      if(alts.some(function(a){ return /χάθηκ|χαθηκ|έφυγ|εφυγ|ξεκαρφ|\blost\b|got away|missed/i.test(a); })&&C.quickMiss){ C.quickMiss(); C.toast(T('Καταγράφηκε χαμένο τσίμπημα.','Lost bite logged.')); return; }
       var r=best(alts); if(!r||r.sc===0){ C.toast(T('Δεν βρέθηκε είδος ή βάρος. Άκουσα: ','No species or weight found. Heard: ')+alts[0]); return; }
+      r.t0=t0;
       if(!r.species){ window.PsaroAsk(T('Άκουσα: «','Heard: “')+alts[0]+T('». Δεν αναγνώρισα το είδος.','”. I did not recognise the species.')+' '+T('Να ξαναπείς;','Try again?'),{title:T('Φωνητική καταγραφή','Voice log'),ok:T('Ξανά','Again'),cancel:T('Άκυρο','Cancel')}).then(function(ok){ if(ok) b.click(); }); return; }
       var msg=[r.species?SN(r.species.disp):T('Άγνωστο είδος','Unknown species'),r.kg!=null?r.kg+' kg':null,r.len!=null?r.len+' cm':null].filter(Boolean).join(' · ');
       window.PsaroAsk(msg+'\n'+T('Άκουσα: «','Heard: “')+alts[0]+'”\n\n'+T('Να καταγραφεί ως ψάρι;','Log as a catch?'),{title:T('Φωνητική καταγραφή','Voice log'),ok:T('Καταγραφή','Log'),cancel:T('Άκυρο','Cancel')}).then(function(ok){
         if(!ok) return; $('fab').click();
-        setTimeout(function(){ applyForm(r); setTimeout(function(){ try{ $('biteForm').requestSubmit(); }catch(e){ $('biteForm').querySelector('button[type=submit]').click(); } },450); },250);
+        setTimeout(function(){ applyForm(r); try{ var tm=$('bWhen'); if(tm&&r.t0&&Date.now()-r.t0<30*60000){ var dd=new Date(r.t0+C.utcMin()*60000); tm.value=dd.toISOString().slice(0,16); tm.dispatchEvent(new Event('input',{bubbles:true})); } }catch(x){} setTimeout(function(){ try{ $('biteForm').requestSubmit(); }catch(e){ $('biteForm').querySelector('button[type=submit]').click(); } },450); },250);
       });
     });
   });
