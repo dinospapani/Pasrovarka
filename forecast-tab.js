@@ -351,7 +351,7 @@ async function pushServer(){
   var cl=Cl(); if(!cl) return false;
   try{
     var sub=await getSub(true); if(!sub) return false;
-    var body={id:await subId(sub),sub:sub.toJSON(),places:cfgPlaces(),threshold:nt.threshold,checked_at:null,updated_at:new Date().toISOString()};
+    var lg=window.LANG==='en'?'en':'el', body={id:await subId(sub),sub:sub.toJSON(),places:cfgPlaces().map(function(p){ p.lang=lg; return p; }),threshold:nt.threshold,checked_at:null,updated_at:new Date().toISOString()};
     var H={Prefer:'resolution=merge-duplicates,return=minimal'};
     var ww=wwCfg(), tn=!!nt.turn;
     try{ await cl.rest('push_subs',{method:'POST',headers:H,body:JSON.stringify(Object.assign({pressure:nt.pressure!==false,wind:ww,turn:tn},body))}); nt.turnSrv=tn; }
@@ -371,7 +371,7 @@ function sigOf(){ return JSON.stringify([nt.threshold,allPlaces().map(function(p
 async function syncNotify(onlyIfChanged){
   save();
   if(!nt.on){ await writeCfg(); return; }
-  var sg=sigOf()+(nt.pressure!==false)+JSON.stringify(wwCfg())+!!nt.turn; if(onlyIfChanged&&nt.sig===sg&&nt.server) return; nt.sig=sg;
+  var sg=sigOf()+(nt.pressure!==false)+JSON.stringify(wwCfg())+!!nt.turn+'|L'+(window.LANG||'el'); if(onlyIfChanged&&nt.sig===sg&&nt.server) return; nt.sig=sg;
   var ok=await pushServer(); nt.server=ok; save(); await writeCfg();
   ntStatus(ok?'Ενεργό. Ο server ελέγχει την πρόγνωση περίπου κάθε 3 ώρες και σου στέλνει ειδοποίηση, ακόμα και με κλειστή εφαρμογή.':'Ενεργό μόνο όταν ανοίγεις την εφαρμογή (ή περιοδικά στο παρασκήνιο, αν το επιτρέπει το Android). Για ειδοποιήσεις με κλειστή εφαρμογή χρειάζεται η ρύθμιση του server.');
 }
@@ -410,6 +410,8 @@ $('ntOn').addEventListener('change',async function(){
 });
 $('ntThr').addEventListener('change',async function(){ nt.threshold=+$('ntThr').value; nt.notified={}; save(); if(nt.on){ await syncNotify(); localCheck(); } });
 window.addEventListener('psaro-wwatch',function(){ if(nt.on) syncNotify(); });
+/* v31z358: μία φορά στο άνοιγμα, αν άλλαξε κάτι (π.χ. γλώσσα), ενημερώνει τον server */
+setTimeout(function(){ try{ if(nt.on) syncNotify(true); }catch(e){} },5000);
 $('ntPress').addEventListener('change',function(){ nt.pressure=$('ntPress').checked; save(); if(nt.on){ syncNotify(); } });
 $('ntTest').addEventListener('click',async function(){
   if(!('Notification' in window)){ ntStatus('Ο browser δεν υποστηρίζει ειδοποιήσεις.'); return; }

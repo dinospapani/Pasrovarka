@@ -94,7 +94,7 @@ function render(){
   arr.forEach(function(x){
     var d=dayOf(x.at); if(d!==lastDay){ lastDay=d; var dl; try{ dl=new Intl.DateTimeFormat(EN?'en-GB':'el-GR',{weekday:'long',day:'numeric',month:'long',timeZone:'Asia/Nicosia'}).format(new Date(x.at)); }catch(e){ dl=d; } ls.append(el('div','iday',dl)); }
     var k=KIND[x.kind]||KIND.info, it=el('div','iit'), bt=el('button'); bt.type='button'; bt.setAttribute('aria-expanded','false');
-    var tx=el('div','itx'); tx.append(el('div','itt',x.title),el('div','ibd',x.body||''));
+    var tx=el('div','itx'); tx.append(el('div','itt',String(x.title||'').replace(/^[^\p{L}\p{N}]+/u,'')),el('div','ibd',x.body||''));
     bt.append(el('span','iic',k[0]),tx,el('span','itm',hmOf(x.at)));
     var fu=el('div','ifu'); fu.hidden=true; fu.append(document.createTextNode(x.full||x.body||''));
     if(x.place&&x.place.lat!=null&&window.PsaroCoord&&window.PsaroCoord.fmt){ try{ fu.append(el('div','note',T('Σημείο: ','Location: ')+(x.place.name?x.place.name+' · ':'')+window.PsaroCoord.fmt(+x.place.lat,+x.place.lon))); }catch(e){} }
