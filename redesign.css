@@ -1386,3 +1386,35 @@ body.fp-lake #logSeg,body.fp-shore #logSeg,body.fp-spear #logSeg{grid-template-c
 
 /* v31z411: ένδειξη «χρειάζεται προσοχή» στις γραμμές του Profile */
 .ndphr b .ndphw{display:inline-block;width:8px;height:8px;margin-left:8px;border-radius:50%;background:#e0a01a;vertical-align:middle}
+
+/* v31z412: Profile */
+.ndpcard{border-radius:20px;background:var(--surface);border:1px solid var(--line);padding:12px 12px 10px;margin:2px 0 4px}
+.ndpcard .ndphead{display:flex;align-items:center;gap:12px;width:100%;padding:2px;border:0;background:transparent;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.ndpcard .ndpnm{flex:1}.ndpcard .ndpnm span{display:flex;align-items:center;gap:6px}.ndpcard .ndpnm em{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ndsy{width:8px;height:8px;border-radius:50%;flex:none;background:#8a959c}.ndsy.ok{background:#2e9e5b}.ndsy.warn{background:#e0a01a}.ndsy.bad{background:#d23b30}
+.ndpch{font-style:normal;font-size:22px;color:var(--muted)}
+.ndpyr{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:12px 0 8px}
+.ndpyc{display:flex;flex-direction:column;align-items:flex-start;min-width:0;padding:8px 10px;border-radius:12px;background:color-mix(in srgb,var(--ink) 5%,transparent)}
+.ndpyc b{font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.ndpyc span{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.ndpall{width:100%;min-height:38px;border:0;border-radius:12px;background:transparent;color:var(--accent,#c4401c);font:600 14px system-ui,sans-serif;cursor:pointer}
+.ndphsrch{display:flex;align-items:center;gap:8px;margin:8px 0 2px;padding:0 12px;min-height:44px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.ndphsrch svg{width:18px;height:18px;fill:none;stroke:var(--muted);stroke-width:2;flex:none}
+.ndphsrch input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:15px system-ui,sans-serif;outline:none;min-height:42px;padding:0}
+.ndphnone{text-align:center;margin:16px 0}
+.ndphh[hidden],.ndphg[hidden],.ndphr[hidden]{display:none!important}
+/* ετοιμότητα ασφαλείας */
+.ndsafr{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line)}
+.ndsafr i{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:13px;background:#e0a01a;color:#fff}
+.ndsafr.ok i{background:#2e9e5b}.ndsafr span{display:flex;flex-direction:column}.ndsafr b{font-size:14px}.ndsafr small{font-size:12px;color:var(--muted)}
+/* ειδοποιήσεις σε ομάδες */
+.ndalh{margin:16px 0 4px;font-size:11.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+#ntCard .ndalsm{display:block;font-size:12px;color:var(--muted);font-weight:400;margin-top:2px}
+#ntCard.ndaloff>.ndalh:nth-of-type(n+2),#ntCard.ndaloff label:has(#ntThr),#ntCard.ndaloff label.chk:has(#ntPress),#ntCard.ndaloff label.chk:has(#ntTurn),#ntCard.ndaloff #wwBox{opacity:.45}
+/* ενιαίοι διακόπτες στις ρυθμίσεις */
+#pSettings label.chk{display:flex;align-items:center;gap:12px;padding:10px 0;margin:0;border:0;border-bottom:1px solid var(--line)}
+#pSettings label.chk>input[type=checkbox]{order:2;margin-left:auto}
+#pSettings input[type=checkbox]{-webkit-appearance:none;appearance:none;flex:none;width:46px;height:28px;border-radius:14px;background:color-mix(in srgb,var(--ink) 22%,transparent);position:relative;cursor:pointer;transition:background .15s;margin:0;border:0}
+#pSettings input[type=checkbox]::before{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .15s}
+#pSettings input[type=checkbox]:checked{background:var(--good,#2e9e5b)}
+#pSettings input[type=checkbox]:checked::before{transform:translateX(18px)}
+#pSettings input[type=checkbox]:focus-visible{outline:2px solid var(--accent,#c4401c);outline-offset:2px}
