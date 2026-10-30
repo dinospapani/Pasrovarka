@@ -926,6 +926,18 @@ box.insertBefore(tools,bar.nextSibling);
     document.body.classList.add('ndbsopen'); body.scrollTop=0;
   }
   function close(){ if(!sheet||sheet.hidden) return; sheet.hidden=true; body.replaceChildren(); document.body.classList.remove('ndbsopen'); }
+  /* v31z356: το σημείο μπαίνει στο ορατό κομμάτι του χάρτη, πάνω από το φύλλο και κάτω από τις μπάρες, ώστε να μην κρύβεται */
+  function keepAbove(ll){
+    function place(){
+      try{ if(!map||!sheet||sheet.hidden) return;
+        var mr=map.getContainer().getBoundingClientRect(), sr=sheet.getBoundingClientRect();
+        var top=mr.top+(document.body.classList.contains('ontrip')?165:105), bot=Math.min(mr.bottom,sr.top)-12; if(bot-top<60) top=mr.top+40;
+        var p=map.latLngToContainerPoint(ll), wantY=((top+bot)/2)-mr.top, wantX=mr.width/2;
+        var dx=p.x-wantX, dy=p.y-wantY; if(Math.abs(dx)>4||Math.abs(dy)>4) map.panBy([dx,dy],{animate:true,duration:.3});
+      }catch(e){}
+    }
+    if(map._flyToFrame) map.once('moveend',function(){ setTimeout(place,40); }); else setTimeout(place,60);
+  }
   function wire(){
     if(wired) return; try{ map=C.map&&C.map(); }catch(e){ map=null; } if(!map) return; wired=true;
     map.on('popupopen',function(e){
@@ -934,8 +946,9 @@ box.insertBefore(tools,bar.nextSibling);
       if(pu.options&&pu.options.className&&/nobs/.test(pu.options.className)) return;
       setTimeout(function(){
         if(!ct.childNodes.length) return;
-        var nodes=[].slice.call(ct.childNodes); open(nodes);
+        var nodes=[].slice.call(ct.childNodes), ll=pu.getLatLng&&pu.getLatLng(); open(nodes);
         try{ map.closePopup(pu); }catch(x){}
+        if(ll) keepAbove(ll);
       },30);
     });
     map.on('click',function(){ if(sheet&&!sheet.hidden&&!document.body.classList.contains('ndbsjust')) {} });

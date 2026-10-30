@@ -820,6 +820,8 @@ function tripEff(t,all){
 }
 let reviewSet=null, bitesVisRef=null, backOnly=false, focusId=null; /* v31z353: το ψάρι/σημείο που άνοιξες από τη λίστα φαίνεται ακόμα κι αν είναι κρυμμένα τα υπόλοιπα */
 function setFocus(id){ focusId=id||null; try{ drawMap(); if(bitesVisRef) bitesVisRef(); if(window.PsaroCore.spotsVis) window.PsaroCore.spotsVis(); }catch(e){} }
+/* v31z356: «Πηγαίνω εκεί» από ψάρι που ανοίχτηκε από λίστα: σβήνει η μπάρα επιστροφής, μένει μόνο η μπάρα πλοήγησης */
+function dropBack(){ if(!backOnly||reviewSet) return; backOnly=false; retTo=null; followPause=0; const rb=$('reviewBar'); if(rb) rb.hidden=true; }
 window.addEventListener('psaro-bsx',()=>{ if(backOnly&&!reviewSet&&retTo) endReview(); }); /* v31z351: το ✕ του φύλλου γυρίζει κι αυτό στη λίστα */
 function tripBitesOf(t){
   const all=Store.get('trips');
@@ -2099,5 +2101,5 @@ document.addEventListener('visibilitychange',()=>{
 });
 setInterval(()=>{ if(document.visibilityState==='visible'&&navigator.onLine!==false) refreshConditions(); },10*60*1000);
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
-Object.assign(window.PsaroCore,{openSpotForm:(p,sp)=>openSpotForm(p||{},sp),tripStamp:tripStamp,utcOff:utcOff,matchSp:matchSp,dispName:dispName,shownName:shownName,openRodSheet:()=>openSheet(),reviewTrip:reviewTrip,endReview:endReview,speciesDB:()=>DB,pickSpecies:sp=>{ $('bSpecies').value=shownName(sp); curLatin=sp.la; try{updateLaw();}catch(e){} $('bSpecies').dispatchEvent(new Event('change',{bubbles:true})); }});
+Object.assign(window.PsaroCore,{dropBack:dropBack,openSpotForm:(p,sp)=>openSpotForm(p||{},sp),tripStamp:tripStamp,utcOff:utcOff,matchSp:matchSp,dispName:dispName,shownName:shownName,openRodSheet:()=>openSheet(),reviewTrip:reviewTrip,endReview:endReview,speciesDB:()=>DB,pickSpecies:sp=>{ $('bSpecies').value=shownName(sp); curLatin=sp.la; try{updateLaw();}catch(e){} $('bSpecies').dispatchEvent(new Event('change',{bubbles:true})); }});
 })();

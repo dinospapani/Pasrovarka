@@ -96,7 +96,7 @@ function onPos(p){
 function onErr(e){ if(e&&e.code===1){ try{ C.toast(T('Δεν δόθηκε άδεια θέσης. Χωρίς GPS δεν υπάρχει πορεία.','Location permission denied. No course without GPS.')); }catch(x){} } }
 function begin(){ if(wid!=null||!navigator.geolocation) return; try{ wid=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:3000,timeout:30000}); }catch(e){ wid=null; } }
 function stop(){ if(wid!=null){ try{ navigator.geolocation.clearWatch(wid); }catch(e){} wid=null; } }
-function go(lat,lon,name){ rt=null; tgt={lat:+lat,lon:+lon,name:(name||'').slice(0,40)}; C.lsSet(KEY,tgt); arrived=false; spd=null; prev=null; lastZ=0; map.closePopup(); begin(); render(); try{ C.toast(T('Πλοήγηση προς ','Heading to ')+(tgt.name||T('σημείο','point'))); }catch(e){} }
+function go(lat,lon,name){ try{ if(C.dropBack) C.dropBack(); }catch(e){} rt=null; tgt={lat:+lat,lon:+lon,name:(name||'').slice(0,40)}; C.lsSet(KEY,tgt); arrived=false; spd=null; prev=null; lastZ=0; map.closePopup(); begin(); render(); try{ C.toast(T('Πλοήγηση προς ','Heading to ')+(tgt.name||T('σημείο','point'))); }catch(e){} }
 function clear(){ rt=null; tgt=null; arrived=false; C.lsSet(KEY,null); stop(); render(); }
 bar.querySelector('.dthide').addEventListener('click',function(e){ e.stopPropagation(); dmin=!dmin; if(dmin) dseen=keysNow(); applyMin(); });
 pill.addEventListener('click',function(){ dmin=false; applyMin(); });

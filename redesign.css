@@ -818,6 +818,7 @@ body.fp-shore .ndmob{display:none!important}
 .ndbsb{flex:1;min-height:0;overflow-y:auto;padding:2px 16px 16px;-webkit-overflow-scrolling:touch}
 .ndbsb .pop{font-size:15px}
 body.ndbsopen .ndcard,body.ndbsopen .ndshowc{opacity:0;pointer-events:none}
+body.ndbsopen .rvbar{display:none!important} /* v31z356: όταν είναι ανοιχτό το φύλλο, δεν δείχνει και τη μπάρα επιστροφής (το ✕ του φύλλου κάνει την ίδια δουλειά) */
 @media (min-width:701px){.ndbs{display:none!important}}
 @media (prefers-reduced-motion:reduce){.ndbs{transition:none}}
 
