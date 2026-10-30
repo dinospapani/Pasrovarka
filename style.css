@@ -696,6 +696,16 @@ details.fday>summary{flex-wrap:wrap}
 .mk-dam svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .dampop .damst{font-weight:700;font-size:13px;margin:4px 0}
 .dampop .damst.bad{color:#c8332b}.dampop .damst.warn{color:#b86e00}
+.mk-dam{position:relative}
+.leaflet-container:not(.dam-z) .mk-dpct{display:none}
+.mk-dpct{position:absolute;left:50%;top:100%;transform:translate(-50%,2px);background:#fff;color:#0b4f86;font:700 10px/1 system-ui,sans-serif;padding:2px 4px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.35);white-space:nowrap;pointer-events:none}
+.damlv{margin:6px 0 8px;padding:8px 10px;border-radius:10px;background:rgba(29,120,193,.08)}
+.damlv-h{display:flex;align-items:baseline;gap:6px}.damlv-h b{font-size:22px;color:#1d78c1;font-variant-numeric:tabular-nums}.damlv-h span{font-size:12px;opacity:.75}
+.damlv-bar{position:relative;height:8px;border-radius:4px;background:rgba(127,127,127,.25);margin:4px 0 6px;overflow:visible}
+.damlv-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:linear-gradient(90deg,#4aa3e8,#1d78c1)}
+.damlv-bar u{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:currentColor;opacity:.55;text-decoration:none}
+.damlv-r{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:2px 0}.damlv-r span{opacity:.75}.damlv-r b{font-variant-numeric:tabular-nums}
+.damlv .note{margin-top:4px;font-size:11px;opacity:.65}
 /* ---- v31a: όνομα και λογότυπο πάνω στον χάρτη ---- */
 .mapbrand{display:none}
 body.mapfull .mapbrand{display:flex;align-items:center;gap:7px;position:absolute;left:50%;top:calc(8px + env(safe-area-inset-top,0px));transform:translateX(-50%);height:36px;padding:0 13px 0 6px;border-radius:99px;background:rgba(9,30,44,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#fff;box-shadow:0 3px 12px rgba(0,0,0,.35);pointer-events:none}

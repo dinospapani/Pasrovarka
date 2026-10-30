@@ -28,6 +28,7 @@ var IC={
   chev:S('<path d="M9 6l6 6-6 6"/>'),
   why:S('<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1.1-1.5 2.2M12 17h.01"/>'),
   press:S('<circle cx="12" cy="13" r="8"/><path d="M12 13l3.5-3.5M12 5V3"/>'),
+  drop:S('<path d="M12 3s6 6.4 6 11a6 6 0 01-12 0c0-4.6 6-11 6-11z"/><path d="M8.5 14.5a3.5 3.5 0 003.5 3.5"/>'),
   moon:S('<path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/>'),
   coast:S('<path d="M3 17c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 3 2"/><path d="M4 12l4-6 4 4 3-3 5 5"/>'),
   sliders:S('<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>'),
@@ -178,10 +179,17 @@ var ROWS=[
   {k:'why',ic:'why',t:function(){ var v=parseInt((($('score')||{}).firstChild||{}).textContent,10); return isNaN(v)?T('Γιατί αυτός ο βαθμός','Why this score'):T('Γιατί ','Why ')+v+';'; },s:function(){ return T('Σελήνη, πίεση, άνεμος, κύμα, ουρανός','Moon, pressure, wind, waves, sky'); },node:function(){ return $('factors'); }},
   {k:'press',ic:'press',t:function(){ return T('Πίεση','Pressure'); },s:function(){ var p=$('fcTurn'); var q=p&&p.querySelectorAll(':scope>p:not(.note)'); return q&&q[0]?q[0].textContent:''; },node:function(){ return $('fcTurn'); }},
   {k:'moon',ic:'moon',t:function(){ return T('Σελήνη','Moon'); },s:function(){ var m=moonNow(); return m?m.name+' · '+m.ill+'%':''; },build:moonBox},
+  {k:'dam',ic:'drop',t:function(){ var n=damNear(); return n?n.name+T(' · πληρότητα',' · fullness'):T('Πληρότητα φράγματος','Reservoir level'); },s:function(){ var n=damNear(); return n?Math.round(n.lv.pct)+'%'+(n.lv.lyPct!=null?T(' · πέρσι ',' · last year ')+Math.round(n.lv.lyPct)+'%':''):''; },build:function(body){ var n=damNear(); if(!n){ body.textContent=''; return; } var sig=n.name+n.date+n.lv.pct; if(body.dataset.sig===sig) return; body.dataset.sig=sig; body.replaceChildren(window.PsaroDams.box(n.lv)); }},
   {k:'coast',ic:'coast',t:function(){ return T('Έκθεση ακτής','Coast exposure'); },s:function(){ var e=$('fcExposure'); if(!e) return ''; var p=[].slice.call(e.querySelectorAll(':scope>p:not(.note)')).filter(function(x){ return /^Τώρα|^Now/.test((x.textContent||'').trim()); })[0]; return p?p.textContent.replace(/^(Τώρα|Now):\s*/,''):''; },node:function(){ return $('fcExposure'); }},
   {k:'sp',ic:'fish',t:function(){ return T('Βαθμός για είδος','Score for a species'); },s:function(){ var s=document.querySelector('#fcSpPick select'); return s&&s.selectedOptions[0]?s.selectedOptions[0].textContent:T('Όλα τα είδη','All species'); },node:function(){ return $('fcSpPick'); }},
   {k:'scen',ic:'sliders',t:function(){ return T('Δοκίμασε σενάριο','Try a scenario'); },s:function(){ return T('Άλλη μέρα, άνεμος ή κύμα','Another day, wind or waves'); },node:function(){ return document.querySelector('#liveBox details.scen'); }}
 ];
+function damNear(){
+  if(!isLake()||!window.PsaroDams||!window.PsaroDams.near) return null;
+  var c=C.getCond&&C.getCond(), ll=place&&place.lat!=null?[place.lat,place.lon]:(c&&c.lat!=null?[c.lat,c.lon]:null);
+  return ll?window.PsaroDams.near(+ll[0],+ll[1],5):null;
+}
+window.addEventListener('psaro-dams',function(){ try{ if(root) rows(); }catch(e){} });
 function rowsBuild(){
   var box=root.querySelector('.fc2-rows');
   ROWS.forEach(function(r){
@@ -200,7 +208,7 @@ function fill(r,body){
 function rows(){
   [].forEach.call(root.querySelectorAll('.ds-row'),function(w){
     var r=ROWS.filter(function(x){ return x.k===w.dataset.k; })[0]; if(!r) return;
-    var hide=(r.node&&!r.node()&&!r.build)||(r.k==='coast'&&isLake()); w.hidden=hide;
+    var hide=(r.node&&!r.node()&&!r.build)||(r.k==='coast'&&isLake())||(r.k==='dam'&&!damNear()); w.hidden=hide;
     var b=w.querySelector('.ds-rt b'), s=w.querySelector('.ds-rt small'), t=r.t(), st=(r.s()||'').trim();
     if(b.textContent!==t) b.textContent=t; if(s.textContent!==st) s.textContent=st;
     if(openRow[r.k]) fill(r,w.querySelector('.ds-rowc'));
