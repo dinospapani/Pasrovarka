@@ -1290,3 +1290,8 @@ body.ndphon #profile .phead>#pAvatar,body.ndphon #profile .phead>#pAvatar+div{di
 body.ndspform #biteForm label:has(#bRel),body.ndspform #biteForm label:has(#bMulti),body.ndspform #bMultiBox,
 body.ndspform #biteForm label:has(#bBait),body.ndspform #bChipsBait,body.ndspform #bTerm,body.ndspform #bTerm+*:not(div),
 body.ndspform #bTackleWrap>span:nth-of-type(2),body.ndspform #bTkW,body.ndspform #bTkSug{display:none!important}
+
+/* v31z376 · μία τοποθεσία στο «Σήμερα» */
+#tdLoc.ndlocc{display:none!important}
+.ndlocb{display:inline-flex;align-items:center;gap:6px;max-width:100%;min-height:44px;margin:10px 0 4px;padding:0 16px;border-radius:22px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.ndlocb[aria-expanded=true]{border-color:var(--accent,#ef7a4c);color:var(--accent,#ef7a4c)}

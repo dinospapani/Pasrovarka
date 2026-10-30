@@ -1227,7 +1227,7 @@ box.insertBefore(tools,bar.nextSibling);
     /* μία επιλογή τοποθεσίας: στο «Σήμερα». Εδώ μένει μόνο το όνομα και ένα κουμπί αλλαγής. */
     var gen=$('fcGen'), pl=$('plCard'); if(pl&&gen&&!gen.hidden) pl.classList.add('ndgone'); else if(pl) pl.classList.remove('ndgone');
     var fid=document.querySelector('#fcHead .fcid'); if(fid&&!$('ndFcLoc')){ var cb=document.createElement('button'); cb.type='button'; cb.id='ndFcLoc'; cb.className='btn ghost sm'; cb.style.marginTop='6px'; cb.textContent=T('📍 Αλλαγή τοποθεσίας','📍 Change location');
-      cb.addEventListener('click',function(){ try{ window.PsaroCore.lsSet('psaro-wxsub','today'); window.PsaroCore.switchTab('today'); }catch(e){} setTimeout(function(){ var w=$('tdLoc'); if(w){ try{ w.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){} var i=w.querySelector('input'); if(i) try{ i.focus({preventScroll:true}); }catch(e){} } },150); });
+      cb.addEventListener('click',function(){ try{ window.PsaroCore.lsSet('psaro-wxsub','today'); window.PsaroCore.switchTab('today'); }catch(e){} setTimeout(function(){ var w=$('tdLoc'), lb=$('ndLocBtn'); if(w&&w.classList.contains('ndlocc')&&lb) lb.click(); setTimeout(function(){ if(w){ try{ w.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){} var i=w.querySelector('input'); if(i) try{ i.focus({preventScroll:true}); }catch(e){} } },80); },150); });
       fid.appendChild(cb); }
     var tc=$('fcTurn'); if(tc){ var ps=tc.querySelectorAll(':scope>p:not(.note)'); fold(tc,'turn',T('Πίεση','Pressure')+': '+cut(txt(ps[0]),44),cut(txt(ps[1]),70)); }
     var ex=$('fcExposure'); if(ex){ var now=[].slice.call(ex.querySelectorAll(':scope>p:not(.note)')).filter(function(p){ return /^Τώρα|^Now/.test(txt(p)); })[0]; fold(ex,'exp',T('Έκθεση ακτής','Coast exposure'),cut(txt(now).replace(/^Τώρα:\s*|^Now:\s*/,''),60)); }
@@ -1719,4 +1719,23 @@ box.insertBefore(tools,bar.nextSibling);
     var lab=sp?(EN?'Spearfishing':'Ψαροντούφεκο'):(EN?'Rod and line':'Καλάμι'); if(t.textContent!==lab) t.textContent=lab;
   }
   window.ndEvery(kpiWords,1500);
+})();
+
+/* v31z376 · «Σήμερα»: μία τοποθεσία. Φαίνεται μόνο η επιλεγμένη («📍 Η θέση μου ▾»)· με πάτημα ανοίγουν οι υπόλοιπες και η αναζήτηση. */
+(function(){
+  var EN=window.LANG==='en', T=function(el,en){ return EN?en:el; };
+  var open=false, last='';
+  function cur(w){ var c=w.querySelector('.chip[aria-pressed=true]'); return c?(c.textContent||'').trim():T('Η θέση μου','My location'); }
+  function tick(){
+    var w=document.getElementById('tdLoc'); if(!w||!w.offsetParent&&!w.classList.contains('ndlocc')) return;
+    var b=document.getElementById('ndLocBtn');
+    if(!b){ b=document.createElement('button'); b.type='button'; b.id='ndLocBtn'; b.className='ndlocb';
+      b.addEventListener('click',function(){ open=!open; paint(); if(open){ var i=w.querySelector('input'); if(i) setTimeout(function(){ try{ i.focus({preventScroll:true}); }catch(e){} },50); } });
+      w.parentNode.insertBefore(b,w); }
+    var c=cur(w); if(last&&c!==last) open=false; last=c;
+    paint();
+    function paint(){ w.classList.toggle('ndlocc',!open); b.setAttribute('aria-expanded',String(open)); var t='📍 '+cur(w)+(open?'  ▴':'  ▾'); if(b.textContent!==t) b.textContent=t; }
+  }
+  window.ndEvery(tick,700); setTimeout(tick,800);
+  document.addEventListener('click',function(e){ if(e.target&&e.target.closest&&e.target.closest('#tdLoc .chip')){ open=false; setTimeout(tick,120); } },true);
 })();
