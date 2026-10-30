@@ -2026,6 +2026,39 @@ async function paCheck(){
 window.paCheck=paCheck;
 setInterval(paCheck,PA.every); setTimeout(paCheck,20000);
 window.addEventListener('psaro-sess',()=>setTimeout(paCheck,3000));
+/* v31z357: στην έναρξη εξόδου, μία ειδοποίηση με την εικόνα της πίεσης: ανεβαίνει/πέφτει/σταθερή και πότε αναμένεται η επόμενη κορυφή ή κοιλάδα (μοντέλο Open-Meteo, όχι μέτρηση). */
+async function tripPressBrief(){
+  try{
+    const st=window.PsaroTrip&&window.PsaroTrip.state&&window.PsaroTrip.state(); if(!st||!st.active||!st.id) return;
+    if(lsGet('psaro-tpb','')===st.id) return;
+    if(st.start&&Date.now()-st.start>30*60000) { lsSet('psaro-tpb',st.id); return; } /* μόνο στην αρχή της εξόδου */
+    const PFx=window.PF; if(!PFx||!PFx.getForecast||!PFx.pressureOutlook) return;
+    const fx=window.PsaroTrack&&window.PsaroTrack.fix&&window.PsaroTrack.fix(), la=fx?fx.lat:(cond&&cond.lat), lo=fx?fx.lon:(cond&&cond.lon);
+    if(la==null||lo==null) return;
+    const fc=await PFx.getForecast(+la,+lo,undefined,{days:2}), o=PFx.pressureOutlook(fc); if(!o) return;
+    lsSet('psaro-tpb',st.id);
+    const en=window.LANG==='en', T2=(a,b)=>en?b:a, num=v=>String(Math.round(v*10)/10).replace('.',en?'.':','), sg=v=>(v>0?'+':v<0?'−':'±')+num(Math.abs(v));
+    /* επόμενες 3 ώρες από την πρόγνωση */
+    const hs=[]; fc.days.forEach(d=>d.hours.forEach(x=>{ if(x.p!=null) hs.push(x); })); hs.sort((a,b)=>a.t<b.t?-1:1);
+    const now=fc.nowLocal.slice(0,13); let n0=-1; hs.forEach((x,i)=>{ if(x.t.slice(0,13)<=now) n0=i; });
+    const f3=n0>=0&&hs[n0+3]?hs[n0+3].p-hs[n0].p:null;
+    const rising=(o.d3!=null&&o.d3>=0.5)||(f3!=null&&f3>=0.5&&!(o.d3!=null&&o.d3<=-0.5)), falling=!rising&&((o.d3!=null&&o.d3<=-0.5)||(f3!=null&&f3<=-0.5));
+    const hhOf=t=>t.slice(11,16), dayOf=t=>t.slice(0,10)===fc.nowLocal.slice(0,10)?'':T2('αύριο ','tomorrow ');
+    let head=rising?T2('📈 Η πίεση ανεβαίνει','📈 Pressure is rising'):falling?T2('📉 Η πίεση πέφτει','📉 Pressure is falling'):T2('➖ Η πίεση είναι σταθερή','➖ Pressure is steady');
+    const parts=[T2('Τώρα ','Now ')+num(o.now)+' hPa'];
+    if(o.d3!=null) parts.push(T2('τελευταίες 3 ώρες ','last 3 h ')+sg(o.d3)+' hPa');
+    if(f3!=null) parts.push(T2('επόμενες 3 ώρες ','next 3 h ')+sg(f3)+' hPa');
+    let line2='';
+    if(o.last&&rising&&o.last.kind==='trough') line2+=T2('Η άνοδος ξεκίνησε μετά την κοιλάδα των ','The rise began after the low of ')+num(o.last.p)+T2(' hPa στις ',' hPa at ')+hhOf(o.last.t)+'. ';
+    if(o.last&&falling&&o.last.kind==='peak') line2+=T2('Η πτώση ξεκίνησε μετά την κορυφή των ','The fall began after the peak of ')+num(o.last.p)+T2(' hPa στις ',' hPa at ')+hhOf(o.last.t)+'. ';
+    if(o.next) line2+=(o.next.kind==='peak'?T2('Αναμένεται κορυφή ','Peak expected ')+num(o.next.p)+T2(' hPa ',' hPa '):T2('Αναμένεται κοιλάδα ','Low expected ')+num(o.next.p)+T2(' hPa ',' hPa '))+dayOf(o.next.t)+T2('γύρω στις ','around ')+hhOf(o.next.t)+T2(' (σε ~',' (in ~')+o.next.hours+T2(' ώρ.)',' h)')+(o.next.kind==='peak'?T2(', μετά αρχίζει να πέφτει.',', then it starts falling.'):T2(', μετά αρχίζει να ανεβαίνει.',', then it starts rising.'));
+    else line2+=T2('Δεν φαίνεται καμπή στις επόμενες ώρες της πρόγνωσης.','No turning point in the coming forecast hours.');
+    const body=parts.join(' · ')+'. '+line2, full=body+T2(' Πρόγνωση μοντέλου (Open-Meteo), όχι μέτρηση.',' Model forecast (Open-Meteo), not a measurement.');
+    toast(head+'. '+line2);
+    if('Notification' in window&&Notification.permission==='granted'&&navigator.serviceWorker){ const r=await navigator.serviceWorker.getRegistration(); if(r) r.showNotification(head+T2(' · έναρξη εξόδου',' · trip start'),{body,tag:'bc-tpb-'+st.id,data:{bc:{id:'tpb-'+st.id,kind:'turn',full,place:{name:T2('Έξοδος','Trip'),lat:+la,lon:+lo},t:fc.nowLocal}}}); }
+  }catch(e){}
+}
+window.addEventListener('psaro-sess',()=>setTimeout(tripPressBrief,2500)); setTimeout(tripPressBrief,6000);
 setTimeout(fitMap,100); setTimeout(fitMap,1500);
 renderToday(); renderSpecies(); renderTech(); renderChecks(); renderLaw(); renderSpots(); renderTrips(); renderWx();
 Store.on('spots',()=>{drawMap();renderSpots();});

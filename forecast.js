@@ -192,7 +192,7 @@ function pressureTurns(fc){
   return out;
 }
 /* v31z355: έναρξη ανόδου. Ρυθμός = αλλαγή σε 3 ώρες (λειασμένη). «Άνοδος» από +0,5 hPa/3ω (RISE_RATE).
-   Έναρξη = η πρώτη ώρα που ο ρυθμός περνά το όριο, αφού για 4 ώρες πριν δεν ήταν πάνω από αυτό (πτώση ή σταθερή).
+   Έναρξη = η πρώτη ώρα που ο ρυθμός περνά το όριο, αφού για 3 ώρες πριν δεν ήταν πάνω από αυτό (πτώση ή σταθερή). v31z357: 3 ώρες (ήταν 4), ώστε να πιάνει και νέα άνοδο μετά από σύντομη στασιμότητα.
    Επιστρέφει: rise-soon (σε 1–3 ώρες, από την πρόγνωση) και rise-start (άρχισε τις τελευταίες 3 ώρες). */
 const RISE_RATE=0.5;
 function pressureRise(fc){
@@ -205,7 +205,7 @@ function pressureRise(fc){
   const r3=s.map((v,i)=>i>=3?v-s[i-3]:null), out=[];
   for(let i=Math.max(7,n0-3);i<=Math.min(s.length-1,n0+3);i++){
     if(r3[i]==null||r3[i]<RISE_RATE-1e-6) continue;
-    let quiet=true; for(let k=i-4;k<i;k++){ if(r3[k]!=null&&r3[k]>=RISE_RATE-1e-6){ quiet=false; break; } }
+    let quiet=true; for(let k=i-3;k<i;k++){ if(r3[k]!=null&&r3[k]>=RISE_RATE-1e-6){ quiet=false; break; } }
     if(!quiet) continue;
     /* η άνοδος να συνεχίζει (όχι στιγμιαίο σκαμπανέβασμα): +0,3 hPa συνολικά μέσα στις επόμενες 3 ώρες από την έναρξη */
     const j=Math.min(s.length-1,i+3); if(s[j]-s[Math.max(0,i-3)]<0.3) continue;

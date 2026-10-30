@@ -354,8 +354,8 @@ async function pushServer(){
     var body={id:await subId(sub),sub:sub.toJSON(),places:cfgPlaces(),threshold:nt.threshold,checked_at:null,updated_at:new Date().toISOString()};
     var H={Prefer:'resolution=merge-duplicates,return=minimal'};
     var ww=wwCfg(), tn=!!nt.turn;
-    try{ await cl.rest('push_subs',{method:'POST',headers:H,body:JSON.stringify(Object.assign({pressure:nt.pressure!==false,wind:ww,turn:tn},body))}); }
-    catch(eT){ try{ await cl.rest('push_subs',{method:'POST',headers:H,body:JSON.stringify(Object.assign({pressure:nt.pressure!==false,wind:ww},body))}); }catch(e0){
+    try{ await cl.rest('push_subs',{method:'POST',headers:H,body:JSON.stringify(Object.assign({pressure:nt.pressure!==false,wind:ww,turn:tn},body))}); nt.turnSrv=tn; }
+    catch(eT){ nt.turnSrv=false; if(tn) setTimeout(function(){ try{ ntStatus(T('⚠ Ο server δεν δέχτηκε τη ρύθμιση «καμπή πίεσης». Τρέξε το safety-upgrade.sql στη Supabase.','⚠ The server did not accept the pressure-turn setting. Run safety-upgrade.sql in Supabase.')); }catch(x){} },400); try{ await cl.rest('push_subs',{method:'POST',headers:H,body:JSON.stringify(Object.assign({pressure:nt.pressure!==false,wind:ww},body))}); }catch(e0){
       try{ await cl.rest('push_subs',{method:'POST',headers:H,body:JSON.stringify(Object.assign({pressure:nt.pressure!==false},body))}); }
       catch(e1){ await cl.rest('push_subs',{method:'POST',headers:H,body:JSON.stringify(body)}); }
     } }
