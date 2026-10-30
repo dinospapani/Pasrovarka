@@ -1226,7 +1226,7 @@ box.insertBefore(tools,bar.nextSibling);
     var pr=$('fcPress'); if(pr) pr.classList.add('ndgone');   /* το ίδιο γράφημα υπάρχει στο «Σήμερα» */
     /* μία επιλογή τοποθεσίας: στο «Σήμερα». Εδώ μένει μόνο το όνομα και ένα κουμπί αλλαγής. */
     var gen=$('fcGen'), pl=$('plCard'); if(pl&&gen&&!gen.hidden) pl.classList.add('ndgone'); else if(pl) pl.classList.remove('ndgone');
-    var fid=document.querySelector('#fcHead .fcid'); if(fid&&!$('ndFcLoc')){ var cb=document.createElement('button'); cb.type='button'; cb.id='ndFcLoc'; cb.className='btn ghost sm'; cb.style.marginTop='6px'; cb.textContent=T('📍 Αλλαγή τοποθεσίας','📍 Change location');
+    var fid=document.querySelector('#fcHead .fcid'); if(false&&fid&&!$('ndFcLoc')){ var cb=document.createElement('button'); cb.type='button'; cb.id='ndFcLoc'; cb.className='btn ghost sm'; cb.style.marginTop='6px'; cb.textContent=T('📍 Αλλαγή τοποθεσίας','📍 Change location');
       cb.addEventListener('click',function(){ try{ window.PsaroCore.lsSet('psaro-wxsub','today'); window.PsaroCore.switchTab('today'); }catch(e){} setTimeout(function(){ var w=$('tdLoc'), lb=$('ndLocBtn'); if(w&&w.classList.contains('ndlocc')&&lb) lb.click(); setTimeout(function(){ if(w){ try{ w.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){} var i=w.querySelector('input'); if(i) try{ i.focus({preventScroll:true}); }catch(e){} } },80); },150); });
       fid.appendChild(cb); }
     var tc=$('fcTurn'); if(tc){ var ps=tc.querySelectorAll(':scope>p:not(.note)'); fold(tc,'turn',T('Πίεση','Pressure')+': '+cut(txt(ps[0]),44),cut(txt(ps[1]),70)); }

@@ -1295,3 +1295,8 @@ body.ndspform #bTackleWrap>span:nth-of-type(2),body.ndspform #bTkW,body.ndspform
 #tdLoc.ndlocc{display:none!important}
 .ndlocb{display:inline-flex;align-items:center;gap:6px;max-width:100%;min-height:44px;margin:10px 0 4px;padding:0 16px;border-radius:22px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
 .ndlocb[aria-expanded=true]{border-color:var(--accent,#ef7a4c);color:var(--accent,#ef7a4c)}
+
+/* v31z377 · Πρόγνωση χωρίς τοποθεσία: η τοποθεσία διαλέγεται μόνο στο «Σήμερα» */
+#fcHead .fckick,#fcHead #fcName,#fcHead #fcSub,#ndFcLoc{display:none!important}
+#fcHead .fchead{align-items:center}
+#tab-fc #plCard{display:none!important}
