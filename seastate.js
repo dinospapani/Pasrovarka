@@ -118,7 +118,7 @@ var WAVE_MODELS=[['ecmwf_wam025','ECMWF WAM'],['meteofrance_wave','MF MFWAM'],['
 var REG=null;
 function getJ(u){
   var ac=new AbortController(), tm=setTimeout(function(){ ac.abort(); },25000);
-  return fetch(u,{signal:ac.signal}).then(function(r){ clearTimeout(tm); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); },function(e){ clearTimeout(tm); throw e; });
+  return fetch(u,{signal:ac.signal}).then(function(r){ clearTimeout(tm); if(!r.ok) return r.text().then(function(t){ var m=''; try{ m=(JSON.parse(t).reason||'').slice(0,80); }catch(e){} throw new Error('HTTP '+r.status+(m?' · '+m:'')); }); return r.json(); },function(e){ clearTimeout(tm); throw e; });
 }
 function lattice(b,maxN){
   var sp=Math.max(0.1,Math.sqrt((b.n-b.s)*(b.e-b.w)/maxN));
@@ -138,24 +138,31 @@ function loadRegion(bounds){
   var pw=getJ('https://api.open-meteo.com/v1/forecast?'+latQ(NP)+'&hourly=wind_speed_10m,wind_direction_10m&wind_speed_unit=kn&past_hours=24&forecast_hours=49&timezone=UTC')
     .then(function(j){ var a=arrOf(j); if(!a||a.length!==NP.nla*NP.nlo||!a[0].hourly) return; R.wind={L:NP,t:a[0].hourly.time,sp:a.map(function(p){ return (p.hourly&&p.hourly.wind_speed_10m)||[]; }),dir:a.map(function(p){ return (p.hourly&&p.hourly.wind_direction_10m)||[]; })}; })
     .catch(function(){ R.retry=true; });
-  var pm=WAVE_MODELS.map(function(m){
-    return getJ('https://marine-api.open-meteo.com/v1/marine?'+latQ(WP)+'&hourly=wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_direction,swell_wave_period&models='+m[0]+'&past_hours=1&forecast_hours=49&timezone=UTC')
-      .then(function(j){
-        var a=arrOf(j); if(!a||a.length!==WP.nla*WP.nlo||!a[0].hourly||!a[0].hourly.time) return;
-        function col(p,base){ var H=p.hourly||{}; if(H[base]) return H[base]; for(var k in H) if(k.indexOf(base+'_')===0) return H[k]; return []; }
-        var any=a.some(function(p){ return col(p,'wave_height').some(function(x){ return x!=null; }); }); if(!any) return;
-        R.waves.push({id:m[0],name:m[1],L:WP,t:a[0].hourly.time,h:a.map(function(p){ return col(p,'wave_height'); }),tp:a.map(function(p){ return col(p,'wave_period'); }),wd:a.map(function(p){ return col(p,'wave_direction'); }),sh:a.map(function(p){ return col(p,'swell_wave_height'); }),sd:a.map(function(p){ return col(p,'swell_wave_direction'); }),st:a.map(function(p){ return col(p,'swell_wave_period'); })});
-      }).catch(function(){ R.retry=true; });
-  });
-  function waveReq(model,name){
-    return getJ('https://marine-api.open-meteo.com/v1/marine?'+latQ(WP)+'&hourly=wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_direction,swell_wave_period'+(model?'&models='+model:'')+'&past_hours=1&forecast_hours=49&timezone=UTC')
-      .then(function(j){ var a=arrOf(j); if(!a||a.length!==WP.nla*WP.nlo||!a[0].hourly||!a[0].hourly.time) return;
-        function col(p,base){ var H=p.hourly||{}; if(H[base]) return H[base]; for(var k in H) if(k.indexOf(base+'_')===0) return H[k]; return []; }
-        var any=a.some(function(p){ return col(p,'wave_height').some(function(x){ return x!=null; }); }); if(!any) return;
-        R.waves.push({id:model||'best',name:name,L:WP,t:a[0].hourly.time,h:a.map(function(p){ return col(p,'wave_height'); }),tp:a.map(function(p){ return col(p,'wave_period'); }),wd:a.map(function(p){ return col(p,'wave_direction'); }),sh:a.map(function(p){ return col(p,'swell_wave_height'); }),sd:a.map(function(p){ return col(p,'swell_wave_direction'); }),st:a.map(function(p){ return col(p,'swell_wave_period'); })}); })
-      .catch(function(){});
+  /* v31z383: κάθε μοντέλο ζητιέται σε μικρά κομμάτια (20 σημεία), ώστε ένα σημείο στη στεριά ή ένα όριο να μη χαλάει όλο τον χάρτη.
+     Τα σφάλματα κρατιούνται (R.err) και φαίνονται στις «Πληροφορίες». */
+  R.err={};
+  var pts=[]; for(var jj=0;jj<WP.nla;jj++) for(var ii=0;ii<WP.nlo;ii++) pts.push([(WP.la0+(WP.la1-WP.la0)*jj/(WP.nla-1)).toFixed(3),(WP.lo0+(WP.lo1-WP.lo0)*ii/(WP.nlo-1)).toFixed(3)]);
+  function col(p,base){ var H=(p&&p.hourly)||{}; if(H[base]) return H[base]; for(var k in H) if(k.indexOf(base+'_')===0) return H[k]; return []; }
+  function waveModel(model,name){
+    var CH=20, chunks=[]; for(var c=0;c<pts.length;c+=CH) chunks.push(pts.slice(c,c+CH));
+    var all=new Array(pts.length), okN=0, lastErr='';
+    return chunks.reduce(function(pr,ch,ci){ return pr.then(function(){
+      var q='latitude='+ch.map(function(x){ return x[0]; }).join(',')+'&longitude='+ch.map(function(x){ return x[1]; }).join(',');
+      return getJ('https://marine-api.open-meteo.com/v1/marine?'+q+'&hourly=wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_direction,swell_wave_period'+(model?'&models='+model:'')+'&past_hours=1&forecast_hours=49&timezone=UTC')
+        .then(function(j){ var a=arrOf(j); if(!a) return; a.forEach(function(p,k){ all[ci*CH+k]=p; }); okN++; })
+        .catch(function(e){ lastErr=(e&&e.message)||'error'; });
+    }); },Promise.resolve()).then(function(){
+      if(!okN){ R.err[name]=lastErr||'—'; return; }
+      var first=all.filter(function(p){ return p&&p.hourly&&p.hourly.time; })[0]; if(!first){ R.err[name]=T('χωρίς δεδομένα','no data'); return; }
+      var any=all.some(function(p){ return p&&col(p,'wave_height').some(function(x){ return x!=null; }); }); if(!any){ R.err[name]=T('χωρίς δεδομένα','no data'); return; }
+      var tl=first.hourly.time, nul=tl.map(function(){ return null; }), get=function(p,b){ var v=p?col(p,b):null; return v&&v.length?v:nul; };
+      R.waves.push({id:model||'best',name:name,L:WP,t:tl,h:all.map(function(p){ return get(p,'wave_height'); }),tp:all.map(function(p){ return get(p,'wave_period'); }),wd:all.map(function(p){ return get(p,'wave_direction'); }),sh:all.map(function(p){ return get(p,'swell_wave_height'); }),sd:all.map(function(p){ return get(p,'swell_wave_direction'); }),st:all.map(function(p){ return get(p,'swell_wave_period'); })});
+      if(lastErr) R.err[name]=T('μερικά: ','partial: ')+lastErr;
+    });
   }
-  R.p=Promise.all([pw].concat(pm)).then(function(){ if(!R.waves.length) return waveReq('',T('Open-Meteo (αυτόματο)','Open-Meteo (auto)')); }).then(function(){ if(R.retry) R.at=Date.now()-3300000; R.retry=false; R.waves.sort(function(x,y){ return WAVE_MODELS.findIndex(function(m){ return m[0]===x.id; })-WAVE_MODELS.findIndex(function(m){ return m[0]===y.id; }); }); return R; });
+  /* ένα-ένα τα μοντέλα, για να μη χτυπάμε το όριο αιτημάτων ανά λεπτό */
+  var pm=WAVE_MODELS.reduce(function(pr,m){ return pr.then(function(){ return waveModel(m[0],m[1]); }); },Promise.resolve());
+  R.p=Promise.all([pw,pm]).then(function(){ if(!R.waves.length) return waveModel('',T('Open-Meteo (αυτόματο)','Open-Meteo (auto)')); }).then(function(){ if(R.retry) R.at=Date.now()-3300000; R.retry=false; R.waves.sort(function(x,y){ return WAVE_MODELS.findIndex(function(m){ return m[0]===x.id; })-WAVE_MODELS.findIndex(function(m){ return m[0]===y.id; }); }); return R; });
   REG=R; return R.p;
 }
 /* IDW σε κόμβους πλέγματος με τιμή */
@@ -461,7 +468,8 @@ function draw(){
   swap();
   var tot=drawn, best=LV.map(function(l,ii){ return Math.round(100*cnt[ii]/tot)+'% '+(EN?l.en:l.el).toLowerCase(); }).filter(function(x5){ return x5.indexOf('0% ')!==0; });
   var miss=[]; if(!P.waves.length) miss.push(P.pointFallback?T('χάρτη μοντέλων κύματος· το swell είναι από την πρόγνωση του σημείου σου','wave model map; swell is from your point forecast'):T('μοντέλα κύματος','wave models')); if(!P.dur) miss.push(T('διάρκεια ανέμου','wind duration'));
-  status(T('Στη θέα: ','In view: ')+best.join(' · ')+(unc?T(' · αβέβαιο ',' · uncertain ')+Math.round(100*unc/tot)+'%':'')+(miss.length?T(' (χωρίς ',' (without ')+miss.join(T(' και ',' and '))+')':''));
+  var errs=REG&&REG.err?Object.keys(REG.err).map(function(k){ return k+': '+REG.err[k]; }):[];
+  status(T('Στη θέα: ','In view: ')+best.join(' · ')+(errs.length?' · '+T('Μοντέλα: ','Models: ')+errs.join(' | '):'')+(unc?T(' · αβέβαιο ',' · uncertain ')+Math.round(100*unc/tot)+'%':'')+(miss.length?T(' (χωρίς ',' (without ')+miss.join(T(' και ',' and '))+')':''));
   srcLine(); showPoint();
 }
 /* Βάθη με χρώματα κάτω από την κατάσταση θάλασσας μπερδεύονται (παρόμοια χρώματα). Όσο είναι ανοιχτή, τα βάθη φαίνονται ως γραμμές ΠΑΝΩ από τα χρώματα. */
