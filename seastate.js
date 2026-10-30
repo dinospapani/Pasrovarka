@@ -113,7 +113,8 @@ function distKm(cl){ return cl.t.d?cl.t.d[cl.k]*0.05:5; }
 function depthM(cl){ if(!cl.t.z) return Infinity; var z=cl.t.z[cl.k]; return (z>0&&z<255)?z:Infinity; }
 
 /* ---------- εξωτερικά δεδομένα ανά περιοχή χάρτη: ιστορικό ανέμου (διάρκεια) και μοντέλα κύματος ---------- */
-var WAVE_MODELS=[['ewam','DWD EWAM'],['ecmwf_wam','ECMWF WAM'],['meteofrance_wave','MF MFWAM']];
+/* v31z382: ECMWF WAM λέγεται πλέον ecmwf_wam025 στο Open-Meteo· το EWAM απορρίπτει όλο το αίτημα αν έστω ένα σημείο είναι στη στεριά, γι' αυτό υπάρχει και το best_match ως εφεδρικό */
+var WAVE_MODELS=[['ecmwf_wam025','ECMWF WAM'],['meteofrance_wave','MF MFWAM'],['ewam','DWD EWAM']];
 var REG=null;
 function getJ(u){
   var ac=new AbortController(), tm=setTimeout(function(){ ac.abort(); },25000);
@@ -133,7 +134,7 @@ function regionFor(b){
 function covers(R,b){ return R&&b.getSouth()>=R.b.s&&b.getNorth()<=R.b.n&&b.getWest()>=R.b.w&&b.getEast()<=R.b.e; }
 function loadRegion(bounds){
   if(REG&&covers(REG,bounds)&&Date.now()-REG.at<3600000&&!REG.retry) return REG.p;
-  var b=regionFor(bounds), R={b:b,at:Date.now(),wind:null,waves:[]}, NP=lattice(b,64), WP=lattice(b,180);
+  var b=regionFor(bounds), R={b:b,at:Date.now(),wind:null,waves:[]}, NP=lattice(b,49), WP=lattice(b,100);
   var pw=getJ('https://api.open-meteo.com/v1/forecast?'+latQ(NP)+'&hourly=wind_speed_10m,wind_direction_10m&wind_speed_unit=kn&past_hours=24&forecast_hours=49&timezone=UTC')
     .then(function(j){ var a=arrOf(j); if(!a||a.length!==NP.nla*NP.nlo||!a[0].hourly) return; R.wind={L:NP,t:a[0].hourly.time,sp:a.map(function(p){ return (p.hourly&&p.hourly.wind_speed_10m)||[]; }),dir:a.map(function(p){ return (p.hourly&&p.hourly.wind_direction_10m)||[]; })}; })
     .catch(function(){ R.retry=true; });
@@ -146,7 +147,15 @@ function loadRegion(bounds){
         R.waves.push({id:m[0],name:m[1],L:WP,t:a[0].hourly.time,h:a.map(function(p){ return col(p,'wave_height'); }),tp:a.map(function(p){ return col(p,'wave_period'); }),wd:a.map(function(p){ return col(p,'wave_direction'); }),sh:a.map(function(p){ return col(p,'swell_wave_height'); }),sd:a.map(function(p){ return col(p,'swell_wave_direction'); }),st:a.map(function(p){ return col(p,'swell_wave_period'); })});
       }).catch(function(){ R.retry=true; });
   });
-  R.p=Promise.all([pw].concat(pm)).then(function(){ if(R.retry) R.at=Date.now()-3300000; R.retry=false; R.waves.sort(function(x,y){ return WAVE_MODELS.findIndex(function(m){ return m[0]===x.id; })-WAVE_MODELS.findIndex(function(m){ return m[0]===y.id; }); }); return R; });
+  function waveReq(model,name){
+    return getJ('https://marine-api.open-meteo.com/v1/marine?'+latQ(WP)+'&hourly=wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_direction,swell_wave_period'+(model?'&models='+model:'')+'&past_hours=1&forecast_hours=49&timezone=UTC')
+      .then(function(j){ var a=arrOf(j); if(!a||a.length!==WP.nla*WP.nlo||!a[0].hourly||!a[0].hourly.time) return;
+        function col(p,base){ var H=p.hourly||{}; if(H[base]) return H[base]; for(var k in H) if(k.indexOf(base+'_')===0) return H[k]; return []; }
+        var any=a.some(function(p){ return col(p,'wave_height').some(function(x){ return x!=null; }); }); if(!any) return;
+        R.waves.push({id:model||'best',name:name,L:WP,t:a[0].hourly.time,h:a.map(function(p){ return col(p,'wave_height'); }),tp:a.map(function(p){ return col(p,'wave_period'); }),wd:a.map(function(p){ return col(p,'wave_direction'); }),sh:a.map(function(p){ return col(p,'swell_wave_height'); }),sd:a.map(function(p){ return col(p,'swell_wave_direction'); }),st:a.map(function(p){ return col(p,'swell_wave_period'); })}); })
+      .catch(function(){});
+  }
+  R.p=Promise.all([pw].concat(pm)).then(function(){ if(!R.waves.length) return waveReq('',T('Open-Meteo (αυτόματο)','Open-Meteo (auto)')); }).then(function(){ if(R.retry) R.at=Date.now()-3300000; R.retry=false; R.waves.sort(function(x,y){ return WAVE_MODELS.findIndex(function(m){ return m[0]===x.id; })-WAVE_MODELS.findIndex(function(m){ return m[0]===y.id; }); }); return R; });
   REG=R; return R.p;
 }
 /* IDW σε κόμβους πλέγματος με τιμή */
@@ -187,6 +196,7 @@ function calc(cl,lat,lon,wind,winds,P){
   var mH=[], swx=0, swy=0, swh=0, swn=0, mT=0, mTn=0, sT=0, sTn=0, mWu=0, mWv=0;
   P.waves.forEach(function(m){ var s=latSample(m.L,lat,lon,function(p){ return m.ok[p]?[m.h[p],m.sh[p],m.su[p],m.sv[p],m.tp?m.tp[p]:0,m.stp?m.stp[p]:0,m.wu?m.wu[p]:0,m.wv?m.wv[p]:0]:null; }); if(s){ mWu+=s[6]; mWv+=s[7]; mH.push({name:m.name,h:s[0]}); swh+=s[1]; swx+=s[2]; swy+=s[3]; swn++; if(s[4]>0.5){ mT+=s[4]; mTn++; } if(s[5]>0.5){ sT+=s[5]; sTn++; } } });
   var swell=null, swE=0;
+  if(!swn&&!P.waves.length){ try{ var cc=window.PsaroCore&&window.PsaroCore.getCond&&window.PsaroCore.getCond(); if(cc&&cc.wave!=null&&cc.wave>0){ swh=+cc.wave; var dd0=cc.waveDir!=null?+cc.waveDir:(cc.windDeg!=null?+cc.windDeg:270); swx=Math.sin(dd0*Math.PI/180); swy=Math.cos(dd0*Math.PI/180); swn=1; P.pointFallback=true; if(cc.wavePeriod) { sT+=+cc.wavePeriod; sTn++; } } }catch(e){} }
   if(swn){ swh/=swn; var sdir=(Math.atan2(swx,swy)*180/Math.PI+360)%360; swell={h:swh,dir:sdir,fetchKm:fetchKm(cl,sdir)}; swE=swh*swellOpen(swell.fetchKm); }
   function ours(v){ var ws=hsWind(v.sp*0.514444,fetchKm(cl,v.dir),dur,dep); return {ws:ws,h:Math.sqrt(ws*ws+swE*swE)}; }
   var oc=ours(wind), olo=oc.h, ohi=oc.h;
@@ -450,7 +460,7 @@ function draw(){
   });
   swap();
   var tot=drawn, best=LV.map(function(l,ii){ return Math.round(100*cnt[ii]/tot)+'% '+(EN?l.en:l.el).toLowerCase(); }).filter(function(x5){ return x5.indexOf('0% ')!==0; });
-  var miss=[]; if(!P.waves.length) miss.push(T('μοντέλα κύματος','wave models')); if(!P.dur) miss.push(T('διάρκεια ανέμου','wind duration'));
+  var miss=[]; if(!P.waves.length) miss.push(P.pointFallback?T('χάρτη μοντέλων κύματος· το swell είναι από την πρόγνωση του σημείου σου','wave model map; swell is from your point forecast'):T('μοντέλα κύματος','wave models')); if(!P.dur) miss.push(T('διάρκεια ανέμου','wind duration'));
   status(T('Στη θέα: ','In view: ')+best.join(' · ')+(unc?T(' · αβέβαιο ',' · uncertain ')+Math.round(100*unc/tot)+'%':'')+(miss.length?T(' (χωρίς ',' (without ')+miss.join(T(' και ',' and '))+')':''));
   srcLine(); showPoint();
 }
