@@ -23,12 +23,23 @@ function build(trips,bites,opt){
     const cAll=s.manual?Math.max(0,+s.count||0):inS.length+inM.length;
     H+=hrs; C+=s.manual?cAll:inS.length; const c=cAll;
     const bh=new Array(8).fill(0); // ώρες ανά τρίωρο, μοιράζουμε τον χρόνο ανά 10 λεπτά
-    for(let t=s.startMs;t<s.endMs;t+=600000){ const loc=new Date(t+utcMin*60000); bh[Math.floor(loc.getUTCHours()/3)]+=Math.min(600000,s.endMs-t)/3600000; }
+    /* v31z364: πίεση και άνεμος ώρα με ώρα (s.condH, από το Open-Meteo για τη θέση και τις ώρες της εξόδου)· αλλιώς οι συνθήκες της αρχής */
+    const cH={}; if(Array.isArray(s.condH)) s.condH.forEach(r=>{ if(Array.isArray(r)) cH[r[0]]={pt:r[1],w:r[2]}; });
+    const cd0=s.cond0||{}, at=ms=>{ const r=cH[Math.floor(ms/3600000)]; return r?{pi:r.pt,wi:windCls(r.w)}:{pi:PTS.indexOf(cd0.ptrend),wi:windCls(cd0.wind)}; };
+    const hasH=!s.manual&&Object.keys(cH).length>0;
+    for(let t=s.startMs;t<s.endMs;t+=600000){ const loc=new Date(t+utcMin*60000), dh=Math.min(600000,s.endMs-t)/3600000; bh[Math.floor(loc.getUTCHours()/3)]+=dh;
+      if(hasH){ const q=at(t); if(q.pi>=0) T.ptrend[q.pi].h+=dh; if(q.wi!=null) T.wind[q.wi].h+=dh; } }
     bh.forEach((v,i)=>{ T.block[i].h+=v; if(s.manual&&hrs>0) T.block[i].c+=c*v/hrs; });
     inS.concat(inM).forEach(x=>{ const loc=new Date(Math.min(Math.max(x.ms,s.startMs),s.endMs-1)+utcMin*60000); T.block[Math.floor(loc.getUTCHours()/3)].c++; });
     const mi=moonOf((s.startMs+s.endMs)/2); T.moon[mi].h+=hrs; T.moon[mi].c+=c;
-    const cd=s.cond0||{}; const pi=PTS.indexOf(cd.ptrend); if(pi>=0){ T.ptrend[pi].h+=hrs; T.ptrend[pi].c+=c; }
-    const wi=windCls(cd.wind); if(wi!=null){ T.wind[wi].h+=hrs; T.wind[wi].c+=c; }
+    if(hasH){
+      /* κάθε τσίμπημα μετρά με τις συνθήκες της ώρας του: πρώτα ό,τι καταγράφηκε στο ίδιο το ψάρι, αλλιώς η ώρα από το condH */
+      inS.concat(inM).forEach(x=>{ const q=at(x.ms), bp=PTS.indexOf(x.b.ptrend), bw=windCls(x.b.wind!=null?+x.b.wind:null), pi=bp>=0&&T.ptrend[bp].h>0?bp:q.pi, wi=bw!=null&&T.wind[bw].h>0?bw:q.wi;
+        if(pi>=0) T.ptrend[pi].c++; if(wi!=null) T.wind[wi].c++; });
+    } else {
+      const cd=s.cond0||{}; const pi=PTS.indexOf(cd.ptrend); if(pi>=0){ T.ptrend[pi].h+=hrs; T.ptrend[pi].c+=c; }
+      const wi=windCls(cd.wind); if(wi!=null){ T.wind[wi].h+=hrs; T.wind[wi].c+=c; }
+    }
   }
   let CA=0; for(const k of T.moon) CA+=k.c; /* όλα τα τσιμπήματα (ψάρια + χαμένα) */
   const r0=H>0?CA/H:0;

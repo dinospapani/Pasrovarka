@@ -2094,6 +2094,28 @@ async function tripPressBrief(){
   }catch(e){}
 }
 window.addEventListener('psaro-sess',()=>setTimeout(tripPressBrief,2500)); setTimeout(tripPressBrief,6000);
+/* v31z364: πίεση και άνεμος ώρα με ώρα για κάθε έξοδο (Open-Meteo, για τη θέση και το διάστημα της εξόδου), ώστε το προσωπικό μοντέλο
+   να μετρά τις ώρες ψαρέματος με τις πραγματικές συνθήκες κάθε ώρας και όχι μόνο της αρχής. Αποθηκεύεται στην έξοδο ως condH=[[ώρα UTC/3600000, τάση 0–3, άνεμος kn]].
+   Τάση πίεσης όπως παντού: αλλαγή 3 ωρών, ≤−3 απότομη πτώση, ≤−1 αργή πτώση, ≥+1 άνοδος, αλλιώς σταθερή. Μόνο για εξόδους των τελευταίων ~85 ημερών (όριο του Open-Meteo). */
+async function tripCondH(t){
+  if(!t||!t.startMs||!t.endMs||t.manual||Array.isArray(t.condH)) return false;
+  if(Date.now()-t.endMs>85*86400000||t.endMs-t.startMs>16*3600000) return false;
+  const la=t.lat!=null?t.lat:(t.cond0&&t.cond0.lat), lo=t.lon!=null?t.lon:(t.cond0&&t.cond0.lon); if(la==null||lo==null) return false;
+  const d0=new Date(t.startMs-4*3600000).toISOString().slice(0,10), d1=new Date(t.endMs).toISOString().slice(0,10);
+  const j=await fetchJson('https://api.open-meteo.com/v1/forecast?latitude='+(+la).toFixed(3)+'&longitude='+(+lo).toFixed(3)+'&hourly=pressure_msl,wind_speed_10m&wind_speed_unit=kn&timezone=UTC&start_date='+d0+'&end_date='+d1);
+  const ts=(j.hourly&&j.hourly.time)||[], ps=j.hourly.pressure_msl||[], ws=j.hourly.wind_speed_10m||[], byH={};
+  ts.forEach((x,i)=>{ byH[Math.floor(Date.parse(x+'Z')/3600000)]={p:ps[i],w:ws[i]}; });
+  const out=[], PT=['fast','slow','stable','rise'];
+  for(let hh=Math.floor(t.startMs/3600000);hh<=Math.floor((t.endMs-1)/3600000);hh++){ const a=byH[hh], b=byH[hh-3]; if(!a||typeof a.p!=='number') continue;
+    const d=b&&typeof b.p==='number'?a.p-b.p:null, pt=d==null?2:d<=-3?0:d<=-1?1:d>=1?3:2; out.push([hh,pt,typeof a.w==='number'?Math.round(a.w*10)/10:null]); }
+  if(!out.length) return false;
+  const cur=Store.get('trips').find(x=>x.id===t.id); if(!cur) return false;
+  await Store.save('trips',Object.assign({},cur,{condH:out})); return true;
+}
+window.addEventListener('psaro-tripend',e=>{ setTimeout(()=>{ const id=e.detail&&e.detail.id, t=id&&Store.get('trips').find(x=>x.id===id); if(t) tripCondH(t).catch(()=>{}); },5000); });
+/* παλιότερες έξοδοι χωρίς condH: συμπλήρωση στο παρασκήνιο, λίγες κάθε φορά */
+setTimeout(async()=>{ try{ const list=(Store.get('trips')||[]).filter(t=>t.startMs&&t.endMs&&!t.manual&&!Array.isArray(t.condH)&&Date.now()-t.endMs<85*86400000).slice(0,8);
+  for(const t of list){ try{ await tripCondH(t); }catch(e){} await new Promise(r=>setTimeout(r,1500)); } }catch(e){} },20000);
 /* v31z363: λίγα λεπτά μετά την έναρξη εξόδου, αν το σημείο ψαρεύτηκε τις 2 από τις 3 τελευταίες μέρες, μια υπενθύμιση για ξεκούραση σημείου (μία φορά ανά έξοδο) */
 function tripRestCheck(){
   try{ const st=window.PsaroTrip&&window.PsaroTrip.state&&window.PsaroTrip.state(); if(!st||!st.active||!st.id||lsGet('psaro-rest-trip','')===st.id) return;
