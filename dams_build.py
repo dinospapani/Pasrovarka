@@ -6,11 +6,24 @@
 import sys, re, json, io, datetime, urllib.request, urllib.parse
 
 PAGE = 'https://www.gov.cy/moa-wdd/documents/tamieytires-neroy-fragmata-ydatodexamenes/plirotita-fragmaton/'
-UA = {'User-Agent': 'Mozilla/5.0 (BiteCast dams sync; github.com/dinospapani/pasrovarka)'}
+UA = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'el-GR,el;q=0.9,en;q=0.8'}
 SKIP = ('ΟΛΙΚΟ', 'ΣΥΝΟΛΟ', 'ΝΟΤΙΟΣ', 'ΠΑΦΟΣ', 'ΧΡΥΣΟΧΟΥ', 'ΛΕΥΚΩΣΙΑ', 'ΦΡΑΓΜΑ', 'ΤΑΜΙΕΥΤΗΡ')
 
 
 def get(url):
+    # 1) curl_cffi: μιμείται τον Chrome (και στο TLS), περνά τα περισσότερα φίλτρα κατά των bots
+    try:
+        from curl_cffi import requests as cr
+        r = cr.get(url, impersonate='chrome', timeout=60, headers={'Accept-Language': UA['Accept-Language']})
+        if r.status_code == 200:
+            return r.content, str(r.url)
+        print('curl_cffi', r.status_code, url)
+    except ImportError:
+        pass
+    except Exception as e:
+        print('curl_cffi fail', url, e)
     req = urllib.request.Request(url, headers=UA)
     with urllib.request.urlopen(req, timeout=60) as r:
         return r.read(), r.geturl()
@@ -117,7 +130,11 @@ def main():
         date, dams, total = parse(data)
     else:
         last = None
-        for u in find_xlsx()[:6]:
+        try:
+            urls = find_xlsx()[:6]
+        except Exception as e:
+            raise SystemExit('gov.cy page not reachable: %s' % e)
+        for u in urls:
             try:
                 data, _ = get(u)
                 date, dams, total = parse(data)
