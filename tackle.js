@@ -239,7 +239,7 @@ function render(){
   var all=load();
   if(all.length&&!editing) box.append(advisor());
   var chips=el('div','seg'); chips.style.cssText='flex-wrap:wrap;margin:8px 0';
-  [['all',T('Όλα','All')]].concat(TYPES.filter(function(t){ return typeOn(t[0],fType); }).map(function(t){ return [t[0],t[1]]; })).concat([['lst',T('Λίστα','List')],['units',T('Μονάδες','Units')]]).forEach(function(c){
+  [['all',T('Όλα','All')]].concat(TYPES.filter(function(t){ return typeOn(t[0],fType); }).map(function(t){ return [t[0],t[1]]; })).concat([['lst',T('Λίστα','List')]]).forEach(function(c){
     var n=c[0]==='all'?all.length:c[0]==='lst'?remCount():all.filter(function(x){ return x.type===c[0]; }).length;
     var b=el('button','',c[1]+(n?' '+n:'')); b.type='button'; b.style.flex='1 0 auto'; b.setAttribute('aria-pressed',String(fType===c[0]));
     b.addEventListener('click',function(){ fType=c[0]; editing=null; render(); }); chips.append(b);

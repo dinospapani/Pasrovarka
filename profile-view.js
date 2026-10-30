@@ -89,6 +89,14 @@ Object.keys(UL).forEach(function(k){
   });
   row.append(seg); uc.append(row);
 });
+/* v31z413: οι μονάδες εξοπλισμού (πριν ήταν ξεχωριστά στον Εξοπλισμό) */
+(function(){ var get=function(){ var v=String(C.lsGet('psaro-tk-units','g|kg|m')||'').split('|'); return {w:v[0]==='oz'?'oz':'g',d:v[1]==='lb'?'lb':'kg',l:v[2]==='yd'?'yd':'m'}; };
+  var hh=document.createElement('div'); hh.className='unsub'; hh.textContent=T('Εξοπλισμός','Tackle'); uc.append(hh);
+  [['w',T('Βάρος (ζόκες, καλάμια)','Weight (lures, rods)'),[['g','g'],['oz','oz']]],['d',T('Drag μουλινέ','Reel drag'),[['kg','kg'],['lb','lb']]],['l',T('Μήκος νήματος','Line length'),[['m','m'],['yd','yd']]]].forEach(function(q){
+    var row=document.createElement('div'); row.className='unrow'; var l=document.createElement('span'); l.textContent=q[1]; row.append(l); var seg=document.createElement('div'); seg.className='unseg';
+    q[2].forEach(function(o){ var b=document.createElement('button'); b.type='button'; b.textContent=o[1]; b.setAttribute('aria-pressed',String(get()[q[0]]===o[0]));
+      b.addEventListener('click',function(){ var u=get(); u[q[0]]=o[0]; C.lsSet('psaro-tk-units',u.w+'|'+u.d+'|'+u.l); seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed','false'); }); b.setAttribute('aria-pressed','true'); }); seg.append(b); });
+    row.append(seg); uc.append(row); }); })();
 sc.insertBefore(uc,gc.nextSibling);
 var wantSet=false;
 $('sfGoProf').addEventListener('click',function(){ wantSet=true; },true);

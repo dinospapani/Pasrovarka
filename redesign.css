@@ -1418,3 +1418,27 @@ body.fp-lake #logSeg,body.fp-shore #logSeg,body.fp-spear #logSeg{grid-template-c
 #pSettings input[type=checkbox]:checked{background:var(--good,#2e9e5b)}
 #pSettings input[type=checkbox]:checked::before{transform:translateX(18px)}
 #pSettings input[type=checkbox]:focus-visible{outline:2px solid var(--accent,#c4401c);outline-offset:2px}
+
+/* v31z413: επαγγελματική εμφάνιση Profile */
+#profile h2.ndphlt{font-size:30px!important;line-height:1.15;font-weight:800!important;letter-spacing:-.02em;margin:2px 4px 12px!important;color:var(--ink);text-transform:none!important}
+#profile h2.ndphlt[hidden]{display:none}
+body.ndphon #pSettings .ndhdup{display:none!important}
+.ndpgt{margin-top:0}
+.ndphr{gap:14px}
+.ndphi{flex:none;width:32px;height:32px;border-radius:9px;background:var(--c);display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.ndphi svg{width:19px;height:19px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ndphr{position:relative}
+.ndphr::after{content:'';position:absolute;left:60px;right:0;bottom:0;height:1px;background:var(--line)}
+.ndphr:last-child::after{display:none}
+.ndphg .ndphr{border-bottom:0}
+.ndphr:active{background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.ndphh{padding:16px 6px 6px;font-size:12px}
+#profile.ndslide #pSettings,#profile.ndslide #pTackle,#profile.ndslide #pGuide,#profile.ndslide #pBoat,#profile.ndslide #pMain{animation:ndslin .22s cubic-bezier(.2,.8,.2,1)}
+@keyframes ndslin{from{transform:translateX(28px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){#profile.ndslide *{animation:none!important}}
+/* κάρτες στις σελίδες του Profile: ίδιο ύφος παντού */
+body.ndphon #pSettings>.card,body.ndphon #pSettings>.setcard{border-radius:18px;border:1px solid var(--line);background:var(--surface);box-shadow:none;padding:14px 16px;margin:0 0 12px}
+body.ndphon #pSettings .card>h3,body.ndphon #pSettings .card>b:first-child{display:block;font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+body.ndphon #pSettings input[type=text],body.ndphon #pSettings input[type=password],body.ndphon #pSettings input[type=email],body.ndphon #pSettings input[type=tel],body.ndphon #pSettings select{min-height:46px;border-radius:12px}
+body.ndphon #pSettings .btn{border-radius:12px;min-height:42px}
+.unsub{margin:14px 0 2px;font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}

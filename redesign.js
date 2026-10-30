@@ -902,7 +902,7 @@ box.insertBefore(tools,bar.nextSibling);
     function askPaint(){ ab.textContent=(askOn()?'✓ ':'')+T('Ρώτα στο άνοιγμα της εφαρμογής','Ask when the app opens'); ab.setAttribute('aria-pressed',String(askOn())); }
     ab.addEventListener('click',function(){ try{ localStorage.setItem('psaro-askfp',askOn()?'0':'1'); }catch(e){} askPaint(); }); askPaint();
     card.querySelector('.ndfpd').after(ab);
-    card.querySelector('.ndvh').textContent=T('Γλώσσα φωνητικής καταγραφής','Voice input language');
+    card.querySelector('.ndvh').textContent=T('Γλώσσα μικροφώνου (φωνητική καταγραφή)','Microphone language (voice input)');
     card.querySelector('.ndvn').textContent=T('Για το μικρόφωνο στον χάρτη (έξοδος) και το «Πες το» στη φόρμα ψαριού. Λέγε τα ονόματα των ψαριών στη γλώσσα που διαλέγεις.','For the map microphone (during a trip) and “Say it” in the catch form. Say fish names in the language you pick here.');
     var vs=card.querySelector('.ndvs');
     function vget(){ var v=null; try{ v=JSON.parse(localStorage.getItem('psaro-vlang')); }catch(e){} return v==='en-US'?'en-US':'el-GR'; }
@@ -1288,7 +1288,7 @@ box.insertBefore(tools,bar.nextSibling);
       ['ai',T('Αναγνώριση ψαριού με AI','AI fish identification'),null,'set','pAICard']]],
     [T('ΛΟΓΑΡΙΑΣΜΟΣ','ACCOUNT'),[
       ['account',T('Λογαριασμός και γλώσσα','Account and language'),null,'set','pAccCard,pSyncCard,pPassCard,ndDelAcc'],
-      ['about',T('Σχετικά','About'),T('Απόρρητο, έκδοση, οδηγός καλωσορίσματος','Privacy, version, welcome tour'),'set','appVer,ndChkUpd,ndAbout,ndTour']]]
+      ['about',T('Σχετικά','About'),T('Απόρρητο, έκδοση, οδηγός καλωσορίσματος','Privacy, version, welcome tour'),'set','appVer,ndAbout,ndTour']]]
   ];
   /* v31z412: ετοιμότητα ασφαλείας */
   function safeItems(){ var d=J('psaro-safe',{}), gps=true; try{ gps=!window.PsaroTrack||window.PsaroTrack.enabled(); }catch(e){}
@@ -1317,6 +1317,21 @@ box.insertBefore(tools,bar.nextSibling);
     var h3=nc.querySelector('h3'); if(h3&&!h3.dataset.nd){ h3.dataset.nd='1'; h3.textContent=T('Ειδοποιήσεις','Alerts'); }
     var sc=$('seaSetCard'), sh=sc&&sc.querySelector('h3'); if(sh) sh.textContent=T('Κατά την έξοδο: καιρός, φωνή, λιμάνι','During a trip: weather, voice, home port');
   }
+  /* v31z413: εικονίδιο ανά γραμμή (χρωματιστό τετράγωνο, όπως στις Ρυθμίσεις του κινητού) */
+  var ICO={
+    tackle:['#d9772b','<path d="M5 19L19 5"/><path d="M15 5h4v4"/><circle cx="7" cy="17" r="2"/>'],
+    boat:['#2b7fc4','<path d="M3 17l2 3h14l2-3z"/><path d="M12 4v10M12 4l6 8h-6"/>'],
+    friends:['#8e44ad','<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.8.3 5 2.6 5 5.8"/>'],
+    fprof:['#1f8a7a','<path d="M2.5 12c3-5 10-5.5 13.5-1.2L21 7v10l-5-3.8C12.5 17.5 5.5 17 2.5 12z"/>'],
+    alerts:['#e04a3a','<path d="M6 17v-6a6 6 0 0112 0v6l1.5 2h-15z"/><path d="M10 21h4"/>'],
+    guide:['#3d6fd8','<path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M4 19V5"/>'],
+    units:['#6b7a86','<path d="M3 8h18v8H3z"/><path d="M7 8v3M11 8v4M15 8v3M19 8v4"/>'],
+    safety:['#2e9e5b','<path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>'],
+    backup:['#0f8fb3','<path d="M7 18a4 4 0 01-.5-8 5.5 5.5 0 0110.6-1.5A4 4 0 0117 18"/><path d="M12 12v8M9 15l3-3 3 3"/>'],
+    data:['#c58a12','<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>'],
+    ai:['#b0469b','<path d="M12 3l1.8 4.7L18.5 9.5 13.8 11.3 12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>'],
+    account:['#4b5563','<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>'],
+    about:['#7a8691','<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/>']};
   /* γραμμές που χρειάζονται προσοχή: ● */
   function warnOf(k){ try{
     if(k==='safety'){ var d=J('psaro-safe',{}); return !(d.phone||d.email||d.tgLinked); }
@@ -1327,7 +1342,7 @@ box.insertBefore(tools,bar.nextSibling);
     var pb=document.querySelector('#profile .pbox'), pm=$('pMain'); if(!pb||!pm) return false; if(home) return true;
     home=document.createElement('div'); home.id='pHome'; home.className='ndphome'; pm.parentNode.insertBefore(home,pm);
     back=document.createElement('button'); back.type='button'; back.id='pHomeBack'; back.className='ndphback'; back.hidden=true;
-    back.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span></span>'; back.querySelector('span').textContent='Profile';
+    back.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span></span>'; back.querySelector('span').textContent=T('Προφίλ','Profile');
     back.addEventListener('click',showHome); pm.parentNode.insertBefore(back,home);
     return true;
   }
@@ -1348,6 +1363,7 @@ box.insertBefore(tools,bar.nextSibling);
   }
   function paint(){
     if(!home) return; home.replaceChildren();
+    var lt=document.createElement('h2'); lt.className='ndphlt'; lt.textContent=T('Προφίλ','Profile'); home.appendChild(lt);
     var sw=document.createElement('div'); sw.className='ndphsrch'; sw.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input type="search" autocomplete="off">';
     var si=sw.querySelector('input'); si.placeholder=T('Αναζήτηση ρυθμίσεων (π.χ. άγκυρα, μονάδες)','Search settings (e.g. anchor, units)'); si.setAttribute('aria-label',T('Αναζήτηση ρυθμίσεων','Search settings')); si.value=qv;
     si.addEventListener('input',function(){ qv=si.value; filt(); }); home.appendChild(sw);
@@ -1361,7 +1377,7 @@ box.insertBefore(tools,bar.nextSibling);
       g[1].forEach(function(r){
         if(r[0]==='boat'&&!$('pBoat')) return;
         var b=document.createElement('button'); b.type='button'; b.className='ndphr'; b.dataset.k=r[0];
-        b.innerHTML='<span><b></b><small></small></span><i aria-hidden="true">›</i>';
+        var ic=ICO[r[0]]; b.innerHTML=(ic?'<em class="ndphi" style="--c:'+ic[0]+'" aria-hidden="true"><svg viewBox="0 0 24 24">'+ic[1]+'</svg></em>':'')+'<span><b></b><small></small></span><i aria-hidden="true">›</i>';
         b.querySelector('b').textContent=r[1]; b.querySelector('small').textContent=r[2]||sub(r[0]);
         if(warnOf(r[0])){ var wd=document.createElement('i'); wd.className='ndphw'; wd.setAttribute('aria-label',T('Χρειάζεται προσοχή','Needs attention')); b.querySelector('b').appendChild(wd); }
         if(r[0]==='boat'){ var bb=document.querySelector('#pSeg [data-p=boat]'); if(bb&&bb.dataset.badge){ var d=document.createElement('em'); d.textContent=bb.dataset.badge; b.querySelector('b').appendChild(d); } }
@@ -1384,7 +1400,7 @@ box.insertBefore(tools,bar.nextSibling);
   var inHome=false;
   function showHome(){
     if(!build()) return; moveAlerts(); inHome=true; paint();
-    document.body.classList.add('ndphon'); home.hidden=false; back.hidden=true;
+    document.body.classList.add('ndphon'); home.hidden=false; back.hidden=true; var st0=$('ndPgTitle'); if(st0) st0.hidden=true;
     ['pMain','pSettings','pTackle','pGuide','pBoat'].forEach(function(i){ var x=$(i); if(x) x.hidden=true; });
     try{ $('profile').scrollTop=0; }catch(e){}
   }
@@ -1392,6 +1408,9 @@ box.insertBefore(tools,bar.nextSibling);
     if(k==='stats'&&window.PsaroOpenStats){ window.PsaroOpenStats(); return; }
     var r=ROW[k]; if(!r||!build()) return; moveAlerts();
     inHome=false; home.hidden=true; back.hidden=false; document.body.classList.add('ndphon');
+    /* v31z413: μεγάλος τίτλος σελίδας και ομαλή μετάβαση */
+    var st=$('ndPgTitle'); if(!st){ st=document.createElement('h2'); st.id='ndPgTitle'; st.className='ndphlt ndpgt'; back.parentNode.insertBefore(st,back.nextSibling); }
+    st.textContent=r[1]; st.hidden=false; try{ var pf=$('profile'); pf.classList.remove('ndslide'); void pf.offsetWidth; pf.classList.add('ndslide'); }catch(e){}
     if(window.PsaroProfView) window.PsaroProfView.set(r[3]);
     home.hidden=true; back.hidden=false;
     document.body.classList.toggle('ndphone',!!r[4]);
@@ -1400,6 +1419,7 @@ box.insertBefore(tools,bar.nextSibling);
       setTimeout(function(){
         var pr=$('profile');
         tagCards(); if(k==='safety') safeCard(); if(k==='alerts') orgAlerts();
+        var pt=nrm(r[1]); [].forEach.call(document.querySelectorAll('#pSettings .card>h3, #pSettings .card>b:first-child'),function(h){ var same=nrm(h.textContent).trim()===pt||(k==='units'&&/μοναδες|units/.test(nrm(h.textContent)))||(k==='alerts'&&/^ειδοποιησεις$|^alerts$/.test(nrm(h.textContent).trim())); h.classList.toggle('ndhdup',same); });
         (r[4]||'').split(',').forEach(function(id){ var t=id?$(id):null; if(t) t.classList.add('ndphsel'); });
         try{ pr.scrollTop=0; }catch(e){}
       },120);
@@ -1645,7 +1665,7 @@ box.insertBefore(tools,bar.nextSibling);
       hd.innerHTML='<button type="button" class="ndphead"><div class="ndpav"></div><div class="ndpnm"><b></b><span><i class="ndsy"></i><em></em></span></div><i class="ndpch" aria-hidden="true">›</i></button><div class="ndpyr"></div><button type="button" class="ndpall"></button>';
       hd.querySelector('.ndphead').addEventListener('click',function(){ if(window.PsaroProfGo) window.PsaroProfGo('account'); });
       hd.querySelector('.ndpall').addEventListener('click',function(){ if(window.PsaroOpenStats) window.PsaroOpenStats(); }); }
-    if(home.firstChild!==hd) home.insertBefore(hd,home.firstChild);
+    var lt0=home.querySelector('.ndphlt'), want=lt0?lt0.nextSibling:home.firstChild; if(hd.previousSibling!==(lt0||null)||hd.parentNode!==home) home.insertBefore(hd,want);
     var nm=(($('pNameShow')||{}).textContent||'').trim(), last=0, sess=null; if(nm==='?') nm='';
     try{ last=+JSON.parse(localStorage.getItem('psaro-last'))||0; }catch(e){ try{ last=+localStorage.getItem('psaro-last')||0; }catch(x){} }
     try{ sess=JSON.parse(localStorage.getItem('psaro-sess')||'null'); }catch(e){}
