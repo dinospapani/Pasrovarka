@@ -66,7 +66,7 @@ function render(){
   }
   q.addEventListener('input',function(){ query=q.value; fill(); }); fill();
 }
-function open(cb){ onPick=cb||null; if(!manual) cur=autoRegion(); query=''; render(); P.hidden=false; }
+function open(cb){ onPick=cb||null; if(!manual){ var fpL=''; try{ fpL=localStorage.getItem('psaro-fprof')||''; }catch(e){} cur=fpL==='lake'?'f':autoRegion(); } query=''; render(); P.hidden=false; }
 
 window.PsaroSpecies={open:open,suggestions:suggestions,autoRegion:autoRegion,tagsOf:tagsOf};
 })();

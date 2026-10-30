@@ -735,7 +735,7 @@ function drawMap(){
     if(typeof b.lat!=='number'||typeof b.lon!=='number') continue;
     if(reviewSet&&!tripActive()&&!reviewSet.has(b.id)) continue;
     if(lsGet('psaro-showbites',true)===false&&!reviewSet&&b.id!==focusId) continue;
-    const m=L.marker([b.lat,b.lon],{icon:L.divIcon({className:'',html:'<div class="mk-fish sym g-'+fishGroup(b)+(b.photo?' ph':'')+(b.rel?' rel':'')+'">'+SYM_SVG[fishGroup(b)==='ceph'?'ceph':'fish']+'</div>',iconSize:[30,30]}),title:b.species||''});
+    const m=L.marker([b.lat,b.lon],{icon:L.divIcon({className:'',html:'<div class="mk-fish sym g-'+fishGroup(b)+(b.photo?' ph':'')+(b.rel?' rel':'')+(b.prof==='lake'?' src-lake':b.prof==='spear'?' src-spear':'')+'">'+SYM_SVG[fishGroup(b)==='ceph'?'ceph':'fish']+'</div>',iconSize:[30,30]}),title:b.species||''});
     m.bindPopup(()=>catchPopup(b),{minWidth:200,maxWidth:250,className:'fishpopw'});
     m.on('popupopen',e=>{const pu=e.popup, im=pu.getElement().querySelector('img.pimg');
       /* το παράθυρο ψαριού μπαίνει στο κέντρο του χάρτη, και ξανά όταν φορτώσει η φωτογραφία */

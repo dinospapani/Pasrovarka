@@ -13,6 +13,7 @@ var $=function(i){ return document.getElementById(i); };
 function E(tag,cls,txt){ var e=document.createElement(tag); if(cls) e.className=cls; if(txt!=null) e.textContent=txt; return e; }
 function p2(n){ return (n<10?'0':'')+n; }
 function u(fn,v){ try{ return PU&&PU[fn]?PU[fn](v):String(v); }catch(e){ return ''; } }
+function isLake(){ try{ return localStorage.getItem('psaro-fprof')==='lake'; }catch(e){ return false; } }
 function lvl(v){ return v>=75?'good':v>=60?'ok':v>=45?'fair':'poor'; }
 var DN=EN?['Sun','Mon','Tue','Wed','Thu','Fri','Sat']:['Κυρ','Δευ','Τρί','Τετ','Πέμ','Παρ','Σάβ'];
 var DIRS=EN?['N','NE','E','SE','S','SW','W','NW']:['Β','ΒΑ','Α','ΝΑ','Ν','ΝΔ','Δ','ΒΔ'];
@@ -167,7 +168,7 @@ function hours(){
   }
   var h=d.hours.filter(function(x){ return x.hr===selH; })[0]; if(!h){ det.textContent=''; return; }
   var cells=[[p2(h.hr)+':00',T('ώρα','time')],[String(h.score),T('βαθμός','score')],[u('wind',h.wind)+(h.dir!=null?' '+dir(h.dir):''),T('άνεμος','wind')+(h.gust!=null?' · '+T('ριπές ','gusts ')+u('wind',h.gust):'')]];
-  if(h.wave!=null) cells.push([u('wave',h.wave),T('κύμα','waves')+(h.period!=null?' · '+Math.round(h.period)+' s':'')]);
+  if(h.wave!=null&&!isLake()) cells.push([u('wave',h.wave),T('κύμα','waves')+(h.period!=null?' · '+Math.round(h.period)+' s':'')]);
   if(h.rain!=null) cells.push([Math.round(h.rain)+'%',T('βροχή','rain')]);
   var s2=JSON.stringify(cells); if(det.dataset.sig===s2) return; det.dataset.sig=s2; det.replaceChildren();
   cells.forEach(function(c,i){ var x=E('div','fc2-hc'+(i===1?' lv-'+lvl(h.score):'')); x.append(E('b','ds-num',c[0]),E('span','',c[1])); det.appendChild(x); });
@@ -199,7 +200,7 @@ function fill(r,body){
 function rows(){
   [].forEach.call(root.querySelectorAll('.ds-row'),function(w){
     var r=ROWS.filter(function(x){ return x.k===w.dataset.k; })[0]; if(!r) return;
-    var hide=(r.node&&!r.node()&&!r.build); w.hidden=hide;
+    var hide=(r.node&&!r.node()&&!r.build)||(r.k==='coast'&&isLake()); w.hidden=hide;
     var b=w.querySelector('.ds-rt b'), s=w.querySelector('.ds-rt small'), t=r.t(), st=(r.s()||'').trim();
     if(b.textContent!==t) b.textContent=t; if(s.textContent!==st) s.textContent=st;
     if(openRow[r.k]) fill(r,w.querySelector('.ds-rowc'));
@@ -235,14 +236,14 @@ function days(){
     b.querySelector('.fc2-dn b').innerHTML=''; b.querySelector('.fc2-dn b').textContent=name; if(i===best) b.querySelector('.fc2-dn b').insertAdjacentHTML('beforeend',' '+IC.star);
     b.querySelector('.fc2-dn small').textContent=d.win&&d.safe?p2(d.win.s)+':00–'+p2((d.win.e+1)%24)+':00':(d.safe?'':T('χωρίς ασφαλές παράθυρο','no safe window'));
     b.querySelector('.fc2-wx').innerHTML=wx(w.code);
-    b.querySelector('.fc2-dw').textContent=[d.avgWind!=null?u('wind',d.avgWind)+(w.windDir!=null?' '+dir(w.windDir):''):'',d.avgWave!=null?u('wave',d.avgWave):''].filter(Boolean).join(' · ');
+    b.querySelector('.fc2-dw').textContent=[d.avgWind!=null?u('wind',d.avgWind)+(w.windDir!=null?' '+dir(w.windDir):''):'',d.avgWave!=null&&!isLake()?u('wave',d.avgWave):''].filter(Boolean).join(' · ');
     var cf=b.querySelector('.ds-conf'); cf.dataset.c=i<=1?2:i<=3?1:0; cf.title=[T('χαμηλή βεβαιότητα','low confidence'),T('μέτρια βεβαιότητα','medium confidence'),T('υψηλή βεβαιότητα','high confidence')][cf.dataset.c];
     var sc=b.querySelector('.ds-score'); sc.textContent=d.safe?String(d.best):'–'; sc.dataset.lv=d.safe?lvl(d.best):'none';
     b.addEventListener('click',function(){ openDay[d.date]=!openDay[d.date]; days(); });
     r.appendChild(b);
     if(openDay[d.date]){ var c=E('div','fc2-dayc'); var bars=E('div','fc2-mini'); d.hours.forEach(function(h){ var x=E('i'); x.style.setProperty('--v',h.score); if(!h.safe) x.dataset.k='bad'; else if(d.win&&h.hr>=d.win.s&&h.hr<=d.win.e) x.dataset.k='best'; x.title=p2(h.hr)+':00 · '+h.score; bars.appendChild(x); }); c.appendChild(bars);
       var ax=E('div','fc2-axis'); ['00','06','12','18','23'].forEach(function(x){ ax.appendChild(E('span','',x)); }); c.appendChild(ax);
-      var facts=[]; if(w.tmin!=null&&w.tmax!=null) facts.push(u('temp',w.tmin)+' – '+u('temp',w.tmax)); if(w.gustMax!=null) facts.push(T('ριπές έως ','gusts up to ')+u('wind',w.gustMax)); if(w.waveMax!=null) facts.push(T('κύμα έως ','waves up to ')+u('wave',w.waveMax));
+      var facts=[]; if(w.tmin!=null&&w.tmax!=null) facts.push(u('temp',w.tmin)+' – '+u('temp',w.tmax)); if(w.gustMax!=null) facts.push(T('ριπές έως ','gusts up to ')+u('wind',w.gustMax)); if(w.waveMax!=null&&!isLake()) facts.push(T('κύμα έως ','waves up to ')+u('wave',w.waveMax));
       c.appendChild(E('p','ds-note',facts.join(' · ')));
       if(!d.safe){ var why=[]; if(w.windMax!=null&&w.windMax>14) why.push(T('άνεμος έως ','wind up to ')+u('wind',w.windMax)); if(w.waveMax!=null&&w.waveMax>0.9) why.push(T('κύμα έως ','waves up to ')+u('wave',w.waveMax)); if(w.code!=null&&w.code>=95) why.push(T('καταιγίδα','thunderstorm')); c.appendChild(E('p','ds-warn',T('Δεν υπάρχει ασφαλές παράθυρο','No safe window')+(why.length?': '+why.join(', '):'.'))); }
       r.appendChild(c); }

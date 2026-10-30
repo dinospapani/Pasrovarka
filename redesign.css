@@ -1346,3 +1346,12 @@ body.ndspform #bTackleWrap>span:nth-of-type(2),body.ndspform #bTkW,body.ndspform
 #fcHead .fcbconf[data-c="2"]::before{background:currentColor}
 #fcHead .fcbconf[data-c="1"]::before{background:linear-gradient(90deg,currentColor 50%,transparent 50%)}
 .ndfca{align-items:center}.ndfca a.ndib,.ndfca a.ndib:visited{margin:0!important;color:var(--ink)!important;vertical-align:middle;line-height:1;box-sizing:border-box}.ndfca .ndib{box-sizing:border-box}
+
+/* v31z392 · φράγμα / λίμνη */
+body.fp-lake #logSeg [data-l=gear],body.fp-shore #logSeg [data-l=gear],body.fp-spear #logSeg [data-l=gear]{display:none!important}
+body.fp-lake #logSeg,body.fp-shore #logSeg,body.fp-spear #logSeg{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.mk-fish.sym.src-lake{border-radius:9px!important;--g:#2f8fb7}
+.mk-fish.sym.src-spear{border-style:double!important;border-width:4px!important}
+#tripList .ndth.fam-lake{box-shadow:inset 0 0 0 3px #2f8fb7}
+#tripList .ndth.fam-spear{box-shadow:inset 0 0 0 3px #c9a227}
+#tripList[data-fam=sea] .item[data-fam]:not([data-fam=sea]),#tripList[data-fam=lake] .item[data-fam]:not([data-fam=lake]),#tripList[data-fam=spear] .item[data-fam]:not([data-fam=spear]){display:none!important}

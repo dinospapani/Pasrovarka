@@ -1419,7 +1419,7 @@ box.insertBefore(tools,bar.nextSibling);
   function insights(){
     var ls=$('l-stats'); if(!ls||ls.hidden||!C||!C.Store||insBusy) return; insBusy=true;
     try{
-      var fm=prof()==='spear'?'spear':'rod', ff=function(x){ return ((x&&x.prof)==='spear'?'spear':'rod')===fm; };
+      var fp0=prof(), fm=fp0==='spear'?'spear':fp0==='lake'?'lake':'rod', ff=function(x){ var p=x&&x.prof; return (p==='spear'?'spear':p==='lake'?'lake':'rod')===fm; };
       var allT=C.Store.get('trips')||[], trips=allT.filter(inR).filter(ff), bites=(C.Store.act?C.Store.act():C.Store.get('bites')).filter(inR).filter(ff), miss=(C.Store.misses?C.Store.misses():[]).filter(inR).filter(ff);
       var sig=[fm,trips.length,bites.length,miss.length,(window.PsaroRange&&JSON.stringify(window.PsaroRange.get&&window.PsaroRange.get('log')))||'',(C.lsGet&&C.lsGet('psaro-range-log',''))||''].join('|')+'|'+allT.length;
       var box=$('ndIns'); if(box&&sig===insSig&&box.parentNode===ls) return; insSig=sig;
@@ -1504,7 +1504,8 @@ box.insertBefore(tools,bar.nextSibling);
     [].forEach.call(L.querySelectorAll(':scope>.item[data-tid]'),function(it){
       if(it.querySelector(':scope>.ndth')) return; if(!all) all=C.Store.get('trips')||[];
       var t=all.filter(function(x){ return x.id===it.dataset.tid; })[0]; if(!t) return; var n=0; try{ n=C.tripEff(t,all).count; }catch(e){ n=+t.count||0; }
-      var th=E('div','ndth'+(n>0?' got':'')); th.setAttribute('aria-hidden','true'); th.textContent=n>0?String(n):''; it.insertBefore(th,it.firstChild); it.classList.add('ndthi');
+      var fmT=t.prof==='spear'?'spear':t.prof==='lake'?'lake':'sea'; it.dataset.fam=fmT;
+      var th=E('div','ndth'+(n>0?' got':'')+' fam-'+fmT); th.setAttribute('aria-hidden','true'); th.textContent=n>0?String(n):''; it.insertBefore(th,it.firstChild); it.classList.add('ndthi');
     });
     var R=$('logRange'); if(R&&!$('ndRngSel')){
       var chips=R.querySelector('.rngchips'), more=R.querySelector('.rngmore'); if(!chips) return;
@@ -1518,10 +1519,17 @@ box.insertBefore(tools,bar.nextSibling);
     }
     var ss=document.querySelector('#l-trips > .sortsel'), row2=document.querySelector('#logRange .ndlrow');
     if(ss&&row2&&ss.parentNode!==row2){ var s=ss.querySelector('select'); if(s){ s.classList.add('ndpillsel'); s.setAttribute('aria-label',T('Ταξινόμηση','Sort')); row2.appendChild(s); ss.classList.add('ndgone'); } }
+    /* v31z392: φίλτρο τύπου ψαρέματος στο Ημερολόγιο (όλα μαζί ή μόνο ένας τύπος) */
+    if(row2&&!$('ndFamSel')){ var fs=document.createElement('select'); fs.id='ndFamSel'; fs.className='ndpillsel'; fs.setAttribute('aria-label',T('Τύπος ψαρέματος','Fishing type'));
+      [['all',T('Όλοι οι τύποι','All types')],['sea',T('Θάλασσα (καλάμι)','Sea (rod)')],['lake',T('Φράγμα / λίμνη','Dam / lake')],['spear',T('Ψαροντούφεκο','Spearfishing')]].forEach(function(o){ var op=document.createElement('option'); op.value=o[0]; op.textContent=o[1]; fs.appendChild(op); });
+      try{ fs.value=localStorage.getItem('psaro-logfam')||'all'; }catch(e){}
+      fs.addEventListener('change',function(){ try{ localStorage.setItem('psaro-logfam',fs.value); }catch(e){} famPaint(); }); row2.appendChild(fs); }
+    famPaint();
     var cnt=$('ndLogCnt'), st=$('stats'); if(row2&&!cnt){ cnt=E('span','ndlcnt'); cnt.id='ndLogCnt'; row2.appendChild(cnt); }
     if(cnt&&st){ var bs=st.querySelectorAll(':scope>div>b'); if(bs.length>=2){ var t=bs[0].textContent+' '+T('έξοδοι','trips')+' · '+bs[1].textContent+' '+T('ψάρια','fish'); if(cnt.textContent!==t) cnt.textContent=t; } }
   }
 
+  function famPaint(){ var v='all'; try{ v=localStorage.getItem('psaro-logfam')||'all'; }catch(e){} var L=$('tripList'); if(!L) return; L.dataset.fam=v; }
   /* ---------- 5. Ψαροντούφεκο στην έξοδο: συνθήκες, σημαδούρα, κατάδυση ---------- */
   function spearBar(){
     var on=document.body.classList.contains('ontrip')&&prof()==='spear', box=document.querySelector('.mapbox'), w=$('ndSpBar');
@@ -1686,7 +1694,7 @@ box.insertBefore(tools,bar.nextSibling);
 (function(){
   var EN=window.LANG==='en';
   function prof(){ try{ return localStorage.getItem('psaro-fprof')||'boat'; }catch(e){ return 'boat'; } }
-  function fam(p){ return p==='spear'?'spear':'rod'; }
+  function fam(p){ return p==='spear'?'spear':p==='lake'?'lake':'rod'; }
   /* 1. Η προσωπική πρόγνωση, ο σύμβουλος και ο έλεγχος του βαθμού μαθαίνουν χωριστά για ψαροντούφεκο και για καλάμι.
         Καταγραφές χωρίς τύπο (παλιές) μετράνε ως καλάμι. */
   function patch(){
@@ -1718,7 +1726,7 @@ box.insertBefore(tools,bar.nextSibling);
   function kpiWords(){
     var box=document.getElementById('ndIns'); if(!box) return; var sp=prof()==='spear';
     var t=box.querySelector('.ndkind'); if(!t){ t=document.createElement('div'); t.className='ndisep ndkind'; box.insertBefore(t,box.firstChild); }
-    var lab=sp?(EN?'Spearfishing':'Ψαροντούφεκο'):(EN?'Rod and line':'Καλάμι'); if(t.textContent!==lab) t.textContent=lab;
+    var pf=prof(), lab=sp?(EN?'Spearfishing':'Ψαροντούφεκο'):pf==='lake'?(EN?'Dam / lake':'Φράγμα / λίμνη'):(EN?'Sea, rod and line':'Θάλασσα, καλάμι'); if(t.textContent!==lab) t.textContent=lab;
   }
   window.ndEvery(kpiWords,1500);
 })();
