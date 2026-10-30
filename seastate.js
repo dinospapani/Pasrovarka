@@ -13,7 +13,7 @@
    Όριο βάθους: Hs ≤ 0,55·βάθος.
    Βεβαιότητα: υπολογισμός με κάθε μοντέλο ανέμου και κάθε μοντέλο κύματος· αν το ελάχιστο και το μέγιστο πέφτουν
    σε διαφορετική κατηγορία WMO, η περιοχή διαγραμμίζεται.
-   ΔΕΝ περιλαμβάνει ρεύματα, διάθλαση/περίθλαση, βουνά (επιτάχυνση/σκιά ανέμου). */
+   Περίθλαση/διάθλαση κατά προσέγγιση (βεντάλια κατευθύνσεων, v31z384). ΔΕΝ περιλαμβάνει ρεύματα, βουνά (επιτάχυνση/σκιά ανέμου). */
 (function(){
 'use strict';
 var EN=window.LANG==='en', T=function(a,b){ return EN?b:a; };
@@ -109,6 +109,19 @@ function fetchKm(cl,dir){
   var x=((dir%360)+360)%360/22.5, i0=Math.floor(x)%16, i1=(i0+1)%16, t=x-Math.floor(x), F=cl.t.f, k=cl.k*16;
   return qkm(F[k+i0])*(1-t)+qkm(F[k+i1])*t;
 }
+/* v31z384 · Κύμα που «στρίβει» γύρω από ακρωτήρια (περίθλαση) και προς την ακτή στα ρηχά (διάθλαση), κατά προσέγγιση:
+   αντί για μία μόνο κατεύθυνση, το κύμα έρχεται σε μια βεντάλια γύρω από την κύρια κατεύθυνση (κατανομή cos^2s).
+   Πίσω από ακρωτήριο φτάνει μέρος της ενέργειας από τις γειτονικές κατευθύνσεις που είναι ανοιχτές.
+   Στα ρηχά (βάθος < μισό μήκος κύματος) η βεντάλια ανοίγει, γιατί το κύμα στρέφεται προς την ακτή.
+   Ύψος = ύψος ανοιχτά × √(μέση ενέργεια που περνά). Ενδεικτικό, όχι φασματικό μοντέλο (SWAN κ.λπ.). */
+function swellExpo(cl,dir,depth,per){
+  var L0=1.56*Math.pow(per>0?per:7,2), shallow=isFinite(depth)&&depth<L0/2;
+  var span=shallow?75:45, pw=shallow?2:4, sw=0, se=0;
+  for(var d=-span;d<=span;d+=15){ var c=Math.cos(d*Math.PI/180); if(c<=0) continue; var w=Math.pow(c,pw), o=swellOpen(fetchKm(cl,dir+d)); sw+=w; se+=w*o*o; }
+  return sw?Math.sqrt(se/sw):swellOpen(fetchKm(cl,dir));
+}
+/* ενεργό fetch για κύμα ανέμου (μέθοδος SPM: μέσος όρος ±45° με βάρος cos²), ώστε στενά ανοίγματα να μη μετρούν σαν ανοιχτή θάλασσα */
+function fetchEff(cl,dir){ var sw=0, sf=0; for(var d=-45;d<=45;d+=15){ var c=Math.cos(d*Math.PI/180), w=c*c; sw+=w; sf+=w*fetchKm(cl,dir+d); } return sf/sw; }
 function distKm(cl){ return cl.t.d?cl.t.d[cl.k]*0.05:5; }
 function depthM(cl){ if(!cl.t.z) return Infinity; var z=cl.t.z[cl.k]; return (z>0&&z<255)?z:Infinity; }
 
@@ -204,8 +217,8 @@ function calc(cl,lat,lon,wind,winds,P){
   P.waves.forEach(function(m){ var s=latSample(m.L,lat,lon,function(p){ return m.ok[p]?[m.h[p],m.sh[p],m.su[p],m.sv[p],m.tp?m.tp[p]:0,m.stp?m.stp[p]:0,m.wu?m.wu[p]:0,m.wv?m.wv[p]:0]:null; }); if(s){ mWu+=s[6]; mWv+=s[7]; mH.push({name:m.name,h:s[0]}); swh+=s[1]; swx+=s[2]; swy+=s[3]; swn++; if(s[4]>0.5){ mT+=s[4]; mTn++; } if(s[5]>0.5){ sT+=s[5]; sTn++; } } });
   var swell=null, swE=0;
   if(!swn&&!P.waves.length){ try{ var cc=window.PsaroCore&&window.PsaroCore.getCond&&window.PsaroCore.getCond(); if(cc&&cc.wave!=null&&cc.wave>0){ swh=+cc.wave; var dd0=cc.waveDir!=null?+cc.waveDir:(cc.windDeg!=null?+cc.windDeg:270); swx=Math.sin(dd0*Math.PI/180); swy=Math.cos(dd0*Math.PI/180); swn=1; P.pointFallback=true; if(cc.wavePeriod) { sT+=+cc.wavePeriod; sTn++; } } }catch(e){} }
-  if(swn){ swh/=swn; var sdir=(Math.atan2(swx,swy)*180/Math.PI+360)%360; swell={h:swh,dir:sdir,fetchKm:fetchKm(cl,sdir)}; swE=swh*swellOpen(swell.fetchKm); }
-  function ours(v){ var ws=hsWind(v.sp*0.514444,fetchKm(cl,v.dir),dur,dep); return {ws:ws,h:Math.sqrt(ws*ws+swE*swE)}; }
+  if(swn){ swh/=swn; var sdir=(Math.atan2(swx,swy)*180/Math.PI+360)%360; swell={h:swh,dir:sdir,fetchKm:fetchKm(cl,sdir)}; swE=swh*swellExpo(cl,sdir,dep,sTn?sT/sTn:0); }
+  function ours(v){ var ws=hsWind(v.sp*0.514444,fetchEff(cl,v.dir),dur,dep); return {ws:ws,h:Math.sqrt(ws*ws+swE*swE)}; }
   var oc=ours(wind), olo=oc.h, ohi=oc.h;
   (winds||[]).forEach(function(x){ var o=ours(x.v); if(o.h<olo) olo=o.h; if(o.h>ohi) ohi=o.h; });
   var w=mH.length?clamp01((dist-2)/6)*clamp01((F-10)/40):0;
@@ -265,7 +278,7 @@ function ensure(){
   var nt=document.createElement('details'); nt.style.cssText='margin-top:2px';
   var sm=document.createElement('summary'); sm.className='note'; sm.style.cssText='font-size:11px;cursor:pointer;min-height:24px;display:list-item'; sm.textContent=T('Τι δείχνει αυτό','What this shows');
   var nb=document.createElement('p'); nb.className='note'; nb.style.cssText='font-size:11px;margin:2px 0 0';
-  nb.textContent=T('Εκτίμηση σημαντικού ύψους κύματος, έως 10 km από την ακτή (Κύπρος, Ελλάδα). Κοντά στην ακτή: κύμα ανέμου με τη μέθοδο SPM (άνεμος, ανοιχτή θάλασσα προς τον άνεμο, διάρκεια, βάθος) και swell από τα μοντέλα κύματος, μειωμένο όπου η ακτή το κόβει. Ανοιχτά και σε εκτεθειμένα σημεία μετρούν περισσότερο τα μοντέλα κύματος (DWD EWAM, ECMWF WAM, MeteoFrance). Στα ρηχά το κύμα περιορίζεται από το βάθος (EMODnet). Κατηγορίες WMO, λευκές γραμμές στα όρια. Δεν περιλαμβάνει ρεύματα και βουνά. Δεν είναι ναυτικό όργανο. Ακτογραμμή © OpenStreetMap contributors · Βάθος EMODnet Bathymetry · Καιρός και κύμα Open-Meteo.','Significant wave height estimate up to 10 km offshore (Cyprus, Greece). Near the coast: wind sea by the SPM method (wind, open sea upwind, duration, depth) plus swell from the wave models, reduced where the coast blocks it. Offshore and at exposed spots the wave models count more (DWD EWAM, ECMWF WAM, MeteoFrance). In shallow water waves are limited by depth (EMODnet). WMO categories, white lines at the boundaries. Excludes currents and mountains. Not a navigation instrument. Coastline © OpenStreetMap contributors · Depth EMODnet Bathymetry · Weather and waves Open-Meteo.');
+  nb.textContent=T('Εκτίμηση σημαντικού ύψους κύματος, έως 10 km από την ακτή (Κύπρος, Ελλάδα). Κοντά στην ακτή: κύμα ανέμου με τη μέθοδο SPM (άνεμος, ανοιχτή θάλασσα προς τον άνεμο, διάρκεια, βάθος) και swell από τα μοντέλα κύματος, μειωμένο όπου η ακτή το κόβει. Ανοιχτά και σε εκτεθειμένα σημεία μετρούν περισσότερο τα μοντέλα κύματος (DWD EWAM, ECMWF WAM, MeteoFrance). Στα ρηχά το κύμα περιορίζεται από το βάθος (EMODnet). Κατηγορίες WMO, λευκές γραμμές στα όρια. Το κύμα που στρίβει γύρω από ακρωτήρια και προς την ακτή στα ρηχά υπολογίζεται κατά προσέγγιση. Δεν περιλαμβάνει ρεύματα και βουνά. Δεν είναι ναυτικό όργανο. Ακτογραμμή © OpenStreetMap contributors · Βάθος EMODnet Bathymetry · Καιρός και κύμα Open-Meteo.','Significant wave height estimate up to 10 km offshore (Cyprus, Greece). Near the coast: wind sea by the SPM method (wind, open sea upwind, duration, depth) plus swell from the wave models, reduced where the coast blocks it. Offshore and at exposed spots the wave models count more (DWD EWAM, ECMWF WAM, MeteoFrance). In shallow water waves are limited by depth (EMODnet). WMO categories, white lines at the boundaries. Waves bending around headlands and towards the shore in shallow water are approximated. Excludes currents and mountains. Not a navigation instrument. Coastline © OpenStreetMap contributors · Depth EMODnet Bathymetry · Weather and waves Open-Meteo.');
   nt.append(sm,nb);
   x.append(nm,rg,un,src,nt);
   var pt=document.createElement('div'); pt.id='ndSeaPt'; pt.style.cssText='margin-top:5px;padding:5px 7px;border-radius:8px;background:rgba(127,127,127,.14);font-size:12px'; pt.hidden=true; pt.setAttribute('aria-live','polite');
