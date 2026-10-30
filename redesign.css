@@ -1315,3 +1315,34 @@ body.ndspform #bTackleWrap>span:nth-of-type(2),body.ndspform #bTkW,body.ndspform
 #fcHead .fcact{order:1;display:flex!important;flex-direction:row!important;gap:8px;width:100%}
 #fcHead .fcact .btn{flex:1 1 0;min-height:44px;margin:0!important}
 #fcHead .fcbest{margin-top:10px}
+
+/* v31z379 · Πρόγνωση: κεφαλίδα */
+#fcHead .fchead{display:none!important}
+.ndfcbar{display:flex;align-items:center;gap:12px;margin:0 0 12px}
+.ndfct{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.ndfct b{font-size:18px;font-weight:700;letter-spacing:.01em}
+.ndfct span{font-size:12.5px;color:var(--muted)}
+.ndfca{display:flex;gap:6px;flex:none}
+.ndib{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;text-decoration:none;padding:0}
+.ndib[hidden]{display:none}
+.ndib svg{width:20px;height:20px}
+.ndib[aria-pressed=true]{color:var(--accent,#ef7a4c);border-color:color-mix(in srgb,var(--accent,#ef7a4c) 55%,var(--line))}
+.ndib.spin svg{animation:ndspin .9s linear}
+@keyframes ndspin{to{transform:rotate(360deg)}}
+/* καλύτερη μέρα */
+#fcHead .fcbest{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px 12px;margin:0!important;padding:14px 16px!important;border-radius:16px!important;border:1px solid var(--line)!important;background:color-mix(in srgb,var(--ink) 4%,var(--surface))!important;box-shadow:none!important}
+#fcHead .fcbtx{display:flex;flex-direction:column;gap:2px;min-width:0}
+#fcHead .fcbl{font-size:11.5px!important;font-weight:650;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+#fcHead .fcbd{font-size:20px!important;font-weight:700}
+#fcHead .fcbw{font-size:14px!important;color:var(--muted);font-variant-numeric:tabular-nums}
+#fcHead .fcbs{grid-row:1;grid-column:2;width:62px!important;height:62px!important;min-width:0!important;border-radius:16px!important;border:0!important;display:flex!important;flex-direction:column;align-items:center;justify-content:center;padding:0!important}
+#fcHead .fcbs b{font-size:24px!important;line-height:1;font-family:var(--font-display)}
+#fcHead .fcbs span{font-size:9.5px!important;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+#fcHead .fcbs.good{background:#2f7d55!important;color:#fff!important}
+#fcHead .fcbs.warn{background:#a8792a!important;color:#fff!important}
+#fcHead .fcbs.bad{background:#7d8d99!important;color:#fff!important}
+#fcHead .fcbconf{grid-column:1 / -1;display:flex;align-items:center;gap:8px;font-size:12.5px!important;opacity:1!important;color:var(--muted);padding-top:8px;border-top:1px solid var(--line)}
+#fcHead .fcbconf::before{content:"";width:9px;height:9px;border-radius:50%;box-sizing:border-box;border:2px solid currentColor;flex:none}
+#fcHead .fcbconf[data-c="2"]::before{background:currentColor}
+#fcHead .fcbconf[data-c="1"]::before{background:linear-gradient(90deg,currentColor 50%,transparent 50%)}
+.ndfca{align-items:center}.ndfca a.ndib,.ndfca a.ndib:visited{margin:0!important;color:var(--ink)!important;vertical-align:middle;line-height:1;box-sizing:border-box}.ndfca .ndib{box-sizing:border-box}

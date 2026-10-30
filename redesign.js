@@ -1748,3 +1748,37 @@ box.insertBefore(tools,bar.nextSibling);
   window.ndEvery(tick,700); setTimeout(tick,800);
   document.addEventListener('click',function(e){ if(e.target&&e.target.closest&&e.target.closest('#tdLoc .chip')){ open=false; setTimeout(tick,120); } },true);
 })();
+
+/* v31z379 · Πρόγνωση: καθαρή κεφαλίδα με εικονίδια (ραντάρ, ειδοποιήσεις, ανανέωση) και η καρτέλα «Πρόγνωση» ανοίγει πάντα στο «Σήμερα» */
+(function(){
+  var EN=window.LANG==='en', T=function(el,en){ return EN?en:el; }, C=window.PsaroCore;
+  var $=function(i){ return document.getElementById(i); };
+  var SV=function(d){ return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>'; };
+  var IC={radar:SV('<path d="M7 16a4 4 0 01-.5-7.97A5.5 5.5 0 0117 9a3.5 3.5 0 01.5 7"/><path d="M9 19l1-2M13 20l1-2M11 22l.5-1"/>'),
+    bell:SV('<path d="M6 17v-6a6 6 0 0112 0v6l1.5 2h-15z"/><path d="M10 21h4"/>'),bellOff:SV('<path d="M6 17v-6a6 6 0 0112 0v6l1.5 2h-15z"/><path d="M10 21h4"/><path d="M3 3l18 18"/>'),
+    ref:SV('<path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 4v7h-7"/>')};
+  function ibtn(id,lab){ var b=document.createElement('button'); b.type='button'; b.id=id; b.className='ndib'; b.setAttribute('aria-label',lab); b.title=lab; return b; }
+  function bar(){
+    var head=$('fcHead'); if(!head||!head.offsetParent) return;
+    var w=$('ndFcBar');
+    if(!w){ w=document.createElement('div'); w.id='ndFcBar'; w.className='ndfcbar';
+      w.innerHTML='<div class="ndfct"><b></b><span></span></div><div class="ndfca"></div>';
+      w.querySelector('b').textContent=T('Επόμενες 7 μέρες','Next 7 days');
+      var a=w.querySelector('.ndfca');
+      var r=document.createElement('a'); r.id='ndFcRadar'; r.className='ndib'; r.target='_blank'; r.rel='noopener'; r.innerHTML=IC.radar; r.setAttribute('aria-label',T('Ραντάρ βροχής (Windy)','Rain radar (Windy)')); r.title=r.getAttribute('aria-label'); a.appendChild(r);
+      var bl=ibtn('ndFcBell',T('Ειδοποιήσεις για αυτή την τοποθεσία','Alerts for this location')); bl.addEventListener('click',function(){ var x=$('fcWatch'); if(x) x.click(); setTimeout(bar,80); }); a.appendChild(bl);
+      var rf=ibtn('ndFcRef',T('Ανανέωση','Refresh')); rf.innerHTML=IC.ref; rf.addEventListener('click',function(){ var x=$('fcRefresh'); if(x) x.click(); rf.classList.add('spin'); setTimeout(function(){ rf.classList.remove('spin'); },900); }); a.appendChild(rf);
+      head.insertBefore(w,head.firstChild); }
+    var rd=$('fcRadar'), r2=$('ndFcRadar'); if(rd&&r2){ r2.hidden=!!rd.hidden||!rd.href; if(rd.href&&r2.href!==rd.href) r2.href=rd.href; }
+    var wt=$('fcWatch'), b2=$('ndFcBell'); if(wt&&b2){ b2.hidden=!!wt.hidden; var on=wt.getAttribute('aria-pressed')==='true'; if(b2.dataset.on!==String(on)){ b2.dataset.on=String(on); b2.innerHTML=on?IC.bell:IC.bellOff; } b2.setAttribute('aria-pressed',String(on)); b2.title=on?T('Ειδοποιήσεις: ενεργές','Alerts: on'):T('Ειδοποιήσεις: ανενεργές','Alerts: off'); b2.setAttribute('aria-label',b2.title); }
+    var sb=$('fcSub'), sp=w.querySelector('.ndfct span'), m=sb&&/(\d{1,2}:\d{2}(?:\s?[πμ]\.?μ\.?|\s?[AP]M)?)/i.exec(sb.textContent||''), t=m?T('Ενημερώθηκε ','Updated ')+m[1]:''; if(sp.textContent!==t) sp.textContent=t;
+    /* βεβαιότητα ως τελεία + κείμενο */
+    var cf=document.querySelector('#fcBest .fcbconf'); if(cf){ var lv=/υψηλή|high/i.test(cf.textContent)?2:/μέτρια|medium/i.test(cf.textContent)?1:0; cf.dataset.c=lv; }
+  }
+  window.ndEvery(bar,1500); setTimeout(bar,600); document.addEventListener('click',function(){ setTimeout(bar,120); },true);
+  /* η καρτέλα «Πρόγνωση» ανοίγει πάντα στο «Σήμερα» */
+  function hook(){ var nb=document.querySelector('nav.tabs button[data-tab=fc]'); if(!nb||nb.dataset.ndToday) return !!nb; nb.dataset.ndToday='1';
+    nb.addEventListener('click',function(){ var td=$('tab-today'), fc=$('tab-fc'); if(td&&fc&&td.hidden&&fc.hidden){ try{ C.lsSet('psaro-wxsub','today'); }catch(e){ try{ localStorage.setItem('psaro-wxsub','"today"'); }catch(x){} } } },true); return true; }
+  var n=0, iv=setInterval(function(){ n++; if(hook()||n>40) clearInterval(iv); },500);
+  try{ C.lsSet('psaro-wxsub','today'); }catch(e){}
+})();
