@@ -154,3 +154,8 @@ body.fc2 #tab-fc>.tabseg,body.fc2 #fcSeg,body.fc2 #fcGen,body.fc2 #ndNtLink{disp
 .fc2-chartbox #tdPress .ndmoreb{display:none!important}
 .fc2-more{display:inline-flex;align-items:center;min-height:36px;margin:10px 0 0;padding:0;border:0;background:none;color:var(--ds-acc);font:600 13.5px var(--ds-body);cursor:pointer}
 .fc2-wx .sun{color:#e5b544}.fc2-wx .part{color:#d7bd73}.fc2-wx .rain,.fc2-wx .storm{color:#6fa8d6}
+/* v31z381 · Σήμερα | 7 μέρες */
+.fc2[data-mode=days] .fc2-hero,.fc2[data-mode=days] .fc2-hours,.fc2[data-mode=days] .fc2-chart,.fc2[data-mode=days] .fc2-rows{display:none!important}
+.fc2[data-mode=today] .fc2-days{display:none!important}
+.ds-seg button{font-size:13.5px;padding:0 4px}
+.ds-seg button{font-size:12.5px!important;white-space:nowrap;letter-spacing:-.005em}

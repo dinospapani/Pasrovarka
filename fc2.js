@@ -56,12 +56,14 @@ var fc=null, place=null, selH=null, openRow={}, openDay={};
 try{ var c0=JSON.parse(localStorage.getItem('psaro-fc7')||'null'); if(c0&&c0.fc) fc=c0.fc; }catch(e){}
 window.addEventListener('psaro-fcloaded',function(e){ if(e.detail&&e.detail.fc){ fc=e.detail.fc; place=e.detail.place; selH=null; render(); } });
 
-var root=null, segT=null;
+var root=null, segT=null, mode='today';
+/* v31z381: «Σήμερα» και «7 μέρες» ως χωριστές καρτέλες της ίδιας σελίδας */
+function setMode(m){ mode=m==='days'?'days':'today'; if(root){ root.dataset.mode=mode; segBuild(root.querySelector('.ds-seg'),mode==='days'?'days':'fc'); } setTimeout(render,0); }
 /* ---------- βασική δομή ---------- */
 function build(){
   var tab=$('tab-today'); if(!tab) return false; if(root) return true;
   document.body.classList.add('fc2');
-  root=E('div','ds fc2'); root.id='fc2';
+  root=E('div','ds fc2'); root.id='fc2'; root.dataset.mode=mode;
   root.innerHTML=
     '<div class="ds-seg" role="tablist"></div>'+
     '<div class="fc2-head"><button type="button" class="ds-pill fc2-loc">'+IC.pin+'<span></span><i>▾</i></button><div class="fc2-acts"></div></div>'+
@@ -73,7 +75,7 @@ function build(){
     '<section class="ds-card fc2-days"><header class="ds-h"><h2></h2><span class="ds-sub"></span></header><div class="fc2-dlist"></div><p class="ds-foot"></p></section>'+
     '<p class="ds-src"></p>';
   tab.insertBefore(root,tab.firstChild);
-  segBuild(root.querySelector('.ds-seg'),'fc');
+  segBuild(root.querySelector('.ds-seg'),mode==='days'?'days':'fc');
   /* κάρτα με τοποθεσίες (η υπάρχουσα), ανοίγει από το κουμπί */
   var lb=root.querySelector('.fc2-locbox'), tl=$('tdLoc'); if(tl){ lb.appendChild(tl); tl.classList.remove('ndlocc'); }
   root.querySelector('.fc2-loc').addEventListener('click',function(){ lb.hidden=!lb.hidden; this.setAttribute('aria-expanded',String(!lb.hidden)); if(!lb.hidden){ var i=lb.querySelector('input'); if(i) setTimeout(function(){ try{ i.focus({preventScroll:true}); }catch(e){} },60); } });
@@ -99,13 +101,13 @@ function build(){
 /* καρτέλες: Πρόγνωση | Δικά μου | Τι να ψαρέψω */
 function segBuild(box,act){
   box.replaceChildren();
-  [['fc',T('Πρόγνωση','Forecast')],['mine',T('Δικά μου','My data')],['adv',T('Τι να ψαρέψω','What to fish')]].forEach(function(x){
+  [['fc',T('Σήμερα','Today')],['days',T('7 μέρες','7 days')],['mine',T('Δικά μου','My data')],['adv',T('Τι να ψαρέψω','What to fish')]].forEach(function(x){
     var b=E('button','',x[1]); b.type='button'; b.setAttribute('role','tab'); b.setAttribute('aria-selected',String(x[0]===act)); b.dataset.k=x[0];
     b.addEventListener('click',function(){ go(x[0]); }); box.appendChild(b); });
 }
 function go(k){
   try{
-    if(k==='fc'){ C.lsSet('psaro-wxsub','today'); C.switchTab('today'); window.scrollTo(0,0); return; }
+    if(k==='fc'||k==='days'){ setMode(k==='days'?'days':'today'); C.lsSet('psaro-wxsub','today'); C.switchTab('today'); window.scrollTo(0,0); return; }
     C.lsSet('psaro-wxsub','fc'); C.switchTab('fc');
     setTimeout(function(){ var b=document.querySelector('#fcSeg button[data-s='+k+']'); if(b) b.click(); fcSeg(k); window.scrollTo(0,0); },30);
   }catch(e){}
@@ -269,5 +271,8 @@ var n=0, iv=setInterval(function(){ n++; if(build()||n>40){ clearInterval(iv); r
 document.addEventListener('click',function(){ setTimeout(render,60); },true);
 try{ var tf=$('tab-fc'); if(tf) new MutationObserver(function(){ if(!tf.hidden){ var s=document.querySelector('#fcSeg button[aria-pressed=true]'); fcSeg(s?s.dataset.s:'mine'); } }).observe(tf,{attributes:true,attributeFilter:['hidden']}); }catch(e){}
 document.addEventListener('psaro-cond',function(){ setTimeout(render,50); });
-window.PsaroFC2={render:render,go:go};
+window.PsaroFC2={render:render,go:go,mode:setMode};
 })();
+
+/* η καρτέλα «Πρόγνωση» της κάτω μπάρας ανοίγει πάντα στο «Σήμερα» */
+(function(){ var nb=document.querySelector('nav.tabs button[data-tab=fc]'); if(nb) nb.addEventListener('click',function(){ var td=document.getElementById('tab-today'), tf=document.getElementById('tab-fc'); if(td&&tf&&td.hidden&&tf.hidden&&window.PsaroFC2&&window.PsaroFC2.mode) window.PsaroFC2.mode('today'); },true); })();
