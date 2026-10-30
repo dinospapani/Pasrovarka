@@ -1079,3 +1079,44 @@ body.nd:not(.ontrip):has(#ndMapDock:not([hidden])) .ndcard,body.nd:not(.ontrip):
 .btmaint .mtrow{border-top:1px solid var(--line);padding:8px 0}
 .btfoot{margin:0 4px}
 @media (max-width:360px){.btgrid,.btexpg{grid-template-columns:1fr}}
+
+/* v31z367 · Επιλογέας τύπου ψαρέματος σε δύο βήματα: Ακτή/Σκάφος → μέθοδος */
+.ndpk{display:flex;flex-direction:column;gap:10px}
+.ndpks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ndpks button{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px 12px;border:1.5px solid var(--line);border-radius:22px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer;text-align:center;min-height:0}
+.ndpks .ndpic{width:76px;height:76px;display:block;flex:none}
+.ndpks .ndpic svg{width:76px!important;height:76px!important;display:block}
+.ndpks .ndpkt{display:flex;flex-direction:column;gap:2px}
+.ndpks b{font-size:18px;font-weight:700}
+.ndpks .ndpkt span{font-size:12px;line-height:1.3;color:var(--muted)}
+.ndpks button[aria-checked=true]{border:2px solid var(--accent,#ef7a4c);background:color-mix(in srgb,var(--accent,#ef7a4c) 12%,var(--surface))}
+.ndpkh{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:6px 4px 0}
+.ndpkm{display:flex;flex-direction:column;border-radius:18px;background:var(--surface);overflow:hidden}
+.ndpkm button{display:flex;align-items:center;gap:12px;min-height:62px;padding:8px 14px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;text-align:left;cursor:pointer;position:relative}
+.ndpkm button:last-child{border-bottom:0}
+.ndpkm .ndpki{width:40px;height:40px;flex:none;display:block}
+.ndpkm .ndpki svg{width:40px!important;height:40px!important;display:block}
+.ndpkm .ndpkt{display:flex;flex-direction:column;gap:1px;flex:1;min-width:0}
+.ndpkm b{font-size:15px;font-weight:600}
+.ndpkm .ndpkt span{font-size:13px;color:var(--muted)}
+.ndpkm .ndck{position:relative;flex:none;width:24px;height:24px;border-radius:50%;border:2px solid var(--line);box-sizing:border-box}
+.ndpkm button[aria-checked=true]{background:color-mix(in srgb,var(--accent,#ef7a4c) 10%,transparent)}
+.ndpkm button[aria-checked=true] .ndck{background:var(--accent,#ef7a4c);border-color:var(--accent,#ef7a4c)}
+.ndpkm button[aria-checked=true] .ndck::after{content:"";position:absolute;left:7px;top:3px;width:5px;height:10px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+.ndpk button:focus-visible{outline:3px solid var(--sea);outline-offset:2px}
+.ndstc h1{margin:10px 0 4px}
+.ndstask{display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;color:var(--ink);min-height:40px}
+.ndstask input{width:20px;height:20px;accent-color:var(--accent,#ef7a4c)}
+.ndobp.ndpk{display:flex!important;width:100%;text-align:left}
+.ndobp.ndpk[hidden]{display:none!important}
+#ndFProf .ndpk{margin:6px 0}
+@media (max-height:640px){.ndpks .ndpic,.ndpks .ndpic svg{width:52px!important;height:52px!important}.ndpks .ndpkt span{display:none}}
+.ndobp.ndpk{gap:10px!important;margin:4px 0 14px}
+.ndobp.ndpk .ndpkm button{flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;text-align:left!important;gap:12px!important;min-height:62px!important;padding:8px 14px!important;border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important;font-weight:400}
+.ndobp.ndpk .ndpkm button:last-child{border-bottom:0!important}
+.ndobp.ndpk .ndpkm button[aria-checked=true]{background:color-mix(in srgb,var(--accent,#ef7a4c) 10%,transparent)!important}
+.ndobp.ndpk .ndpkm .ndck{position:relative!important;top:auto!important;right:auto!important}
+.ndobp.ndpk .ndpkm b{font-size:15px;font-weight:600}
+.ndobp.ndpk .ndpks button{border-radius:22px!important;font-weight:400}
+.ndobp.ndpk .ndpks button[aria-checked=true]{border:2px solid var(--accent,#ef7a4c)!important;background:color-mix(in srgb,var(--accent,#ef7a4c) 12%,var(--surface))!important}
+.ndobp.ndpk .ndpic,.ndobp.ndpk .ndpic svg{width:64px!important;height:64px!important}

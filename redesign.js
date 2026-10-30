@@ -520,7 +520,7 @@ box.insertBefore(tools,bar.nextSibling);
   function hasData(){ try{ var S=window.PsaroCore&&window.PsaroCore.Store; if(!S) return false; return ['bites','trips','spots','tackle'].some(function(k){ return (S.raw?S.raw(k):[]).length>0; }); }catch(x){ return false; } }
   var STEPS=[
     {ic:'fish',t:T('Καλώς ήρθες στο BiteCast','Welcome to BiteCast'),b:T('Πρόγνωση, χάρτης και ημερολόγιο για ψάρεμα με σκάφος στην Κύπρο. Τέσσερα γρήγορα βήματα για να ξεκινήσεις.','Forecast, map and logbook for boat fishing in Cyprus. Four quick steps to get started.')},
-    {ic:'fish',pick:true,t:T('Πού ψαρεύεις συνήθως;','Where do you usually fish?'),b:T('Διάλεξε τον τύπο ψαρέματος. Προσαρμόζει τις τεχνικές και τα κουμπιά ασφαλείας. Μπορείς να το αλλάξεις αργότερα στα Settings.','Pick your fishing type. It adapts the techniques and safety buttons. You can change it later in Settings.')},
+    {ic:'fish',pick:true,t:T('Πού ψαρεύεις συνήθως;','Where do you usually fish?'),b:T('Διάλεξε τον τύπο ψαρέματος. Προσαρμόζει τις τεχνικές και τα κουμπιά ασφαλείας. Μπορείς να το αλλάξεις αργότερα στο Profile.','Pick your fishing type. It adapts the techniques and safety buttons. You can change it later in Profile.')},
     {ic:'wave',t:T('Δες τη θάλασσα πριν φύγεις','Check the sea before you leave'),b:T('Στην Πρόγνωση βλέπεις βαθμό 0–100, τις καλύτερες ώρες, άνεμο και κύμα για το σημείο που διαλέγεις.','Forecast shows a 0–100 score, the best hours, wind and waves for the place you choose.')},
     {ic:'anchor',t:T('Κατέγραψε κάθε έξοδο','Log every outing'),b:T('Πάτα το κουμπί με το ψάρι για να ξεκινήσεις έξοδο και κατέγραψε ψάρια με ένα άγγιγμα. Αν ορίσεις επαφή ασφαλείας, η εφαρμογή την ειδοποιεί αν δεν γυρίσεις στην ώρα σου.','Tap the fish button to start a trip and log catches with one tap. If you set a safety contact, the app alerts them if you do not return on time.'),last:true}];
   var ov=null, step=0, prevFocus=null, ST=STEPS;
@@ -529,7 +529,7 @@ box.insertBefore(tools,bar.nextSibling);
   function draw(){
     var s=ST[step]; ov.querySelector('.ndobic').innerHTML=SV(P[s.ic]); ov.querySelector('.ndobt').textContent=s.t; ov.querySelector('.ndobb').textContent=s.b;
     var dots=ov.querySelector('.ndobd'); dots.innerHTML=''; ST.forEach(function(_,i){ var d=document.createElement('i'); if(i===step) d.className='on'; dots.appendChild(d); });
-    var pk=ov.querySelector('.ndobp'); pk.hidden=!s.pick; if(s.pick&&window.PsaroFProf){ var cur=window.PsaroFProf.get(); [].forEach.call(pk.querySelectorAll('button'),function(b){ b.setAttribute('aria-pressed',String(b.dataset.p===cur)); }); }
+    var pk=ov.querySelector('.ndobp'); pk.hidden=!s.pick; if(s.pick&&window.PsaroFProf){ var cur=window.PsaroFProf.get(); [].forEach.call(pk.querySelectorAll('button[data-p]'),function(b){ b.setAttribute('aria-pressed',String(b.dataset.p===cur)); }); }
     var nx=ov.querySelector('.ndobn'); nx.textContent=s.nosafe?T('Έτοιμο','Done'):s.last?T('Ξεκινάμε','Get started'):T('Επόμενο','Next');
     var sf=ov.querySelector('.ndobs'); sf.hidden=!s.last||!!s.nosafe; var sk=ov.querySelector('.ndobk'); sk.hidden=!!s.last;
   }
@@ -546,6 +546,7 @@ box.insertBefore(tools,bar.nextSibling);
     ['boat','shore','lake','spear'].forEach(function(k){ var b=document.createElement('button'); b.type='button'; b.dataset.p=k;
       b.innerHTML='<i class="ndck" aria-hidden="true"></i><span class="ndpic" aria-hidden="true">'+PIC[k]+'</span><b></b><span class="ndpd"></span>'; b.querySelector('b').textContent=PN[k]; b.querySelector('.ndpd').textContent=PD[k];
       b.addEventListener('click',function(){ if(window.PsaroFProf) window.PsaroFProf.set(k); try{ localStorage.setItem('psaro-fprof-done','1'); }catch(e){} draw(); }); pkb.appendChild(b); });
+    if(window.PsaroPicker){ pkb.classList.remove('seg'); pkb.removeAttribute('role'); window.PsaroPicker.render(pkb,{instant:true}); }
     ov.querySelector('.ndobk').addEventListener('click',close);
     ov.querySelector('.ndobs').addEventListener('click',function(){ close(); var np=document.getElementById('navProf'); if(np) np.click(); setTimeout(function(){ var b=[].slice.call(document.querySelectorAll('button')).filter(function(x){ return x.offsetParent&&/^(Settings|Ρυθμίσεις)$/.test(x.textContent.trim()); })[0]; if(b) b.click(); var n=0, t=setInterval(function(){ n++; var c=document.getElementById('pContacts'), f=document.getElementById('sfName');
       if(c&&c.offsetParent&&f){ clearInterval(t); try{ c.scrollIntoView({block:'start',behavior:'smooth'}); }catch(e){ c.scrollIntoView(); }
@@ -864,20 +865,18 @@ box.insertBefore(tools,bar.nextSibling);
   function apply(){ var p=get(); LIST.forEach(function(k){ document.body.classList.toggle('fp-'+k,k===p); }); }
   function set(p){ if(LIST.indexOf(p)<0) return; try{ localStorage.setItem(KEY,p); }catch(e){} apply(); try{ window.dispatchEvent(new Event('psaro-fprof')); }catch(e){} paint(); }
   var card=null;
-  function paint(){ if(!card) return; var p=get(); [].forEach.call(card.querySelectorAll('button[data-p]'),function(b){ b.setAttribute('aria-pressed',String(b.dataset.p===p)); }); card.querySelector('.ndfpd').textContent=DESC[p]; }
+  function paint(){ if(!card) return; var p=get(); [].forEach.call(card.querySelectorAll('button[data-p]'),function(b){ b.setAttribute('aria-pressed',String(b.dataset.p===p)); }); card.querySelector('.ndfpd').textContent=DESC[p]; if(window.PsaroPicker&&card.querySelector('.ndpk')&&!card.contains(document.activeElement)) window.PsaroPicker.render(card.querySelector('.ndpk'),{instant:true}); }
   function build(){
     if(card) return card;
     card=document.createElement('div'); card.id='ndFProf'; card.className='card setcard';
     card.innerHTML='<h3></h3><div class="seg ndfps" role="group"></div><p class="note ndfpd"></p><h3 class="ndvh"></h3><div class="seg ndvs" role="group"></div><p class="note ndvn"></p>';
     card.querySelector('h3').textContent=T('Τύπος ψαρέματος','Fishing type');
     var sg=card.querySelector('.seg');
-    LIST.forEach(function(k){ var b=document.createElement('button'); b.type='button'; b.dataset.p=k; b.textContent=NAME[k]; b.addEventListener('click',function(){ set(k); }); sg.append(b); });
-    var pb=document.createElement('button'); pb.type='button'; pb.className='btn ghost sm ndpickb'; pb.textContent=T('Άνοιγμα με εικόνες','Open with pictures');
-    pb.addEventListener('click',function(){ if(window.PsaroStartPick) window.PsaroStartPick(); });
-    card.querySelector('.ndfpd').after(pb);
+    if(window.PsaroPicker){ sg.className='ndpk'; sg.removeAttribute('role'); window.PsaroPicker.render(sg,{instant:true}); }
+    else LIST.forEach(function(k){ var b=document.createElement('button'); b.type='button'; b.dataset.p=k; b.textContent=NAME[k]; b.addEventListener('click',function(){ set(k); }); sg.append(b); });
     var ab=document.createElement('button'); ab.type='button'; ab.className='btn ghost sm ndaskb';
     function askOn(){ var v=null; try{ v=localStorage.getItem('psaro-askfp'); }catch(e){} return v!=='0'; }
-    function askPaint(){ ab.textContent=(askOn()?'✓ ':'')+T('Ρώτα σε κάθε άνοιγμα','Ask every time I open the app'); ab.setAttribute('aria-pressed',String(askOn())); }
+    function askPaint(){ ab.textContent=(askOn()?'✓ ':'')+T('Ρώτα στο άνοιγμα της εφαρμογής','Ask when the app opens'); ab.setAttribute('aria-pressed',String(askOn())); }
     ab.addEventListener('click',function(){ try{ localStorage.setItem('psaro-askfp',askOn()?'0':'1'); }catch(e){} askPaint(); }); askPaint();
     card.querySelector('.ndfpd').after(ab);
     card.querySelector('.ndvh').textContent=T('Γλώσσα φωνητικής καταγραφής','Voice input language');
@@ -888,7 +887,7 @@ box.insertBefore(tools,bar.nextSibling);
     [['el-GR','Ελληνικά'],['en-US','English']].forEach(function(o){ var b=document.createElement('button'); b.type='button'; b.dataset.v=o[0]; b.textContent=o[1]; b.addEventListener('click',function(){ try{ if(C&&C.lsSet) C.lsSet('psaro-vlang',o[0]); else localStorage.setItem('psaro-vlang',JSON.stringify(o[0])); }catch(e){} vpaint(); }); vs.append(b); });
     vpaint(); paint(); return card;
   }
-  window.PsaroFProf={get:get,set:set,card:build,name:function(){ return NAME[get()]; }};
+  window.PsaroFProf={get:get,set:set,card:build,name:function(){ return window.PsaroPicker?window.PsaroPicker.label():NAME[get()]; }};
   apply(); new MutationObserver(function(){ if(!document.body.classList.contains('fp-'+get())) apply(); }).observe(document.body,{attributes:true,attributeFilter:['class']});
 })();
 
