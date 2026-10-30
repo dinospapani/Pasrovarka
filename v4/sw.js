@@ -1,0 +1,25 @@
+/* BiteCast 4 · service worker (μόνο για τον φάκελο v4/).
+   Δικά μας αρχεία: πρώτα δίκτυο, αλλιώς αποθηκευμένο αντίγραφο. Γραμματοσειρές: αποθηκευμένο αντίγραφο πρώτα. */
+const V = 'bitecast4-001';
+const SHELL = ['./', 'index.html', 'app.css', 'forecast.css', 'core.js', 'ui.js', 'shell.js', 'forecast-view.js', 'manifest.webmanifest',
+  '../units.js', '../knowledge.js', '../forecast.js', '../icon-192.png'];
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(V).then(c => Promise.all(SHELL.map(u => c.add(u).catch(() => {})))).then(() => self.skipWaiting()));
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('bitecast4-') && k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+});
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+  const u = new URL(e.request.url);
+  if (/^fonts\.(googleapis|gstatic)\.com$/.test(u.hostname)) {
+    e.respondWith(caches.open(V).then(c => c.match(e.request).then(r => r || fetch(e.request).then(n => { if (n.ok || n.type === 'opaque') c.put(e.request, n.clone()); return n; }))));
+    return;
+  }
+  if (u.origin !== location.origin) return;
+  e.respondWith(
+    fetch(new Request(e.request, { cache: 'no-cache' }))
+      .then(r => { if (r.ok) { const cp = r.clone(); caches.open(V).then(c => c.put(e.request, cp)); } return r; })
+      .catch(() => caches.open(V).then(c => c.match(e.request, { ignoreSearch: e.request.mode === 'navigate' }).then(r => r || (e.request.mode === 'navigate' ? c.match('index.html') : undefined))))
+  );
+});

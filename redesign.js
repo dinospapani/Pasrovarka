@@ -1403,12 +1403,13 @@ box.insertBefore(tools,bar.nextSibling);
   /* v31z414: κάρτα «Έκδοση» στα Σχετικά: η μόνη θέση του ελέγχου για νέα έκδοση */
   function verCard(){ var ps=$('pSettings'); if(!ps) return; var c=$('ndVerCard');
     if(!c){ c=document.createElement('div'); c.id='ndVerCard'; c.className='card setcard ndver';
-      c.innerHTML='<h3></h3><div class="ndverr"><div><b></b><small></small></div><button class="btn sm" type="button"></button></div>';
+      c.innerHTML='<h3></h3><div class="ndverr"><div><b></b><small></small></div><button class="btn sm" type="button"></button></div><a class="btn sm ghost ndv4" href="v4/"></a>';
       c.querySelector('button').addEventListener('click',function(){ var u=$('ndChkUpd'), bt=this; if(!u) return; bt.disabled=true; bt.textContent=T('Έλεγχος…','Checking…'); u.click(); });
       window.addEventListener('psaro-updmsg',function(e){ var sm=c.querySelector('small'), bt=c.querySelector('button'); sm.textContent=e.detail||''; sm.classList.add('ndvmsg'); bt.disabled=false; bt.textContent=T('Έλεγχος τώρα','Check now'); }); }
     c.querySelector('h3').textContent=T('Έκδοση','Version'); c.querySelector('b').textContent='BiteCast '+(window.PSARO_VERSION||'');
     var sm=c.querySelector('small'); if(!sm.classList.contains('ndvmsg')) sm.textContent=T('Οι ενημερώσεις γίνονται αυτόματα όταν ανοίγεις την εφαρμογή.','Updates install automatically when you open the app.');
     var vb=c.querySelector('button'); if(!vb.disabled) vb.textContent=T('Έλεγχος τώρα','Check now');
+    c.querySelector('.ndv4').textContent=T('Δοκίμασε το νέο BiteCast (δοκιμαστικό)','Try the new BiteCast (beta)');
     if(c.parentNode!==ps) ps.appendChild(c); }
   var inHome=false;
   function showHome(){
@@ -1986,6 +1987,9 @@ box.insertBefore(tools,bar.nextSibling);
       if(a==='fc'){ var f=document.querySelector('nav.tabs [data-tab=fc]'); if(f) f.click(); }
       else if(a==='trip'){ var t=document.getElementById('tripBtn'); if(t&&!document.body.classList.contains('ontrip')) t.click(); }
       else if(a==='bite'){ var b=document.getElementById('fab'); if(b) b.click(); }
+      else if(a==='log'){ var lg=document.querySelector('nav.tabs [data-tab=log]'); if(lg) lg.click(); }
+      else if(a==='map'){ var mp=document.querySelector('nav.tabs [data-tab=map]'); if(mp) mp.click(); }
+      else if(a==='prof'){ var np=document.getElementById('navProf')||document.getElementById('profBtn'); if(np) np.click(); }
     },700);
   },300);
 })();

@@ -1476,3 +1476,4 @@ body.ndlogt #tab-log>div:first-child>h2:only-child{display:none}
 #ndOff span{flex:1}
 #ndOff button{flex:none;border:0;background:transparent;color:inherit;font-size:16px;min-width:32px;min-height:32px;cursor:pointer}
 #ndOff.ok{background:#0d3b2a;color:#c9f5dc}#ndOff.ok i{background:#2fbf71}
+.ndver .ndv4{display:flex;margin-top:12px;width:100%;justify-content:center;text-decoration:none}
