@@ -1271,16 +1271,17 @@ box.insertBefore(tools,bar.nextSibling);
       ['boat',T('Σκάφος','Boat'),T('Μηχανή, συντήρηση, λήξεις','Engine, maintenance, expiries'),'boat'],
       ['guide',T('Οδηγός','Guide'),T('Είδη, τεχνικές, κόμποι, νομοθεσία','Species, techniques, knots, rules'),'guide']]],
     [T('ΡΥΘΜΙΣΕΙΣ','SETTINGS'),[
-      ['alerts',T('Ειδοποιήσεις','Alerts'),null,'set','ntCard'],
+      ['alerts',T('Ειδοποιήσεις','Alerts'),null,'set','ntCard,seaSetCard'],
       ['safety',T('Ασφάλεια','Safety'),T('Επαφή ασφαλείας, ώρα επιστροφής, GPS διαδρομή','Safety contact, return time, GPS track'),'set','pContacts,pGpsCard'],
       ['fprof',T('Τύπος ψαρέματος και φωνή','Fishing type and voice'),null,'set','ndFProf'],
       ['units',T('Μονάδες','Units'),T('Άνεμος, θερμοκρασία, πίεση, απόσταση, συντεταγμένες','Wind, temperature, pressure, distance, coordinates'),'set','unitsCard']]],
     [T('ΔΕΔΟΜΕΝΑ ΚΑΙ ΛΟΓΑΡΙΑΣΜΟΣ','DATA AND ACCOUNT'),[
       ['backup',T('Αντίγραφο και εξαγωγή','Backup and export'),null,'set','ndExport'],
-      ['data',T('Έλεγχος και συμπλήρωση δεδομένων','Check and fill in data'),T('Διπλά, καιρός σε παλιά ψάρια','Duplicates, weather on old catches'),'set','dgCard'],
+      ['data',T('Έλεγχος και συμπλήρωση δεδομένων','Check and fill in data'),T('Διπλά, καιρός σε παλιά ψάρια','Duplicates, weather on old catches'),'set','dgCard,seaDataCard'],
       ['friends',T('Φίλοι','Friends'),null,'set','frCard'],
-      ['account',T('Λογαριασμός και γλώσσα','Account and language'),T('Όνομα, γλώσσα, συγχρονισμός, κωδικός','Name, language, sync, password'),'set',null],
-      ['about',T('Σχετικά','About'),T('Απόρρητο, ασφάλεια, έκδοση','Privacy, safety, version'),'set','appVer,ndChkUpd,ndAbout']]]
+      ['account',T('Λογαριασμός και γλώσσα','Account and language'),T('Όνομα, γλώσσα, συγχρονισμός, κωδικός','Name, language, sync, password'),'set','pAccCard,pSyncCard,pPassCard,ndDelAcc'],
+      ['ai',T('Αναγνώριση ψαριού με AI','AI fish identification'),T('Κλειδί API για αναγνώριση από φωτογραφία','API key for photo recognition'),'set','pAICard'],
+      ['about',T('Σχετικά','About'),T('Απόρρητο, ασφάλεια, έκδοση, οδηγός','Privacy, safety, version, tour'),'set','appVer,ndChkUpd,ndAbout,ndTour']]]
   ];
   function build(){
     var pb=document.querySelector('#profile .pbox'), pm=$('pMain'); if(!pb||!pm) return false; if(home) return true;
@@ -1316,6 +1317,9 @@ box.insertBefore(tools,bar.nextSibling);
     vf.append(vt,vb); home.appendChild(vf);
   }
   var ROW={}; GROUPS.forEach(function(g){ g[1].forEach(function(r){ ROW[r[0]]=r; }); });
+  /* v31z410: κάρτες χωρίς id παίρνουν id, ώστε κάθε γραμμή να δείχνει μόνο τις δικές της (πριν «Λογαριασμός» έδειχνε όλες τις ρυθμίσεις ξανά) */
+  function tagCards(){ [['pName','pAccCard'],['acSync','pSyncCard'],['pPass','pPassCard']].forEach(function(p){ var e=$(p[0]), c=e&&e.closest('.card'); if(c&&!c.id) c.id=p[1]; });
+    var ps=$('pSettings'); if(ps) [].forEach.call(ps.querySelectorAll('.card'),function(c){ if(!c.id&&/Αναγνώριση ψαριού με AI|AI fish (recognition|identification)/.test((c.querySelector('h3')||{}).textContent||'')) c.id='pAICard'; }); }
   var inHome=false;
   function showHome(){
     if(!build()) return; moveAlerts(); inHome=true; paint();
@@ -1334,6 +1338,7 @@ box.insertBefore(tools,bar.nextSibling);
     if(r[3]==='set'){
       setTimeout(function(){
         var pr=$('profile');
+        tagCards();
         (r[4]||'').split(',').forEach(function(id){ var t=id?$(id):null; if(t) t.classList.add('ndphsel'); });
         try{ pr.scrollTop=0; }catch(e){}
       },120);
