@@ -248,6 +248,108 @@ setTimeout(annivSync,4000); if(window.ndEvery) window.ndEvery(annivSync,6*360000
 })();
 window.PsaroAnniv={list:annivList,sync:annivSync};
 
+/* ---------- v31z398: «ίδιες συνθήκες με παλιά ψαριά» ----------
+   Για παλιές ψαριές (προηγούμενες χρονιές, ±30 μέρες από την ίδια ημερομηνία φέτος) που έχουν καταγεγραμμένες συνθήκες,
+   συγκρίνει την πρόγνωση των επόμενων 6 ημερών στο ίδιο σημείο, την ίδια ώρα: σελήνη, άνεμος, διεύθυνση, κύμα, πίεση, νερό.
+   Αν μια μέρα μοιάζει ≥ 80%, στέλνει μία ειδοποίηση (μία ανά μέρα-στόχο και ψαριά). */
+var SIM_MIN=0.80, SIM_KEY='psaro-simseen';
+function simOn(){ return C.lsGet('psaro-simnote',true)!==false; }
+var DIR8=EN?['N','NE','E','SE','S','SW','W','NW']:['Β','ΒΑ','Α','ΝΑ','Ν','ΝΔ','Δ','ΒΔ'];
+function d8(g){ return g==null?'':DIR8[Math.round(((g%360)+360)%360/45)%8]; }
+var PTN={fast:T('πέφτει γρήγορα','falling fast'),slow:T('πέφτει αργά','falling slowly'),stable:T('σταθερή','steady'),rise:T('ανεβαίνει','rising')};
+var MPH=EN?['new moon','waxing crescent','first quarter','waxing gibbous','full moon','waning gibbous','last quarter','waning crescent']:['νέα σελήνη','αύξων μηνίσκος','πρώτο τέταρτο','αύξουσα αμφίκυρτη','πανσέληνος','φθίνουσα αμφίκυρτη','τελευταίο τέταρτο','φθίνων μηνίσκος'];
+function phName(f){ return MPH[Math.floor(((f%1)+1)%1*8+0.5)%8]; }
+function bHour(b){ var m=/^(\d{1,2})/.exec(b.time||''); return m?Math.min(23,+m[1]):7; }
+function bMs(b){ var h=bHour(b); return Date.UTC(+b.date.slice(0,4),+b.date.slice(5,7)-1,+b.date.slice(8,10),h-2); }
+function circ(a,b,p){ var d=Math.abs(a-b)%p; return Math.min(d,p-d); }
+function simScore(b,h,f){
+  var parts=[], add=function(w,v){ if(v!=null&&!isNaN(v)) parts.push([w,Math.max(0,Math.min(1,v))]); };
+  var bf=null; try{ bf=window.PF.moonPhase(bMs(b)).f; }catch(e){}
+  if(bf!=null&&f!=null) add(0.25,1-circ(bf,f,1)/0.125);
+  if(b.wind!=null&&h.wind!=null) add(0.2,1-Math.abs(b.wind-h.wind)/6);
+  if(b.wdeg!=null&&h.dir!=null&&(b.wind||0)>=4&&(h.wind||0)>=4) add(0.15,1-circ(b.wdeg,h.dir,360)/90);
+  if(b.wave!=null&&h.wave!=null) add(0.15,1-Math.abs(b.wave-h.wave)/0.5);
+  if(b.ptrend&&h.ptrend) add(0.15,b.ptrend===h.ptrend?1:((b.ptrend==='slow'||b.ptrend==='stable')&&(h.ptrend==='slow'||h.ptrend==='stable'))?0.6:0);
+  if(b.sst!=null&&h.sst!=null) add(0.1,1-Math.abs(b.sst-h.sst)/2);
+  var W=parts.reduce(function(a,x){ return a+x[0]; },0); if(W<0.55) return null; /* χρειάζονται αρκετές συνθήκες */
+  return parts.reduce(function(a,x){ return a+x[0]*x[1]; },0)/W;
+}
+var simBusy=false;
+async function simCheck(force){
+  if(simBusy||!simOn()||!window.PF||!window.PF.getForecast) return null; simBusy=true;
+  try{
+    var last=C.lsGet('psaro-simlast',0); if(!force&&Date.now()-last<6*3600000) return null; C.lsSet('psaro-simlast',Date.now());
+    var td=C.nicosiaToday(), y0=+td.slice(0,4), t0=Date.UTC(y0,+td.slice(5,7)-1,+td.slice(8,10));
+    var cand=(C.Store.get('bites')||[]).filter(function(b){
+      if(!b||!b.date||typeof b.lat!=='number'||typeof b.lon!=='number'||+b.date.slice(0,4)>=y0) return false;
+      if(b.wind==null&&b.wave==null&&!b.ptrend) return false;
+      var a=Date.UTC(y0,+b.date.slice(5,7)-1,+b.date.slice(8,10)), dd=(a-t0)/86400000; if(dd<-180) dd+=365; if(dd>180) dd-=365; return dd>=-29&&dd<=36;
+    });
+    if(!cand.length) return [];
+    var G=[]; cand.forEach(function(b){ var g=null; for(var i=0;i<G.length;i++){ var dy=(G[i].lat-b.lat)*111, dx=(G[i].lon-b.lon)*111*Math.cos(b.lat*Math.PI/180); if(dx*dx+dy*dy<4){ g=G[i]; break; } } if(!g){ g={lat:b.lat,lon:b.lon,bs:[]}; G.push(g); } g.bs.push(b); });
+    G.sort(function(a,b){ return b.bs.length-a.bs.length; }); G=G.slice(0,3);
+    var best=[], seen=C.lsGet(SIM_KEY,{})||{};
+    for(var gi=0;gi<G.length;gi++){
+      var g=G[gi], fc; try{ fc=await window.PF.getForecast(g.lat,g.lon,undefined,{days:7}); }catch(e){ continue; }
+      if(!fc||!fc.days) continue;
+      fc.days.forEach(function(d,di){
+        if(di<1||!d.hours) return; var dt=Date.parse(d.date+'T00:00:00Z');
+        g.bs.forEach(function(b){
+          var a=Date.UTC(+d.date.slice(0,4),+b.date.slice(5,7)-1,+b.date.slice(8,10)), dd=Math.abs(a-dt)/86400000; if(dd>182) dd=365-dd; if(dd>30) return;
+          var hr=bHour(b), h=d.hours.filter(function(x){ return x.hr===hr; })[0]; if(!h||h.safe===false) return;
+          var sc=simScore(b,h,d.f); if(sc==null||sc<SIM_MIN) return;
+          var key=d.date+'|'+b.date; if(seen[key]||Object.keys(seen).some(function(k){ return k.split('|')[1]===b.date&&Date.now()-seen[k]<14*86400000; })) return;
+          best.push({sc:sc,d:d,h:h,b:b,key:key,g:g});
+        });
+      });
+    }
+    best.sort(function(a,b){ return b.sc-a.sc; });
+    var byDay={}, byB={}, out=[]; best.forEach(function(x){ if(!byDay[x.d.date]&&!byB[x.b.date]){ byDay[x.d.date]=1; byB[x.b.date]=1; out.push(x); } }); /* μία ανά μέρα-στόχο και μία ανά παλιά ψαριά (η καλύτερη) */
+    out=out.slice(0,2);
+    for(var i=0;i<out.length;i++) await simNotify(out[i]);
+    if(out.length){ out.forEach(function(x){ seen[x.key]=Date.now(); }); Object.keys(seen).forEach(function(k){ if(Date.now()-seen[k]>40*86400000) delete seen[k]; }); C.lsSet(SIM_KEY,seen); }
+    return out;
+  }catch(e){ return null; } finally{ simBusy=false; }
+}
+function simText(x){
+  var b=x.b, h=x.h, DN=EN?['Sun','Mon','Tue','Wed','Thu','Fri','Sat']:['Κυρ','Δευ','Τρι','Τετ','Πέμ','Παρ','Σάβ'];
+  var dt=new Date(x.d.date+'T12:00:00Z'), bd=new Date(b.date+'T12:00:00Z');
+  var dLab=DN[dt.getUTCDay()]+' '+dt.getUTCDate()+'/'+(dt.getUTCMonth()+1), bLab=DN[bd.getUTCDay()]+' '+bd.getUTCDate()+'/'+(bd.getUTCMonth()+1)+'/'+b.date.slice(0,4);
+  var same=(C.Store.get('bites')||[]).filter(function(z){ return z.date===b.date&&typeof z.lat==='number'&&Math.abs(z.lat-b.lat)<0.02&&Math.abs(z.lon-b.lon)<0.02; });
+  var sp={}; same.forEach(function(z){ if(z.species) sp[z.species]=(sp[z.species]||0)+1; });
+  var spT=Object.keys(sp).map(function(k){ return k+(sp[k]>1?' ×'+sp[k]:''); }).join(', ');
+  var hh=('0'+bHour(b)).slice(-2)+':00', bf=null; try{ bf=window.PF.moonPhase(bMs(b)).f; }catch(e){}
+  var w=function(v){ return U&&U.wind?U.wind(v):Math.round(v)+' kn'; }, wv=function(v){ return U&&U.wave?U.wave(v):v.toFixed(1)+' m'; }, tp=function(v){ return U&&U.temp?U.temp(v):Math.round(v)+'°'; };
+  var L2=[];
+  if(bf!=null) L2.push(T('Σελήνη: ','Moon: ')+phName(x.d.f)+(phName(x.d.f)===phName(bf)?T(' (ίδια με τότε)',' (same as then)'):T(' (τότε ',' (then ')+phName(bf)+')'));
+  if(b.wind!=null&&h.wind!=null) L2.push(T('Άνεμος: ','Wind: ')+d8(h.dir)+' '+w(h.wind)+T(' (τότε ',' (then ')+(b.wdeg!=null?d8(b.wdeg)+' ':'')+w(b.wind)+')');
+  if(b.wave!=null&&h.wave!=null) L2.push(T('Κύμα: ','Waves: ')+wv(h.wave)+T(' (τότε ',' (then ')+wv(b.wave)+')');
+  if(b.ptrend&&h.ptrend) L2.push(T('Πίεση: ','Pressure: ')+PTN[h.ptrend]+(h.ptrend===b.ptrend?T(' (όπως τότε)',' (as then)'):T(' (τότε ',' (then ')+PTN[b.ptrend]+')'));
+  if(b.sst!=null&&h.sst!=null) L2.push(T('Νερό: ','Water: ')+tp(h.sst)+T(' (τότε ',' (then ')+tp(b.sst)+')');
+  var pl=b.place||'';
+  var title=dLab+T(' μοιάζει με τη μέρα της ψαριάς ',' looks like your catch day ')+bLab+' · '+Math.round(x.sc*100)+'%';
+  var body=T('Τότε: ','Then: ')+(same.length||1)+(same.length>1?T(' ψάρια',' fish'):T(' ψάρι',' fish'))+(spT?' ('+spT+')':'')+(pl?T(' στο ',' at ')+pl:'')+T(', γύρω στις ',', around ')+hh+'.\n'+T('Πρόγνωση για ','Forecast for ')+dLab+' '+hh+':\n'+L2.join('\n');
+  var det=[bLab+' · '+(same.length||1)+(same.length>1?T(' ψάρια',' fish'):T(' ψάρι',' fish'))+(spT?' · '+spT:''),T('Ίδιες συνθήκες: ','Similar conditions: ')+dLab+' '+hh+' ('+Math.round(x.sc*100)+'%)'];
+  return {title:title,body:body,locs:[{lat:+b.lat.toFixed(5),lon:+b.lon.toFixed(5),name:pl,label:(pl||T('Σημείο','Spot'))+' · '+bLab,det:det}]};
+}
+async function simNotify(x){
+  var m=simText(x), id='sim-'+x.key.replace(/[^0-9|]/g,'').replace('|','-');
+  try{
+    var reg=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();
+    if(reg&&reg.active){ reg.active.postMessage({localMsg:{id:id,title:m.title,body:m.body,full:m.body,kind:'good',tag:id,locs:m.locs,notify:('Notification' in window)&&Notification.permission==='granted'}}); return; }
+  }catch(e){}
+  try{ C.toast&&C.toast(m.title); }catch(e){}
+}
+setTimeout(function(){ simCheck(); },9000); if(window.ndEvery) window.ndEvery(function(){ simCheck(); },3*3600000);
+(function(){
+  var t=$('ntAnniv'), row=t&&t.closest('label.chk'); if(!row||$('ntSim')) return;
+  var w=el('label','chk'); w.style.border='0'; var cb=el('input'); cb.type='checkbox'; cb.id='ntSim'; cb.checked=simOn();
+  var lb=el('label','',T('Ειδοποίησέ με όταν έρχεται μέρα με ίδιες συνθήκες με παλιά ψαριά (σελήνη, άνεμος, κύμα, πίεση, νερό)','Notify me when a coming day has the same conditions as a past catch (moon, wind, waves, pressure, water)')); lb.htmlFor='ntSim';
+  w.append(cb,lb); row.parentNode.insertBefore(w,row.nextSibling);
+  cb.addEventListener('change',function(){ C.lsSet('psaro-simnote',cb.checked); if(cb.checked) simCheck(true); });
+})();
+window.PsaroSim={check:simCheck,score:simScore,text:simText};
+
 /* ---------- λίστα ελέγχου ---------- */
 var clOv=el('div','cdov'); clOv.hidden=true; clOv.style.zIndex=4750; document.body.appendChild(clOv);
 function clCount(){ var n=0; S.cl.items.forEach(function(i){ if(S.cl.done[i]) n++; }); return n; }

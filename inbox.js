@@ -105,7 +105,7 @@ function render(){
     if(Array.isArray(x.locs)&&x.locs.length){ /* v31z397: όλα τα σημεία μαζί στον χάρτη, με λεπτομέρειες ανά σημείο */
       var lw=el('div','ilocs'), locs=x.locs.filter(function(q){ return q&&q.lat!=null; }), ttl=String(x.title||'').replace(/^[^:]*:\s*/,'');
       var all=el('button','iloc iloc-all','🗺 '+T('Δες τα όλα στον χάρτη','Show them all on the map')+' ('+locs.length+')'); all.type='button';
-      all.addEventListener('click',function(ev){ ev.stopPropagation(); showLocs(locs,-1,ttl); }); lw.append(all);
+      all.addEventListener('click',function(ev){ ev.stopPropagation(); showLocs(locs,-1,ttl); }); if(locs.length>1) lw.append(all);
       locs.forEach(function(q,i){ var lb=el('button','iloc','📍 '+(q.label||q.name||'')); lb.type='button';
         lb.addEventListener('click',function(ev){ ev.stopPropagation(); showLocs(locs,i,ttl); }); lw.append(lb); });
       fu.append(lw); }

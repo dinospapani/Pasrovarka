@@ -1,7 +1,7 @@
 // Network first for the app's own files so updates arrive at once; cache is the offline fallback.
 // Weather APIs and fonts are cross-origin and always go straight to the network.
 importScripts('forecast.js');
-const V = 'psarovarka-v31z397';
+const V = 'psarovarka-v31z398';
 const CFG = 'psaro-cfg';
 const SHELL = ['./', 'apple-touch-icon.png', 'push-config.js', 'index.html','startpick.js','divelog.js','ruler.js','windwatch.js','windmap.js','windlocal.js','seastate.js','tripform.js','plotterscan.js','boat.js','cx_index.json','inbox.js', 'style.css', 'app.js', 'species.js', 'cy100.js','cy100-en.js','i18n.js','cloud.js','extras.js','ext.js','track.js','mapwx.js','tripui.js','dialog.js','units.js','version.js','range.js','gearstats.js', 'coords.js','techs.js','tackle.js','knots.js','orient.js','todayloc.js','tackle-lib.js','tackle-guide.js','gear.js','hist.js','bitewx.js','profile-view.js','navigator.js','navigator-mpa.json','bathy-lines.js','direct.js','sea.js','cards.js','tools.js','ports.js','route.js','redesign.js','redesign.css','fc2.js','fc2.css','dams.js','dams_levels.json','smart.js','insights.js','speciespick.js','regions.js','community.js','forecast-tab.js','coastgrid.js','exposure.js','fish-photos.js', 'rules.js', 'zones.js', 'forecast.js', 'personal.js', 'mine-tab.js','knowledge.js','advisor.js', 'diag.js', 'leaflet.js', 'leaflet.css', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 const cfgUrl = () => new URL('__cfg', self.registration.scope).href;
@@ -81,7 +81,11 @@ async function annivCheck() {
     if (ch) { Object.keys(seen).forEach(k => { if (Date.parse(seen[k]) < Date.now() - 400 * 86400000) delete seen[k]; }); await c.put(su, new Response(JSON.stringify(seen))); }
   } catch (e) {}
 }
-self.addEventListener('message', e => { if (e.data && e.data.annivCheck) e.waitUntil(annivCheck()); });
+self.addEventListener('message', e => {
+  if (e.data && e.data.annivCheck) e.waitUntil(annivCheck());
+  /* v31z398: μήνυμα από τη σελίδα (π.χ. «ίδιες συνθήκες με παλιά ψαριά»): στο ιστορικό και ως ειδοποίηση */
+  if (e.data && e.data.localMsg) { const m = e.data.localMsg; e.waitUntil(m.notify === false ? inboxAdd({ id: m.id, at: new Date().toISOString(), kind: m.kind || 'info', title: m.title, body: m.body, full: m.full || m.body, place: null, t: null, locs: m.locs || null, src: 'local' }) : showMsg(m, 'local').catch(() => {})); }
+});
 self.addEventListener('periodicsync', e => { if (e.tag === 'psaro-forecast') e.waitUntil(Promise.all([runCheck(), annivCheck()])); });
 self.addEventListener('push', e => {
   let d = {};
