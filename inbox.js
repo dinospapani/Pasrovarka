@@ -42,7 +42,7 @@ try{
     P.showNotification=function(title,opt){
       opt=Object.assign({},opt||{}); var bc=(opt.data&&opt.data.bc)||{}, id=bc.id||('a'+Date.now()+Math.random().toString(36).slice(2,6));
       var kind=bc.kind||(String(opt.tag||'').indexOf('wind')>=0?'wind':String(opt.tag||'').indexOf('sea')>=0?'safety':/πίεσ|pressure/i.test(title)?'pressure':'info');
-      addLocal({id:id,at:new Date().toISOString(),kind:kind,title:String(title||'BiteCast'),body:opt.body||'',full:bc.full||opt.body||'',place:bc.place||null,t:bc.t||null,src:'app'}).then(function(){ loaded=false; });
+      addLocal({id:id,at:new Date().toISOString(),kind:kind,title:String(title||'BiteCast'),body:opt.body||'',full:bc.full||opt.body||'',place:bc.place||null,t:bc.t||null,src:'app'}).then(function(){ loaded=false; load(); });  /* v31z360: η ένδειξη ενημερώνεται αμέσως (και κατά την έξοδο) */
       if(!opt.tag||opt.tag==='psaro-ideal') opt.tag='bc-'+id; opt.renotify=true;
       opt.data=Object.assign({},opt.data||{},{url:(this.scope||location.href.split('#')[0])+'#inbox='+encodeURIComponent(id)});
       return orig.call(this,title,opt);

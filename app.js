@@ -2031,12 +2031,13 @@ async function tripPressBrief(){
   try{
     const st=window.PsaroTrip&&window.PsaroTrip.state&&window.PsaroTrip.state(); if(!st||!st.active||!st.id) return;
     if(lsGet('psaro-tpb','')===st.id) return;
+    if(Date.now()-(+lsGet('psaro-tpb-at',0)||0)<20*60000){ lsSet('psaro-tpb',st.id); return; } /* v31z360: όχι δεύτερη φορά αν τερμάτισες και ξεκίνησες ξανά σε λίγα λεπτά */
     if(st.start&&Date.now()-st.start>30*60000) { lsSet('psaro-tpb',st.id); return; } /* μόνο στην αρχή της εξόδου */
     const PFx=window.PF; if(!PFx||!PFx.getForecast||!PFx.pressureOutlook) return;
     const fx=window.PsaroTrack&&window.PsaroTrack.fix&&window.PsaroTrack.fix(), la=fx?fx.lat:(cond&&cond.lat), lo=fx?fx.lon:(cond&&cond.lon);
     if(la==null||lo==null) return;
     const fc=await PFx.getForecast(+la,+lo,undefined,{days:2}), o=PFx.pressureOutlook(fc); if(!o) return;
-    lsSet('psaro-tpb',st.id);
+    lsSet('psaro-tpb',st.id); lsSet('psaro-tpb-at',Date.now());
     const en=window.LANG==='en', T2=(a,b)=>en?b:a, num=v=>String(Math.round(v*10)/10).replace('.',en?'.':','), sg=v=>(v>0?'+':v<0?'−':'±')+num(Math.abs(v));
     /* επόμενες 3 ώρες από την πρόγνωση */
     const hs=[]; fc.days.forEach(d=>d.hours.forEach(x=>{ if(x.p!=null) hs.push(x); })); hs.sort((a,b)=>a.t<b.t?-1:1);
