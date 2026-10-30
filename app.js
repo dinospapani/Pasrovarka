@@ -1210,8 +1210,24 @@ const norm=t=>(t||'').trim().toLowerCase();
 /* quick-log sheet */
 let photoBlob=null, photoBlobs=[], phDirty=false, curLatin='', sheetFresh=true, editRec=null, pressTouched=false;
 $('bPress').addEventListener('input',()=>{ pressTouched=true; });
+/* v31z399: ψαριά κοντά (≤300 m) σε αποθηκευμένο σημείο ή σε παλιά ψαριά με όνομα → παίρνει αυτόματα το ίδιο όνομα σημείου */
+const NEAR_KM=0.3;
+function nearPlace(lat,lon){
+  if(typeof lat!=='number'||typeof lon!=='number') return null; let best=null;
+  Store.get('spots').forEach(s=>{ if(typeof s.lat!=='number'||!s.name) return; const d=haversine(lat,lon,s.lat,s.lon); if(d<=NEAR_KM&&(!best||d<best.d)) best={name:s.name,d:d,spot:s.id}; });
+  if(best) return best;
+  Store.get('bites').forEach(b=>{ if(typeof b.lat!=='number'||!b.place||(editRec&&b.id===editRec.id)) return; const d=haversine(lat,lon,b.lat,b.lon); if(d<=NEAR_KM&&(!best||d<best.d)) best={name:b.place,d:d}; });
+  return best;
+}
+function locNow(){ const m=$('bLocMode').value; if(m==='auto') return cond&&cond.lat!=null?{lat:cond.lat,lon:cond.lon}:null; if(m==='pick'||m==='coords') return pickedPt; return null; }
+function nearHint(){
+  let h=$('bNearHint'); if(!h){ h=document.createElement('p'); h.id='bNearHint'; h.className='note'; h.style.margin='4px 0 0'; const w=$('bSpotWrap'); if(!w) return; w.parentNode.insertBefore(h,w); }
+  const q=locNow(), np=q&&nearPlace(q.lat,q.lon), en=window.LANG==='en';
+  h.hidden=!np; if(np) h.textContent='📍 '+(en?'Near «'+np.name+'» ('+Math.round(np.d*1000)+' m): the catch will be grouped under this spot.':'Κοντά στο «'+np.name+'» ('+Math.round(np.d*1000)+' m): η ψαριά θα μπει σε αυτό το σημείο.');
+}
 function syncLoc(){
   const m=$('bLocMode').value;
+  try{ setTimeout(nearHint,0); }catch(e){}
   $('bSpotWrap').hidden=m!=='spot'; $('bPickWrap').hidden=m!=='pick'; $('bCoordWrap').hidden=m!=='coords';
   if(m==='coords'&&!$('bLat').value&&!$('bLon').value){ const q=pickedPt||(editRec&&typeof editRec.lat==='number'?{lat:editRec.lat,lon:editRec.lon}:null); if(q){ PsaroCoord.set($('bLat'),$('bLon'),q.lat,q.lon); pickedPt={lat:q.lat,lon:q.lon}; } }
   $('bPickTxt').textContent=pickedPt?PsaroCoord.fmt(pickedPt.lat,pickedPt.lon):'Δεν έχει επιλεγεί θέση.';
@@ -1243,7 +1259,7 @@ function openSheet(){
     $('bWhen').value=nowLocalInput();
     if(cond&&cond.press!=null) $('bPress').value=cond.press;
     sheetFresh=false; fillTripSel('');
-    refreshConditions();
+    Promise.resolve(refreshConditions()).then(()=>{ try{ nearHint(); }catch(e){} });
   }
   renderChips(); syncLoc(); updateLaw();
   $('sheet').hidden=false;
@@ -1338,6 +1354,7 @@ $('biteForm').addEventListener('submit',async e=>{
     else if(mode==='spot'){const sp=Store.get('spots').find(x=>x.id===$('bSpot').value); if(sp){lat=sp.lat;lon=sp.lon;place=sp.name;}}
     else if((mode==='pick'||mode==='coords')&&pickedPt){lat=pickedPt.lat;lon=pickedPt.lon;}
     else if(mode==='keep'&&editing){lat=editing.lat;lon=editing.lon;place=editing.place||'';}
+    if(!place&&lat!=null&&(mode==='auto'||mode==='pick'||mode==='coords')){ const np=nearPlace(lat,lon); if(np) place=np.name; }
     const num=id=>$(id).value===''?null:+$(id).value;
     let sName=$('bSpecies').value.trim(); { const mm=matchSp(sName); if(mm){ sName=dispName(mm); if(!curLatin) curLatin=mm.la; } }
     let rec={date:date,time:(time||'12:00').slice(0,5),tz:utcOff(),species:sName,latin:curLatin||'',bait:$('bBait').value.trim(),tech:$('bTech').value,
@@ -1413,7 +1430,7 @@ async function quickRec(miss){
     const has=c.lat!=null;
     const rec={date:nicosiaToday(),time:fmt(nicosiaNowMin()),tz:utcOff(),species:'',latin:'',bait:'',tech:'',depth:null,kg:null,len:null,press:c.press!=null?c.press:null,notes:'',
       ptrend:$('dPress').value,wind:+$('dWind').value,wdeg:c.windDeg!=null?Math.round(c.windDeg):null,wave:+$('dWave').value,cloud:$('dCloud').value,temp:c.temp!=null?c.temp:null,sst:c.sst!=null?c.sst:null,tide:c.tide?c.tide.st:null,
-      place:'',lat:has?c.lat:null,lon:has?c.lon:null,photo:false,src:miss?'miss':'quick'};
+      place:has?((nearPlace(c.lat,c.lon)||{}).name||''):'',lat:has?c.lat:null,lon:has?c.lon:null,photo:false,src:miss?'miss':'quick'};
     if(miss) rec.miss=true;
     try{ if(window.PsaroTackle){ const L=PsaroTackle.last(); if(L.ids.length){ rec.tk=L.ids; if(Object.keys(L.w).length) rec.tkw=L.w; if(Object.keys(L.h).length) rec.tkh=L.h; if(Object.keys(L.s).length) rec.tks=L.s; } } }catch(e){}
     tripStamp(rec,!!miss);
@@ -1432,7 +1449,7 @@ async function quickAt(lat,lon,miss){
   try{
     const rec={date:nicosiaToday(),time:fmt(nicosiaNowMin()),tz:utcOff(),species:'',latin:'',bait:'',tech:'',depth:null,kg:null,len:null,press:c.press!=null?c.press:null,notes:'',
       ptrend:c.ptrend||null,wind:c.wind!=null?c.wind:null,wdeg:c.windDeg!=null?Math.round(c.windDeg):null,wave:c.wave!=null?Math.round(c.wave*10)/10:null,cloud:c.cloud||null,temp:c.temp!=null?c.temp:null,sst:c.sst!=null?c.sst:null,tide:c.tide?c.tide.st:null,
-      place:'',lat:lat,lon:lon,photo:false,src:miss?'miss-map':'map'};
+      place:(nearPlace(lat,lon)||{}).name||'',lat:lat,lon:lon,photo:false,src:miss?'miss-map':'map'};
     if(miss) rec.miss=true;
     try{ if(window.PsaroTackle){ const Lt=PsaroTackle.last(); if(Lt.ids.length){ rec.tk=Lt.ids; if(Object.keys(Lt.w).length) rec.tkw=Lt.w; if(Object.keys(Lt.h).length) rec.tkh=Lt.h; if(Object.keys(Lt.s).length) rec.tks=Lt.s; } } }catch(e){}
     tripStamp(rec,!!miss);
