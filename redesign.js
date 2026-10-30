@@ -500,7 +500,7 @@ box.insertBefore(tools,bar.nextSibling);
     shield:'<path d="M12 3l7 3v5c0 5-3.2 8.3-7 10-3.8-1.7-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/>'};
   var KIND={
     tripList:{ic:'anchor',t:T('Ξεκίνα το ημερολόγιό σου','Start your logbook'),cta:T('Προσθήκη εξόδου','Add a trip'),btn:'tNew'},
-    biteList:{ic:'fish',t:T('Κατέγραψε το πρώτο σου ψάρι','Log your first catch'),cta:T('Νέο τσίμπημα','New catch'),btn:'bNew',rng:'log',rt:T('Τίποτα σε αυτό το διάστημα','Nothing in this period')},
+    biteList:{ic:'fish',t:T('Κατέγραψε το πρώτο σου ψάρι','Log your first catch'),cta:T('Νέο ψάρι','New fish'),btn:'bNew',rng:'log',rt:T('Τίποτα σε αυτό το διάστημα','Nothing in this period')},
     stBody:{ic:'chart',t:T('Τα στατιστικά θα εμφανιστούν εδώ','Your statistics will appear here')},
     spotList:{ic:'pin',t:T('Αποθήκευσε το πρώτο σου σημείο','Save your first spot'),cta:T('Νέο σημείο','New spot'),btn:'sNew'}};
   function enhance(e){
@@ -1663,4 +1663,14 @@ box.insertBefore(tools,bar.nextSibling);
   var n=0, iv=setInterval(function(){ n++; try{ toggle(); card(); }catch(e){} if(n>60) clearInterval(iv); },1000);
   window.ndEvery(function(){ try{ draw(); toggle(); card(); cleanup(); }catch(e){} },3000);
   setTimeout(draw,2500);
+})();
+
+/* v31z374 · Ψαροντούφεκο: όταν ανοίγει η φόρμα, το «Catch & release» και τα «πολλά μαζί» μένουν πάντα κλειστά */
+(function(){
+  var sh=document.getElementById('sheet'); if(!sh) return;
+  function fix(){ var sp=false; try{ sp=localStorage.getItem('psaro-fprof')==='spear'; }catch(e){} if(!sp||sh.hidden) return;
+    ['bRel','bMulti'].forEach(function(id){ var c=document.getElementById(id); if(c&&c.checked){ c.checked=false; c.dispatchEvent(new Event('change',{bubbles:true})); } });
+    var t=document.getElementById('bTitle'); if(t&&/τσίμπημα|bite/i.test(t.textContent)) t.textContent=window.LANG==='en'?'New fish':'Νέο ψάρι';
+    var tc=document.getElementById('bTech'); if(tc&&!tc.value&&tc.options.length) tc.selectedIndex=0; }
+  new MutationObserver(function(){ setTimeout(fix,50); }).observe(sh,{attributes:true,attributeFilter:['hidden']});
 })();
