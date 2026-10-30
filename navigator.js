@@ -145,8 +145,11 @@ window.PsaroNavInfo=function(lat,lon,closeFn){
     var line=el('div','note'); line.style.color=COL[f._s]; line.style.fontWeight='700';
     line.textContent=(f._s===2?'⛔ ':f._s===1?'⚠ ':'ℹ ')+title(f)+(f._s?' · '+T('ψάρεμα: ','fishing: ')+lv(f.rf):'');
     var more=el('button','btn sm ghost',T('Λεπτομέρειες','Details')); more.type='button'; more.style.marginLeft='6px';
-    more.addEventListener('click',function(){ if(closeFn) closeFn(); L.popup({minWidth:200,maxWidth:300,maxHeight:Math.max(180,Math.round(window.innerHeight*.48)),className:'navpopw',autoPanPaddingTopLeft:[10,130],autoPanPaddingBottomRight:[84,110]}).setLatLng([lat,lon]).setContent(details(f)).openOn(map); });
-    line.appendChild(more); box.appendChild(line);
+    /* v31z391: οι λεπτομέρειες ανοίγουν μέσα στο ίδιο φύλλο (πριν άνοιγε νέο παράθυρο στον χάρτη, που έκλεινε αμέσως μαζί με το φύλλο) */
+    var det=el('div','navdet'); det.hidden=true; det.style.cssText='margin:8px 0 4px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);font-weight:400;color:var(--ink);font-size:13px;line-height:1.45';
+    more.setAttribute('aria-expanded','false');
+    more.addEventListener('click',function(e){ e.stopPropagation(); var open=det.hidden; if(open&&!det.firstChild){ var c=details(f); if(typeof c==='string') det.innerHTML=c; else det.appendChild(c); } det.hidden=!open; more.textContent=open?T('Απόκρυψη','Hide'):T('Λεπτομέρειες','Details'); more.setAttribute('aria-expanded',String(open)); });
+    line.appendChild(more); box.appendChild(line); box.appendChild(det);
   });
   return box;
 };
