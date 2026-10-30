@@ -456,7 +456,8 @@ box.insertBefore(tools,bar.nextSibling);
 (function(){
   var IC={"💡": "<path d=\"M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z\"/>", "📍": "<path d=\"M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z\"/><circle cx=\"12\" cy=\"10\" r=\"2.5\"/>", "🔧": "<path d=\"M14.7 6.3a4 4 0 0 0-5.4 5.2L3.5 17.3a1.8 1.8 0 0 0 2.5 2.5l5.8-5.8a4 4 0 0 0 5.2-5.4l-2.6 2.6-2.4-.6-.6-2.4z\"/>", "🛒": "<circle cx=\"9\" cy=\"20\" r=\"1.3\"/><circle cx=\"18\" cy=\"20\" r=\"1.3\"/><path d=\"M3 4h2.5l2.2 11h10.6L20.5 8H6.2\"/>", "💾": "<path d=\"M5 4h11l3 3v13H5z\"/><path d=\"M8 4v5h7V4M8 20v-6h8v6\"/>", "📷": "<path d=\"M4 8h3l2-2h6l2 2h3v11H4z\"/><circle cx=\"12\" cy=\"13\" r=\"3.5\"/>", "🖼": "<rect x=\"3.5\" y=\"4.5\" width=\"17\" height=\"15\" rx=\"2\"/><circle cx=\"9\" cy=\"10\" r=\"1.6\"/><path d=\"M4 18l5-5 4 4 3-3 4 4\"/>", "🧰": "<rect x=\"3\" y=\"8\" width=\"18\" height=\"12\" rx=\"2\"/><path d=\"M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3 13h18\"/>", "📦": "<path d=\"M12 3l8 4.5v9L12 21l-8-4.5v-9z\"/><path d=\"M4 7.5l8 4.5 8-4.5M12 12v9\"/>", "🏠": "<path d=\"M4 11l8-7 8 7v9H4z\"/><path d=\"M10 20v-6h4v6\"/>", "⛽": "<path d=\"M5 20V5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v15M4 20h11\"/><path d=\"M14 9h2.5a1.5 1.5 0 0 1 1.5 1.5V16a1.5 1.5 0 0 0 3 0V9l-3-3\"/><path d=\"M7 8h5\"/>", "⚓": "<circle cx=\"12\" cy=\"5\" r=\"2\"/><path d=\"M12 7v14M7 11h10M4 14a8 8 0 0 0 16 0\"/>", "📅": "<rect x=\"4\" y=\"5\" width=\"16\" height=\"15\" rx=\"2\"/><path d=\"M4 10h16M8 3v4M16 3v4\"/>", "⚖": "<path d=\"M12 4v16M7 20h10M5 8h14\"/><path d=\"M5 8l-3 6a3 3 0 0 0 6 0zM19 8l-3 6a3 3 0 0 0 6 0z\"/>", "🎯": "<circle cx=\"12\" cy=\"12\" r=\"8\"/><circle cx=\"12\" cy=\"12\" r=\"4\"/><circle cx=\"12\" cy=\"12\" r=\".8\"/>", "🔒": "<rect x=\"5\" y=\"11\" width=\"14\" height=\"9\" rx=\"2\"/><path d=\"M8 11V8a4 4 0 0 1 8 0v3\"/>", "🔍": "<circle cx=\"11\" cy=\"11\" r=\"6\"/><path d=\"M20 20l-4.5-4.5\"/>", "📝": "<path d=\"M5 4h10l4 4v12H5z\"/><path d=\"M8 12h8M8 16h5\"/>", "🏆": "<path d=\"M8 4h8v5a4 4 0 0 1-8 0zM8 6H4v1a3 3 0 0 0 4 3M16 6h4v1a3 3 0 0 1-4 3M12 13v4M8 20h8M10 17h4\"/>", "🪪": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><circle cx=\"9\" cy=\"11\" r=\"2\"/><path d=\"M6 16c.5-1.5 5.5-1.5 6 0M14 10h4M14 14h3\"/>", "🎣": "<path d=\"M6 3v10a5 5 0 0 0 10 0v-2M6 3l-2 2\"/><circle cx=\"16\" cy=\"9.5\" r=\"1.5\"/>", "🐟": "<path d=\"M2 12c3-5.5 10-7 15-3l5-3v12l-5-3c-5 4-12 2.5-15-3z\"/><circle cx=\"7.5\" cy=\"11\" r=\".8\"/>", "🔔": "<path d=\"M6 17v-6a6 6 0 0 1 12 0v6l1.5 2h-15zM10 21h4\"/>", "🔕": "<path d=\"M6 17v-6a6 6 0 0 1 12 0v6l1.5 2h-15zM10 21h4M3 3l18 18\"/>", "🧵": "<path d=\"M7 4h10M7 20h10M8 4v16M16 4v16M8 8h8M8 12h8M8 16h8\"/>", "➰": "<path d=\"M4 17c0-6 5-9 8-5s8 1 8-5\"/>", "🪝": "<circle cx=\"14\" cy=\"4\" r=\"1.5\"/><path d=\"M14 5.5V14a5 5 0 0 1-10 0M1.5 12l2.5 2.5L6.5 12\"/>", "🔹": "<path d=\"M12 4l7 8-7 8-7-8z\"/>", "🪢": "<path d=\"M5 8c4 0 4 8 8 8s4-8 8-8M5 16c4 0 4-8 8-8s4 8 8 8\"/>", "🗑": "<path d=\"M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6\"/>", "✏": "<path d=\"M4 20l1-4L16 5l3 3L8 19zM14 7l3 3\"/>", "💬": "<path d=\"M4 5h16v11H9l-5 4z\"/>"};
   var SKIP={OPTION:1,SCRIPT:1,STYLE:1,TEXTAREA:1,TITLE:1,INPUT:1,SELECT:1,svg:1,SVG:1,CODE:1};
-  var rx=new RegExp('['+Object.keys(IC).join('')+']');
+  /* v31z406: σημαία u, αλλιώς ταίριαζε κάθε emoji με το ίδιο «μισό» (π.χ. 🌙) και ξαναέγραφε το κείμενο συνέχεια → blinking */
+  var rx; try{ rx=new RegExp('(?:'+Object.keys(IC).join('|')+')','u'); }catch(e){ rx=new RegExp('(?:'+Object.keys(IC).join('|')+')'); }
   function mk(k,tail){ var i=document.createElement('i'); i.className='ndi'; i.setAttribute('aria-hidden','true');
     i.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+IC[k]+'</svg>';
     if(tail) i.classList.add('ndit'); return i; }
@@ -464,6 +465,7 @@ box.insertBefore(tools,bar.nextSibling);
     var s=t.nodeValue; if(!s||!rx.test(s)) return;
     var p=t.parentNode; if(!p||SKIP[p.nodeName]||(p.closest&&p.closest('svg,[contenteditable=true],.leaflet-tooltip-pane'))) return;
     var cps=Array.from(s), f=document.createDocumentFragment(), buf='';
+    if(!cps.some(function(ch){ return !!IC[ch]; })) return; /* κανένα γνωστό εικονίδιο: τίποτα δεν αλλάζει */
     for(var j=0;j<cps.length;j++){ var ch=cps[j];
       if(IC[ch]){ if(buf){ f.appendChild(document.createTextNode(buf)); buf=''; }
         var k=j+1; if(cps[k]==='\uFE0F') { j=k; k++; }
@@ -712,11 +714,14 @@ box.insertBefore(tools,bar.nextSibling);
     pill.querySelector('.ndlt').textContent=(h?h+':'+p2(m):p2(m))+':'+p2(x);
     var n=0, km=0; try{ n=window.PsaroTrip.counts().n||0; }catch(e){} try{ km=window.PsaroTrack&&window.PsaroTrack.km?window.PsaroTrack.km():0; }catch(e){}
     var parts=[n+' '+(n===1?T('ψάρι','fish'):T('ψάρια','fish'))];
+    try{ if(window.ndLiveFirst){ var f0=window.ndLiveFirst(); if(f0) parts[0]=f0; } }catch(e){} /* ψαροντούφεκο: «στο νερό · 1 ψάρι · 3 είδα» */
     if(km>=0.05) parts.push(km.toFixed(1)+' km');
     var mn=moonNext(); if(mn) parts.push(mn);
     if(s.due) parts.push(T('επιστροφή ','back ')+hm(s.due));
-    var ls=pill.querySelector('.ndls'); ls.textContent=''; var s1=document.createElement('span'); s1.textContent=parts[0]; ls.appendChild(s1);
-    if(parts.length>1){ var s2=document.createElement('span'); s2.className='ndlx'; s2.textContent=' · '+parts.slice(1).join(' · '); ls.appendChild(s2); }
+    /* v31z406: αλλάζει μόνο ό,τι άλλαξε (πριν ξαναγραφόταν κάθε δευτερόλεπτο και έκανε blinking) */
+    var ls=pill.querySelector('.ndls'), sig=parts.join('|');
+    if(ls.dataset.sig!==sig){ ls.dataset.sig=sig; ls.textContent=''; var s1=document.createElement('span'); s1.textContent=parts[0]; ls.appendChild(s1);
+      if(parts.length>1){ var s2=document.createElement('span'); s2.className='ndlx'; s2.textContent=' · '+parts.slice(1).join(' · '); ls.appendChild(s2); } }
     pill.classList.toggle('late',!!(s.due&&Date.now()>s.due));
   }
   tmr=setInterval(tick,1000); document.addEventListener('visibilitychange',tick);
@@ -1141,6 +1146,7 @@ box.insertBefore(tools,bar.nextSibling);
   }
   /* ετικέτες κάτω από τα κουμπιά ψαριού, ανάλογα με τον τύπο ψαρέματος */
   function cap(id,t){ var b=$(id); if(!b) return; var c=b.querySelector('.fbcap'); if(!c){ c=document.createElement('span'); c.className='fbcap'; b.appendChild(c); } if(c.textContent!==t) c.textContent=t; }
+  window.ndLiveFirst=function(){ if(prof()!=='spear') return null; var k=0; try{ k=window.PsaroTrip.counts().n||0; }catch(e){} return T('στο νερό · ','in water · ')+k+' '+(k===1?T('ψάρι','fish'):T('ψάρια','fish'))+' · '+seenN()+' '+T('είδα','seen'); };
   function upd(){
     if(!document.body.classList.contains('ontrip')) return;
     var sp=prof()==='spear';
@@ -1153,8 +1159,7 @@ box.insertBefore(tools,bar.nextSibling);
     if(bc) bc.setAttribute('aria-label',sp?T('Ψάρι (κράτα για διαγραφή του τελευταίου)','Fish (hold to delete the last one)'):T('Έπιασα ψάρι (κράτα για διαγραφή του τελευταίου)','Caught a fish (hold to delete the last one)'));
     if(bm) bm.setAttribute('aria-label',sp?T('Χαμένη βολή (κράτα για διαγραφή της τελευταίας)','Missed shot (hold to delete the last one)'):T('Τσίμπησε αλλά χάθηκε (κράτα για διαγραφή του τελευταίου)','Bite but lost (hold to delete the last one)'));
     /* λωρίδα εξόδου: «στο νερό · 1 ψάρι · 3 είδα» */
-    var ls=document.querySelector('.ndlive:not([hidden]) .ndls>span:first-child');
-    if(sp&&ls){ var k=0; try{ k=window.PsaroTrip.counts().n||0; }catch(e){} var t=T('στο νερό · ','in water · ')+k+' '+(k===1?T('ψάρι','fish'):T('ψάρια','fish'))+' · '+seenN()+' '+T('είδα','seen'); if(ls.textContent!==t) ls.textContent=t; }
+    /* το κείμενο της λωρίδας το γράφει μόνο ο χρονομετρητής της (ndLiveFirst), όχι δύο κώδικες μαζί */
     place();
   }
   var n=0, iv=setInterval(function(){ n++; if(danger()||n>60){ clearInterval(iv); upd(); } },500);
