@@ -1551,7 +1551,7 @@ function renderStats(){
   const all=Store.act().filter(b=>PsaroRange.inR('log',b)), sel=$('stSpecies').value;
   const bs=sel?all.filter(b=>norm(b.species)===norm(sel)):all;
   const B=$('stBody'); B.replaceChildren();
-  if(!all.length){B.append(h('div',{class:'empty',text:'Τα στατιστικά εμφανίζονται μόλις καταγράψεις τσιμπήματα στην καρτέλα «Τσιμπήματα».'}));return;}
+  if(!all.length){B.append(h('div',{class:'empty',text:'Τα στατιστικά εμφανίζονται μόλις καταγράψεις ψάρια στην καρτέλα «Ψάρια».'}));return;}
   B.append(h('p',{class:'muted',text:bs.length+' τσιμπήματα'+(bs.length<15?'. Λίγα δεδομένα, δες τα ως ένδειξη και όχι ως κανόνα.':'')}));
   const sorted=m=>[...m.entries()].sort((a,b)=>b[1]-a[1]);
   if(!sel){

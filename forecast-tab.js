@@ -122,7 +122,7 @@ function renderFc(p,f,note,t){
   $('fcSub').textContent=p&&f?('Ενημερώθηκε '+new Date(t||Date.now()).toLocaleTimeString(EN?'en-GB':'el-GR',{hour:'2-digit',minute:'2-digit'})+' · '+PsaroCoord.fmt(p.lat,p.lon)):'';
   $('fcNote').textContent=note||'';
   try{ var ra=$('fcRadar'), sb=$('fcSub'); if(!ra&&sb){ ra=h('a',{id:'fcRadar',class:'note',target:'_blank',rel:'noopener',style:'display:block;margin:4px 0;text-decoration:underline'}); sb.after(ra); }
-    if(ra){ ra.hidden=!(p&&f); if(p) { ra.href='https://www.windy.com/-Weather-radar-radar?radar,'+(+p.lat).toFixed(3)+','+(+p.lon).toFixed(3)+',9'; ra.textContent=EN?'🌧 Live rain radar and lightning (Windy). The forecast % is a model estimate and can miss storms that are already forming.':'🌧 Ζωντανό ραντάρ βροχής και κεραυνών (Windy). Το ποσοστό βροχής της πρόγνωσης είναι εκτίμηση μοντέλου και μπορεί να χάσει καταιγίδες που ήδη σχηματίζονται.'; } } }catch(e){}
+    if(ra){ ra.hidden=!(p&&f); if(p) { ra.href='https://www.windy.com/-Weather-radar-radar?radar,'+(+p.lat).toFixed(3)+','+(+p.lon).toFixed(3)+',9'; ra.textContent=EN?'🌧 Live rain radar (Windy)':'🌧 Ζωντανό ραντάρ βροχής (Windy)'; } } }catch(e){}
   try{ spPick(p&&f); }catch(e){}
   try{ pressCard(p&&f?p:null); }catch(e){}
   try{ turnCard(p&&f?f:null); }catch(e){}

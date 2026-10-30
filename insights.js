@@ -51,7 +51,12 @@ function dayInfo(dateStr){
   return {date:dateStr,ph:ph,sun:sn,moon:mn,star:star};
 }
 function rng(a,b,w){ return a&&b?hhmm(a)+'–'+hhmm(b):'—'; }
-function solunar(info){
+function solunar(info,day){
+  /* v31z369: ίδιες περίοδοι με το γράφημα (PF.solunarPeriods: κύρια ±90′, δευτερεύουσα ±60′ από ακριβή υπολογισμό σελήνης) */
+  var PFm=window.PF;
+  if(day&&PFm&&PFm.solunarPeriods){ try{ var c=C.getCond&&C.getCond(), lat=c&&c.lat!=null?+c.lat:35, lon=c&&c.lon!=null?+c.lon:33, t0=new Date(day+'T00:00:00').getTime();
+    var per=PFm.solunarPeriods(t0,t0+86400000,lat,lon).filter(function(p){ return p.t>=t0&&p.t<t0+86400000; });
+    if(per.length) return per.map(function(p){ return {k:p.kind==='major'?T('Κύρια','Major'):T('Δευτερεύουσα','Minor'),s:p.s,e:p.e}; }).sort(function(a,b){ return a.s-b.s; }); }catch(e){} }
   var m=info.moon, out=[];
   if(m.transit) out.push({k:T('Κύρια','Major'),s:m.transit-3600000,e:m.transit+3600000});
   if(m.under) out.push({k:T('Κύρια','Major'),s:m.under-3600000,e:m.under+3600000});
@@ -71,7 +76,7 @@ function moonCard(){
   tx.append(el('span','',T('Ανατολή ','Sunrise ')+(i0.sun.rise?hhmm(i0.sun.rise):'—')+T('  ·  Δύση ',' · Sunset ')+(i0.sun.set?hhmm(i0.sun.set):'—')));
   tx.append(el('span','',T('Σελήνη: ανατολή ','Moon: rise ')+(i0.moon.rise?hhmm(i0.moon.rise):'—')+T('  ·  δύση ',' · set ')+(i0.moon.set?hhmm(i0.moon.set):'—')));
   top.append(tx); card.append(top);
-  var sl=solunar(i0); if(sl.length){ var l=el('div','mcsl'); l.append(el('span','mclab',T('Παραδοσιακές ώρες δραστηριότητας (solunar)','Traditional activity windows (solunar)')));
+  var sl=solunar(i0,td); if(sl.length){ var l=el('div','mcsl'); l.append(el('span','mclab',T('Παραδοσιακές ώρες δραστηριότητας (solunar)','Traditional activity windows (solunar)')));
     sl.forEach(function(x){ l.append(el('span','mcpill '+(x.k===T('Κύρια','Major')?'maj':''),x.k+' '+hhmm(x.s)+'–'+hhmm(x.e))); }); card.append(l); }
   var strip=el('div','mcstrip'); for(var n=0;n<7;n++){ var ds=addDays(td,n), inf=n?dayInfo(ds):i0, d=el('div','mcday'+(n===0?' now':'')); var dd=new Date(Date.parse(ds+'T12:00:00Z'));
     d.append(el('span','mcd',dd.toLocaleDateString(EN?'en-GB':'el-GR',{weekday:'short',timeZone:'UTC'})),el('span','mce',EMO[inf.ph.idx]),el('span','mcs',stars(inf.star))); strip.append(d); }
