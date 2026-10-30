@@ -237,6 +237,13 @@ function calc(cl,lat,lon,wind,winds,P){
   return {hs:hc,lo:hlo,hi:hhi,unc:levelOf(hlo)!==levelOf(hhi),level:levelOf(hc),period:per,wdir:wdir,tWind:tW,tSwell:tS,fetchKm:F,distKm:dist,depth:dep,dur:dur,windSea:oc.ws,swell:swell,swellEff:swE,model:mH,modelMean:mm,wModel:w,capped:hc>=cap-1e-6};
 }
 window.PsaroSeaState={levels:LV,grad:grad,hsWind:hsWind,calc:calc,decodeTile:decodeTile};
+/* v31z390: τα ακριβή περιγράμματα ξηράς (OSM, ~5 m, και τα νησάκια) για μια περιοχή, ώστε η διαδρομή πλοήγησης να τα αποφεύγει */
+window.PsaroSeaState.landRings=function(bb){
+  return loadIndex().then(function(){
+    var ks=[]; for(var la=Math.floor(bb.s);la<=Math.floor(bb.n);la++) for(var lo=Math.floor(bb.w);lo<=Math.floor(bb.e);lo++){ var k=tkey(la,lo); if(hasTile(k)) ks.push(k); }
+    return Promise.all(ks.map(loadTile)).then(function(){ var out=[]; ks.forEach(function(k){ var o=TL[k]; if(!o||o.st!=='ok'||!o.t) return; o.t.rings.forEach(function(r){ if(r.b[2]>=bb.w&&r.b[0]<=bb.e&&r.b[3]>=bb.s&&r.b[1]<=bb.n) out.push(r); }); }); return out; });
+  });
+};
 
 /* ---------- χάρτης ---------- */
 var C=window.PsaroCore, mb=document.querySelector('.mapbtns'), Lf=window.L; if(!C||!mb||!Lf) return;

@@ -1,6 +1,7 @@
 /* Ενδεικτική διαδρομή γύρω από στεριά: ψάχνει διαδρομή στη θάλασσα με ελάχιστη απόσταση από την ακτή.
    Χρησιμοποιεί το πλέγμα βαθών EMODnet (θάλασσα = θετικό βάθος, στεριά = όχι). ΔΕΝ είναι ναυτικός χάρτης:
-   δεν ξέρει ξέρες, βράχια που λείπουν από το πλέγμα, δίχτυα ή κυκλοφορία. */
+   δεν ξέρει ξέρες (βράχια κάτω από το νερό), δίχτυα ή κυκλοφορία. Τα νησάκια και οι βράχοι πάνω από το νερό
+   που υπάρχουν στο OpenStreetMap λαμβάνονται υπόψη (v31z390). */
 (function(){
 'use strict';
 var MINDEPTH=1, MAXC=520, RES0=1/960, R=Math.PI/180;
@@ -17,10 +18,20 @@ function getGrid(bb){
   return window.PsaroBathy.fetchGrid(bb,res).then(function(g){ last={s:bb.s,n:bb.n,w:bb.w,e:bb.e,t:Date.now(),g:g}; return g; });
 }
 /* grid → {w,h,sea,dist,mx,my,cell(lat,lon),pos(i,j)} */
-function prep(g){
+function prep(g,rings){
   var w=g.w,h=g.h, N=w*h, sea=new Uint8Array(N), dist=new Float32Array(N);
   var latc=g.y0+g.dy*(h/2), mx=Math.abs(g.dx)*111320*Math.cos(latc*R), my=Math.abs(g.dy)*111320, md=Math.sqrt(mx*mx+my*my);
-  for(var k=0;k<N;k++){ var v=g.data[k]; sea[k]=(v>=MINDEPTH)?1:0; dist[k]=sea[k]?1e9:0; }
+  for(var k=0;k<N;k++){ var v=g.data[k]; sea[k]=(v>=MINDEPTH)?1:0; }
+  /* v31z390: νησάκια και βράχια από το OSM (ακρίβεια ~5 m) σημειώνονται ως στεριά, ακόμα κι αν είναι μικρότερα από ένα κελί του πλέγματος βαθών */
+  if(rings&&rings.length){ var ci=function(lon){ return Math.floor((lon-g.x0)/g.dx); }, cj=function(lat){ return Math.floor((lat-g.y0)/g.dy); };
+    rings.forEach(function(rg){ var b=rg.b; if((b[2]-b[0])>0.03||(b[3]-b[1])>0.03) return; /* μόνο μικρά νησιά· η μεγάλη στεριά υπάρχει ήδη στο πλέγμα βαθών */
+      var xy=rg.xy, m=xy.length>>1;
+      for(var q=0;q<m;q++){ var i0=ci(xy[2*q]), j0=cj(xy[2*q+1]); if(i0>=0&&j0>=0&&i0<w&&j0<h) sea[j0*w+i0]=0; }
+      var ia=Math.max(0,Math.min(ci(b[0]),ci(b[2]))), ib=Math.min(w-1,Math.max(ci(b[0]),ci(b[2]))), ja=Math.max(0,Math.min(cj(b[1]),cj(b[3]))), jb=Math.min(h-1,Math.max(cj(b[1]),cj(b[3])));
+      for(var jj=ja;jj<=jb;jj++) for(var ii=ia;ii<=ib;ii++){ var px=g.x0+g.dx*(ii+.5), py=g.y0+g.dy*(jj+.5), inn=false;
+        for(var a2=0,b2=m-1;a2<m;b2=a2++){ var xa=xy[2*a2],ya=xy[2*a2+1],xb=xy[2*b2],yb=xy[2*b2+1]; if(((ya>py)!==(yb>py))&&(px<(xb-xa)*(py-ya)/(yb-ya)+xa)) inn=!inn; }
+        if(inn) sea[jj*w+ii]=0; } }); }
+  for(k=0;k<N;k++) dist[k]=sea[k]?1e9:0;
   for(var j=0;j<h;j++) for(var i=0;i<w;i++){ var k2=j*w+i; if(!sea[k2]) continue; var d=dist[k2];
     if(i>0&&dist[k2-1]+mx<d) d=dist[k2-1]+mx; if(j>0){ if(dist[k2-w]+my<d) d=dist[k2-w]+my; if(i>0&&dist[k2-w-1]+md<d) d=dist[k2-w-1]+md; if(i<w-1&&dist[k2-w+1]+md<d) d=dist[k2-w+1]+md; } dist[k2]=d; }
   for(j=h-1;j>=0;j--) for(i=w-1;i>=0;i--){ k2=j*w+i; if(!sea[k2]) continue; d=dist[k2];
@@ -33,8 +44,12 @@ function inside(P,i,j){ return i>=0&&j>=0&&i<P.w&&j<P.h; }
 /* μια διαδρομή: from,to = {lat,lon}; clr σε μέτρα. Επιστρέφει {straight:true} | {pts:[[lat,lon],…],len(m)} | {err} */
 function plan(from,to,clr,mul){
   clr=Math.max(0,+clr||0); mul=mul||1;
-  return getGrid(bboxFor(from,to,mul)).then(function(g){
-    var P=prep(g), minClr=Math.max(clr,Math.min(P.mx,P.my)*1.2);
+  var bb0=bboxFor(from,to,mul);
+  return getGrid(bb0).then(function(g){
+    var SS=window.PsaroSeaState; if(!SS||!SS.landRings) return [g,[]];
+    return SS.landRings(bb0).then(function(rs){ return [g,rs]; },function(){ return [g,[]]; });
+  }).then(function(gr){ var g=gr[0];
+    var P=prep(g,gr[1]), minClr=Math.max(clr,Math.min(P.mx,P.my)*1.2);
     var free=Math.min(3000,Math.max(clr*3,800)), A=toIJ(P,from.lat,from.lon), B=toIJ(P,to.lat,to.lon);
     if(!inside(P,A[0],A[1])||!inside(P,B[0],B[1])) return {err:'outside'};
     function nearSea(c){ /* πλησιέστερο κελί θάλασσας μέσα σε ~2 km */
