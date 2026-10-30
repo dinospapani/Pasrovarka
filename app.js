@@ -915,6 +915,7 @@ function openSpotForm(p,sp){
   $('spotForm').hidden=false;
   PsaroCoord.set($('sLat'),$('sLon'),p&&p.lat!=null?p.lat:null,p&&p.lon!=null?p.lon:null);
   if(sp){ $('sName').value=sp.name||''; $('sType').value=sp.type||$('sType').value; $('sDepth').value=sp.depth==null?'':sp.depth; $('sNotes').value=sp.notes||''; }
+  if($('sPriv')) $('sPriv').checked=!!(sp&&sp.priv);
   $('sErr').textContent=''; drawMap();
   $('spotForm').scrollIntoView({behavior:'smooth',block:'center'});
   $('sName').focus({preventScroll:true});
@@ -937,7 +938,8 @@ $('spotForm').addEventListener('submit',async e=>{
   if(!cp){$('sErr').textContent='Γράψε έγκυρο πλάτος και μήκος, π.χ. N 35°03.602′ και E 32°23.856′, ή πάτα στον χάρτη.';return;}
   const depth=$('sDepth').value===''?null:+$('sDepth').value;
   try{
-    const id=await Store.save('spots',Object.assign({},editSpot||{},{name:$('sName').value.trim(),type:$('sType').value,lat:la,lon:lo,depth:depth,notes:$('sNotes').value.trim()}));
+    const spRec=Object.assign({},editSpot||{},{name:$('sName').value.trim(),type:$('sType').value,lat:la,lon:lo,depth:depth,notes:$('sNotes').value.trim()}); if($('sPriv')){ if($('sPriv').checked) spRec.priv=true; else delete spRec.priv; }
+    const id=await Store.save('spots',spRec);
     selSpot=id; closeSpotForm();
   }catch(err){$('sErr').textContent='Δεν αποθηκεύτηκε. Δοκίμασε ξανά.';}
 });
@@ -1404,6 +1406,7 @@ function openSheet(){
 }
 function closeSheet(keep){ $('sheet').hidden=true; $('bSug').hidden=true; if(editRec&&keep!==true) resetSheet(); }
 function resetSheet(){
+  if($('bPriv')) $('bPriv').checked=false;
   $('biteForm').reset(); photoBlob=null; photoBlobs=[]; phDirty=false; renderPrevs(); curLatin=''; pickedPt=null; sheetFresh=true; editRec=null; window.PsaroEditRec=null; pressTouched=false;
   $('bPrev').hidden=true; $('bPrevX').hidden=true; $('bAI').hidden=true; $('bAIOut').replaceChildren(); $('bAIMsg').textContent=''; $('bLaw').textContent=''; $('bErr').textContent=''; multiSync();
   try{ if(window.PsaroTackle) PsaroTackle.mount($('bTackle'),'last'); }catch(e){}
@@ -1524,6 +1527,7 @@ $('biteForm').addEventListener('submit',async e=>{
     const tsel=$('bTrip')?$('bTrip').value:'';
     if(editing){ if(tsel!==(editing.trip||'')){ if(tsel){ rec.trip=tsel; rec.n=nextN(tsel); } else { delete rec.trip; delete rec.n; } } }
     else if(tsel){ rec.trip=tsel; rec.n=nextN(tsel); }
+    if($('bPriv')){ if($('bPriv').checked) rec.priv=true; else delete rec.priv; } /* v31z401: ιδιωτικό, δεν το βλέπουν οι φίλοι */
     const id=await Store.save('bites',rec);
     try{ if(window.PsaroBiteWx) window.PsaroBiteWx.ensure(Object.assign({},rec,{id:id})); }catch(e){} /* v31z352: και τα χαμένα κρατούν πίεση/άνεμο ±30 λεπτά */
     try{ if(editing&&(editing.trip||'')!==(rec.trip||'')){ await recountTrip(editing.trip); await recountTrip(rec.trip); } else if(!editing&&tsel) await recountTrip(tsel); else if(editing&&rec.trip&&(!!editing.rel!==!!rec.rel||editing.kg!==rec.kg)) await recountTrip(rec.trip); }catch(e){}
@@ -1543,7 +1547,7 @@ function editBite(b){
   $('bBait').value=b.bait||''; $('bTech').value=b.tech||''; try{ if(window.PsaroTackle) PsaroTackle.mount($('bTackle'),b.tk||[],b.tkw||{},b.tkh||{},b.tks||{}); }catch(e){}
   for(const [id,k] of [['bDepth','depth'],['bKg','kg'],['bLen','len'],['bPress','press']]) $(id).value=b[k]==null?'':b[k];
   $('bWindM').value=(b.wman&&b.wind!=null)?String(Math.min(10,bft(b.wind))):''; $('bWdirM').value=(b.wman&&b.wdeg!=null)?String(Math.round((((b.wdeg%360)+360)%360)/45)%8):'';
-  $('bNotes').value=b.notes||''; $('bRel').checked=!!b.rel; $('bMulti').checked=bc(b)>1; $('bCnt').value=bc(b)>1?bc(b):''; multiSync();
+  $('bNotes').value=b.notes||''; $('bRel').checked=!!b.rel; if($('bPriv')) $('bPriv').checked=!!b.priv; $('bMulti').checked=bc(b)>1; $('bCnt').value=bc(b)>1?bc(b):''; multiSync();
   $('bLocMode').value=(typeof b.lat==='number')?'keep':'none';
   fillTripSel(b.trip||'');
   renderChips(); syncLoc(); updateLaw(); $('sheet').hidden=false;

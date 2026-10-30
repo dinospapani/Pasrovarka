@@ -328,6 +328,7 @@
         <label class="f">Γεωγραφικό μήκος<input type="text" id="sLon" class="coordin" placeholder="E 032°23.856′"></label>
         <label class="f">Βάθος (m)<input type="number" id="sDepth" min="0" max="2000" step="1" inputmode="numeric"></label>
         <label class="f">Σημειώσεις<textarea id="sNotes" maxlength="400" placeholder="Δόλωμα, ρεύμα, ώρα που δούλεψε"></textarea></label>
+        <label class="chk" style="display:flex;align-items:center;gap:10px;margin:6px 0;font-weight:600"><input type="checkbox" id="sPriv" style="width:22px;height:22px"><span>Ιδιωτικό: δεν το βλέπουν οι φίλοι</span></label>
       </div>
       <div class="err" id="sErr" role="alert"></div>
       <div class="row" style="margin-top:10px">
@@ -472,6 +473,7 @@
       <label class="chk" style="display:flex;align-items:center;gap:10px;margin-top:8px;font-weight:600"><input type="checkbox" id="bMulti" style="width:22px;height:22px"><span>Πολλά ψάρια μαζί (μία εγγραφή)</span></label>
       <div id="bMultiBox" hidden><label class="f">Πλήθος ψαριών<input type="number" id="bCnt" min="2" max="9999" step="1" inputmode="numeric" placeholder="π.χ. 30"></label><div class="note">Γράψε πόσα έπιασες και τα συνολικά κιλά τους. Μετράνε ως ψάρια στα στατιστικά.</div></div>
       <label class="chk" style="display:flex;align-items:center;gap:10px;margin-top:8px;font-weight:600"><input type="checkbox" id="bRel" style="width:22px;height:22px"><span>Catch &amp; release: το άφησα ελεύθερο</span></label>
+      <label class="chk" style="display:flex;align-items:center;gap:10px;margin-top:8px;font-weight:600"><input type="checkbox" id="bPriv" style="width:22px;height:22px"><span>Ιδιωτικό: δεν το βλέπουν οι φίλοι</span></label>
       <div class="note" id="bLaw"></div>
     </section>
     <section class="fsec">
@@ -525,7 +527,7 @@
 
 <script>
 /* Οι υπόλοιπες δέσμες φορτώνουν μετά την πρώτη εικόνα, ώστε η οθόνη επιλογής να φαίνεται αμέσως. Η σειρά εκτέλεσης είναι ίδια με πριν. */
-(function(){var L=["leaflet.js", "species.js", "cy100.js", "regions.js", "rules.js", "i18n.js", "forecast.js", "personal.js", "push-config.js", "zones.js", "units.js", "version.js", "coords.js", "hist.js", "bitewx.js", "dialog.js", "range.js", "app.js", "cloud.js", "inbox.js", "extras.js", "forecast-tab.js", "coastgrid.js", "exposure.js", "todayloc.js", "mine-tab.js", "knowledge.js", "ext.js", "advisor.js", "diag.js", "track.js", "mapwx.js", "tripui.js", "profile-view.js", "tackle-lib.js", "tackle-guide.js", "tackle.js", "knots.js", "orient.js", "navigator.js", "bathy-lines.js", "route.js", "direct.js", "sea.js", "cards.js", "dams.js", "ports.js", "smart.js", "insights.js", "speciespick.js", "community.js", "gearstats.js", "techs.js", "gear.js", "tools.js", "redesign.js", "fc2.js", "divelog.js", "ruler.js", "windwatch.js", "windmap.js", "windlocal.js", "seastate.js", "tripform.js", "plotterscan.js", "boat.js"],ran=false;
+(function(){var L=["leaflet.js", "species.js", "cy100.js", "regions.js", "rules.js", "i18n.js", "forecast.js", "personal.js", "push-config.js", "zones.js", "units.js", "version.js", "coords.js", "hist.js", "bitewx.js", "dialog.js", "range.js", "app.js", "cloud.js", "inbox.js", "extras.js", "forecast-tab.js", "coastgrid.js", "exposure.js", "todayloc.js", "mine-tab.js", "knowledge.js", "ext.js", "advisor.js", "diag.js", "track.js", "mapwx.js", "tripui.js", "profile-view.js", "tackle-lib.js", "tackle-guide.js", "tackle.js", "knots.js", "orient.js", "navigator.js", "bathy-lines.js", "route.js", "direct.js", "sea.js", "cards.js", "dams.js", "ports.js", "smart.js", "insights.js", "speciespick.js", "community.js", "gearstats.js", "techs.js", "gear.js", "tools.js", "redesign.js", "fc2.js", "friends.js", "divelog.js", "ruler.js", "windwatch.js", "windmap.js", "windlocal.js", "seastate.js", "tripform.js", "plotterscan.js", "boat.js"],ran=false;
 function go(){if(ran)return;ran=true;for(var i=0;i<L.length;i++){var s=document.createElement('script');s.src=L[i];s.async=false;document.body.appendChild(s);}}
 try{requestAnimationFrame(function(){setTimeout(go,0);});}catch(e){}
 setTimeout(go,400);})();

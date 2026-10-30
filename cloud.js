@@ -71,7 +71,9 @@ async function sync(manual){
   busy=true; status('Συγχρονισμός…');
   try{
     // 1) λήψη
-    var r=await rest('records?select=kind,id,data,deleted,updated_at&order=updated_at.asc&limit=10000');
+    /* v31z401: μόνο τα δικά μου (με τους φίλους η βάση επιτρέπει να διαβάζω και δικά τους). Αν λείπει η στήλη user_id, χωρίς φίλτρο όπως πριν. */
+    var r; try{ r=await rest('records?select=kind,id,data,deleted,updated_at&user_id=eq.'+encodeURIComponent(sess.uid)+'&order=updated_at.asc&limit=10000'); }
+    catch(eu){ if(/HTTP 400|42703|PGRST/.test(String(eu.message))&&!ls('psaro-fr-on')) r=await rest('records?select=kind,id,data,deleted,updated_at&order=updated_at.asc&limit=10000'); else throw eu; }
     var rows=await r.json(), remote={}, got=0, needPh=[];
     rows.forEach(function(x){ remote[x.kind+'/'+x.id]=x; var u=Date.parse(x.updated_at)||0; if(Store.mergeIn(x.kind,x.id,x.data||{},x.deleted,(x.data&&x.data._u)||u)){ got++; if(!x.deleted&&x.data&&x.data.photo){ if(x.kind==='bites'){ needPh.push(x.id); for(var xi=1;xi<=(+x.data.xph||0);xi++) needPh.push(x.id+'~'+xi); } else if(x.kind==='tackle') needPh.push('tk-'+x.id); } } });
     if(got) Store.flush();
