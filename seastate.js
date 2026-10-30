@@ -327,6 +327,7 @@ function showPoint(){
   main.push(T('ακτή ','shore ')+(r.distKm<1?Math.round(r.distKm*1000)+' m':fmt(r.distKm,1)+' km'));
   if(isFinite(r.depth)) main.push(T('βάθος ~','depth ~')+Math.round(r.depth)+' m'+(r.capped?T(' (περιορίζει)',' (limits waves)'):''));
   var det=[T('άνεμος ','wind ')+dn(r.wind.dir)+' '+W_(r.wind.sp)+(isFinite(r.dur)?T(' επί ',' for ')+(r.dur>=24?'24+':Math.round(r.dur))+' h':'')];
+  if(r.wind.obs&&r.wind.obs.near){ var ob=r.wind.obs.near; det.push(T('διόρθωση από σταθμό ','corrected by station ')+ob.name+' ('+Math.round(r.wind.obs.dist)+' km'+T(': μέτρηση ',': observed ')+W_(ob.obs)+T(', μοντέλο ',', model ')+W_(ob.mod)+T(', βάρος ',', weight ')+Math.round(100*r.wind.obs.w)+'%)'); }
   det.push(T('κύμα ανέμου ','wind sea ')+fmt(r.windSea,1)+' m'+(r.tWind>0?' / '+Math.round(r.tWind)+' s':'')+' (fetch '+(r.fetchKm<10?fmt(r.fetchKm,1):Math.round(r.fetchKm))+' km)');
   if(r.swell) det.push('swell '+fmt(r.swellEff,1)+' m'+(r.tSwell>0?' / '+Math.round(r.tSwell)+' s':'')+(r.swell.h>r.swellEff+0.05?T(' (ανοιχτά '+fmt(r.swell.h,1)+' m από '+dn(r.swell.dir)+')',' (offshore '+fmt(r.swell.h,1)+' m from '+dn(r.swell.dir)+')'):T(' από ',' from ')+dn(r.swell.dir)));
   if(r.model.length) det.push(T('μοντέλα κύματος ','wave models ')+r.model.map(function(m){ return fmt(m.h,1); }).join('/')+' m'+T(' (βάρος ',' (weight ')+Math.round(100*r.wModel)+'%)');

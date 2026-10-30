@@ -147,7 +147,30 @@ function bil(A,lat,lon){
 }
 function vec(u,v){ var sp=Math.sqrt(u*u+v*v); return isFinite(sp)?{u:u,v:v,sp:sp,dir:(Math.atan2(-u,-v)*180/Math.PI+360)%360}:null; }
 function sampleSrc(src,h,lat,lon){ if(!grid) return null; var u=bil(src.u[h],lat,lon), v=bil(src.v[h],lat,lon); if(u==null||v==null) return null; return vec(u,v); }
-function sample(lat,lon,h){ if(!grid) return null; var src=SEL===0||!grid.m[SEL-1]?grid.mean:grid.m[SEL-1]; return sampleSrc(src,h==null?hi:h,lat,lon); }
+/* v31z385 · Διόρθωση από σταθμούς: κοντά σε σταθμό που μετρά τώρα, ο άνεμος του μοντέλου μετακινείται προς τη μέτρηση.
+   Η μέτρηση περιέχει ό,τι κάνουν τα βουνά γύρω από τον σταθμό (επιτάχυνση, σκιά), που το μοντέλο των 7–9 km δεν βλέπει.
+   Βάρος: γκαουσιανό με απόσταση (σ = 8 km, έως 20 km) και με τον χρόνο (πλήρες τώρα, μηδέν σε ±3 ώρες). Μόνο μετρήσεις έως 90′. */
+var OBS_S=8, OBS_MAX=20, OBS_H=3, obsCache=null;
+function obsList(){
+  if(!stations||!stations.length||!grid) return [];
+  if(obsCache&&obsCache.st===stations&&obsCache.g===grid&&obsCache.n===nowIdx) return obsCache.l;
+  var now=Date.now(), l=[];
+  dedupe(stations.filter(function(x){ return now-Date.parse(x.t||0)<90*60000; })).forEach(function(st){
+    var m=sampleSrc(grid.mean,nowIdx,st.lat,st.lon); if(!m) return;
+    var ou,ov; if(st.dir!=null&&st.spd>=1){ var r=st.dir*Math.PI/180; ou=-st.spd*Math.sin(r); ov=-st.spd*Math.cos(r); } else { var k=m.sp>0.1?st.spd/m.sp:0; ou=m.u*k; ov=m.v*k; }
+    l.push({lat:st.lat,lon:st.lon,du:ou-m.u,dv:ov-m.v,name:st.name||st.id||'',obs:st.spd,mod:m.sp});
+  });
+  obsCache={st:stations,g:grid,n:nowIdx,l:l}; return l;
+}
+function obsAdj(lat,lon,h){
+  var l=obsList(); if(!l.length) return null; var dt=Math.abs((h==null?hi:h)-nowIdx); if(dt>=OBS_H) return null;
+  var tw=1-dt/OBS_H, su=0, sv=0, sw=0, near=null, nd=1e9;
+  l.forEach(function(o){ var dx=(o.lon-lon)*Math.cos(lat*Math.PI/180)*111.2, dy=(o.lat-lat)*111.2, d=Math.sqrt(dx*dx+dy*dy); if(d>OBS_MAX) return; var w=Math.exp(-(d*d)/(2*OBS_S*OBS_S)); su+=w*o.du; sv+=w*o.dv; sw+=w; if(d<nd){ nd=d; near=o; } });
+  if(!sw) return null; var f=Math.min(1,sw)*tw/sw;
+  return {du:su*f,dv:sv*f,w:Math.min(1,sw)*tw,near:near,dist:nd};
+}
+function sample(lat,lon,h){ if(!grid) return null; var src=SEL===0||!grid.m[SEL-1]?grid.mean:grid.m[SEL-1]; var v=sampleSrc(src,h==null?hi:h,lat,lon); if(!v) return null;
+  var a=obsAdj(lat,lon,h); if(!a||a.w<0.02) return v; var r=vec(v.u+a.du,v.v+a.dv); if(!r) return v; r.obs=a; r.model=v; return r; }
 function adiff(a,b){ var d=Math.abs(a-b)%360; return d>180?360-d:d; }
 function agree(lat,lon){
   if(!grid||grid.m.length<2) return null;
@@ -298,5 +321,5 @@ stBtn.addEventListener('click',function(){ stSet(!stOn); if(stOn) try{ C.toast(T
 map.on('moveend',function(){ if(stOn) drawStations(); });
 setTimeout(function(){ var v=null; try{ v=localStorage.getItem('psaro-wst'); }catch(e){} stSet(v==='1'); },1500);
 function sampleAll(lat,lon){ if(!grid) return []; var o=[]; grid.m.forEach(function(m){ var v=sampleSrc(m,hi,lat,lon); if(v) o.push({name:m.name,v:v}); }); return o; }
-window.PsaroWindMap={start:start,stop:stop,show:show,shown:function(){ return on&&shown; },on:function(){ return on; },sample:sample,sampleAll:sampleAll,modelFetch:modelFetch,diffTxt:diffTxt};
+window.PsaroWindMap={start:start,stop:stop,show:show,shown:function(){ return on&&shown; },on:function(){ return on; },sample:sample,sampleAll:sampleAll,obs:function(lat,lon){ return obsAdj(lat,lon,hi); },modelFetch:modelFetch,diffTxt:diffTxt};
 })();
