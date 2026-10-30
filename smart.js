@@ -183,22 +183,34 @@ C.Store.on('bites',lastYear); lastYear();
 var AN_DAYS=7;
 function annivOn(){ return C.lsGet('psaro-anniv',true)!==false; }
 function annivList(){
-  var td=C.nicosiaToday(), y0=+td.slice(0,4), t0=Date.UTC(y0,+td.slice(5,7)-1,+td.slice(8,10)), G={};
+  /* v31z395: εβδομαδιαία σύνοψη. Κάθε παλιά ψαριά πέφτει στην εβδομάδα (Δευ–Κυρ) της ίδιας ημερομηνίας φέτος.
+     Μία ειδοποίηση 7 μέρες πριν τη Δευτέρα της εβδομάδας, με σύνολο ανά χρονιά και τις μέρες (με ημέρα εβδομάδας). */
+  var DN=EN?['Sun','Mon','Tue','Wed','Thu','Fri','Sat']:['Κυρ','Δευ','Τρι','Τετ','Πέμ','Παρ','Σάβ'];
+  var td=C.nicosiaToday(), y0=+td.slice(0,4), t0=Date.UTC(y0,+td.slice(5,7)-1,+td.slice(8,10)), W={};
+  var thisMon=t0-((new Date(t0).getUTCDay()+6)%7)*86400000;
   (C.Store.get('bites')||[]).forEach(function(b){
     if(!b||!b.date) return; var y=+b.date.slice(0,4), mo=+b.date.slice(5,7), d=+b.date.slice(8,10); if(!y||y>y0) return;
-    var a=Date.UTC(y0,mo-1,d); if(a<t0) a=Date.UTC(y0+1,mo-1,d); if(new Date(a).getUTCFullYear()<=y) return; var dd=Math.round((a-t0)/86400000); if(dd>60) return;
-    var k=b.date.slice(0,10), g=G[k]||(G[k]={date:k,ann:new Date(a).toISOString().slice(0,10),n:0,kg:0,sp:{},pl:{}});
-    g.n++; g.kg+=+b.kg||0; if(b.species) g.sp[b.species]=(g.sp[b.species]||0)+1; var pn=b.place||''; if(pn) g.pl[pn]=(g.pl[pn]||0)+1;
+    var a=Date.UTC(y0,mo-1,d); if(a<thisMon) a=Date.UTC(y0+1,mo-1,d); if(new Date(a).getUTCFullYear()<=y) return;
+    var mon=a-((new Date(a).getUTCDay()+6)%7)*86400000; if(mon-t0>60*86400000) return;
+    var wk=W[mon]||(W[mon]={mon:mon,Y:{}}), o=wk.Y[y]||(wk.Y[y]={n:0,kg:0,D:{}}), dk=b.date.slice(0,10), dd=o.D[dk]||(o.D[dk]={n:0,sp:{},pl:{}});
+    o.n++; o.kg+=+b.kg||0; dd.n++; if(b.species) dd.sp[b.species]=(dd.sp[b.species]||0)+1; if(b.place) dd.pl[b.place]=1;
   });
-  return Object.keys(G).sort().map(function(k){
-    var g=G[k], ag=+g.ann.slice(0,4)-+k.slice(0,4);
-    var sp=Object.keys(g.sp).sort(function(a,b){ return g.sp[b]-g.sp[a]; }).slice(0,3).map(function(x){ return x+(g.sp[x]>1?' ×'+g.sp[x]:''); }).join(', ');
-    var pl=Object.keys(g.pl).sort(function(a,b){ return g.pl[b]-g.pl[a]; })[0]||'';
-    var dm=(+k.slice(8,10))+'/'+(+k.slice(5,7))+'/'+k.slice(0,4);
-    var due=new Date(Date.parse(g.ann+'T00:00:00Z')-AN_DAYS*86400000).toISOString().slice(0,10);
-    var title=ag===1?T('πέρσι τέτοια μέρα','a year ago that day'):T('πριν από '+ag+' χρόνια','that day '+ag+' years ago');
-    var body=T('Στις ','On ')+dm+T(' έπιασες ',' you caught ')+g.n+(g.n===1?T(' ψάρι',' fish'):T(' ψάρια',' fish'))+(g.kg?' ('+(Math.round(g.kg*10)/10)+' kg)':'')+(sp?': '+sp:'')+(pl?T(' στο ',' at ')+pl:'')+'.';
-    return {id:'anniv-'+k+'-'+g.ann.slice(0,4),due:due,ann:g.ann,title:title,body:body};
+  function dm(t){ var x=new Date(t); return x.getUTCDate()+'/'+(x.getUTCMonth()+1); }
+  return Object.keys(W).sort().map(function(k){
+    var wk=W[k], sun=wk.mon+6*86400000, lines=[];
+    Object.keys(wk.Y).sort(function(a,b){ return b-a; }).forEach(function(y){
+      var o=wk.Y[y], days=Object.keys(o.D).sort().map(function(dk){
+        var dd=o.D[dk], t=Date.UTC(+dk.slice(0,4),+dk.slice(5,7)-1,+dk.slice(8,10));
+        var sp=Object.keys(dd.sp).sort(function(a,b){ return dd.sp[b]-dd.sp[a]; }).slice(0,3).map(function(x){ return x+(dd.sp[x]>1?' ×'+dd.sp[x]:''); }).join(', ');
+        var pl=Object.keys(dd.pl)[0]||'';
+        return DN[new Date(t).getUTCDay()]+' '+dm(t)+': '+(sp||dd.n+(dd.n===1?T(' ψάρι',' fish'):T(' ψάρια',' fish')))+(pl?' ('+pl+')':'');
+      });
+      lines.push(y+' · '+o.n+(o.n===1?T(' ψάρι',' fish'):T(' ψάρια',' fish'))+(o.kg?', '+(Math.round(o.kg*10)/10)+' kg':'')+'\n  '+days.join('\n  '));
+    });
+    var iso=function(t){ return new Date(t).toISOString().slice(0,10); };
+    return {id:'annivw-'+iso(wk.mon),due:iso(wk.mon-AN_DAYS*86400000),ann:iso(wk.mon),end:iso(sun),
+      title:T('η εβδομάδα ','the week of ')+DN[1]+' '+dm(wk.mon)+' – '+DN[0]+' '+dm(sun)+T(' τα προηγούμενα χρόνια',' in past years'),
+      body:lines.join('\n')};
   });
 }
 async function annivSync(){
