@@ -1,7 +1,7 @@
 // Network first for the app's own files so updates arrive at once; cache is the offline fallback.
 // Weather APIs and fonts are cross-origin and always go straight to the network.
 importScripts('forecast.js');
-const V = 'psarovarka-v31z395';
+const V = 'psarovarka-v31z396';
 const CFG = 'psaro-cfg';
 const SHELL = ['./', 'apple-touch-icon.png', 'push-config.js', 'index.html','startpick.js','divelog.js','ruler.js','windwatch.js','windmap.js','windlocal.js','seastate.js','tripform.js','plotterscan.js','boat.js','cx_index.json','inbox.js', 'style.css', 'app.js', 'species.js', 'cy100.js','cy100-en.js','i18n.js','cloud.js','extras.js','ext.js','track.js','mapwx.js','tripui.js','dialog.js','units.js','version.js','range.js','gearstats.js', 'coords.js','techs.js','tackle.js','knots.js','orient.js','todayloc.js','tackle-lib.js','tackle-guide.js','gear.js','hist.js','bitewx.js','profile-view.js','navigator.js','navigator-mpa.json','bathy-lines.js','direct.js','sea.js','cards.js','tools.js','ports.js','route.js','redesign.js','redesign.css','fc2.js','fc2.css','dams.js','dams_levels.json','smart.js','insights.js','speciespick.js','regions.js','community.js','forecast-tab.js','coastgrid.js','exposure.js','fish-photos.js', 'rules.js', 'zones.js', 'forecast.js', 'personal.js', 'mine-tab.js','knowledge.js','advisor.js', 'diag.js', 'leaflet.js', 'leaflet.css', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 const cfgUrl = () => new URL('__cfg', self.registration.scope).href;
@@ -44,7 +44,7 @@ async function inboxAdd(it) {
 }
 async function showMsg(m, src) {
   const id = m.id || ('n' + Date.now() + Math.random().toString(36).slice(2, 6));
-  const it = { id, at: m.at || new Date().toISOString(), kind: m.kind || 'info', title: m.title || 'BiteCast', body: m.body || '', full: m.full || m.body || '', place: m.place || null, t: m.t || null, src: src || 'push' };
+  const it = { id, at: m.at || new Date().toISOString(), kind: m.kind || 'info', title: m.title || 'BiteCast', body: m.body || '', full: m.full || m.body || '', place: m.place || null, t: m.t || null, locs: m.locs || null, src: src || 'push' };
   await inboxAdd(it);
   await self.registration.showNotification(it.title, { body: it.body, tag: m.tag || ('bc-' + id), renotify: true, icon: 'icon-192.png', badge: 'icon-192.png', data: { url: self.registration.scope + '#inbox=' + encodeURIComponent(id) } });
 }
@@ -76,7 +76,7 @@ async function annivCheck() {
       const title = when + ': ' + its.map(i => i.title).join(en ? ' and ' : ' και ');
       const body = its.map(i => i.body).join('\n');
       its.forEach(i => { seen[i.id] = today; }); ch = true;
-      try { await showMsg({ id: 'anniv-' + ann, title, body, full: body, kind: 'info', tag: 'anniv-' + ann }, 'local'); } catch (x) {}
+      try { await showMsg({ id: 'anniv-' + ann, title, body, full: body, kind: 'info', tag: 'anniv-' + ann, locs: [].concat(...its.map(i => i.locs || [])).slice(0, 6) }, 'local'); } catch (x) {}
     }
     if (ch) { Object.keys(seen).forEach(k => { if (Date.parse(seen[k]) < Date.now() - 400 * 86400000) delete seen[k]; }); await c.put(su, new Response(JSON.stringify(seen))); }
   } catch (e) {}

@@ -194,6 +194,10 @@ function annivList(){
     var mon=a-((new Date(a).getUTCDay()+6)%7)*86400000; if(mon-t0>60*86400000) return;
     var wk=W[mon]||(W[mon]={mon:mon,Y:{}}), o=wk.Y[y]||(wk.Y[y]={n:0,kg:0,D:{}}), dk=b.date.slice(0,10), dd=o.D[dk]||(o.D[dk]={n:0,sp:{},pl:{}});
     o.n++; o.kg+=+b.kg||0; dd.n++; if(b.species) dd.sp[b.species]=(dd.sp[b.species]||0)+1; if(b.place) dd.pl[b.place]=1;
+    if(typeof b.lat==='number'&&typeof b.lon==='number'){ /* σημεία για «Δες στον χάρτη» (ομαδοποίηση ~500 m) */
+      var L0=wk.L||(wk.L=[]), q=null; for(var i=0;i<L0.length;i++){ var dy=(L0[i].lat-b.lat)*111, dx=(L0[i].lon-b.lon)*111*Math.cos(b.lat*Math.PI/180); if(dx*dx+dy*dy<0.25){ q=L0[i]; break; } }
+      if(!q){ q={lat:+b.lat.toFixed(5),lon:+b.lon.toFixed(5),name:b.place||'',n:0,d:{}}; L0.push(q); } q.n++; if(!q.name&&b.place) q.name=b.place; q.d[dk]=1;
+    }
   });
   function dm(t){ var x=new Date(t); return x.getUTCDate()+'/'+(x.getUTCMonth()+1); }
   return Object.keys(W).sort().map(function(k){
@@ -208,7 +212,11 @@ function annivList(){
       lines.push(y+' · '+o.n+(o.n===1?T(' ψάρι',' fish'):T(' ψάρια',' fish'))+(o.kg?', '+(Math.round(o.kg*10)/10)+' kg':'')+'\n  '+days.join('\n  '));
     });
     var iso=function(t){ return new Date(t).toISOString().slice(0,10); };
-    return {id:'annivw-'+iso(wk.mon),due:iso(wk.mon-AN_DAYS*86400000),ann:iso(wk.mon),end:iso(sun),
+    var locs=(wk.L||[]).sort(function(a,b){ return b.n-a.n; }).slice(0,6).map(function(q){
+      var ds=Object.keys(q.d).sort().reverse().slice(0,2).map(function(dk){ var t=Date.UTC(+dk.slice(0,4),+dk.slice(5,7)-1,+dk.slice(8,10)); return DN[new Date(t).getUTCDay()]+' '+dm(t)+'/'+dk.slice(2,4); }).join(', ');
+      return {lat:q.lat,lon:q.lon,name:q.name,label:(q.name||T('Σημείο','Spot'))+' · '+ds+' · '+q.n+(q.n===1?T(' ψάρι',' fish'):T(' ψάρια',' fish'))};
+    });
+    return {locs:locs,id:'annivw-'+iso(wk.mon),due:iso(wk.mon-AN_DAYS*86400000),ann:iso(wk.mon),end:iso(sun),
       title:T('η εβδομάδα ','the week of ')+DN[1]+' '+dm(wk.mon)+' – '+DN[0]+' '+dm(sun)+T(' τα προηγούμενα χρόνια',' in past years'),
       body:lines.join('\n')};
   });
