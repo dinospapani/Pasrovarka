@@ -1,3 +1,8 @@
+/* v31z373 · Κοινός «χρονιστής»: σταματά όταν η εφαρμογή δεν φαίνεται (οθόνη κλειστή ή άλλη εφαρμογή) για λιγότερη μπαταρία.
+   Και κοινή μνήμη για τις περιόδους σελήνης, ώστε να μην υπολογίζονται ξανά κάθε δευτερόλεπτο. */
+window.ndEvery=function(fn,ms){ return setInterval(function(){ if(document.hidden) return; try{ fn(); }catch(e){} },ms); };
+window.ndSol=(function(){ var cache={}; return function(t0,t1,lat,lon){ var k=Math.round(t0/600000)+'|'+Math.round(t1/600000)+'|'+(+lat).toFixed(2)+'|'+(+lon).toFixed(2); if(cache[k]) return cache[k];
+  var r=[]; try{ r=window.PF&&window.PF.solunarPeriods?window.PF.solunarPeriods(t0,t1,lat,lon):[]; }catch(e){} var ks=Object.keys(cache); if(ks.length>40) cache={}; cache[k]=r; return r; }; })();
 /* Νέα εμφάνιση: τα κουμπιά του χάρτη μαζεύονται σε 4 κουμπιά (Στρώματα, Ενέργειες, Ασφάλεια, Θέση μου) με φύλλα.
    Δεν αλλάζει λογική: μετακινεί τα ίδια τα υπάρχοντα κουμπιά, με τους ίδιους χειριστές.
    Διακόπτης: Προφίλ → Ρυθμίσεις → Εμφάνιση (κλειδί psaro-ui: new ή old). */
@@ -688,7 +693,7 @@ box.insertBefore(tools,bar.nextSibling);
     var now=Date.now(); if(now-mC.t<60000) return mC.v; mC.t=now; mC.v='';
     try{ var PF=window.PF; if(!PF||!PF.solunarPeriods) return ''; var N=window.PsaroNav, c=window.PsaroCore.getCond&&window.PsaroCore.getCond();
       var lat=N&&N.lat!=null?+N.lat:(c&&c.lat!=null?+c.lat:35), lon=N&&N.lon!=null?+N.lon:(c&&c.lon!=null?+c.lon:33);
-      var per=PF.solunarPeriods(now-3*3600000,now+18*3600000,lat,lon).filter(function(p){ return p.e>now; }).sort(function(a,b){ return a.s-b.s; })[0];
+      var per=window.ndSol(Math.floor(now/3600000)*3600000-3*3600000,Math.floor(now/3600000)*3600000+18*3600000,lat,lon).filter(function(p){ return p.e>now; }).sort(function(a,b){ return a.s-b.s; })[0];
       if(per){ var k=per.kind==='major'?T('κύρια','major'):T('δευτ.','minor'); mC.v='🌙 '+(per.s<=now?T('τώρα ','now ')+k:hm(per.s)+' '+k); } }catch(e){}
     return mC.v;
   }
@@ -1024,7 +1029,7 @@ box.insertBefore(tools,bar.nextSibling);
     d.innerHTML=h; f.insertBefore(d,b);
   }
   /* Χρονόμετρο κατάδυσης (ψαροτούφεκο) */
-  var tm={on:false,t0:0,lastDive:0,lastSurf:0,s0:0,iv:null,lim:90};
+  var tm={on:false,t0:0,lastDive:0,lastSurf:0,s0:0,iv:null,lim:90}; window.PsaroDive=tm;
   function fmt(s){s=Math.max(0,Math.round(s));return Math.floor(s/60)+':'+('0'+(s%60)).slice(-2);}
   function timer(){
     var a=document.getElementById('safeActive'); if(!a) return;
@@ -1137,6 +1142,7 @@ box.insertBefore(tools,bar.nextSibling);
   /* ετικέτες κάτω από τα κουμπιά ψαριού, ανάλογα με τον τύπο ψαρέματος */
   function cap(id,t){ var b=$(id); if(!b) return; var c=b.querySelector('.fbcap'); if(!c){ c=document.createElement('span'); c.className='fbcap'; b.appendChild(c); } if(c.textContent!==t) c.textContent=t; }
   function upd(){
+    if(!document.body.classList.contains('ontrip')) return;
     var sp=prof()==='spear';
     if(sp) seenBtn();
     var sb=$('fbSeen'); if(sb){ sb.hidden=!sp; var n=$('fbSeenN'); if(n) n.textContent=seenN(); }
@@ -1152,7 +1158,7 @@ box.insertBefore(tools,bar.nextSibling);
     place();
   }
   var n=0, iv=setInterval(function(){ n++; if(danger()||n>60){ clearInterval(iv); upd(); } },500);
-  setInterval(upd,1000); window.addEventListener('resize',place); window.addEventListener('psaro-fprof',upd);
+  window.ndEvery(upd,1000); window.addEventListener('resize',place); window.addEventListener('psaro-fprof',upd);
 })();
 
 /* v31z369 · Πρόγνωση πιο καθαρή: ένας βαθμός, «Καλύτερη ώρα σήμερα» από τους ωριαίους βαθμούς, ένα γράφημα,
@@ -1190,7 +1196,7 @@ box.insertBefore(tools,bar.nextSibling);
     el.querySelector('span').textContent=T('Καλύτερη ώρα σήμερα','Best time today');
     var why='';
     try{ var PF=window.PF, c=window.PsaroCore.getCond&&window.PsaroCore.getCond(); if(PF&&PF.solunarPeriods){ var t0=new Date(); t0.setHours(best.h,0,0,0); var s0=t0.getTime(), s1=s0+7200000;
-      var per=PF.solunarPeriods(s0-86400000,s1+86400000,c&&c.lat!=null?+c.lat:35,c&&c.lon!=null?+c.lon:33).filter(function(p){ return p.s<s1&&p.e>s0; });
+      var per=window.ndSol(s0-86400000,s1+86400000,c&&c.lat!=null?+c.lat:35,c&&c.lon!=null?+c.lon:33).filter(function(p){ return p.s<s1&&p.e>s0; });
       if(per.length) why=per.some(function(p){ return p.kind==='major'; })?T('★ κύρια περίοδος σελήνης','★ major moon period'):T('δευτερεύουσα περίοδος σελήνης','minor moon period'); } }catch(e){}
     el.querySelector('b').textContent=p2(best.h)+':00–'+p2((best.h+2)%24)+':00 · '+Math.round(best.a);
     el.querySelector('small').textContent=why;
@@ -1228,7 +1234,7 @@ box.insertBefore(tools,bar.nextSibling);
     var nt=$('ntCard'); if(nt&&!nt.dataset.ndmoved){ var lk=$('ndNtLink'); if(!lk){ lk=document.createElement('button'); lk.type='button'; lk.id='ndNtLink'; lk.className='btn ghost sm ndntlink'; lk.textContent=T('🔔 Ειδοποιήσεις: Profile › Ειδοποιήσεις','🔔 Alerts: Profile › Alerts'); lk.addEventListener('click',function(){ if(window.PsaroProfGo) window.PsaroProfGo('alerts'); }); nt.parentNode.insertBefore(lk,nt); } }
   }
   function tick(){ try{ today(); }catch(e){} try{ fcTab(); }catch(e){} }
-  setInterval(tick,1200); document.addEventListener('click',function(){ setTimeout(tick,60); },true);
+  window.ndEvery(tick,1500); document.addEventListener('click',function(){ setTimeout(tick,60); },true);
 })();
 
 /* v31z369 · Profile ως απλή λίστα: Τα δικά μου / Ρυθμίσεις / Δεδομένα και λογαριασμός. Κάθε γραμμή ανοίγει την υπάρχουσα ενότητα. */
@@ -1376,7 +1382,7 @@ box.insertBefore(tools,bar.nextSibling);
   window.PsaroOpenStats=function(){ var pc=$('pClose'), p=$('profile'); if(p&&!p.hidden&&pc) pc.click(); try{ C.switchTab('log'); }catch(e){} setTimeout(function(){ var b=document.querySelector('#logSeg [data-l=stats]'); if(b) b.click(); try{ window.scrollTo(0,0); }catch(e){} },80); };
   function init(){ var L=$('tripList'); if(!L) return false; compact(); stats(); new MutationObserver(function(){ setTimeout(compact,0); }).observe(L,{childList:true}); return true; }
   var n=0, iv=setInterval(function(){ n++; if(init()||n>40) clearInterval(iv); },500);
-  setInterval(stats,2000);
+  window.ndEvery(stats,3000);
 })();
 
 /* v31z370 · Μία φορά: (α) οι τεχνικές που γράφτηκαν στα αγγλικά γίνονται ίδιες με τις ελληνικές, ώστε να μη φαίνονται διπλές στα στατιστικά·
@@ -1462,7 +1468,7 @@ box.insertBefore(tools,bar.nextSibling);
     strip.classList.add('ndbars');
     var chips=[].slice.call(strip.querySelectorAll('.ndhc')); if(!chips.length) return;
     var bt=$('ndBestT'), bw=bt&&bt.querySelector('b')?/^(\d\d):00/.exec(bt.querySelector('b').textContent):null, bh=bw?+bw[1]:-9;
-    var per=[]; try{ var c=C.getCond&&C.getCond(), d0=new Date(); d0.setHours(0,0,0,0); per=window.PF.solunarPeriods(d0.getTime(),d0.getTime()+86400000,c&&c.lat!=null?+c.lat:35,c&&c.lon!=null?+c.lon:33); }catch(e){}
+    var per=[]; try{ var c=C.getCond&&C.getCond(), d0=new Date(); d0.setHours(0,0,0,0); per=window.ndSol(d0.getTime(),d0.getTime()+86400000,c&&c.lat!=null?+c.lat:35,c&&c.lon!=null?+c.lon:33); }catch(e){}
     var d0m=new Date(); d0m.setHours(0,0,0,0);
     chips.forEach(function(ch){
       var v=+((ch.querySelector('i')||{}).textContent)||0, hr=+ch.dataset.h; ch.style.setProperty('--sc',v);
@@ -1522,9 +1528,9 @@ box.insertBefore(tools,bar.nextSibling);
     w.hidden=false;
     var c=C.getCond&&C.getCond()||{}, kn=function(v){ return v==null?null:v/1.852; };
     var wv=c.wave, wd=c.wind;
-    var vis=null; if(wv!=null||wd!=null){ var sc=(wv||0)*2+(wd||0)/15; vis=sc<0.8?T('Καλή','Good'):sc<1.6?T('Μέτρια','Fair'):T('Κακή','Poor'); }
+    var vis=null, hv=window.ndVis&&window.ndVis(); if(hv) vis=hv.lab; else if(wv!=null||wd!=null){ var sc=(wv||0)*2+(wd||0)/15; vis=sc<0.8?T('Καλή','Good'):sc<1.6?T('Μέτρια','Fair'):T('Κακή','Poor'); }
     var tiles=[[wv!=null?(PU&&PU.wave?PU.wave(wv):nf(wv,1)+' m'):'–',T('κύμα','waves')],[c.cur!=null?nf(kn(c.cur),1)+' kn':'–',T('ρεύμα','current')],[vis||'–',T('ορατότητα*','visibility*')]];
-    var sig=JSON.stringify(tiles); if(w.dataset.sig!==sig){ w.dataset.sig=sig; w.replaceChildren(); var g=E('div','ndspg'); tiles.forEach(function(t){ var d=E('div',''); d.append(E('b','',t[0]),E('span','',t[1])); g.appendChild(d); }); w.append(g,E('small','',T('* εκτίμηση από κύμα και άνεμο','* estimate from waves and wind'))); }
+    var sig=JSON.stringify(tiles); if(w.dataset.sig!==sig){ w.dataset.sig=sig; w.replaceChildren(); var g=E('div','ndspg'); tiles.forEach(function(t){ var d=E('div',''); d.append(E('b','',t[0]),E('span','',t[1])); g.appendChild(d); }); w.append(g,E('small','',hv?T('* εκτίμηση από κύμα και άνεμο των 2 τελευταίων ημερών','* estimate from waves and wind over the last 2 days'):T('* εκτίμηση από κύμα και άνεμο','* estimate from waves and wind'))); }
     var live=document.querySelector('.ndlive:not([hidden])'), r0=box.getBoundingClientRect();
     if(live){ var r=live.getBoundingClientRect(); w.style.top=Math.round(r.bottom-r0.top+8)+'px'; }
     var dg=$('ndDanger'); if(dg){ var wr=w.getBoundingClientRect(); if(wr.height) dg.style.top=Math.round(wr.bottom-r0.top+10)+'px'; }
@@ -1552,7 +1558,109 @@ box.insertBefore(tools,bar.nextSibling);
   }
 
   function tick(){ try{ insights(); }catch(e){} try{ hourBars(); }catch(e){} try{ days7(); }catch(e){} try{ logLook(); }catch(e){} try{ spearBar(); }catch(e){} try{ profHead(); }catch(e){} }
-  setInterval(tick,1000); document.addEventListener('click',function(){ setTimeout(tick,80); },true);
+  window.ndEvery(tick,1000); document.addEventListener('click',function(){ setTimeout(tick,80); },true);
   if(C&&C.Store&&C.Store.on){ ['trips','bites'].forEach(function(k){ try{ C.Store.on(k,function(){ insSig=''; }); }catch(e){} }); }
   window.addEventListener('psaro-range',function(){ insSig=''; setTimeout(tick,50); });
+})();
+
+/* ===================== v31z373 ===================== */
+(function(){
+  var EN=window.LANG==='en', T=function(el,en){ return EN?en:el; }, C=window.PsaroCore;
+  var $=function(i){ return document.getElementById(i); };
+  function ls(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+  function prof(){ return ls('psaro-fprof')||'boat'; }
+
+  /* ---------- «Είδα» στον χάρτη ---------- */
+  var KEY='psaro-showseen', grp=null, sig='';
+  function seen(){ try{ return (window.PsaroSeen&&window.PsaroSeen.all())||[]; }catch(e){ return []; } }
+  function vis(){ var v=C&&C.lsGet?C.lsGet(KEY,true):true; return v!==false; }
+  function draw(){
+    var map=C&&C.map&&C.map(), L=window.L; if(!map||!L) return;
+    var a=seen().filter(function(x){ return x.lat!=null&&x.lon!=null; }), s2=a.length+'|'+vis();
+    if(s2===sig) return; sig=s2;
+    if(grp){ grp.remove(); grp=null; }
+    if(!vis()||!a.length) return;
+    grp=L.layerGroup();
+    var ic=L.divIcon({className:'ndseenm',html:'<span>👁</span>',iconSize:[26,26],iconAnchor:[13,13]});
+    a.forEach(function(x){ var d=new Date(x.u); L.marker([x.lat,x.lon],{icon:ic,keyboard:false}).bindPopup(T('Είδα ψάρι','Fish seen')+' · '+d.toLocaleDateString(EN?'en-GB':'el-GR')+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)).addTo(grp); });
+    grp.addTo(map);
+  }
+  function toggle(){
+    var row=document.querySelector('.ndtogs'); if(!row||row.querySelector('[data-k="'+KEY+'"]')) return;
+    if(!seen().length&&prof()!=='spear') return;
+    var b=document.createElement('button'); b.type='button'; b.className='ndtog'; b.dataset.k=KEY; b.innerHTML='<i></i><span></span>'; b.lastChild.textContent=T('Είδα','Seen');
+    function sync(){ b.setAttribute('aria-pressed',String(vis())); } sync();
+    b.addEventListener('click',function(){ C.lsSet(KEY,!vis()); sync(); sig=''; draw(); }); row.appendChild(b);
+  }
+
+  /* ---------- Ορατότητα νερού από τον καιρό των 2 τελευταίων ημερών ---------- */
+  var VK='psaro-vis48', vbusy=false;
+  function vget(){ try{ return JSON.parse(ls(VK)||'null'); }catch(e){ return null; } }
+  window.ndVis=function(){
+    var c=C&&C.getCond&&C.getCond(); if(!c||c.lat==null) return null;
+    var v=vget(), key=(+c.lat).toFixed(2)+','+(+c.lon).toFixed(2);
+    if(v&&v.key===key&&Date.now()-v.t<3*3600000) return v;
+    if(!vbusy&&navigator.onLine!==false){ vbusy=true; fetchVis(+c.lat,+c.lon,key).then(function(){ vbusy=false; },function(){ vbusy=false; }); }
+    return v&&v.key===key&&Date.now()-v.t<24*3600000?v:null;
+  };
+  function avg(a){ a=a.filter(function(x){ return x!=null; }); return a.length?a.reduce(function(s,x){ return s+x; },0)/a.length:null; }
+  function fetchVis(lat,lon,key){
+    var q='latitude='+lat.toFixed(3)+'&longitude='+lon.toFixed(3)+'&past_days=2&forecast_days=1&timezone=auto';
+    return Promise.all([
+      fetch('https://marine-api.open-meteo.com/v1/marine?'+q+'&hourly=wave_height').then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }),
+      fetch('https://api.open-meteo.com/v1/forecast?'+q+'&hourly=wind_speed_10m').then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; })
+    ]).then(function(rr){
+      var now=Date.now(), w=rr[0]&&rr[0].hourly, f=rr[1]&&rr[1].hourly, off=((rr[0]||rr[1]||{}).utc_offset_seconds||0)*1000;
+      function past(h,k){ if(!h||!h.time) return []; return h.time.map(function(t,i){ var ms=Date.parse(t+'Z')-off; return (ms<=now&&ms>=now-48*3600000)?h[k][i]:null; }); }
+      var wv=past(w,'wave_height'), wn=past(f,'wind_speed_10m');
+      var wvp=wv.filter(function(x){ return x!=null; }), wAvg=avg(wvp), wMax24=wvp.length?Math.max.apply(null,wvp.slice(-24)):null, kmh=avg(wn);
+      if(wAvg==null&&kmh==null) return;
+      /* ενδεικτική κλίμακα (δική μου εκτίμηση, όχι μέτρηση): μέσο κύμα 48 ωρών, μέγιστο κύμα 24 ωρών και μέσος άνεμος */
+      var sc=(wAvg||0)*1.6+(wMax24||0)*0.8+(kmh||0)/30;
+      var lab=sc<0.9?T('Καλή','Good'):sc<1.8?T('Μέτρια','Fair'):T('Κακή','Poor');
+      try{ localStorage.setItem(VK,JSON.stringify({key:key,t:Date.now(),lab:lab,sc:Math.round(sc*100)/100})); }catch(e){}
+    });
+  }
+
+  /* ---------- Ψαροντούφεκο: «Είσαι εντάξει;» αν μείνεις κάτω από το νερό πολύ ώρα ---------- */
+  var WK='psaro-divewatch', ov=null, cd=null;
+  function wOn(){ return ls(WK)==='1'; }
+  function card(){
+    var pc=$('pContacts'); if(!pc||$('ndDiveW')) return;
+    var d=document.createElement('div'); d.id='ndDiveW'; d.className='nddivew';
+    d.innerHTML='<label class="chk"><input type="checkbox"><span><b></b><span class="note" style="display:block"></span></span></label>';
+    d.querySelector('b').textContent=T('Ψαροντούφεκο: «Είσαι εντάξει;» αν δεν ανέβεις','Spearfishing: “Are you OK?” if you do not surface');
+    d.querySelector('.note').textContent=T('Αν το χρονόμετρο κατάδυσης περάσει το όριο κατά 30 δευτ., το κινητό δονείται και ρωτά «Είσαι εντάξει;». Αν δεν απαντήσεις σε 30 δευτ., στέλνει SOS στην επαφή ασφαλείας. Δουλεύει μόνο όσο η εφαρμογή είναι ανοιχτή και η οθόνη αναμμένη, και μόνο αν πατάς «Κατάδυση/Επιφάνεια». Δεν αντικαθιστά τον συνοδό.','If the dive timer passes the limit by 30 s, the phone vibrates and asks “Are you OK?”. If you do not answer within 30 s, it sends an SOS to your safety contact. Works only while the app is open with the screen on, and only if you use Dive/Surfaced. It does not replace a buddy.');
+    var i=d.querySelector('input'); i.checked=wOn(); i.addEventListener('change',function(){ try{ localStorage.setItem(WK,i.checked?'1':'0'); }catch(e){} });
+    pc.appendChild(d);
+  }
+  function closeAsk(){ if(cd){ clearInterval(cd); cd=null; } if(ov){ ov.remove(); ov=null; } }
+  function ask(){
+    if(ov) return; var left=30;
+    ov=document.createElement('div'); ov.className='ndruok'; ov.setAttribute('role','alertdialog'); ov.setAttribute('aria-modal','true');
+    ov.innerHTML='<div class="ndruc"><h2></h2><p></p><button type="button" class="ndruy"></button><button type="button" class="ndrun"></button></div>';
+    ov.querySelector('h2').textContent=T('Είσαι εντάξει;','Are you OK?');
+    var p=ov.querySelector('p'); function txt(){ p.textContent=T('SOS στην επαφή ασφαλείας σε ','SOS to your safety contact in ')+left+T(' δευτ.',' s'); } txt();
+    var y=ov.querySelector('.ndruy'); y.textContent=T('Είμαι καλά','I am OK');
+    y.addEventListener('click',function(){ var D=window.PsaroDive; if(D&&D.on){ var b=$('ndDb'); if(b) b.click(); } closeAsk(); });
+    var n=ov.querySelector('.ndrun'); n.textContent=T('Στείλε SOS τώρα','Send SOS now'); n.addEventListener('click',function(){ closeAsk(); fire(); });
+    document.body.appendChild(ov);
+    try{ navigator.vibrate&&navigator.vibrate([600,200,600,200,600]); }catch(e){}
+    cd=setInterval(function(){ left--; txt(); if(left%5===0){ try{ navigator.vibrate&&navigator.vibrate([500,150,500]); }catch(e){} } if(left<=0){ closeAsk(); fire(); } },1000);
+  }
+  function fire(){ try{ if(window.PsaroTrip&&window.PsaroTrip.sosNow) window.PsaroTrip.sosNow(); else if(window.PsaroTrip) window.PsaroTrip.sos(); }catch(e){} }
+  var asked=0;
+  /* εδώ setInterval και όχι ndEvery: πρέπει να μετράει και όταν η οθόνη μόλις έσβησε (όσο το επιτρέπει το κινητό) */
+  setInterval(function(){
+    var D=window.PsaroDive; if(!wOn()||prof()!=='spear'||!D||!D.on||!document.body.classList.contains('ontrip')){ asked=0; if(ov&&!(D&&D.on)) closeAsk(); return; }
+    var s=(Date.now()-D.t0)/1000, lim=D.lim||90;
+    if(s>=lim+30&&asked!==D.t0){ asked=D.t0; ask(); }
+  },1000);
+
+  /* ---------- Καθάρισμα: η παλιά σελίδα στατιστικών του Profile δεν ξαναζωγραφίζεται όσο φαίνεται η λίστα ---------- */
+  function cleanup(){ var pm=$('pMain'); if(pm&&document.body.classList.contains('ndphon')) pm.hidden=true; }
+
+  var n=0, iv=setInterval(function(){ n++; try{ toggle(); card(); }catch(e){} if(n>60) clearInterval(iv); },1000);
+  window.ndEvery(function(){ try{ draw(); toggle(); card(); cleanup(); }catch(e){} },3000);
+  setTimeout(draw,2500);
 })();
