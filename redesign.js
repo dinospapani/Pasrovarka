@@ -1253,6 +1253,7 @@ box.insertBefore(tools,bar.nextSibling);
       if(k==='stats'){ var tr=(C.Store.get('trips')||[]).length, f=0; (C.Store.act?C.Store.act():(C.Store.get('bites')||[])).forEach(function(b){ f+=C.bc?C.bc(b):1; }); return tr+' '+T('έξοδοι','trips')+' · '+f+' '+T('ψάρια','fish'); }
       if(k==='alerts'){ var n=J('psaro-notify',{}), a=[]; if(n.on) a.push(T('Καλές μέρες ≥','Good days ≥')+(n.threshold||75)); if(n.pressure) a.push(T('πίεση','pressure')); if(n.turn) a.push(T('καμπή πίεσης','pressure turn')); var w=J('psaro-wwatch',null); if(w&&w.on) a.push(T('άνεμος','wind')); if(a.length){ var s0=a.join(' · '); return s0.charAt(0).toUpperCase()+s0.slice(1); } return T('Κλειστές','Off'); }
       if(k==='fprof'){ var nm=window.PsaroFProf?window.PsaroFProf.name():''; return nm+(ls('psaro-askfp')==='0'?'':T(' · ρωτά στο άνοιγμα',' · asks on open')); }
+      if(k==='friends'){ var fr=J('psaro-fr',{}), l=(fr&&fr.list)||[]; return l.length?l.map(function(f){ return f.name; }).slice(0,3).join(', ')+(l.length>3?' +'+(l.length-3):''):T('Κοινή χρήση ψαριών και σημείων με φίλους','Share fish and spots with friends'); }
       if(k==='backup'){ var lb=+ls('psaro-lastbackup')||0; return lb?T('Τελευταίο: ','Last: ')+new Date(lb).toLocaleDateString(EN?'en-GB':'el-GR'):T('Δεν έχεις κάνει ακόμα αντίγραφο','No backup yet'); }
     }catch(e){}
     return '';
@@ -1271,6 +1272,7 @@ box.insertBefore(tools,bar.nextSibling);
     [T('ΔΕΔΟΜΕΝΑ ΚΑΙ ΛΟΓΑΡΙΑΣΜΟΣ','DATA AND ACCOUNT'),[
       ['backup',T('Αντίγραφο και εξαγωγή','Backup and export'),null,'set','ndExport'],
       ['data',T('Έλεγχος και συμπλήρωση δεδομένων','Check and fill in data'),T('Διπλά, καιρός σε παλιά ψάρια','Duplicates, weather on old catches'),'set','dgCard'],
+      ['friends',T('Φίλοι','Friends'),null,'set','frCard'],
       ['account',T('Λογαριασμός και γλώσσα','Account and language'),T('Όνομα, γλώσσα, συγχρονισμός, κωδικός','Name, language, sync, password'),'set',null],
       ['about',T('Σχετικά','About'),T('Απόρρητο, ασφάλεια, έκδοση','Privacy, safety, version'),'set','appVer,ndChkUpd,ndAbout']]]
   ];
