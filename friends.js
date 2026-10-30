@@ -16,6 +16,30 @@ var COLORS=['#8e44ad','#d35400','#16a085','#c0392b','#2c3e50','#b8860b'];
 var S=ls('psaro-fr')||{list:[],data:{},at:0}; if(!S.list) S.list=[]; if(!S.data) S.data={};
 function save(){ try{ localStorage.setItem('psaro-fr',JSON.stringify(S)); }catch(e){ try{ localStorage.setItem('psaro-fr',JSON.stringify({list:S.list,data:{},at:0})); }catch(x){} } ls('psaro-fr-on',S.list.length>0); }
 function mapOn(){ return ls('psaro-fr-map')!==false; }
+function useOn(){ return ls('psaro-fr-use')===true; }
+/* ψάρια φίλων κοντά σε ένα σημείο (για ψαρότοπους / ομοιότητα), μόνο αν το έχεις ενεργοποιήσει */
+function bitesNear(lat,lon,kmMax){ if(!useOn()) return []; var out=[]; S.list.forEach(function(f){ var d=S.data[f.uid]; if(!d) return; (d.bites||[]).forEach(function(b){ if(lat==null||Math.hypot((b.lat-lat)*111,(b.lon-lon)*111*Math.cos(lat*Math.PI/180))<=kmMax) out.push(Object.assign({},b,{_fr:f.name,_fu:f.uid})); }); }); return out; }
+var trL=null;
+function tripList(f,trs,anchor){
+  var box=anchor.nextSibling&&anchor.nextSibling.classList&&anchor.nextSibling.classList.contains('frtrips')?anchor.nextSibling:null; if(box){ box.remove(); return; }
+  box=el('div','frtrips'); trs.slice().sort(function(a,b){ return String(b.date).localeCompare(String(a.date)); }).slice(0,40).forEach(function(t){
+    var dur=t.startMs&&t.endMs?Math.round((t.endMs-t.startMs)/360000)/10+' h':'', b=el('button','hotrow'); b.type='button';
+    var tx=el('span','hottx'); tx.append(el('b','',fmtD({date:t.date})+(t.spot?' · '+t.spot:'')),el('small','',[t.count+T(' ψάρια',' fish'),t.kg?Math.round(t.kg*10)/10+' kg':null,dur,t.km?Math.round(t.km*10)/10+' km':null].filter(Boolean).join(' · ')));
+    b.append(tx); b.addEventListener('click',function(){ showTrip(f,t); }); box.append(b); });
+  anchor.parentNode.insertBefore(box,anchor.nextSibling);
+}
+function showTrip(f,t){
+  var map=C.map&&C.map(); if(!map) return; try{ var tb=document.querySelector('[data-tab=map]'); if(tb) tb.click(); var pc=document.getElementById('pClose')||document.querySelector('#profile .pclose'); if(pc) pc.click(); }catch(e){}
+  if(trL) map.removeLayer(trL); trL=L.layerGroup().addTo(map);
+  var pts=(t.track||[]).map(function(p){ return Array.isArray(p)?[p[0],p[1]]:[p.lat,p.lon]; }).filter(function(p){ return typeof p[0]==='number'&&typeof p[1]==='number'; });
+  if(pts.length>1){ L.polyline(pts,{color:col(f.uid),weight:4,opacity:.9}).addTo(trL); }
+  var d=S.data[f.uid], t0=t.startMs||0, t1=t.endMs||0, bs=((d&&d.bites)||[]).filter(function(b){ var ms=Date.parse(b.date+'T'+(b.time||'12:00')+':00'); return b.date===t.date&&(!t0||!t1||(ms>=t0-3600000&&ms<=t1+3600000)); });
+  bs.forEach(function(b){ L.circleMarker([b.lat,b.lon],{radius:7,color:'#fff',weight:2,fillColor:col(f.uid),fillOpacity:1}).bindPopup(function(){ return bitePop(f,b); },{className:'fishpopw',maxWidth:260}).addTo(trL); });
+  var all=pts.concat(bs.map(function(b){ return [b.lat,b.lon]; })); if(!all.length&&typeof t.lat==='number') all=[[t.lat,t.lon]];
+  setTimeout(function(){ try{ map.invalidateSize(); if(all.length>1) map.fitBounds(L.latLngBounds(all).pad(0.2)); else if(all.length) map.setView(all[0],13); }catch(e){} },300);
+  try{ C.toast&&C.toast(T('Έξοδος του ','Trip of ')+f.name+' · '+fmtD({date:t.date})+T(' · πάτα τον χάρτη για να κρυφτεί',' · tap the map to hide')); }catch(e){}
+  map.once('click',function(){ if(trL){ map.removeLayer(trL); trL=null; } });
+}
 function col(uid){ var i=S.list.findIndex(function(f){ return f.uid===uid; }); return COLORS[(i<0?0:i)%COLORS.length]; }
 function ini(n){ n=String(n||'?').trim(); var p=n.split(/\s+/); return ((p[0]||'?')[0]+(p[1]?p[1][0]:'')).toUpperCase(); }
 function errMsg(e){ var m=String(e&&e.message||e); if(/PGRST20[25]|relation .*friend|404|function .*redeem_friend/i.test(m)) return T('Λείπει η βάση φίλων στο Supabase: τρέξε το friends.sql.','The friends database is missing in Supabase: run friends.sql.');
@@ -37,9 +61,11 @@ async function loadData(){
   var ids=S.list.filter(function(f){ return f.theyShare; }).map(function(f){ return f.uid; });
   S.data={};
   if(ids.length){
-    var r=await CL().rest('records?select=user_id,kind,id,data&user_id=in.('+ids.join(',')+')&kind=in.(bites,spots)&deleted=eq.false&limit=20000'), rows=await r.json();
-    rows.forEach(function(x){ if(!x.data||x.data.priv) return; var d=S.data[x.user_id]||(S.data[x.user_id]={bites:[],spots:[]}); var o=Object.assign({},x.data,{id:x.id});
-      if(x.kind==='bites'&&!o.miss&&typeof o.lat==='number'&&typeof o.lon==='number') d.bites.push(o); else if(x.kind==='spots'&&typeof o.lat==='number') d.spots.push(o); });
+    var r=await CL().rest('records?select=user_id,kind,id,data&user_id=in.('+ids.join(',')+')&kind=in.(bites,spots,trips)&deleted=eq.false&limit=20000'), rows=await r.json();
+    rows.forEach(function(x){ if(!x.data||x.data.priv) return; var d=S.data[x.user_id]||(S.data[x.user_id]={bites:[],spots:[],trips:[]}); if(!d.trips) d.trips=[]; var o=Object.assign({},x.data,{id:x.id});
+      if(x.kind==='bites'&&!o.miss&&typeof o.lat==='number'&&typeof o.lon==='number') d.bites.push(o); else if(x.kind==='spots'&&typeof o.lat==='number') d.spots.push(o);
+      else if(x.kind==='trips'){ /* μόνο ό,τι χρειάζεται: η διαδρομή αραιώνεται για να χωρά στη μνήμη */ var tk=Array.isArray(o.track)?o.track:[], st=Math.max(1,Math.ceil(tk.length/400));
+        d.trips.push({id:o.id,date:o.date,spot:o.spot||'',count:o.count||0,kg:o.kg||0,startMs:o.startMs,endMs:o.endMs,km:o.km,lat:o.lat,lon:o.lon,track:tk.filter(function(p,i){ return i%st===0; })}); } });
   }
   S.at=Date.now(); save(); draw();
 }
@@ -163,10 +189,14 @@ function render(){
     var d=S.data[f.uid], info=el('div','frinf'); info.append(el('b','',f.name),el('small','',f.theyShare?((d?d.bites.length:0)+T(' ψάρια · ',' fish · ')+(d?d.spots.length:0)+((d&&d.spots.length===1)?T(' σημείο',' spot'):T(' σημεία',' spots'))):T('δεν μοιράζεται τα δικά του','is not sharing theirs')));
     var lb=el('label','frsh'), cb=el('input'); cb.type='checkbox'; cb.checked=f.mine!==false; cb.addEventListener('change',function(){ setShare(f,cb.checked); }); lb.append(cb,el('span','',T('Βλέπει τα δικά μου','Sees mine')));
     var rm=el('button','btn ghost sm',T('Αφαίρεση','Remove')); rm.type='button'; rm.addEventListener('click',function(){ remove(f); });
-    r.append(av,info,lb,rm); ls3.append(r); });
+    r.append(av,info,lb,rm);
+    var trs=(d&&d.trips)||[]; if(trs.length){ var tb=el('button','btn ghost sm',T('Έξοδοι','Trips')+' ('+trs.length+')'); tb.type='button'; tb.addEventListener('click',function(){ tripList(f,trs,r); }); r.append(tb); }
+    ls3.append(r); });
   card.append(ls3);
   var mp=el('label','chk'), mc=el('input'); mc.type='checkbox'; mc.checked=mapOn(); mc.addEventListener('change',function(){ ls('psaro-fr-map',mc.checked); draw(); }); mp.append(mc,el('span','',T('Ψάρια και σημεία φίλων στον χάρτη','Friends’ fish and spots on the map'))); mp.style.cssText='display:flex;gap:10px;align-items:center;margin:8px 0';
   card.append(mp);
+  var up=el('label','chk'), uc=el('input'); uc.type='checkbox'; uc.checked=useOn(); uc.addEventListener('change',function(){ ls('psaro-fr-use',uc.checked); try{ window.dispatchEvent(new Event('psaro-fruse')); }catch(e){} }); up.append(uc,el('span','',T('Να μετράνε και τα ψάρια των φίλων στους ψαρότοπους («Πότε», «Τώρα») και στις ειδοποιήσεις ίδιων συνθηκών','Also count friends’ fish in fishing spots (“When”, “Now”) and in same-conditions alerts'))); up.style.cssText='display:flex;gap:10px;align-items:center;margin:0 0 8px';
+  card.append(up);
   var row=el('div','row'), inv=el('button','btn sm acc',T('Πρόσκληση φίλου','Invite a friend')); inv.type='button';
   var ref=el('button','btn sm ghost',T('Ανανέωση','Refresh')); ref.type='button'; ref.addEventListener('click',function(){ refresh(true); });
   row.append(inv,ref); card.append(row);
@@ -185,7 +215,7 @@ st.textContent='.mk-frb,.mk-frg,.mk-frs{display:grid;place-items:center;border-r
  '.frth{display:grid;place-items:center;background:var(--fc)!important;color:#fff;font:700 12px system-ui,sans-serif}'+
  '#frCard .frrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(127,127,127,.18);flex-wrap:wrap}'+
  '#frCard .frav{width:34px;height:34px;border-radius:50%;background:var(--fc);color:#fff;display:grid;place-items:center;font:700 13px system-ui,sans-serif;flex:0 0 34px}'+
- '#frCard .frinf{flex:1;min-width:120px;display:flex;flex-direction:column}#frCard .frinf small{opacity:.7;font-size:12px}'+
+ '#frCard .frtrips{width:100%;padding:0 0 8px 44px}#frCard .frinf{flex:1;min-width:120px;display:flex;flex-direction:column}#frCard .frinf small{opacity:.7;font-size:12px}'+
  '#frCard .frsh{display:flex;align-items:center;gap:6px;font-size:12.5px}#frCard .frcode{font:800 26px/1.2 ui-monospace,monospace;letter-spacing:.12em;margin:8px 0 2px}';
 document.head.appendChild(st);
 function boot(){ render(); draw(); refresh(false); }
@@ -193,5 +223,5 @@ if(window.ndEvery) window.ndEvery(function(){ refresh(false); },20*60000);
 document.addEventListener('visibilitychange',function(){ if(!document.hidden) refresh(false); });
 window.addEventListener('psaro-login',function(){ refresh(true); });
 setTimeout(boot,1500);
-window.PsaroFriends={refresh:refresh,draw:draw,state:function(){ return S; }};
+window.PsaroFriends={refresh:refresh,draw:draw,state:function(){ return S; },bitesNear:bitesNear,useOn:useOn};
 })();

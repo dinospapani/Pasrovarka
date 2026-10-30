@@ -169,7 +169,7 @@ function hours(){
   }
   var h=d.hours.filter(function(x){ return x.hr===selH; })[0]; if(!h){ det.textContent=''; return; }
   var cells=[[p2(h.hr)+':00',T('ώρα','time')],[String(h.score),T('βαθμός','score')],[u('wind',h.wind)+(h.dir!=null?' '+dir(h.dir):''),T('άνεμος','wind')+(h.gust!=null?' · '+T('ριπές ','gusts ')+u('wind',h.gust):'')]];
-  if(h.wave!=null&&!isLake()) cells.push([u('wave',h.wave),T('κύμα','waves')+(h.period!=null?' · '+Math.round(h.period)+' s':'')]);
+  if(h.wave!=null&&!isLake()){ var wc=fc&&fc.waveCorr; cells.push([u('wave',h.wave),T('κύμα','waves')+(h.period!=null?' · '+Math.round(h.period)+' s':'')+(wc&&Math.abs(wc.f-1)>=0.03?' · '+T('δική σου διόρθ. ','your adj. ')+(wc.f>1?'+':'−')+Math.round(Math.abs(wc.f-1)*100)+'%':'')]); }
   if(h.rain!=null) cells.push([Math.round(h.rain)+'%',T('βροχή','rain')]);
   var s2=JSON.stringify(cells); if(det.dataset.sig===s2) return; det.dataset.sig=s2; det.replaceChildren();
   cells.forEach(function(c,i){ var x=E('div','fc2-hc'+(i===1?' lv-'+lvl(h.score):'')); x.append(E('b','ds-num',c[0]),E('span','',c[1])); det.appendChild(x); });
@@ -179,7 +179,8 @@ var ROWS=[
   {k:'why',ic:'why',t:function(){ var v=parseInt((($('score')||{}).firstChild||{}).textContent,10); return isNaN(v)?T('Γιατί αυτός ο βαθμός','Why this score'):T('Γιατί ','Why ')+v+';'; },s:function(){ return T('Σελήνη, πίεση, άνεμος, κύμα, ουρανός','Moon, pressure, wind, waves, sky'); },node:function(){ return $('factors'); }},
   {k:'press',ic:'press',t:function(){ return T('Πίεση','Pressure'); },s:function(){ var p=$('fcTurn'); var q=p&&p.querySelectorAll(':scope>p:not(.note)'); return q&&q[0]?q[0].textContent:''; },node:function(){ return $('fcTurn'); }},
   {k:'moon',ic:'moon',t:function(){ return T('Σελήνη','Moon'); },s:function(){ var m=moonNow(); return m?m.name+' · '+m.ill+'%':''; },build:moonBox},
-  {k:'dam',ic:'drop',t:function(){ var n=damNear(); return n?n.name+T(' · πληρότητα',' · fullness'):T('Πληρότητα φράγματος','Reservoir level'); },s:function(){ var n=damNear(); return n?Math.round(n.lv.pct)+'%'+(n.lv.lyPct!=null?T(' · πέρσι ',' · last year ')+Math.round(n.lv.lyPct)+'%':''):''; },build:function(body){ var n=damNear(); if(!n){ body.textContent=''; return; } var sig=n.name+n.date+n.lv.pct; if(body.dataset.sig===sig) return; body.dataset.sig=sig; body.replaceChildren(window.PsaroDams.box(n.lv)); }},
+  {k:'dam',ic:'drop',t:function(){ var n=damNear(); return n?n.name+T(' · πληρότητα',' · fullness'):T('Πληρότητα φράγματος','Reservoir level'); },s:function(){ var n=damNear(); return n?Math.round(n.lv.pct)+'%'+(n.lv.lyPct!=null?T(' · πέρσι ',' · last year ')+Math.round(n.lv.lyPct)+'%':''):''; },build:function(body){ var n=damNear(); if(!n){ body.textContent=''; return; } var sig=n.name+n.date+n.lv.pct; if(body.dataset.sig===sig) return; body.dataset.sig=sig; body.replaceChildren(window.PsaroDams.box(n.lv,n.H)); }},
+  {k:'lkw',ic:'coast',t:function(){ return T('Από ποια όχθη','Which bank'); },s:function(){ var x=lakeWind(); return x?x.short:''; },build:function(body){ var x=lakeWind(); if(!x){ body.textContent=''; return; } if(body.dataset.sig===x.long) return; body.dataset.sig=x.long; body.replaceChildren(E('p','',x.long),E('p','ds-note',T('Γενικός κανόνας ψαράδων λίμνης, όχι μέτρηση. Ο άνεμος σπρώχνει το ζεστό επιφανειακό νερό και την τροφή προς την όχθη που τον δέχεται.','A general lake-angling rule, not a measurement. Wind pushes warm surface water and food toward the bank it blows onto.'))); }},
   {k:'coast',ic:'coast',t:function(){ return T('Έκθεση ακτής','Coast exposure'); },s:function(){ var e=$('fcExposure'); if(!e) return ''; var p=[].slice.call(e.querySelectorAll(':scope>p:not(.note)')).filter(function(x){ return /^Τώρα|^Now/.test((x.textContent||'').trim()); })[0]; return p?p.textContent.replace(/^(Τώρα|Now):\s*/,''):''; },node:function(){ return $('fcExposure'); }},
   {k:'sp',ic:'fish',t:function(){ return T('Βαθμός για είδος','Score for a species'); },s:function(){ var s=document.querySelector('#fcSpPick select'); return s&&s.selectedOptions[0]?s.selectedOptions[0].textContent:T('Όλα τα είδη','All species'); },node:function(){ return $('fcSpPick'); }},
   {k:'scen',ic:'sliders',t:function(){ return T('Δοκίμασε σενάριο','Try a scenario'); },s:function(){ return T('Άλλη μέρα, άνεμος ή κύμα','Another day, wind or waves'); },node:function(){ return document.querySelector('#liveBox details.scen'); }}
@@ -190,6 +191,16 @@ function damNear(){
   return ll?window.PsaroDams.near(+ll[0],+ll[1],5):null;
 }
 window.addEventListener('psaro-dams',function(){ try{ if(root) rows(); }catch(e){} });
+/* v31z404: λίμνη, άνεμος και όχθη (την τρέχουσα ώρα) */
+function lakeWind(){
+  if(!isLake()||!fc||!fc.days||!fc.days[0]||!fc.days[0].hours) return null;
+  var hr=new Date().getHours(), h=fc.days[0].hours.filter(function(x){ return x.hr===hr; })[0]; if(!h||h.dir==null||h.wind==null) return null;
+  var D8=EN?['N','NE','E','SE','S','SW','W','NW']:['Β','ΒΑ','Α','ΝΑ','Ν','ΝΔ','Δ','ΒΔ'], from=D8[Math.round(h.dir/45)%8], to=D8[Math.round(((h.dir+180)%360)/45)%8];
+  if(h.wind<4) return {short:T('Άπνοια: όλες οι όχθες','Calm: any bank'),long:T('Σχεδόν άπνοια. Δεν έχει σημασία η όχθη· ψάξε δομές, βάθη και σκιά.','Almost calm. The bank does not matter much; look for structure, depth and shade.')};
+  var cold=typeof h.temp==='number'&&h.temp<12, strong=h.wind>18;
+  if(cold||strong) return {short:T('Προστατευμένη ','Sheltered ')+from+T(' όχθη',' bank'),long:T('Ο άνεμος ('+from+', '+u('wind',h.wind)+') φυσά προς την '+to+' όχθη. ','Wind ('+from+', '+u('wind',h.wind)+') is blowing onto the '+to+' bank. ')+(cold?T('Με κρύο, προτίμησε την προστατευμένη '+from+' όχθη, όπου το νερό μένει πιο ζεστό.','In the cold, prefer the sheltered '+from+' bank, where the water stays warmer.'):T('Με δυνατό αέρα, η προστατευμένη '+from+' όχθη είναι πιο εύκολη και ασφαλής.','In strong wind, the sheltered '+from+' bank is easier and safer.'))};
+  return {short:T('Η ','The ')+to+T(' όχθη (δέχεται τον άνεμο)',' bank (wind blows onto it)'),long:T('Ο άνεμος ('+from+', '+u('wind',h.wind)+') φυσά προς την '+to+' όχθη. Εκεί μαζεύονται τροφή και ζεστό νερό, και συχνά τα ψάρια.','Wind ('+from+', '+u('wind',h.wind)+') is blowing onto the '+to+' bank. Food and warm water collect there, and often the fish too.')};
+}
 function rowsBuild(){
   var box=root.querySelector('.fc2-rows');
   ROWS.forEach(function(r){
@@ -208,7 +219,7 @@ function fill(r,body){
 function rows(){
   [].forEach.call(root.querySelectorAll('.ds-row'),function(w){
     var r=ROWS.filter(function(x){ return x.k===w.dataset.k; })[0]; if(!r) return;
-    var hide=(r.node&&!r.node()&&!r.build)||(r.k==='coast'&&isLake())||(r.k==='dam'&&!damNear()); w.hidden=hide;
+    var hide=(r.node&&!r.node()&&!r.build)||(r.k==='coast'&&isLake())||(r.k==='dam'&&!damNear())||(r.k==='lkw'&&!lakeWind()); w.hidden=hide;
     var b=w.querySelector('.ds-rt b'), s=w.querySelector('.ds-rt small'), t=r.t(), st=(r.s()||'').trim();
     if(b.textContent!==t) b.textContent=t; if(s.textContent!==st) s.textContent=st;
     if(openRow[r.k]) fill(r,w.querySelector('.ds-rowc'));

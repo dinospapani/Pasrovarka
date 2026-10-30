@@ -844,7 +844,10 @@ function hotCard(g){
   if(g.mixed) box.append(h('div',{class:'meta',text:(g.places.length?g.places.join(', ')+' '+T2('και άλλα σημεία','and other spots'):T2('Διάφορα σημεία','Several spots'))+' · '+T2('μεγέθυνε για να χωρίσουν','zoom in to separate them')}));
   const tabs=h('div',{class:'hottabs',role:'tablist'}), body=h('div',{class:'hotbody'});
   const TB=[['fish',T2('Ψάρια','Fish')],['when',T2('Πότε','When')],['now',T2('Τώρα','Now')]];
-  const show=k=>{ [].forEach.call(tabs.children,x=>x.setAttribute('aria-selected',String(x.dataset.k===k))); body.replaceChildren(); if(k==='fish') hotFish(body,bs); else if(k==='when') hotWhen(body,bs); else hotNow(body,g,bs); };
+  /* v31z404: προαιρετικά και τα ψάρια των φίλων σε 500 m (Φίλοι → «Να μετράνε…») */
+  const frb=(window.PsaroFriends&&window.PsaroFriends.bitesNear)?window.PsaroFriends.bitesNear(g.lat,g.lon,0.5).filter(b=>b.date):[], all=bs.concat(frb).sort((a,b)=>biteMs(b)-biteMs(a));
+  if(frb.length) box.append(h('div',{class:'meta',text:T2('+ ',' + ')+frb.length+T2(' ψάρια φίλων (',' friends’ fish (')+[...new Set(frb.map(b=>b._fr))].join(', ')+')'}));
+  const show=k=>{ [].forEach.call(tabs.children,x=>x.setAttribute('aria-selected',String(x.dataset.k===k))); body.replaceChildren(); if(k==='fish') hotFish(body,all); else if(k==='when') hotWhen(body,all); else hotNow(body,g,all); };
   TB.forEach(t=>{ const b=h('button',{type:'button',role:'tab',text:t[1]}); b.dataset.k=t[0]; b.addEventListener('click',e=>{ e.stopPropagation(); show(t[0]); }); tabs.append(b); });
   box.append(tabs,body); show('fish');
   const sp0=g.mixed?null:Store.get('spots').find(x=>x.name&&x.name===g.name&&haversine(x.lat,x.lon,g.lat,g.lon)<=1);
@@ -857,9 +860,9 @@ function hotFish(body,bs){
   const en=window.LANG==='en', ls=h('div',{class:'hotlist'});
   bs.slice(0,60).forEach(b=>{
     const nn=bc(b), row=h('button',{type:'button',class:'hotrow'});
-    if(b.photo){ const im=h('img',{class:'hotth',alt:''}); im.hidden=true; row.append(im); setTimeout(()=>{ try{ loadPhoto(b.id,im); }catch(e){} },20); } else { const ic=h('span',{class:'hotth hotsym'}); ic.innerHTML=SYM_SVG[fishGroup(b)]||SYM_SVG.fish; row.append(ic); }
-    row.append(h('span',{class:'hottx'},h('b',{text:(b.species||(en?'Unknown':'Άγνωστο'))+(nn>1?' ×'+nn:'')+(b.kg?' · '+b.kg+' kg':'')+(b.rel?' ↩':'')}),h('small',{text:bLabel(b)+(b.bait?' · '+b.bait:'')})));
-    row.addEventListener('click',e=>{ e.stopPropagation(); openBite(b); }); ls.append(row); });
+    if(b.photo&&!b._fr){ const im=h('img',{class:'hotth',alt:''}); im.hidden=true; row.append(im); setTimeout(()=>{ try{ loadPhoto(b.id,im); }catch(e){} },20); } else { const ic=h('span',{class:'hotth hotsym'}); ic.innerHTML=SYM_SVG[fishGroup(b)]||SYM_SVG.fish; row.append(ic); }
+    row.append(h('span',{class:'hottx'},h('b',{text:(b.species||(en?'Unknown':'Άγνωστο'))+(nn>1?' ×'+nn:'')+(b.kg?' · '+b.kg+' kg':'')+(b.rel?' ↩':'')}),h('small',{text:bLabel(b)+(b.bait?' · '+b.bait:'')+(b._fr?' · '+b._fr:'')})));
+    if(b._fr) row.classList.add('hotfr'); else row.addEventListener('click',e=>{ e.stopPropagation(); openBite(b); }); ls.append(row); });
   if(bs.length>60) ls.append(h('div',{class:'meta',text:'+'+(bs.length-60)}));
   body.append(ls);
 }
@@ -899,13 +902,13 @@ async function hotNow(body,g,bs){
   fc.days.slice(0,7).forEach((d,i)=>{
     let best=null; if(sim) cand.forEach(b=>{ const hh=d.hours&&d.hours.find(x=>x.hr===hr(b)); if(!hh) return; const s=sim(b,hh,d.f); if(s!=null&&(!best||s>best.s)) best={s:s,b:b,h:hr(b)}; });
     const dt=new Date(d.date+'T12:00:00Z'), nm=i===0?T2('Σήμερα','Today'):i===1?T2('Αύριο','Tomorrow'):DN[dt.getUTCDay()]+' '+dt.getUTCDate()+'/'+(dt.getUTCMonth()+1);
-    const r=h('div',{class:'hotday'+(best&&best.s>=0.8?' good':'')+(d.safe===false?' unsafe':'')});
+    const smin=(+lsGet('psaro-simmin',80)||80)/100, r=h('div',{class:'hotday'+(best&&best.s>=smin?' good':'')+(d.safe===false?' unsafe':'')});
     r.append(h('span',{class:'hdn',text:nm}),h('span',{class:'hds',text:d.safe===false?T2('επικίνδυνο','unsafe'):String(d.best!=null?d.best:'–')}),h('span',{class:'hdm',text:best?Math.round(best.s*100)+'%':'–'}),
       h('small',{text:best?T2('σαν ','like ')+bLabel(best.b).split(' ').slice(0,2).join(' ')+' '+String(best.h).padStart(2,'0')+':00':''}));
     ls.append(r); });
   body.append(ls);
   if(!cand.length) body.append(h('div',{class:'meta',text:T2('Για ομοιότητα χρειάζονται ψάρια με καταγεγραμμένες συνθήκες (άνεμος, κύμα, πίεση).','Similarity needs fish with recorded conditions (wind, waves, pressure).')}));
-  else body.append(h('div',{class:'meta',text:T2('Ομοιότητα: σελήνη, άνεμος, διεύθυνση, κύμα, πίεση, νερό, την ίδια ώρα. Πράσινο = 80% και πάνω.','Similarity: moon, wind, direction, waves, pressure, water, same hour. Green = 80% or more.')}));
+  else body.append(h('div',{class:'meta',text:T2('Ομοιότητα: σελήνη, άνεμος, διεύθυνση, κύμα, πίεση, νερό, την ίδια ώρα. Πράσινο = ','Similarity: moon, wind, direction, waves, pressure, water, same hour. Green = ')+(+lsGet('psaro-simmin',80)||80)+T2('% και πάνω.','% or more.')}));
 }
 let editSpot=null;
 function openSpotForm(p,sp){
@@ -1453,8 +1456,13 @@ function renderChips(){
   const bites=Store.get('bites').slice().sort((a,b)=>biteMs(b)-biteMs(a));
   const uniq=(arr,n)=>[...new Set(arr.map(x=>(x||'').trim()).filter(Boolean))].slice(0,n);
   const fill=(el,items,input)=>{el.replaceChildren(); items.forEach(x=>{ const lbl=(input===$('bSpecies')&&window.LANG==='en'&&window.spName)?window.spName(x):x; el.append(h('button',{type:'button',class:'chip',text:lbl,onclick:()=>{input.value=lbl; if(input===$('bSpecies')){const m=DB.find(d=>dispName(d)===x); curLatin=m?m.la:(bites.find(b=>b.species===x)||{}).latin||''; updateLaw();}}})); });};
-  fill($('bChipsSp'),uniq(bites.map(b=>b.species),6),$('bSpecies'));
-  fill($('bChipsBait'),uniq(bites.map(b=>b.bait),6),$('bBait'));
+  /* v31z404: λίμνη/φράγμα → προτάσεις από τα ψάρια λίμνης και δολώματα γλυκού νερού */
+  let lake=false; try{ lake=localStorage.getItem('psaro-fprof')==='lake'; }catch(e){}
+  const pool=lake?bites.filter(b=>b.prof==='lake'):bites.filter(b=>b.prof!=='lake');
+  const LB=window.LANG==='en'?['Sweetcorn','Boilies','Worms','Bread / paste','Pellets','Soft plastic','Spinner']:['Καλαμπόκι','Boilies','Σκουλήκι','Ψωμί / ζύμη','Pellets','Σιλικονούχο τεχνητό','Spinner'];
+  fill($('bChipsSp'),uniq(pool.map(b=>b.species),6),$('bSpecies'));
+  fill($('bChipsBait'),uniq(pool.map(b=>b.bait).concat(lake?LB:[]),lake?8:6),$('bBait'));
+  /* οι τεχνικές λίμνης τις ορίζει ήδη το προφίλ ψαρέματος (redesign.js) */
 }
 /* species suggestions */
 let sugT=null, sugSeq=0;

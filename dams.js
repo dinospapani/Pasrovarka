@@ -7,13 +7,13 @@ var map=C.map&&C.map(); if(!map) return;
 var EN=window.LANG==='en', T=function(el,en){ return EN?en:el; };
 /* st: closed = κλειστό, seasonal = εποχιακό, cr = μόνο ελευθέρωση, check = άγνωστη κατάσταση */
 var D=[
-['Κούρης','Kouris',34.7278,32.9178,'check'],['Ασπρόκρεμμος','Asprokremmos',34.7259,32.5543,'check'],['Εύρετου','Evretou',34.9757,32.4727,'check'],
-['Κανναβιού','Kannaviou',34.9277,32.5878,'check'],['Καλαβασός','Kalavasos',34.803972,33.260517,'check'],['Λεύκαρα','Lefkara',34.8944,33.2956,'check'],
-['Διπόταμος','Dipotamos',34.851618,33.359274,'check'],['Γερμασόγεια','Germasogeia',34.7439,33.0843,'check'],['Άχνα','Achna',35.055321,33.814307,'seasonal'],
-['Κούκλια','Kouklia',35.1207,33.7606,'check'],['Αρμίνου','Arminou',34.8752,32.7371,'check'],['Πολεμίδια','Polemidia',34.7187,32.9888,'cr'],
-['Ταμασός','Tamasos',35.0167,33.2479,'check'],['Μαυροκόλυμπος','Mavrokolympos',34.8565,32.4058,'closed'],['Αργάκα','Argaka',35.0486,32.5022,'closed'],
-['Πώμος','Pomos',35.1449,32.5762,'check'],['Αγία Μαρίνα','Agia Marina',35.1170,32.5410,'check'],['Βυζακιά','Vyzakia',35.0615,33.0272,'check'],
-['Ξυλιάτος','Xyliatos',35.0089,33.0372,'closed'],['Καλοπαναγιώτης','Kalopanagiotis',35.0061,32.8254,'closed'],['Λύμπια','Lympia',34.97518,33.41907,'closed']
+['Κούρης','Kouris',34.7278,32.9178,'check',110],['Ασπρόκρεμμος','Asprokremmos',34.7259,32.5543,'check',53],['Εύρετου','Evretou',34.9757,32.4727,'check',70],
+['Κανναβιού','Kannaviou',34.9277,32.5878,'check',75],['Καλαβασός','Kalavasos',34.803972,33.260517,'check',60],['Λεύκαρα','Lefkara',34.8944,33.2956,'check',71],
+['Διπόταμος','Dipotamos',34.851618,33.359274,'check',60],['Γερμασόγεια','Germasogeia',34.7439,33.0843,'check',49],['Άχνα','Achna',35.055321,33.814307,'seasonal',16],
+['Κούκλια','Kouklia',35.1207,33.7606,'check',6],['Αρμίνου','Arminou',34.8752,32.7371,'check',45],['Πολεμίδια','Polemidia',34.7187,32.9888,'cr',45],
+['Ταμασός','Tamasos',35.0167,33.2479,'check',34],['Μαυροκόλυμπος','Mavrokolympos',34.8565,32.4058,'closed',45],['Αργάκα','Argaka',35.0486,32.5022,'closed',41],
+['Πώμος','Pomos',35.1449,32.5762,'check',38],['Αγία Μαρίνα','Agia Marina',35.1170,32.5410,'check',33],['Βυζακιά','Vyzakia',35.0615,33.0272,'check',37],
+['Ξυλιάτος','Xyliatos',35.0089,33.0372,'closed',42],['Καλοπαναγιώτης','Kalopanagiotis',35.0061,32.8254,'closed',40],['Λύμπια','Lympia',34.97518,33.41907,'closed',12],['Κλήρου-Μαλούντα','Klirou-Malounta',35.0318,33.1727,'check',38]
 ];
 var layer=L.layerGroup(), on=C.lsGet('psaro-dams',true)!==false;
 var ST={
@@ -37,7 +37,10 @@ function lvLoad(){
   }).catch(function(){});
 }
 function badge(m,l){ var el=m.getElement&&m.getElement(), b=el&&el.querySelector('.mk-dam'); if(!b||!l) return; var t=b.querySelector('.mk-dpct'); if(!t){ t=document.createElement('small'); t.className='mk-dpct'; b.appendChild(t); } t.textContent=Math.round(l.pct)+'%'; }
-function lvBox(l){
+/* στάθμη: εκτίμηση από το ύψος του φράγματος (ΤΑΥ, «Dams of Cyprus») και την πληρότητα. Όγκος ≈ βάθος^n (n 2–3, κοιλάδα),
+   μέγιστο βάθος ≈ 90% του ύψους. Δεν είναι μέτρηση: το ΤΑΥ δεν δημοσιεύει στάθμη σε μέτρα. */
+function lvDrop(l,Hm){ if(!Hm||l.pct==null||l.pct>=98) return null; var p=Math.max(0.005,l.pct/100), D=0.9*Hm, a=D*(1-Math.pow(p,1/3)), b=D*(1-Math.pow(p,1/2)), r=function(x){ return x<10?Math.round(x):Math.round(x/5)*5; }; return [r(a),r(b)]; }
+function lvBox(l,Hm){
   var w=document.createElement('div'); w.className='damlv';
   var h=document.createElement('div'); h.className='damlv-h';
   var b=document.createElement('b'); b.textContent=Math.round(l.pct)+'%'; var sp=document.createElement('span'); sp.textContent=T('πληρότητα','full'); h.append(b,sp);
@@ -45,17 +48,18 @@ function lvBox(l){
   if(l.lyPct!=null){ var ly=document.createElement('u'); ly.style.left=Math.max(0,Math.min(100,l.lyPct))+'%'; ly.title=T('Πέρσι','Last year'); bar.appendChild(ly); }
   w.append(h,bar);
   var rows=[[T('Νερό','Water'),n2(l.stor)+' / '+n2(l.cap)+T(' εκ. m³',' million m³')]];
+  var dr=lvDrop(l,Hm); if(dr) rows.push([T('Στάθμη (εκτίμηση)','Level (estimate)'),(dr[0]===dr[1]?'≈ '+dr[0]:'≈ '+dr[0]+'–'+dr[1])+T(' m κάτω από το γεμάτο',' m below full')]);
   if(l.lyPct!=null) rows.push([T('Πέρσι, ίδια μέρα','Same day last year'),Math.round(l.lyPct)+'%'+(l.pct>l.lyPct?' ↑':l.pct<l.lyPct?' ↓':'')]);
   if(l.in24!=null) rows.push([T('Εισροή 24ώρου','Inflow, last 24 h'),n2(l.in24*1000,0)+T(' χιλ. m³',' thousand m³')]);
   if(l.max!=null&&l.cap) rows.push([T('Μέγιστο φέτος','Highest this year'),Math.round(l.max/l.cap*100)+'%'+(l.maxDate?' ('+l.maxDate+')':'')]);
   rows.forEach(function(r){ var m=document.createElement('div'); m.className='damlv-r'; var a=document.createElement('span'); a.textContent=r[0]; var c=document.createElement('b'); c.textContent=r[1]; m.append(a,c); w.appendChild(m); });
-  var n=document.createElement('div'); n.className='note'; n.textContent=T('Τμήμα Αναπτύξεως Υδάτων · ','Water Development Dept · ')+dmy(LV.date); w.appendChild(n);
+  var n=document.createElement('div'); n.className='note'; n.textContent=T('Τμήμα Αναπτύξεως Υδάτων · ','Water Development Dept · ')+dmy(LV.date)+(dr?T(' · Η στάθμη είναι εκτίμηση από το ύψος του φράγματος, όχι μέτρηση.',' · The level is estimated from the dam height, not measured.'):''); w.appendChild(n);
   return w;
 }
 function pop(d){
   var s=ST[d[4]], w=document.createElement('div'); w.className='pop dampop land';
   var b=document.createElement('b'); b.textContent=(EN?d[1]:d[0])+T(' · Φράγμα',' Dam'); w.appendChild(b);
-  var lv=lvOf(d); if(lv) w.appendChild(lvBox(lv));
+  var lv=lvOf(d); if(lv) w.appendChild(lvBox(lv,d[5]));
   var st=document.createElement('div'); st.className='damst '+s[1]; st.textContent=s[0]; w.appendChild(st);
   [T('Μόνο από την όχθη. 1 καλάμι, 1 αγκίστρι.','Bank only. 1 rod, 1 hook.'),T('1 ώρα πριν την ανατολή έως 1 ώρα μετά τη δύση.','1 h before sunrise to 1 h after sunset.'),
    T('Λαβράκι, κυπρίνος, ζαντέρ: 2 ανά είδος (30 cm). Πέστροφα 5 (20 cm). Οξύρρυγχος 1 (70 cm). Σύνολο 10.','Bass, carp, zander: 2 each (30 cm). Trout 5 (20 cm). Sturgeon 1 (70 cm). Max 10 in total.')].forEach(function(t){ var m=document.createElement('div'); m.className='meta'; m.textContent=t; w.appendChild(m); });
@@ -81,10 +85,10 @@ b.addEventListener('click',function(){
 /* κοντινότερο φράγμα με δεδομένα (για την Πρόγνωση σε λίμνη) */
 function near(lat,lon,maxKm){
   var best=null; D.forEach(function(d){ var l=lvOf(d); if(!l) return; var dy=(d[2]-lat)*111, dx=(d[3]-lon)*111*Math.cos(lat*Math.PI/180), k=Math.sqrt(dx*dx+dy*dy);
-    if(k<=(maxKm||5)&&(!best||k<best.km)) best={name:EN?d[1]:d[0],km:k,lv:l,date:LV.date,st:d[4]}; });
+    if(k<=(maxKm||5)&&(!best||k<best.km)) best={name:EN?d[1]:d[0],km:k,lv:l,date:LV.date,st:d[4],H:d[5]}; });
   return best;
 }
-window.PsaroDams={list:D,data:null,near:near,box:function(l){ return lvBox(l); },ready:function(f){ if(LV) f(); else lvWait.push(f); }};
+window.PsaroDams={list:D,data:null,near:near,box:function(l,Hm){ return lvBox(l,Hm); },ready:function(f){ if(LV) f(); else lvWait.push(f); }};
 function zc(){ var c=map.getContainer(); if(c) c.classList.toggle('dam-z',map.getZoom()>=10); } map.on('zoomend',zc); zc();
 lvLoad(); if(window.ndEvery) window.ndEvery(lvLoad,3*3600*1000);
 })();

@@ -340,7 +340,10 @@ function form(it){
   var hint=el('p','note',T('Το σετ παίρνει το όνομα του καλαμιού. Πρόσθεσε πρώτα καλάμια, μουλινέδες και νήματα στις αντίστοιχες καρτέλες.','The setup is named after the rod. Add rods, reels and lines in their own tabs first.')); memL.append(hint);
   var setSync=function(){ var s=ts.value==='set'; memL.hidden=!s; br.l.hidden=s; nm.l.hidden=s; sp.l.hidden=s; };
   ts.addEventListener('change',setSync);
-  f.append(nm.l,br.l,sp.l,rw.l,rp.l,rt.l,ha.l,dr.l,cp.l,qt.l,kd.l,ak.l,wt.l,co.l,hs.l,hc.l,sn.l,sv.l,memL,nt.l); setSync();
+  /* v31z404: σε ποιο νερό χρησιμοποιείται (για φιλτράρισμα στη φόρμα ψαριού: λίμνη ή θάλασσα) */
+  var wa=(function(){ var l=el('label','f'); l.append(document.createTextNode(T('Νερό','Water'))); var s2=el('select'); [['',T('Θάλασσα και γλυκό νερό','Sea and fresh water')],['sea',T('Μόνο θάλασσα','Sea only')],['fresh',T('Μόνο γλυκό νερό (λίμνη / φράγμα)','Fresh water only (lake / dam)')]].forEach(function(o){ var op=el('option',null,o[1]); op.value=o[0]; s2.append(op); }); s2.value=it.water||''; l.append(s2); return {l:l,i:s2}; })();
+  var waSync=function(){ wa.l.hidden=ts.value==='set'||SPEARTY.indexOf(ts.value)>=0; }; ts.addEventListener('change',waSync); waSync();
+  f.append(nm.l,br.l,sp.l,rw.l,rp.l,rt.l,ha.l,dr.l,cp.l,qt.l,kd.l,ak.l,wt.l,co.l,hs.l,hc.l,sn.l,sv.l,memL,wa.l,nt.l); setSync();
   var newBlob=null, rmPhoto=false, pv=el('img','tkimg'), pl=el('div','f'); pv.alt=''; pv.hidden=true;
   pl.append(el('span',null,T('Φωτογραφία','Photo')),pv);
   var prow=el('div','acts'); prow.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-top:4px';
@@ -361,6 +364,7 @@ function form(it){
     var q=parseInt(qt.i.value,10); if(!qt.l.hidden&&q>=0&&qt.i.value!==''){ o.qty=(o.type==='line'||o.type==='leader')?((qt.i.value===i0.qt&&it.qty!=null)?it.qty:lIn(q)):q; }
     if(o.type==='lure'){ var ws=wt.i.value.split(/[,;\s]+/).map(function(x){ return wIn(parseFloat(x.replace(',','.'))); }).filter(function(x){ return x>0&&x<5000; }); ws=ws.filter(function(x,i){ return ws.indexOf(x)===i; }).sort(function(a,b){ return a-b; }); if(ws.length) o.w=(wt.i.value===i0.wt&&it.w)?it.w:ws; }
     if(o.type==='lure'&&co.i.value.trim()) o.color=co.i.value.trim();
+    if(wa.i.value&&!wa.l.hidden) o.water=wa.i.value;
     if(o.type==='lure'&&kd.i.value) o.kind=kd.i.value; if(o.type==='acc'&&ak.i.value){ if(ak.i.value==='__new'){ var cn=ak.c.value.trim().slice(0,30); if(cn) o.kind='c:'+cn; } else o.kind=ak.i.value; }
     if(o.type==='hook'){ var zs=hs.i.value.split(/[,;]+/).map(function(x){ return x.trim(); }).filter(Boolean); zs=zs.filter(function(x,i){ return zs.indexOf(x)===i; }); if(zs.length) o.sz=zs; if(hc.i.value.trim()) o.cord=hc.i.value.trim(); }
     if((o.type==='line'||o.type==='leader')&&sn.i.value) o.since=sn.i.value;
@@ -394,11 +398,13 @@ function mount(div,ids,w,h,s){
   function fam(t){ return t==='other'?null:SPEARTY.indexOf(t)>=0; }
   var all=full.filter(function(x){ if(picked.indexOf(x.id)>=0) return true;
     if(x.type==='set'){ return (x.members||[]).some(function(i){ var m=fx[i]; return m&&fam(m.type)===spf; }); }
-    var f=fam(x.type); return f===null||f===spf; });
+    var f=fam(x.type); if(!(f===null||f===spf)) return false;
+    /* v31z404: λίμνη → όχι «μόνο θάλασσα»· θάλασσα → όχι «μόνο γλυκό νερό» */
+    var tp=tprof(); if(tp==='lake'&&x.water==='sea') return false; if((tp==='boat'||tp==='shore')&&x.water==='fresh') return false; return true; });
   var order=TYPES.map(function(t){ return t[0]; }), ex={}; all.forEach(function(x){ ex[x.id]=x; });
   var emp=document.getElementById('bTkEmpty'); if(!emp&&wrap){ emp=el('div','note'); emp.id='bTkEmpty'; wrap.append(emp); }
   if(emp){ emp.replaceChildren(); emp.hidden=!!all.length; if(!all.length){ emp.append(document.createTextNode(T('Δεν έχεις εξοπλισμό ακόμα. ','No tackle yet. '))); var gb=el('button','btn ghost sm',T('Πρόσθεσε στο Προφίλ → Εξοπλισμός','Add in Profile → Tackle')); gb.type='button'; gb.addEventListener('click',function(){ var pb=document.getElementById('profBtn'); if(pb) pb.click(); setTimeout(function(){ if(window.PsaroProfView) PsaroProfView.set('tackle'); },80); }); emp.append(gb); } }
-  if(wrap){ var sp=wrap.querySelectorAll(':scope>span'); if(sp[0]) sp[0].textContent=spf?T('Εξοπλισμός ψαροντουφέκου','Spearfishing gear'):T('Καλάμι / σετ','Rod / setup'); if(sp[1]) sp[1].textContent=T('Τερματικό','Terminal tackle'); Array.prototype.forEach.call(sp,function(s2){ s2.hidden=!all.length; }); }
+  if(wrap){ var sp=wrap.querySelectorAll(':scope>span'); if(sp[0]) sp[0].textContent=spf?T('Εξοπλισμός ψαροντουφέκου','Spearfishing gear'):tprof()==='lake'?T('Καλάμι / σετ (γλυκό νερό)','Rod / setup (fresh water)'):T('Καλάμι / σετ','Rod / setup'); if(sp[1]) sp[1].textContent=T('Τερματικό','Terminal tackle'); Array.prototype.forEach.call(sp,function(s2){ s2.hidden=!all.length; }); }
   var rank=function(x){ return x.type==='set'?-1:order.indexOf(x.type); };
   all.sort(function(a,b){ return rank(a)-rank(b)||(a.name||'').localeCompare(b.name||''); });
   var inSet={}; all.forEach(function(x){ if(x.type==='set') (x.members||[]).forEach(function(i){ inSet[i]=1; }); });
