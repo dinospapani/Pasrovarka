@@ -482,6 +482,8 @@ $('ntThr').addEventListener('change',async function(){ nt.threshold=+$('ntThr').
 window.addEventListener('psaro-wwatch',function(){ if(nt.on) syncNotify(); });
 /* v31z363: όταν αλλάζει το είδος-στόχος, ξαναϋπολογίζεται ο βαθμός και ενημερώνεται ο server */
 window.addEventListener('psaro-advsp',function(){ try{ load(true); }catch(e){} if(nt.on) syncNotify(true); });
+/* v31z409: αλλαγή τύπου ψαρέματος → νέος υπολογισμός πρόγνωσης (τα βάρη του βαθμού και οι ετικέτες εξαρτώνται από τον τύπο) */
+window.addEventListener('psaro-fprof',function(){ clearTimeout(window.__fpRe); window.__fpRe=setTimeout(function(){ try{ load(true); }catch(e){} },300); });
 /* v31z358: μία φορά στο άνοιγμα, αν άλλαξε κάτι (π.χ. γλώσσα), ενημερώνει τον server */
 setTimeout(function(){ try{ if(nt.on) syncNotify(true); }catch(e){} },5000);
 $('ntPress').addEventListener('change',function(){ nt.pressure=$('ntPress').checked; save(); if(nt.on){ syncNotify(); } });

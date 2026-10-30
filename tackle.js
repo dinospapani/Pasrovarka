@@ -470,6 +470,8 @@ function suggest(){
 function names(){ var m={}; load().forEach(function(x){ m[x.id]=tinfo(x.type)[3]+' '+(x.name||'—'); }); return m; }
 function info(){ var m={}; load().forEach(function(x){ m[x.id]={type:x.type,name:tinfo(x.type)[3]+' '+(x.name||'—'),kind:kname(x.kind)}; }); return m; }
 window.PsaroTackle={all:load,last:lastSel,mount:mount,sel:function(){ return union(); },selW:function(){ var o={}; picked.forEach(function(i){ if(pw[i]) o[i]=pw[i]; }); return o; },selH:function(){ var o={}; picked.forEach(function(i){ if(ph[i]) o[i]=ph[i]; }); return o; },selS:function(){ var o={}; union().forEach(function(i){ if(ps[i]) o[i]=ps[i]; }); return o; },names:names,info:info};
+/* v31z409: αλλαγή τύπου ψαρέματος → ο εξοπλισμός της φόρμας ξαναγεμίζει για τον νέο τύπο (όχι αν επεξεργάζεσαι ψάρι) */
+window.addEventListener('psaro-fprof',function(){ if(window.PsaroEditRec) return; var d=document.getElementById('bTackle'); if(d) try{ mount(d,'last'); }catch(e){} });
 try{ window.dispatchEvent(new Event('psaro-tackle-ready')); }catch(e){}
 window.addEventListener('psaro-fprof',function(){ if(!box.hidden&&!editing){ if(!typeOn(fType)) fType='all'; render(); } });
 window.addEventListener('psaro-pview',function(e){ if(e.detail==='tackle'){ editing=null; render(); } });

@@ -441,7 +441,8 @@ box.insertBefore(tools,bar.nextSibling);
       });
       g.out.concat(g.ver).forEach(function(c){order.push(c)});
       var seenO=[]; order=order.filter(function(c){ if(seenO.indexOf(c)>-1) return false; seenO.push(c); return true; });
-      var cur=[].slice.call(ps.children), same=cur.length===order.length&&cur.every(function(c,i){return c===order[i];});
+      /* v31z409: σύγκριση μόνο της σειράς που θέλουμε· στοιχεία εκτός λίστας μένουν στο τέλος. Πριν, η διαφορά στο πλήθος έκανε ατελείωτη αναδιάταξη (κάθε 60 ms). */
+      var cur=[].slice.call(ps.children), same=order.every(function(c,i){return c===cur[i];});
       if(!same) order.forEach(function(c){ ps.appendChild(c); });
     }catch(e){}
     busy=false;
@@ -1071,7 +1072,7 @@ box.insertBefore(tools,bar.nextSibling);
     var ks=Object.keys(rows).filter(function(k){return NM[k];}); if(!ks.length) return;
     var d=document.createElement('div'); d.id='ndProfSt'; d.style.cssText='grid-column:1/-1;margin-top:10px;font-size:13px';
     var h='<b>'+T('Ανά τύπο ψαρέματος','By fishing type')+'</b>';
-    ks.forEach(function(k){ h+='<div style="display:flex;justify-content:space-between;padding:4px 0"><span>'+T(NM[k][0],NM[k][1])+'</span><span>'+rows[k].n+' '+T('έξοδοι','trips')+' · '+rows[k].f+' '+T('ψάρια','fish')+'</span></div>'; });
+    ks.forEach(function(k){ h+='<div style="display:flex;justify-content:space-between;padding:4px 0"><span>'+T(NM[k][0],NM[k][1])+'</span><span>'+rows[k].n+' '+(rows[k].n===1?T('έξοδος','trip'):T('έξοδοι','trips'))+' · '+rows[k].f+' '+(rows[k].f===1?T('ψάρι','fish'):T('ψάρια','fish'))+'</span></div>'; });
     h+='<p class="note">'+T('Μετράνε μόνο καταγραφές από αυτή την έκδοση και μετά.','Counts only records made since this version.')+'</p>';
     d.innerHTML=h; st.appendChild(d);
   }

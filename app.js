@@ -245,9 +245,9 @@ function renderToday(){
   const TH={boat:[20,1.5,14,0.9],shore:[30,2,20,1.2],lake:[20,9,14,9],spear:[12,0.6,8,0.4]}[fpk]||[20,1.5,14,0.9];
   const lvl=(c.wind>TH[0]||c.wave>TH[1])?'bad':(c.wind>TH[2]||c.wave>TH[3])?'warn':'good';
   const pill=$('safePill'); pill.className='pill '+lvl;
-  pill.textContent={good:'Ήπια θάλασσα',warn:'Προσοχή',bad:'Δύσκολες συνθήκες'}[lvl];
-  const WHO={boat:'έξοδο με μικρό σκάφος',shore:'ψάρεμα από την ακτή',lake:'ψάρεμα σε λίμνη/φράγμα',spear:'ψαροτούφεκο'}[fpk]||'έξοδο με μικρό σκάφος';
-  const WH2={boat:'μικρό σκάφος',shore:'την ακτή (κύμα στα βράχια)',lake:'λίμνη/φράγμα',spear:'ψαροτούφεκο (ορατότητα/ρεύμα)'}[fpk]||'μικρό σκάφος';
+  pill.textContent={good:fpk==='lake'?'Ήπιες συνθήκες':'Ήπια θάλασσα',warn:'Προσοχή',bad:'Δύσκολες συνθήκες'}[lvl];
+  const WHO={boat:'έξοδο με μικρό σκάφος',shore:'ψάρεμα από την ακτή',lake:'ψάρεμα σε λίμνη/φράγμα',spear:'ψαροντούφεκο'}[fpk]||'έξοδο με μικρό σκάφος';
+  const WH2={boat:'μικρό σκάφος',shore:'την ακτή (κύμα στα βράχια)',lake:'λίμνη/φράγμα',spear:'ψαροντούφεκο (ορατότητα/ρεύμα)'}[fpk]||'μικρό σκάφος';
   $('safeText').textContent={good:'Συνθήκες κατάλληλες για '+WHO+'.',warn:'Αρκετός άνεμος ή κύμα για '+WH2+'. Κοίτα την πρόγνωση για ριπές.',bad:'Άνεμος ή κύμα ψηλά για '+WH2+'. Καλύτερα αναβολή ή πιο προφυλαγμένο σημείο.'}[lvl];  const fx=$('factors'); fx.replaceChildren();
   const pressTx={slow:['Πέφτει αργά','Η πίεση πέφτει αργά: τα ψάρια τρώνε πιο πολύ πριν αλλάξει ο καιρός.'],stable:['Σταθερή','Η πίεση είναι σταθερή: φυσιολογική δραστηριότητα.'],rise:['Ανεβαίνει','Η πίεση ανεβαίνει: συνήθως πιο ήσυχα ψάρια.'],fast:['Πέφτει απότομα','Η πίεση πέφτει απότομα: έρχεται αλλαγή καιρού και τα ψάρια συχνά σταματούν.']};
   const cloudTx={clear:['Καθαρός','Καθαρός ουρανός: δυνατό φως, τα ψάρια πάνε πιο βαθιά.'],part:['Λίγα σύννεφα','Λίγα σύννεφα: καλό, μαλακό φως.'],over:['Συννεφιά','Συννεφιά: χαμηλό φως, τα ψάρια πλησιάζουν πιο εύκολα.']};
@@ -1458,7 +1458,8 @@ function renderChips(){
   const fill=(el,items,input)=>{el.replaceChildren(); items.forEach(x=>{ const lbl=(input===$('bSpecies')&&window.LANG==='en'&&window.spName)?window.spName(x):x; el.append(h('button',{type:'button',class:'chip',text:lbl,onclick:()=>{input.value=lbl; if(input===$('bSpecies')){const m=DB.find(d=>dispName(d)===x); curLatin=m?m.la:(bites.find(b=>b.species===x)||{}).latin||''; updateLaw();}}})); });};
   /* v31z404: λίμνη/φράγμα → προτάσεις από τα ψάρια λίμνης και δολώματα γλυκού νερού */
   let lake=false; try{ lake=localStorage.getItem('psaro-fprof')==='lake'; }catch(e){}
-  const pool=lake?bites.filter(b=>b.prof==='lake'):bites.filter(b=>b.prof!=='lake');
+  let fp='boat'; try{ fp=localStorage.getItem('psaro-fprof')||'boat'; }catch(e){}
+  const famOf=p=>p==='spear'?'spear':p==='lake'?'lake':'sea', pool=bites.filter(b=>famOf(b.prof||'boat')===famOf(fp)); /* v31z409: προτάσεις μόνο από ψάρια του ίδιου τύπου ψαρέματος */
   const LB=window.LANG==='en'?['Sweetcorn','Boilies','Worms','Bread / paste','Pellets','Soft plastic','Spinner']:['Καλαμπόκι','Boilies','Σκουλήκι','Ψωμί / ζύμη','Pellets','Σιλικονούχο τεχνητό','Spinner'];
   fill($('bChipsSp'),uniq(pool.map(b=>b.species),6),$('bSpecies'));
   fill($('bChipsBait'),uniq(pool.map(b=>b.bait).concat(lake?LB:[]),lake?8:6),$('bBait'));
@@ -2397,6 +2398,7 @@ async function autoDepth(silent){
   const sh=$('sheet'); if(sh) new MutationObserver(()=>{ if(!sh.hidden&&inp.value==='') setTimeout(()=>{ if(inp.value==='') autoDepth(true); },400); }).observe(sh,{attributes:true,attributeFilter:['hidden']});
 })();
 
+window.addEventListener('psaro-fprof',()=>{ try{ renderToday(); }catch(e){} });
 Object.assign(window.PsaroCore,{tripEff:tripEff,fmtDur:fmtDur,resizeImage:resizeImage,biteMs:biteMs,quick:()=>quickRec(false),quickMiss:()=>quickRec(true),map:()=>map,h:h,$:$,fmt:fmt,pad:pad,nicosiaToday:nicosiaToday,nicosiaNowMin:nicosiaNowMin,getPosition:getPosition,getCond:()=>cond,depthAt:(la,lo)=>depthLookup(la,lo),getViewCond:()=>viewCond||cond,compute:()=>compute(),showOnMap:showOnMap,lsGet:lsGet,lsSet:lsSet,switchTab:switchTab,utcMin:()=>utcOff()});
 Store.init();
 if(cond){ applyConditions(cond); } else { $('liveMain').textContent='Δεν υπάρχουν δεδομένα καιρού ακόμα.'; }

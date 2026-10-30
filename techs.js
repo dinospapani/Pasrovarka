@@ -76,7 +76,9 @@ function wire(id,passive){
 wire('bTech',false); wire('tTech',true);
 function rebuildAll(){ [['bTech',false],['tTech',true]].forEach(function(p){ var s=document.getElementById(p[0]); if(!s) return; var c=s.value; build(s,p[1]); var d=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value');
   /* v31z407: μετά την αλλαγή τύπου ψαρέματος κρατιέται η τεχνική μόνο αν ανήκει στον νέο τύπο (όχι «Βυθού» στο ψαροντούφεκο) */
-  if(c&&Array.prototype.some.call(s.options,function(o){ return o.value===c&&c!=='Άλλο'; })) d.set.call(s,c); else s.selectedIndex=0; }); }
+  var mine=[]; PROFILES[prof()](ANG).forEach(function(g){ g[1].forEach(function(x){ mine.push(x[0]); }); }); mine=mine.concat(load()); if(p[1]) PAS.forEach(function(x){ mine.push(x[0]); });
+  if(c&&mine.indexOf(c)>=0) d.set.call(s,c);
+  else { Array.prototype.slice.call(s.options).forEach(function(o){ if(o.value===c&&mine.indexOf(c)<0&&c!=='Άλλο') o.remove(); }); s.selectedIndex=0; } }); }
 window.addEventListener('psaro-fprof',rebuildAll);
 window.PsaroTechs={custom:load,rebuild:rebuildAll};
 })();
