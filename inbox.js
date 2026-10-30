@@ -105,9 +105,40 @@ function render(){
   });
   if(target) setTimeout(function(){ try{ target.scrollIntoView({block:'center'}); }catch(e){} },50);
 }
-function open(id){ focusId=id||null; ensure(); sheet.hidden=false; render(); load().then(render); }
+function open(id){ focusId=id||null; ensure(); sheet.hidden=false; render(); load().then(function(){ render(); markSeen(); }); markSeen(); }
 function close(){ if(sheet) sheet.hidden=true; focusId=null; if(/^#inbox/.test(location.hash)) try{ history.replaceState(null,'',location.href.split('#')[0]); }catch(e){} }
-function refreshUI(){ if(sheet&&!sheet.hidden) render(); fcButton(); decorateTrips(); }
+function refreshUI(){ if(sheet&&!sheet.hidden){ render(); markSeen(); } fcButton(); decorateTrips(); badges(); }
+
+/* v31z358: αδιάβαστες ειδοποιήσεις: ένδειξη στο καμπανάκι (γραμμή αναζήτησης), στο κουμπί «Ενέργειες», στη λαβή της μπάρας και στο εικονίδιο της εφαρμογής */
+var SEEN='psaro-inbox-seen';
+function seenAt(){ try{ var v=localStorage.getItem(SEEN); if(v) return v; var now=new Date().toISOString(); localStorage.setItem(SEEN,now); return now; }catch(e){ return ''; } }
+function unread(){ var s=seenAt(); return LIST.filter(function(x){ return x.at&&x.at>s; }).length; }
+function markSeen(){ try{ var top=LIST[0]&&LIST[0].at, now=new Date().toISOString(); localStorage.setItem(SEEN,top&&top>now?top:now); }catch(e){} badges(); }
+function dot(host,n){ if(!host) return; var d=host.querySelector(':scope > .ibadge'); if(!n){ if(d) d.remove(); return; } if(!d){ d=el('span','ibadge'); d.setAttribute('aria-hidden','true'); host.append(d); } d.textContent=n>9?'9+':String(n); }
+var bell=null;
+function ensureBell(){
+  if(bell&&bell.isConnected) return bell; var sb=document.querySelector('.ndsearch'); if(!sb||!sb.parentNode) return null;
+  bell=el('button','ibell'); bell.type='button'; bell.setAttribute('aria-label',T('Ειδοποιήσεις','Notifications'));
+  bell.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>';
+  bell.addEventListener('click',function(e){ e.stopPropagation(); open(); }); sb.parentNode.insertBefore(bell,sb.nextSibling); return bell;
+}
+function badges(){
+  var n=loaded?unread():0;
+  dot(ensureBell(),n);
+  var acts=[].slice.call(document.querySelectorAll('.ndtools .ndb')).find(function(b){ return /Ενέργειες|Actions/.test(b.textContent||''); });
+  dot(acts,n); dot(document.querySelector('.ndtools .ndhandle'),n); dot(document.getElementById('bInbox'),n);
+  var fb=document.getElementById('ntInbox'); if(fb) fb.classList.toggle('hasnew',n>0);
+  try{ if(navigator.setAppBadge){ if(n) navigator.setAppBadge(n); else navigator.clearAppBadge(); } }catch(e){}
+}
+(function(){ var st=document.createElement('style'); st.textContent=
+  '.ibadge{position:absolute;top:2px;right:2px;min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:9px;background:#e8541e;color:#fff;font:700 11px/18px system-ui,sans-serif;text-align:center;pointer-events:none;box-shadow:0 0 0 2px var(--surface,#0c1a24);z-index:3}'+
+  '.ndtools .ndb,.ndtools .ndhandle,#bInbox{position:relative}.ndtools .ndhandle .ibadge{top:-6px;right:auto;left:-6px}.ndtools:not(.shut) .ndhandle .ibadge{display:none}'+
+  '.ibell{display:none}body.nd .ibell{display:flex;position:absolute;top:calc(12px + 6px);right:62px;z-index:811;width:44px;height:44px;border:0;border-radius:22px;background:transparent;color:var(--ink,#fff);align-items:center;justify-content:center;cursor:pointer}'+
+  'body.nd .ibell svg{width:22px;height:22px}body.nd .ibell .ibadge{top:2px;right:2px}body.ontrip.nd .ibell{display:none}body.nd .ndsearch{padding-right:18px}body.nd .ndsearch span{margin-right:44px}'+
+  '#ntInbox.hasnew{border-color:#e8541e}';
+  document.head.appendChild(st); })();
+setInterval(function(){ if(!document.hidden){ loaded=false; load(); } },120000);
+try{ if(navigator.serviceWorker) navigator.serviceWorker.addEventListener('message',function(e){ if(e.data&&e.data.inboxNew){ loaded=false; load(); } }); }catch(e){}
 
 /* κουμπί στην κάρτα ειδοποιήσεων της Πρόγνωσης */
 function fcButton(){
