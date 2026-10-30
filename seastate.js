@@ -165,7 +165,7 @@ function loadRegion(bounds){
         .then(function(j){ var a=arrOf(j); if(!a) return; a.forEach(function(p,k){ all[ci*CH+k]=p; }); okN++; })
         .catch(function(e){ lastErr=(e&&e.message)||'error'; });
     }); },Promise.resolve()).then(function(){
-      if(!okN){ R.err[name]=lastErr||'—'; return; }
+      if(!okN){ R.err[name]=lastErr||'—'; if(/429/.test(lastErr)) R.retry=true; return; }
       var first=all.filter(function(p){ return p&&p.hourly&&p.hourly.time; })[0]; if(!first){ R.err[name]=T('χωρίς δεδομένα','no data'); return; }
       var any=all.some(function(p){ return p&&col(p,'wave_height').some(function(x){ return x!=null; }); }); if(!any){ R.err[name]=T('χωρίς δεδομένα','no data'); return; }
       var tl=first.hourly.time, nul=tl.map(function(){ return null; }), get=function(p,b){ var v=p?col(p,b):null; return v&&v.length?v:nul; };
@@ -174,7 +174,8 @@ function loadRegion(bounds){
     });
   }
   /* ένα-ένα τα μοντέλα, για να μη χτυπάμε το όριο αιτημάτων ανά λεπτό */
-  var pm=WAVE_MODELS.reduce(function(pr,m){ return pr.then(function(){ return waveModel(m[0],m[1]); }); },Promise.resolve());
+  /* v31z386: το τρίτο μοντέλο (EWAM) ζητιέται μόνο αν δεν φόρτωσαν τα δύο πρώτα, για να μη χτυπάμε το όριο αιτημάτων ανά λεπτό (HTTP 429) */
+  var pm=WAVE_MODELS.reduce(function(pr,m,i){ return pr.then(function(){ if(i>=2&&R.waves.length>=2) return; return waveModel(m[0],m[1]); }); },Promise.resolve());
   R.p=Promise.all([pw,pm]).then(function(){ if(!R.waves.length) return waveModel('',T('Open-Meteo (αυτόματο)','Open-Meteo (auto)')); }).then(function(){ if(R.retry) R.at=Date.now()-3300000; R.retry=false; R.waves.sort(function(x,y){ return WAVE_MODELS.findIndex(function(m){ return m[0]===x.id; })-WAVE_MODELS.findIndex(function(m){ return m[0]===y.id; }); }); return R; });
   REG=R; return R.p;
 }
@@ -482,7 +483,7 @@ function draw(){
   swap();
   var tot=drawn, best=LV.map(function(l,ii){ return Math.round(100*cnt[ii]/tot)+'% '+(EN?l.en:l.el).toLowerCase(); }).filter(function(x5){ return x5.indexOf('0% ')!==0; });
   var miss=[]; if(!P.waves.length) miss.push(P.pointFallback?T('χάρτη μοντέλων κύματος· το swell είναι από την πρόγνωση του σημείου σου','wave model map; swell is from your point forecast'):T('μοντέλα κύματος','wave models')); if(!P.dur) miss.push(T('διάρκεια ανέμου','wind duration'));
-  var errs=REG&&REG.err?Object.keys(REG.err).map(function(k){ return k+': '+REG.err[k]; }):[];
+  var errs=REG&&REG.err?Object.keys(REG.err).map(function(k){ var e=REG.err[k]; return k+': '+(/429/.test(e)?T('όριο αιτημάτων, ξαναδοκιμάζει σε λίγα λεπτά','rate limit, retrying in a few minutes'):e); }):[];
   status(T('Στη θέα: ','In view: ')+best.join(' · ')+(errs.length?' · '+T('Μοντέλα: ','Models: ')+errs.join(' | '):'')+(unc?T(' · αβέβαιο ',' · uncertain ')+Math.round(100*unc/tot)+'%':'')+(miss.length?T(' (χωρίς ',' (without ')+miss.join(T(' και ',' and '))+')':''));
   srcLine(); showPoint();
 }
