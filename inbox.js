@@ -67,7 +67,10 @@ function css(){
   '#ndInbox .iit{border:1px solid var(--line,#8884);border-radius:12px;margin:6px 0;background:var(--surface,transparent)}#ndInbox .iit>button{display:flex;gap:10px;width:100%;text-align:left;background:none;border:0;color:inherit;font:inherit;padding:10px;min-height:44px}'+
   '#ndInbox .iic{font-size:18px;line-height:1.2;flex:none;width:24px;text-align:center}#ndInbox .itx{flex:1;min-width:0}#ndInbox .itt{font-weight:600;font-size:14px}#ndInbox .ibd{font-size:13px;color:var(--muted,#556);margin-top:2px}#ndInbox .itm{font-size:12px;color:var(--muted,#667);flex:none}'+
   '#ndInbox .ifu{padding:0 10px 10px 44px;font-size:13px;white-space:pre-line}#ndInbox .ifu .note{font-size:11px;margin-top:6px}#ndInbox .iit.on{outline:2px solid var(--accent,#c4401c)}'+
-  '#ndInbox .ilocs{display:flex;flex-direction:column;gap:6px;margin-top:8px;white-space:normal}#ndInbox .iloc{text-align:left;min-height:36px;padding:6px 10px;border-radius:10px;border:1px solid rgba(127,127,127,.35);background:transparent;color:inherit;font:600 13px system-ui,sans-serif;cursor:pointer}'+
+  '#ndInbox .ilocs{display:flex;flex-direction:column;gap:6px;margin-top:8px;white-space:normal}#ndInbox .iloc-all{background:var(--accent,#c4401c);color:#fff;border-color:transparent}#ndInbox .iloc{text-align:left;min-height:36px;padding:6px 10px;border-radius:10px;border:1px solid rgba(127,127,127,.35);background:transparent;color:inherit;font:600 13px system-ui,sans-serif;cursor:pointer}'+
+  '.ilpin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#c4401c;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.45);display:grid;place-items:center}.ilpin span{transform:rotate(45deg);color:#fff;font:700 13px system-ui,sans-serif}'+
+  '.ilpop .ild{font-size:13px;padding:3px 0;border-top:1px solid rgba(127,127,127,.2)}.ilpop .meta{margin-bottom:4px}'+
+  '.ilctl button{height:34px;padding:0 12px;border:0;border-radius:17px;background:#c4401c;color:#fff;font:600 13px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.35);cursor:pointer}'+
   '.nbxd{margin-top:6px}.nbxd summary{cursor:pointer;min-height:28px}.nbxd .nbr{font-size:13px;margin:4px 0;white-space:pre-line}';
   document.head.appendChild(st);
 }
@@ -99,9 +102,13 @@ function render(){
     bt.append(el('span','iic',k[0]),tx,el('span','itm',hmOf(x.at)));
     var fu=el('div','ifu'); fu.hidden=true; fu.append(document.createTextNode(x.full||x.body||''));
     if(x.place&&x.place.lat!=null&&window.PsaroCoord&&window.PsaroCoord.fmt){ try{ fu.append(el('div','note',T('Σημείο: ','Location: ')+(x.place.name?x.place.name+' · ':'')+window.PsaroCoord.fmt(+x.place.lat,+x.place.lon))); }catch(e){} }
-    if(Array.isArray(x.locs)&&x.locs.length){ /* v31z396: «Δες στον χάρτη» για τις παλιές ψαριές */
-      var lw=el('div','ilocs'); x.locs.forEach(function(q){ if(q.lat==null) return; var lb=el('button','iloc','📍 '+(q.label||q.name||'')); lb.type='button';
-        lb.addEventListener('click',function(ev){ ev.stopPropagation(); showLoc(q); }); lw.append(lb); }); fu.append(lw); }
+    if(Array.isArray(x.locs)&&x.locs.length){ /* v31z397: όλα τα σημεία μαζί στον χάρτη, με λεπτομέρειες ανά σημείο */
+      var lw=el('div','ilocs'), locs=x.locs.filter(function(q){ return q&&q.lat!=null; }), ttl=String(x.title||'').replace(/^[^:]*:\s*/,'');
+      var all=el('button','iloc iloc-all','🗺 '+T('Δες τα όλα στον χάρτη','Show them all on the map')+' ('+locs.length+')'); all.type='button';
+      all.addEventListener('click',function(ev){ ev.stopPropagation(); showLocs(locs,-1,ttl); }); lw.append(all);
+      locs.forEach(function(q,i){ var lb=el('button','iloc','📍 '+(q.label||q.name||'')); lb.type='button';
+        lb.addEventListener('click',function(ev){ ev.stopPropagation(); showLocs(locs,i,ttl); }); lw.append(lb); });
+      fu.append(lw); }
     fu.append(el('div','note',(x.srv&&!x.dev)?T('Καταγράφηκε από τον server (μπορεί να μην εμφανίστηκε στο κινητό).','Logged by the server (may not have shown on the phone).'):x.src==='app'?T('Από τον έλεγχο της εφαρμογής.','From the app\'s own check.'):T('Ειδοποίηση push.','Push notification.')));
     bt.addEventListener('click',function(){ var o=fu.hidden; fu.hidden=!o; bt.setAttribute('aria-expanded',String(o)); });
     it.append(bt,fu); ls.append(it);
@@ -109,16 +116,34 @@ function render(){
   });
   if(target) setTimeout(function(){ try{ target.scrollIntoView({block:'center'}); }catch(e){} },50);
 }
-var locLayer=null;
-function showLoc(q){
+var locLayer=null, locCtl=null;
+function clearLocs(){ try{ var m=window.PsaroCore.map(); if(locLayer) m.removeLayer(locLayer); if(locCtl) m.removeControl(locCtl); }catch(e){} locLayer=null; locCtl=null; }
+function locPop(q,ttl){
+  var d=el('div','pop ilpop'); d.append(el('b','',q.name||T('Σημείο','Spot')));
+  if(ttl) d.append(el('div','meta',ttl));
+  var ls=Array.isArray(q.det)&&q.det.length?q.det:[q.label||''];
+  ls.forEach(function(t){ d.append(el('div','ild',t)); });
+  return d;
+}
+function showLocs(locs,focus,ttl){
   close();
   try{ var tb=document.querySelector('[data-tab=map]'); if(tb) tb.click(); }catch(e){}
   setTimeout(function(){ try{
     var C=window.PsaroCore, m=C&&C.map&&C.map(); if(!m||typeof L==='undefined') return;
-    if(locLayer) m.removeLayer(locLayer); locLayer=L.layerGroup().addTo(m);
-    var mk=L.circleMarker([q.lat,q.lon],{radius:11,color:'#fff',weight:3,fillColor:'#c4401c',fillOpacity:.95}).addTo(locLayer);
-    mk.bindPopup(function(){ var d=el('div','pop'); d.append(el('b','',q.name||T('Σημείο','Spot')),el('div','meta',q.label||'')); return d; });
-    m.invalidateSize(); m.flyTo([q.lat,q.lon],Math.max(m.getZoom(),14)); setTimeout(function(){ try{ mk.openPopup(); }catch(e){} },900);
+    clearLocs(); locLayer=L.layerGroup().addTo(m); var mks=[];
+    locs.forEach(function(q,i){
+      var ic=L.divIcon({className:'',html:'<div class="ilpin"><span>'+(i+1)+'</span></div>',iconSize:[30,38],iconAnchor:[15,36],popupAnchor:[0,-32]});
+      var mk=L.marker([q.lat,q.lon],{icon:ic,zIndexOffset:2000,title:q.name||''}).addTo(locLayer);
+      mk.bindPopup(function(){ return locPop(q,ttl); },{maxWidth:280}); mks.push(mk);
+    });
+    var Ctl=L.Control.extend({options:{position:'topleft'},onAdd:function(){ var w=L.DomUtil.create('div','ilctl'); L.DomEvent.disableClickPropagation(w);
+      var b=document.createElement('button'); b.type='button'; b.textContent=T('Παλιές ψαριές ✕','Past catches ✕'); b.setAttribute('aria-label',T('Κλείσιμο σημείων','Hide these spots'));
+      b.addEventListener('click',clearLocs); w.appendChild(b); return w; }});
+    locCtl=new Ctl(); m.addControl(locCtl);
+    m.invalidateSize();
+    if(focus>=0&&mks[focus]){ m.flyTo([locs[focus].lat,locs[focus].lon],Math.max(m.getZoom(),14)); setTimeout(function(){ try{ mks[focus].openPopup(); }catch(e){} },900); }
+    else if(mks.length===1){ m.flyTo([locs[0].lat,locs[0].lon],14); setTimeout(function(){ try{ mks[0].openPopup(); }catch(e){} },900); }
+    else { m.flyToBounds(L.latLngBounds(locs.map(function(q){ return [q.lat,q.lon]; })).pad(0.25),{maxZoom:14}); }
   }catch(e){} },250);
 }
 function open(id){ focusId=id||null; ensure(); sheet.hidden=false; render(); load().then(function(){ render(); markSeen(); }); markSeen(); }
