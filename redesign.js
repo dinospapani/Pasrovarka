@@ -376,7 +376,7 @@ box.insertBefore(tools,bar.nextSibling);
   function arrange(){
     var ps=document.getElementById('pSettings'); if(!ps||busy) return; busy=true;
     try{
-      var OWN={ndExport:1,ndTour:1,ndDelAcc:1,ndAbout:1,ndFProf:1};
+      var OWN={ndExport:1,ndTour:1,ndDelAcc:1,ndAbout:1,ndFProf:1,ndVerCard:1};
       var kids=[].slice.call(ps.children).filter(function(c){ return !c.classList.contains('ndsech')&&!OWN[c.id]; });
       var g={back:[],acc:[],pref:[],safe:[],data:[],adv:[],about:[],out:[],ver:[]};
       kids.forEach(function(c,i){
@@ -430,6 +430,7 @@ box.insertBefore(tools,bar.nextSibling);
         : '<h3>Απόρρητο</h3><ul class="ndul"><li>Τα ψάρια, οι έξοδοι, τα σημεία, ο εξοπλισμός και οι φωτογραφίες σου αποθηκεύονται στο κινητό.</li><li>Αν συνδεθείς, συγχρονίζονται και με τον λογαριασμό σου στο BiteCast, ώστε να τα επαναφέρεις σε άλλο κινητό.</li><li>Η τοποθεσία σου χρησιμοποιείται στο κινητό και στέλνεται σε υπηρεσίες καιρού και χαρτών (Open-Meteo, OpenStreetMap, Esri) μόνο για να φορτωθούν πρόγνωση, μέρη και χάρτης. Οι φωτογραφίες ειδών φορτώνονται από τη Wikipedia και στέλνεται μόνο το όνομα του είδους.</li><li>Όταν είναι ενεργή η παρακολούθηση ασφάλειας της εξόδου, στέλνονται στον διακομιστή του BiteCast η διαδρομή, η τελευταία γνωστή θέση, η μπαταρία και το email της επαφής σου, ώστε να σταλεί ειδοποίηση αν δεν γυρίσεις.</li><li>Αν χρησιμοποιήσεις αναγνώριση ψαριού με AI, η φωτογραφία στέλνεται στην Anthropic με το δικό σου κλειδί.</li></ul><h3>Ασφάλεια</h3><p class="note">Το BiteCast είναι βοήθημα προγραμματισμού και καταγραφής. Οι προγνώσεις είναι ενδεικτικές και όχι επίσημη πρόγνωση. Δεν αντικαθιστά VHF, σωσίβια, φωτοβολίδες ή επίσημες προειδοποιήσεις καιρού. Η κάλυψη κινητού στη θάλασσα είναι περιορισμένη, οπότε οι ειδοποιήσεις μπορεί να καθυστερήσουν ή να αποτύχουν.</p>';
       g.about.push(ab);
       g.adv.unshift(tr);
+      var vcd=document.getElementById('ndVerCard'); if(vcd) g.adv.unshift(vcd);
       var H={acc:E?'Account & sync':'Λογαριασμός και συγχρονισμός',pref:E?'Preferences':'Προτιμήσεις',safe:E?'Safety':'Ασφάλεια',data:E?'Data':'Δεδομένα',adv:E?'Advanced':'Για προχωρημένους',about:E?'About':'Σχετικά'};
       var order=[];
       g.back.forEach(function(c){order.push(c)});
@@ -618,7 +619,7 @@ box.insertBefore(tools,bar.nextSibling);
 /* Χειροκίνητος έλεγχος νέας έκδοσης (κουμπί κάτω από την έκδοση στα Settings) */
 (function(){
   var EN=window.LANG==='en', T=function(el,en){ return EN?en:el; };
-  function say(m){ try{ window.PsaroCore.toast(m); }catch(e){} }
+  function say(m){ try{ window.PsaroCore.toast(m); }catch(e){} try{ window.dispatchEvent(new CustomEvent('psaro-updmsg',{detail:m})); }catch(e){} }
   function num(v){ var m=/z(\d+)/.exec(v||''); return m?+m[1]:0; }
   function reload(){ var go=function(){ location.reload(); };
     try{ (navigator.serviceWorker&&navigator.serviceWorker.getRegistration?navigator.serviceWorker.getRegistration().then(function(rg){ return rg?rg.update():0; }):Promise.resolve()).catch(function(){}).then(function(){ return window.caches?caches.keys():[]; }).then(function(ks){ return Promise.all((ks||[]).filter(function(k){ return /^psarovarka-/.test(k)&&k!=='psarovarka-'+window.PSARO_VERSION; }).map(function(k){ return caches.delete(k); })); }).then(go,go); }catch(e){ go(); } }
@@ -1288,7 +1289,7 @@ box.insertBefore(tools,bar.nextSibling);
       ['ai',T('Αναγνώριση ψαριού με AI','AI fish identification'),null,'set','pAICard']]],
     [T('ΛΟΓΑΡΙΑΣΜΟΣ','ACCOUNT'),[
       ['account',T('Λογαριασμός και γλώσσα','Account and language'),null,'set','pAccCard,pSyncCard,pPassCard,ndDelAcc'],
-      ['about',T('Σχετικά','About'),T('Απόρρητο, έκδοση, οδηγός καλωσορίσματος','Privacy, version, welcome tour'),'set','appVer,ndAbout,ndTour']]]
+      ['about',T('Σχετικά','About'),T('Έκδοση και ενημέρωση, οδηγός, απόρρητο','Version and updates, tour, privacy'),'set','ndVerCard,ndTour,ndAbout']]]
   ];
   /* v31z412: ετοιμότητα ασφαλείας */
   function safeItems(){ var d=J('psaro-safe',{}), gps=true; try{ gps=!window.PsaroTrack||window.PsaroTrack.enabled(); }catch(e){}
@@ -1385,11 +1386,13 @@ box.insertBefore(tools,bar.nextSibling);
         box.appendChild(b);
       });
     });
-    /* έκδοση και έλεγχος για νέα, στο τέλος της λίστας */
-    var vf=document.createElement('div'); vf.className='ndphver'; var vt=document.createElement('span'); vt.textContent='BiteCast '+(window.PSARO_VERSION||'');
-    var vb=document.createElement('button'); vb.type='button'; vb.className='btn ghost sm'; vb.textContent=T('Έλεγχος για νέα έκδοση','Check for updates');
-    vb.addEventListener('click',function(){ var u=$('ndChkUpd'); if(u) u.click(); });
-    vf.append(vt,vb); home.appendChild(vf);
+    /* v31z414: Αποσύνδεση στο τέλος της λίστας (όπως στις ρυθμίσεις του κινητού)· η έκδοση μόνο ως κείμενο, ο έλεγχος για νέα έκδοση μόνο στα «Σχετικά» */
+    var vf=document.createElement('div'); vf.className='ndphver';
+    var lg=window.PsaroCloud&&window.PsaroCloud.logged&&window.PsaroCloud.logged();
+    if(lg&&$('acLogout')){ var ob=document.createElement('button'); ob.type='button'; ob.className='ndphout'; ob.textContent=T('Αποσύνδεση','Sign out');
+      ob.addEventListener('click',function(){ var a=$('acLogout'); if(a) a.click(); }); vf.appendChild(ob); }
+    var vt=document.createElement('span'); vt.textContent='BiteCast '+(window.PSARO_VERSION||''); vf.appendChild(vt);
+    home.appendChild(vf);
     var none=document.createElement('p'); none.className='note ndphnone'; none.hidden=true; none.textContent=T('Δεν βρέθηκε ρύθμιση.','No setting found.'); home.insertBefore(none,vf);
     filt();
   }
@@ -1397,6 +1400,16 @@ box.insertBefore(tools,bar.nextSibling);
   /* v31z410: κάρτες χωρίς id παίρνουν id, ώστε κάθε γραμμή να δείχνει μόνο τις δικές της (πριν «Λογαριασμός» έδειχνε όλες τις ρυθμίσεις ξανά) */
   function tagCards(){ [['pName','pAccCard'],['acSync','pSyncCard'],['pPass','pPassCard']].forEach(function(p){ var e=$(p[0]), c=e&&e.closest('.card'); if(c&&!c.id) c.id=p[1]; });
     var ps=$('pSettings'); if(ps) [].forEach.call(ps.querySelectorAll('.card'),function(c){ if(!c.id&&/Αναγνώριση ψαριού με AI|AI fish (recognition|identification)/.test((c.querySelector('h3')||{}).textContent||'')) c.id='pAICard'; }); }
+  /* v31z414: κάρτα «Έκδοση» στα Σχετικά: η μόνη θέση του ελέγχου για νέα έκδοση */
+  function verCard(){ var ps=$('pSettings'); if(!ps) return; var c=$('ndVerCard');
+    if(!c){ c=document.createElement('div'); c.id='ndVerCard'; c.className='card setcard ndver';
+      c.innerHTML='<h3></h3><div class="ndverr"><div><b></b><small></small></div><button class="btn sm" type="button"></button></div>';
+      c.querySelector('button').addEventListener('click',function(){ var u=$('ndChkUpd'), bt=this; if(!u) return; bt.disabled=true; bt.textContent=T('Έλεγχος…','Checking…'); u.click(); });
+      window.addEventListener('psaro-updmsg',function(e){ var sm=c.querySelector('small'), bt=c.querySelector('button'); sm.textContent=e.detail||''; sm.classList.add('ndvmsg'); bt.disabled=false; bt.textContent=T('Έλεγχος τώρα','Check now'); }); }
+    c.querySelector('h3').textContent=T('Έκδοση','Version'); c.querySelector('b').textContent='BiteCast '+(window.PSARO_VERSION||'');
+    var sm=c.querySelector('small'); if(!sm.classList.contains('ndvmsg')) sm.textContent=T('Οι ενημερώσεις γίνονται αυτόματα όταν ανοίγεις την εφαρμογή.','Updates install automatically when you open the app.');
+    var vb=c.querySelector('button'); if(!vb.disabled) vb.textContent=T('Έλεγχος τώρα','Check now');
+    if(c.parentNode!==ps) ps.appendChild(c); }
   var inHome=false;
   function showHome(){
     if(!build()) return; moveAlerts(); inHome=true; paint();
@@ -1418,7 +1431,7 @@ box.insertBefore(tools,bar.nextSibling);
     if(r[3]==='set'){
       setTimeout(function(){
         var pr=$('profile');
-        tagCards(); if(k==='safety') safeCard(); if(k==='alerts') orgAlerts();
+        tagCards(); if(k==='safety') safeCard(); if(k==='alerts') orgAlerts(); if(k==='about') verCard();
         var pt=nrm(r[1]); [].forEach.call(document.querySelectorAll('#pSettings .card>h3, #pSettings .card>b:first-child'),function(h){ var same=nrm(h.textContent).trim()===pt||(k==='units'&&/μοναδες|units/.test(nrm(h.textContent)))||(k==='alerts'&&/^ειδοποιησεις$|^alerts$/.test(nrm(h.textContent).trim())); h.classList.toggle('ndhdup',same); });
         (r[4]||'').split(',').forEach(function(id){ var t=id?$(id):null; if(t) t.classList.add('ndphsel'); });
         try{ pr.scrollTop=0; }catch(e){}
