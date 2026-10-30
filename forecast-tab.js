@@ -92,11 +92,12 @@ async function load(force){
   if(!p){ renderFc(null,null,'Χρειάζεται τοποθεσία. Πάτα «Η θέση μου» στον χάρτη ή αναζήτησε μία.'); return; }
   if(p.id!==sel){ sel=p.id; renderPlaces(); }
   var cache=lsGet('psaro-fc7',null);
-  if(!force&&cache&&cache.id===p.id&&Date.now()-cache.t<3600e3&&cache.fc){ renderFc(p,cache.fc,'',cache.t); return; }
+  var spk=(spCfg()||{}).n||'';
+  if(!force&&cache&&cache.id===p.id&&(cache.sp||'')===spk&&Date.now()-cache.t<3600e3&&cache.fc){ renderFc(p,cache.fc,'',cache.t); return; }
   if(busy) return; busy=true; $('fcSub').textContent='Φόρτωση…';
   try{
-    var f=await PF.getForecast(p.lat,p.lon,null,{days:7});
-    lsSet('psaro-fc7',{id:p.id,t:Date.now(),fc:f}); renderFc(p,f,'',Date.now());
+    var f=await PF.getForecast(p.lat,p.lon,null,{days:7,sp:spCfg()});
+    lsSet('psaro-fc7',{id:p.id,sp:spk,t:Date.now(),fc:f}); renderFc(p,f,'',Date.now());
   }catch(e){
     try{ console.error('forecast',e); }catch(e0){}
     if(cache&&cache.id===p.id&&cache.fc) renderFc(p,cache.fc,'Δεν φορτώθηκε νέα πρόγνωση. Δείχνω την τελευταία αποθηκευμένη.',cache.t);
@@ -122,6 +123,7 @@ function renderFc(p,f,note,t){
   $('fcNote').textContent=note||'';
   try{ var ra=$('fcRadar'), sb=$('fcSub'); if(!ra&&sb){ ra=h('a',{id:'fcRadar',class:'note',target:'_blank',rel:'noopener',style:'display:block;margin:4px 0;text-decoration:underline'}); sb.after(ra); }
     if(ra){ ra.hidden=!(p&&f); if(p) { ra.href='https://www.windy.com/-Weather-radar-radar?radar,'+(+p.lat).toFixed(3)+','+(+p.lon).toFixed(3)+',9'; ra.textContent=EN?'🌧 Live rain radar and lightning (Windy). The forecast % is a model estimate and can miss storms that are already forming.':'🌧 Ζωντανό ραντάρ βροχής και κεραυνών (Windy). Το ποσοστό βροχής της πρόγνωσης είναι εκτίμηση μοντέλου και μπορεί να χάσει καταιγίδες που ήδη σχηματίζονται.'; } } }catch(e){}
+  try{ spPick(p&&f); }catch(e){}
   try{ pressCard(p&&f?p:null); }catch(e){}
   try{ turnCard(p&&f?f:null); }catch(e){}
   var wb=$('fcWatch'), delBtn=$('plDel');
@@ -364,9 +366,31 @@ function todayPress(){
   setTimeout(todayPress,2500); setInterval(function(){ if(!document.hidden) todayPress(); },60000);
 })();
 /* ---------- ειδοποιήσεις ---------- */
+/* v31z363: επιλογή είδους-στόχου πάνω από τις μέρες: ο βαθμός προσαρμόζεται στο είδος (θερμοκρασία θάλασσας, και για καλαμάρι/ξιφία κανόνες από μελέτες) */
+function spPick(show){
+  var D=$('fcDays'); if(!D) return; var box=$('fcSpPick');
+  if(!box){ box=h('div',{id:'fcSpPick',class:'meta',style:'margin:8px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap'}); D.parentNode.insertBefore(box,D); }
+  box.hidden=!show; if(!show) return; box.replaceChildren();
+  var s=h('select',{'aria-label':T('Είδος για τον βαθμό','Species for the score'),style:'min-height:40px;max-width:60%'}), cur=lsGet('psaro-advsp','');
+  s.append(h('option',{value:'',text:T('Όλα τα είδη (γενικός)','All species (general)')}));
+  (window.SPKB||[]).slice().sort(function(a,b){ return (EN?a.en:a.n).localeCompare(EN?b.en:b.n,EN?'en':'el'); }).forEach(function(e){ s.append(h('option',{value:e.n,text:EN&&e.en?e.en:e.n})); });
+  /* και τα είδη από τα δικά σου ψάρια που δεν είναι στη λίστα (π.χ. ξιφίας) */
+  try{ var kn={}; (window.SPKB||[]).forEach(function(e){ kn[e.n]=1; }); var own={}; ((C.Store.act?C.Store.act():C.Store.get('bites'))||[]).forEach(function(b){ var n=String(b.species||'').replace(/\s*\(.*$/,'').trim(); if(n&&!kn[n]) own[n]=1; });
+    Object.keys(own).sort().forEach(function(n){ s.append(h('option',{value:n,text:n})); }); if(cur&&!kn[cur]&&!own[cur]) s.append(h('option',{value:cur,text:cur})); }catch(e){}
+  s.value=cur;
+  s.addEventListener('change',function(){ lsSet('psaro-advsp',s.value); try{ window.dispatchEvent(new Event('psaro-advsp')); }catch(e){} });
+  var k=spCfg(), sk=window.PF&&k?((k.l||'')+' '+k.n).toLowerCase():'';
+  var why=!k?T('Γενικός βαθμός. Διάλεξε είδος για να μετρήσει και η θερμοκρασία θάλασσας.','General score. Choose a species so sea temperature counts too.')
+    :/loligo|καλαμάρ/.test(sk)?T('Καλαμάρι: καλύτερα κοντά στη νέα σελήνη, γύρω από τη δύση, με λίγο άνεμο, πιο κρύα θάλασσα και χαμηλή πίεση (μελέτη στη Μαγιόρκα, 2012).','Squid: better near new moon, around sunset, with light wind, cooler sea and low pressure (Mallorca study, 2012).')
+    :/xiphias|ξιφ/.test(sk)?T('Ξιφίας: η σελήνη δεν μετρά (μελέτη στην Ανατολική Μεσόγειο, 2018).','Swordfish: the moon does not count (Eastern Mediterranean study, 2018).')
+    :T('Μετρά η θερμοκρασία θάλασσας για το είδος','Sea temperature for the species counts')+(k.sst?' ('+k.sst[0]+'–'+k.sst[1]+' °C).':'.');
+  box.append(h('span',{text:T('Βαθμός για:','Score for:')}),s,h('span',{class:'note',style:'flex-basis:100%;margin:0',text:why}));
+}
+/* v31z363: είδος-στόχος (από «Τι να ψαρέψω») για τον βαθμό, και για τον server/service worker */
+function spCfg(){ var n=lsGet('psaro-advsp',''); if(!n) return null; var e=(window.SPKB||[]).filter(function(k){ return k.n===n; })[0]; return e?{n:e.n,l:e.l,sst:e.sst}:{n:n}; }
 function cfgPlaces(){ return allPlaces().map(function(p){ return {id:p.id,name:p.name,lat:+p.lat.toFixed(3),lon:+p.lon.toFixed(3),watch:p.watch!==false}; }); }
 async function writeCfg(){
-  var cfg={lang:window.LANG||'el',on:nt.on,threshold:nt.threshold,pressure:nt.pressure!==false,turn:!!nt.turn,wind:wwCfg(),notified:nt.notified,server:!!nt.server,places:cfgPlaces()};
+  var cfg={sp:spCfg(),lang:window.LANG||'el',on:nt.on,threshold:nt.threshold,pressure:nt.pressure!==false,turn:!!nt.turn,wind:wwCfg(),notified:nt.notified,server:!!nt.server,places:cfgPlaces()};
   try{ var c=await caches.open('psaro-cfg'); await c.put(new URL('__cfg',location.href).href,new Response(JSON.stringify(cfg))); }catch(e){}
 }
 var b64u=function(s){ var p='='.repeat((4-s.length%4)%4), r=atob((s+p).replace(/-/g,'+').replace(/_/g,'/')); return Uint8Array.from(r,function(c){ return c.charCodeAt(0); }); };
@@ -388,7 +412,7 @@ async function pushServer(){
   var cl=Cl(); if(!cl) return false;
   try{
     var sub=await getSub(true); if(!sub) return false;
-    var lg=window.LANG==='en'?'en':'el', body={id:await subId(sub),sub:sub.toJSON(),places:cfgPlaces().map(function(p){ p.lang=lg; return p; }),threshold:nt.threshold,checked_at:null,updated_at:new Date().toISOString()};
+    var lg=window.LANG==='en'?'en':'el', body={id:await subId(sub),sub:sub.toJSON(),places:cfgPlaces().map(function(p){ p.lang=lg; var sc=spCfg(); if(sc) p.sp=sc; return p; }),threshold:nt.threshold,checked_at:null,updated_at:new Date().toISOString()};
     var H={Prefer:'resolution=merge-duplicates,return=minimal'};
     var ww=wwCfg(), tn=!!nt.turn;
     try{ await cl.rest('push_subs',{method:'POST',headers:H,body:JSON.stringify(Object.assign({pressure:nt.pressure!==false,wind:ww,turn:tn},body))}); nt.turnSrv=tn; }
@@ -408,7 +432,7 @@ function sigOf(){ return JSON.stringify([nt.threshold,allPlaces().map(function(p
 async function syncNotify(onlyIfChanged){
   save();
   if(!nt.on){ await writeCfg(); return; }
-  var sg=sigOf()+(nt.pressure!==false)+JSON.stringify(wwCfg())+!!nt.turn+'|L'+(window.LANG||'el'); if(onlyIfChanged&&nt.sig===sg&&nt.server) return; nt.sig=sg;
+  var sg=sigOf()+(nt.pressure!==false)+JSON.stringify(wwCfg())+!!nt.turn+'|L'+(window.LANG||'el')+'|S'+((spCfg()||{}).n||''); if(onlyIfChanged&&nt.sig===sg&&nt.server) return; nt.sig=sg;
   var ok=await pushServer(); nt.server=ok; save(); await writeCfg();
   ntStatus(ok?'Ενεργό. Ο server ελέγχει την πρόγνωση περίπου κάθε 3 ώρες και σου στέλνει ειδοποίηση, ακόμα και με κλειστή εφαρμογή.':'Ενεργό μόνο όταν ανοίγεις την εφαρμογή (ή περιοδικά στο παρασκήνιο, αν το επιτρέπει το Android). Για ειδοποιήσεις με κλειστή εφαρμογή χρειάζεται η ρύθμιση του server.');
 }
@@ -447,6 +471,8 @@ $('ntOn').addEventListener('change',async function(){
 });
 $('ntThr').addEventListener('change',async function(){ nt.threshold=+$('ntThr').value; nt.notified={}; save(); if(nt.on){ await syncNotify(); localCheck(); } });
 window.addEventListener('psaro-wwatch',function(){ if(nt.on) syncNotify(); });
+/* v31z363: όταν αλλάζει το είδος-στόχος, ξαναϋπολογίζεται ο βαθμός και ενημερώνεται ο server */
+window.addEventListener('psaro-advsp',function(){ try{ load(true); }catch(e){} if(nt.on) syncNotify(true); });
 /* v31z358: μία φορά στο άνοιγμα, αν άλλαξε κάτι (π.χ. γλώσσα), ενημερώνει τον server */
 setTimeout(function(){ try{ if(nt.on) syncNotify(true); }catch(e){} },5000);
 $('ntPress').addEventListener('change',function(){ nt.pressure=$('ntPress').checked; save(); if(nt.on){ syncNotify(); } });

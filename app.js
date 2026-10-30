@@ -85,17 +85,18 @@ function circDist(a,b){const d=Math.abs(a-b)%1440;return Math.min(d,1440-d);}
 /* ---------- Activity model ---------- */
 function haversine(a,b,c,d){const R=6371,r=Math.PI/180,dl=(c-a)*r,dn=(d-b)*r,x=Math.sin(dl/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(x));}
 function personal(){
-  const bs=Store.act().filter(b=>b.time), n=bs.length;
-  const P={n:n,enough:n>=12,on:false,hour:new Array(24).fill(0),press:{},moon:new Array(8).fill(0)};
-  P.on=P.enough&&lsGet('psaro-pm',true)!==false;
-  if(!P.enough) return P;
-  const w=n/(n+25), cnt=new Array(24).fill(0);
-  bs.forEach(b=>{const hh=+b.time.slice(0,2); [hh-1,hh,hh+1].forEach(x=>cnt[(x+24)%24]++);});
-  for(let k=0;k<24;k++) P.hour[k]=Math.round(clamp(((cnt[k]/n)/0.125-1)*7,-6,10)*w);
-  const pt={}, np=bs.filter(b=>b.ptrend).length; bs.forEach(b=>{if(b.ptrend) pt[b.ptrend]=(pt[b.ptrend]||0)+1;});
-  if(np>=10) for(const k of ['slow','stable','rise','fast']) P.press[k]=Math.round(clamp((((pt[k]||0)/np)/0.25-1)*6,-5,8)*np/(np+25));
-  const mc=new Array(8).fill(0); bs.forEach(b=>mc[biteMoon(b)]++);
-  for(let k=0;k<8;k++) P.moon[k]=Math.round(clamp(((mc[k]/n)*8-1)*4,-4,6)*w);
+  /* v31z363: το προσωπικό μοντέλο μετρά ψάρια (και χαμένα τσιμπήματα) ανά ώρα ψαρέματος, από τις εξόδους, μαζί με τις εξόδους χωρίς ψάρι.
+     Πριν μετρούσε μόνο τα ψάρια, οπότε έβλεπε μόνο τις καλές μέρες. Ενεργό όταν υπάρχουν αρκετές ώρες, έξοδοι και ψάρια (personal.js NEED). */
+  const P={n:0,enough:false,on:false,hour:new Array(24).fill(0),press:{},moon:new Array(8).fill(0)};
+  try{
+    if(!window.PP) return P;
+    const m=window.PP.build(Store.get('trips'),Store.act(),{utcMin:utcOff(),misses:Store.misses?Store.misses():[]});
+    P.n=m.C; P.enough=m.ready; P.on=m.ready&&lsGet('psaro-pm',true)!==false; P.model=m; if(!m.ready) return P;
+    const pt=x=>Math.round(clamp(Math.log(x)*10,-6,10)), F=m.factors;
+    for(let k=0;k<24;k++) P.hour[k]=pt(F.block[Math.floor(k/3)].m);
+    ['fast','slow','stable','rise'].forEach((k,i)=>{ if(F.ptrend[i]&&F.ptrend[i].h>0) P.press[k]=pt(F.ptrend[i].m); });
+    for(let k=0;k<8;k++) P.moon[k]=pt(F.moon[Math.round(k/2)%4].m);
+  }catch(e){}
   return P;
 }
 function compute(){
@@ -279,7 +280,7 @@ function renderToday(){
     const cb=h('input',{type:'checkbox',id:'pmOn'}); cb.checked=P.on; cb.addEventListener('change',()=>{lsSet('psaro-pm',cb.checked);renderToday();});
     row.append(h('label',{class:'chk',style:'border:0'},cb,h('span',{text:'Χρήση του ιστορικού μου στον βαθμό'})));
     fx.insertBefore(row,dt);
-  } else if(P.n>0){ fx.insertBefore(h('p',{class:'note',text:'Μετά από 12 τσιμπήματα ο βαθμός θα προσαρμόζεται στο δικό σου ιστορικό.'}),dt); }
+  } else if(P.model){ const pg=P.model.progress, nd=pg.need; fx.insertBefore(h('p',{class:'note',text:window.LANG==='en'?'The score will adapt to your own history once you have '+nd.hours+' fishing hours, '+nd.sessions+' trips and '+nd.catches+' fish, counting trips with no fish too (now: '+Math.round(pg.hours)+' h, '+pg.sessions+' trips, '+pg.catches+' fish). Use Start/End trip even when you catch nothing.':'Ο βαθμός θα προσαρμόζεται στο δικό σου ιστορικό όταν έχεις '+nd.hours+' ώρες ψαρέματος, '+nd.sessions+' εξόδους και '+nd.catches+' ψάρια, μαζί με τις εξόδους χωρίς ψάρι (τώρα: '+Math.round(pg.hours)+' ώρες, '+pg.sessions+' έξοδοι, '+pg.catches+' ψάρια). Χρησιμοποίησε την Έναρξη/Τέλος εξόδου ακόμα κι όταν δεν πιάνεις.'}),dt); }
   renderTiles(c); renderSea(); renderBest(c);
   drawHours(c);
   const sm=c.sm;
@@ -645,6 +646,32 @@ async function toggleRel(b){
 function setsOf(b){ try{ if(!b||!b.tk||!b.tk.length||!window.PsaroTackle) return []; return PsaroTackle.all().filter(x=>x.type==='set'&&(x.members||[]).length&&x.members.every(i=>b.tk.indexOf(i)>=0)).map(x=>x.name||'—'); }catch(e){ return []; } }
 function setsUsed(list){ const m=new Map(); (list||[]).forEach(b=>setsOf(b).forEach(n=>m.set(n,(m.get(n)||0)+1))); return [...m.entries()].sort((x,y)=>y[1]-x[1]); }
 function tkLine(b){ try{ if(!b||!b.tk||!b.tk.length||!window.PsaroTackle) return ''; const nm=PsaroTackle.names(); const parts=b.tk.map(id=>{ const n=nm[id]; if(!n) return null; const w=b.tkw&&b.tkw[id]; return n+(w?' '+w+' g':''); }).filter(Boolean); return parts.length?'🧰 '+parts.join(' · '):''; }catch(e){ return ''; } }
+/* v31z363: «ξεκούραση» σημείου. Μελέτες: τα ψάρια όπου ψαρεύεται πολύ μαθαίνουν να αποφεύγουν το αγκίστρι (Alós κ.ά. 2015, Μαγιόρκα),
+   και όσο περισσότερο ψαρεύτηκε ένα νερό τις 2 προηγούμενες μέρες, τόσο λιγότερα έπιαναν (Kuparinen κ.ά. 2010). Μετρά τις μέρες που ψάρεψες σε ακτίνα 300 μ. τις τελευταίες 3 μέρες. */
+const REST_R=0.3, REST_D=3;
+function restDays(lat,lon){
+  if(typeof lat!=='number'||typeof lon!=='number') return [];
+  const today=nicosiaToday(), lo=new Date(Date.parse(today+'T12:00:00Z')-(REST_D-1)*86400000).toISOString().slice(0,10), days=new Set();
+  const near=(a,b)=>typeof a==='number'&&typeof b==='number'&&haversine(lat,lon,a,b)<=REST_R;
+  (Store.raw?Store.raw('bites'):Store.get('bites')).forEach(b=>{ if(b.date&&b.date>=lo&&b.date<=today&&near(b.lat,b.lon)) days.add(b.date); });
+  (Store.get('trips')||[]).forEach(t=>{ if(!t.date||t.date<lo||t.date>today) return; if(near(t.lat,t.lon)||(Array.isArray(t.track)&&t.track.some(q=>near(q[0],q[1])))) days.add(t.date); });
+  return [...days].sort();
+}
+function restAlt(lat,lon){
+  const en=window.LANG==='en', c=[];
+  Store.get('spots').forEach(sp=>{ if(typeof sp.lat==='number'&&haversine(lat,lon,sp.lat,sp.lon)>REST_R*2&&restDays(sp.lat,sp.lon).length<2) c.push({name:sp.name||(en?'Spot':'Σημείο'),lat:sp.lat,lon:sp.lon,d:haversine(lat,lon,sp.lat,sp.lon)}); });
+  return c.sort((a,b)=>a.d-b.d)[0]||null;
+}
+function restNode(lat,lon){
+  const ds=restDays(lat,lon); if(ds.length<2) return null;
+  const en=window.LANG==='en', alt=restAlt(lat,lon);
+  const box=h('div',{class:'meta restnote',style:'margin-top:6px;padding:6px 8px;border-radius:10px;background:rgba(232,84,30,.12);color:inherit'},
+    h('div',{text:(en?'🔁 Fished here on ':'🔁 Ψάρεψες εδώ ')+ds.length+(en?' of the last ':' από τις τελευταίες ')+REST_D+(en?' days. Fish in heavily fished spots learn to avoid hooks. Give it a rest and try another spot.':' μέρες. Τα ψάρια σε σημεία που ψαρεύονται συχνά μαθαίνουν να αποφεύγουν το αγκίστρι. Άφησέ το να ξεκουραστεί και δοκίμασε άλλο σημείο.')}));
+  if(alt){ box.append(h('div',{style:'margin-top:4px',text:(en?'Nearest rested spot: ':'Πιο κοντινό ξεκούραστο σημείο: ')+alt.name+' · '+(alt.d<10?alt.d.toFixed(1):Math.round(alt.d))+' km'}));
+    if(window.PsaroDirect) box.append(h('button',{class:'btn ghost sm',type:'button',style:'margin-top:4px',text:en?'Go there':'Πηγαίνω εκεί',onclick:()=>{ try{ map&&map.closePopup(); window.PsaroSheet&&window.PsaroSheet.close(); }catch(e){} window.PsaroDirect.go(alt.lat,alt.lon,alt.name); }})); }
+  return box;
+}
+window.PsaroRest={days:restDays,node:restNode};
 function catchPopup(b){
   const nn=bc(b);
   const img=h('img',{class:'pimg',alt:'Φωτογραφία ψαριού'}); img.hidden=true;
@@ -658,6 +685,7 @@ function catchPopup(b){
     tkLine(b)?h('div',{class:'meta',text:tkLine(b)}):null,
     cd?h('div',{class:'meta',text:cd}):null,b.notes?h('div',{class:'meta',text:b.notes}):null,
     typeof b.lat==='number'?h('div',{class:'meta mono',text:PsaroCoord.fmt(b.lat,b.lon)}):null,
+    restNode(b.lat,b.lon),
     h('div',{class:'row pbtns',style:'margin-top:6px'},
       h('button',{class:'btn sm ghost',type:'button',text:window.LANG==='en'?'✎ Edit':'✎ Επεξεργασία',onclick:()=>{ if(map) map.closePopup(); editBite(b); }}),
       typeof b.lat==='number'?h('button',{class:'btn sm',type:'button',text:window.LANG==='en'?'Send':'Στείλε',onclick:()=>sharePlace((b.species||'')+(b.kg?' · '+b.kg+' kg':''),b.lat,b.lon)}):null));
@@ -689,6 +717,7 @@ function drawMap(){
     m.bindTooltip(sp.name||'',{direction:'right',offset:[10,0],className:'lbl'});
     m.bindPopup(()=>h('div',{class:'pop'},h('b',{text:sp.name||'Χωρίς όνομα'}),h('div',{class:'meta',text:[sp.type,sp.depth!=null?sp.depth+' m':null].filter(Boolean).join(' · ')}),sp.notes?h('div',{class:'meta',text:sp.notes}):null,
       h('div',{class:'meta mono',text:PsaroCoord.fmt(sp.lat,sp.lon)}),
+      restNode(sp.lat,sp.lon),
       h('div',{class:'row',style:'margin-top:6px'},h('button',{class:'btn acc sm',type:'button',text:'Τσίμπημα εδώ',onclick:()=>{map.closePopup();pickedPt=null;$('bLocMode').value='spot';syncLoc();$('bSpot').value=sp.id;openSheet();}})),
       h('div',{class:'row',style:'margin-top:6px'},
         h('button',{class:'btn sm',type:'button',text:'Επεξεργασία',onclick:()=>{map.closePopup();openSpotForm({lat:sp.lat,lon:sp.lon},sp);}}),
@@ -2065,6 +2094,16 @@ async function tripPressBrief(){
   }catch(e){}
 }
 window.addEventListener('psaro-sess',()=>setTimeout(tripPressBrief,2500)); setTimeout(tripPressBrief,6000);
+/* v31z363: λίγα λεπτά μετά την έναρξη εξόδου, αν το σημείο ψαρεύτηκε τις 2 από τις 3 τελευταίες μέρες, μια υπενθύμιση για ξεκούραση σημείου (μία φορά ανά έξοδο) */
+function tripRestCheck(){
+  try{ const st=window.PsaroTrip&&window.PsaroTrip.state&&window.PsaroTrip.state(); if(!st||!st.active||!st.id||lsGet('psaro-rest-trip','')===st.id) return;
+    const fx=window.PsaroTrack&&window.PsaroTrack.fix&&window.PsaroTrack.fix(); if(!fx) return;
+    lsSet('psaro-rest-trip',st.id); const ds=restDays(fx.lat,fx.lon), en=window.LANG==='en'; if(ds.length<2) return;
+    const alt=restAlt(fx.lat,fx.lon);
+    toast((en?'🔁 You fished this area on '+ds.length+' of the last 3 days. A rested spot may bite better':'🔁 Ψάρεψες σε αυτή την περιοχή '+ds.length+' από τις 3 τελευταίες μέρες. Ένα ξεκούραστο σημείο ίσως δώσει περισσότερα')+(alt?(en?': ':': ')+alt.name+' ('+(alt.d<10?alt.d.toFixed(1):Math.round(alt.d))+' km).':'.'));
+  }catch(e){}
+}
+window.addEventListener('psaro-sess',()=>setTimeout(tripRestCheck,4*60000)); setInterval(tripRestCheck,5*60000);
 setTimeout(fitMap,100); setTimeout(fitMap,1500);
 renderToday(); renderSpecies(); renderTech(); renderChecks(); renderLaw(); renderSpots(); renderTrips(); renderWx();
 Store.on('spots',()=>{drawMap();renderSpots();});

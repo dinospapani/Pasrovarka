@@ -13,7 +13,7 @@ var LAB={
   wind:function(i){ return [T('Ήπιος (έως 3 Bft)','Light (up to 3 Bft)'),T('Μέτριος (3–4 Bft)','Moderate (3–4 Bft)'),T('Δυνατός (5+ Bft)','Strong (5+ Bft)')][i]; }
 };
 var TITLE={block:T('Ώρα της ημέρας','Time of day'),moon:T('Φεγγάρι','Moon'),ptrend:T('Τάση πίεσης','Pressure trend'),wind:T('Άνεμος','Wind')};
-function model(){ return PP.build(C.Store.get('trips'),C.Store.act(),{utcMin:C.utcMin()}); }
+function model(){ return PP.build(C.Store.get('trips'),C.Store.act(),{utcMin:C.utcMin(),misses:(C.Store.misses?C.Store.misses():[])}); }
 function pct(v,n){ return Math.max(0,Math.min(100,Math.round(v/n*100))); }
 function prog(label,v,n,unit){
   return h('div',{class:'bar'},h('span',{text:label}),h('div',{class:'t'},h('i',{style:'width:'+pct(v,n)+'%'})),h('span',{class:'n',text:(Math.round(v*10)/10)+'/'+n+(unit||'')}));

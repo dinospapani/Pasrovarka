@@ -16,17 +16,22 @@ function build(trips,bites,opt){
   let H=0,C=0;
   for(const s of S){
     const hrs=(s.endMs-s.startMs)/3600000;
-    const inS=s.manual?[]:(bites||[]).map(b=>({b,ms:biteMs(b,utcMin)})).filter(x=>x.ms!=null&&x.ms>=s.startMs-600000&&x.ms<=s.endMs+600000);
-    const c=s.manual?Math.max(0,+s.count||0):inS.length; H+=hrs; C+=c;
+    const win=x=>x.ms!=null&&x.ms>=s.startMs-600000&&x.ms<=s.endMs+600000;
+    const inS=s.manual?[]:(bites||[]).map(b=>({b,ms:biteMs(b,utcMin)})).filter(win);
+    /* v31z363: και τα τσιμπήματα που χάθηκαν μετρούν ως δραστηριότητα ψαριών (για το πότε τσιμπούν), όχι ως ψάρια */
+    const inM=s.manual?[]:((opt&&opt.misses)||[]).map(b=>({b,ms:biteMs(b,utcMin)})).filter(win);
+    const cAll=s.manual?Math.max(0,+s.count||0):inS.length+inM.length;
+    H+=hrs; C+=s.manual?cAll:inS.length; const c=cAll;
     const bh=new Array(8).fill(0); // ώρες ανά τρίωρο, μοιράζουμε τον χρόνο ανά 10 λεπτά
     for(let t=s.startMs;t<s.endMs;t+=600000){ const loc=new Date(t+utcMin*60000); bh[Math.floor(loc.getUTCHours()/3)]+=Math.min(600000,s.endMs-t)/3600000; }
     bh.forEach((v,i)=>{ T.block[i].h+=v; if(s.manual&&hrs>0) T.block[i].c+=c*v/hrs; });
-    inS.forEach(x=>{ const loc=new Date(Math.min(Math.max(x.ms,s.startMs),s.endMs-1)+utcMin*60000); T.block[Math.floor(loc.getUTCHours()/3)].c++; });
+    inS.concat(inM).forEach(x=>{ const loc=new Date(Math.min(Math.max(x.ms,s.startMs),s.endMs-1)+utcMin*60000); T.block[Math.floor(loc.getUTCHours()/3)].c++; });
     const mi=moonOf((s.startMs+s.endMs)/2); T.moon[mi].h+=hrs; T.moon[mi].c+=c;
     const cd=s.cond0||{}; const pi=PTS.indexOf(cd.ptrend); if(pi>=0){ T.ptrend[pi].h+=hrs; T.ptrend[pi].c+=c; }
     const wi=windCls(cd.wind); if(wi!=null){ T.wind[wi].h+=hrs; T.wind[wi].c+=c; }
   }
-  const r0=H>0?C/H:0;
+  let CA=0; for(const k of T.moon) CA+=k.c; /* όλα τα τσιμπήματα (ψάρια + χαμένα) */
+  const r0=H>0?CA/H:0;
   const factors={};
   for(const k in T) factors[k]=T[k].map((x,i)=>{ const rate=(x.c+K*r0)/(x.h+K); return {i,h:x.h,c:x.c,rate:x.h?x.c/x.h:null,m:r0>0?rate/r0:1}; });
   const progress={hours:H,sessions:S.length,catches:C,need:NEED};

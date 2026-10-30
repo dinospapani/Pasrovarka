@@ -21,7 +21,7 @@ function sName(e){ return EN&&e.en?e.en:e.n; }
 /* ---------- δεδομένα ---------- */
 function collect(){
   var bites=(C.Store.act?C.Store.act():C.Store.get('bites'))||[], trips=C.Store.get('trips')||[], utc=C.utcMin();
-  var model=PP.build(trips,bites,{utcMin:utc}), by={}, total=0;
+  var model=PP.build(trips,bites,{utcMin:utc,misses:(C.Store.misses?C.Store.misses():[])}), by={}, total=0;
   bites.forEach(function(b){
     if(!b.species) return; var e=kbOf(b.species,b.latin), key=e?e.n:norm(b.species).replace(/\s*\(.*$/,'');
     var o=by[key]||(by[key]={key:key,kb:e,name:e?e.n:String(b.species).replace(/\s*\(.*$/,''),n:0,bites:[]});
@@ -175,7 +175,7 @@ function whenWhere(D){
   var c=h('div',{class:'card'}); c.append(h('h3',{text:T('Πότε και πού για ένα είδος','When and where for a species')}));
   var opts=speciesOptions(D), s=h('select',{'aria-label':T('Είδος','Species')},h('option',{value:'',text:T('— διάλεξε είδος —','— choose a species —')}));
   opts.forEach(function(o){ s.append(h('option',{value:o.v,text:o.t+(D.by[o.v]?' ('+D.by[o.v].n+')':'')})); });
-  s.value=spSel; s.addEventListener('change',function(){ spSel=s.value; C.lsSet('psaro-advsp',spSel); render(); });
+  s.value=spSel; s.addEventListener('change',function(){ spSel=s.value; C.lsSet('psaro-advsp',spSel); render(); try{ window.dispatchEvent(new Event('psaro-advsp')); }catch(e){} });
   c.append(s);
   if(!spSel) { c.append(h('p',{class:'note',text:T('Διάλεξε είδος για να δεις τις καλύτερες μέρες και ώρες της εβδομάδας και τα σημεία όπου το έπιασες.','Choose a species to see the best days and hours this week and where you caught it.')})); return c; }
   var e=KB.filter(function(k){ return k.n===spSel; })[0]||null, o=D.by[spSel]||null, f=last.fc;
@@ -215,7 +215,7 @@ function whenWhere(D){
   cl.forEach(function(z){
     var go=h('button',{class:'btn ghost sm',type:'button',text:T('Χάρτης','Map'),onclick:function(){ C.switchTab('map'); setTimeout(function(){ var m=C.map(); if(m) m.flyTo([z.lat,z.lon],14); },350); }});
     var dir=window.PsaroDirect?h('button',{class:'btn ghost sm',type:'button',text:T('Πηγαίνω εκεί','Go there'),onclick:function(){ C.switchTab('map'); setTimeout(function(){ window.PsaroDirect.go(z.lat,z.lon,(e?sName(e):spSel)); var m=C.map(); if(m) m.flyTo([z.lat,z.lon],13); },350); }}):null;
-    c.append(h('div',{class:'item advspot'},h('div',{},h('b',{text:z.n+' '+T('ψάρια','fish')+(z.kg?' · '+Math.round(z.kg*10)/10+' kg':'')}),h('div',{class:'meta mono',text:PsaroCoord.fmt(z.lat,z.lon)})),h('div',{class:'acts'},go,dir)));
+    c.append(h('div',{class:'item advspot'},h('div',{},h('b',{text:z.n+' '+T('ψάρια','fish')+(z.kg?' · '+Math.round(z.kg*10)/10+' kg':'')}),h('div',{class:'meta mono',text:PsaroCoord.fmt(z.lat,z.lon)}),(window.PsaroRest?window.PsaroRest.node(z.lat,z.lon):null)),h('div',{class:'acts'},go,dir)));
   });
   return c;
 }

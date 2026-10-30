@@ -61,12 +61,21 @@ function sunMoon(dateStr,lat,lon,tz){
 }
 /* απόσταση (λεπτά) της ώρας t από την πιο κοντινή περίοδο μιας λίστας */
 const nearMin=(t,arr)=>{ let b=1e9; for(const x of arr||[]) b=Math.min(b,Math.abs(t-x)); return b; };
+/* v31z363: είδος-στόχος για τον βαθμό. Στη σελίδα έρχεται από «Τι να ψαρέψω» (psaro-advsp + knowledge.js),
+   στον server και στο service worker από τη ρύθμιση (cfg.sp = {n, l, sst}). */
+function targetSp(w){
+  if(w&&w.sp) return w.sp;
+  try{ if(typeof localStorage==='undefined') return null; const n=localStorage.getItem('psaro-advsp'); if(!n) return null; let v=n; try{ v=JSON.parse(n); }catch(x){} if(!v) return null;
+    const kb=(typeof self!=='undefined'&&self.SPKB)||[], e=kb.find(k=>k.n===v); return e?{n:e.n,l:e.l,sst:e.sst}:{n:v}; }catch(e){ return null; }
+}
+/* ειδικοί κανόνες από μελέτες: καλαμάρι (Cabanellas-Reboredo κ.ά. 2012, Μαγιόρκα), ξιφίας (Ceyhan κ.ά. 2018, Αν. Μεσόγειος) */
+function spKind(sp){ const s=((sp&&(sp.l||''))+' '+(sp&&sp.n||'')).toLowerCase(); return /loligo|καλαμάρ|squid/.test(s)?'squid':/xiphias|ξιφ|swordfish/.test(s)?'sword':null; }
 function hourScore(sm,hr,w){
-  const wind=w.wind, wave=w.wave==null?0.5:w.wave;
+  const wind=w.wind, wave=w.wave==null?0.5:w.wave, sp=targetSp(w), kind=spKind(sp);
   /* προφίλ ψαρέματος: προσαρμογή βαρών (εκτίμηση, όχι επικυρωμένη). Στο service worker δεν υπάρχει localStorage, άρα ισχύει «βάρκα». */
   let prof=w.prof; if(!prof){ try{ prof=typeof localStorage!=='undefined'?localStorage.getItem('psaro-fprof'):null; }catch(e){ prof=null; } }
   /* v31z361: η σελήνη μετρά λιγότερο (μελέτες: επίδραση 5–10% σε κάποια είδη, καμία σε άλλα) */
-  let base=50+Math.round(Math.cos(4*Math.PI*sm.f)*4);
+  let base=50+(kind==='sword'?0:kind==='squid'?Math.round(Math.cos(2*Math.PI*sm.f)*5):Math.round(Math.cos(4*Math.PI*sm.f)*4)); /* καλαμάρι: καλύτερα κοντά στη νέα σελήνη· ξιφίας: καμία επίδραση */
   /* v31z362: η πίεση μετρά ελάχιστα. Οι μελέτες δεν βρίσκουν σταθερή επίδραση στο τσίμπημα (πέρκα: καμία· ανασκόπηση Stoner 2004:
      κύριοι παράγοντες θερμοκρασία, φως, ρεύμα, τροφή). Μικρό +1 στην άνοδο (crappie: περισσότερη κίνηση σε άνοδο, Guy 1992)
      και −2 στην απότομη πτώση (συνήθως έρχεται κακοκαιρία). Το προσωπικό μοντέλο προσαρμόζει από τα δικά σου ψάρια. */
@@ -85,12 +94,17 @@ function hourScore(sm,hr,w){
   }
   base+={clear:0,part:2,over:4}[w.cloud||'part'];
   if(w.gust!=null) base+=w.gust>=35?-10:w.gust>=28?-5:0;
+  /* v31z363: θερμοκρασία θάλασσας σε σχέση με το εύρος του είδους (knowledge.js). Χωρίς είδος δεν μετρά, γιατί η επίδραση αλλάζει από είδος σε είδος. */
+  if(sp&&sp.sst&&w.sst!=null){ const lo=sp.sst[0], hi=sp.sst[1], d=w.sst<lo?lo-w.sst:w.sst>hi?w.sst-hi:0; base-=Math.min(10,Math.round(d*2.5));
+    if(kind==='squid'&&!d) base+=Math.round(3*(hi-w.sst)/Math.max(1,hi-lo)); } /* καλαμάρι: πιο κρύα θάλασσα, περισσότερη ψαριά */
+  if(kind==='squid'){ base+=wind<8?3:wind>14?-4:0; if(w.pres!=null) base+=w.pres<1012?3:w.pres>1018?-2:0; } /* καλαμάρι: λίγος άνεμος, χαμηλή πίεση */
   if(w.code!=null&&w.code>=95) base-=15;
   if(w.rain!=null&&w.rain>=70) base-=2;
   const t=hr*60+30; let b=0;
   const dTw=Math.min(circDist(t,sm.rise),circDist(t,sm.set)); if(dTw<=75) b+=14*(1-dTw/75);
   /* v31z361: περίοδοι Knight από ακριβείς ώρες σελήνης: κύρια ±45′ +6 (μισό έως ±75′), δευτερεύουσα ±30′ +3 */
-  const dMaj=sm.maj?nearMin(t,sm.maj):1e9, dMin=sm.min?nearMin(t,sm.min):1e9;
+  const dMaj=kind==='sword'?1e9:sm.maj?nearMin(t,sm.maj):1e9, dMin=kind==='sword'?1e9:sm.min?nearMin(t,sm.min):1e9;
+  if(kind==='squid'){ const ds=circDist(t,sm.set); if(ds<=60) b+=8*(1-ds/90); } /* καλαμάρι: στενό παράθυρο γύρω από τη δύση του ηλίου */
   if(dMaj<=SOL_MAJ) b+=6; else if(dMaj<=SOL_MAJ+30) b+=3;
   if(dMin<=SOL_MIN) b+=3;
   if(t>=660&&t<=900) b-=4;
@@ -132,7 +146,7 @@ async function getForecast(lat,lon,fetchFn,opt){
   const days=[];
   for(const date of Object.keys(byDay).sort().slice(0,nd)){
     const zn=(typeof w.value.timezone==='string')?w.value.timezone:null, tzd=zn?nicOffAt(date,tz,zn):(tz===120||tz===180)?nicOffAt(date,tz):tz, sm=sunMoon(date,lat,lon,tzd), rows=byDay[date];
-    const hours=rows.map(h=>({t:h.t,hr:h.hr,p:h.p,pres:h.pres,wind:h.wind,wave:h.wave,gust:h.gust,code:h.code,ptrend:h.ptrend,tide:h.tide,dir:h.dir,temp:h.temp,rain:h.rain,cloud:h.cloud,sst:h.sst,period:h.period,score:hourScore(sm,h.hr,h),safe:safeHour(h)}));
+    const hours=rows.map(h=>({t:h.t,hr:h.hr,p:h.p,pres:h.pres,wind:h.wind,wave:h.wave,gust:h.gust,code:h.code,ptrend:h.ptrend,tide:h.tide,dir:h.dir,temp:h.temp,rain:h.rain,cloud:h.cloud,sst:h.sst,period:h.period,score:hourScore(sm,h.hr,opt&&opt.sp?Object.assign({sp:opt.sp},h):h),safe:safeHour(h)}));
     const day=h=>{const t=h.hr*60+30;return t>=sm.rise-60&&t<=sm.set+60;};
     const cand=hours.filter(h=>h.safe&&day(h)&&(date>today||h.t>=nowLocal.slice(0,13)+':00'));
     let best=0,win=null;
@@ -326,7 +340,7 @@ async function checkPlaces(cfg,fetchFn){
   for(const p of cfg.places||[]){
     if(p.watch===false||p.lat==null) continue;
     try{
-      const fc=await getForecast(p.lat,p.lon,fetchFn,{days:7});
+      const fc=await getForecast(p.lat,p.lon,fetchFn,{days:7,sp:cfg.sp||null});
       okN++;
       for(const g of goodDays(fc,thr)){ const key=p.id+':'+g.date; if(notified[key]) continue; goods.push({type:'good',place:p,key,date:g.date,best:g.best,win:g.win,wind:g.wind}); }
       if(near(p)) await doPressure(fc,{name:p.name,lat:p.lat,lon:p.lon});
@@ -337,7 +351,7 @@ async function checkPlaces(cfg,fetchFn){
     }catch(e){ errs.push((p.name||p.id)+': '+(e&&e.message||e)); }
   }
   if(area&&!areaDone&&(cfg.pressure!==false||cfg.turn)){
-    try{ const fc=await getForecast(area.lat,area.lon,fetchFn,{days:3}); okN++; await doPressure(fc,{name:area.name,lat:area.lat,lon:area.lon}); }
+    try{ const fc=await getForecast(area.lat,area.lon,fetchFn,{days:3,sp:cfg.sp||null}); okN++; await doPressure(fc,{name:area.name,lat:area.lat,lon:area.lon}); }
     catch(e){ errs.push((area.name||'area')+': '+(e&&e.message||e)); }
   }
   goods.sort((a,b)=>b.best-a.best);
