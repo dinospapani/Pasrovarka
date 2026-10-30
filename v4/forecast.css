@@ -114,3 +114,10 @@ svg.pwc{width:100%;height:auto}
 .sph span{font-weight:700;color:var(--ink-2);font-size:14px}
 .sp>.bt{display:block;height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin:0 0 6px}
 .sp>.bt i{display:block;height:100%;border-radius:inherit;background:var(--sea)}
+.pwc .mp{fill:#9b8cf0;opacity:.16}
+.pwc .mp.maj{opacity:.34}
+.pwc .ma{fill:#9b8cf0;fill-opacity:.14;stroke:#8c7be8;stroke-width:1.4;stroke-linejoin:round}
+.pwc .sel{stroke:var(--ink);stroke-width:1.2;opacity:.4}
+.pwc .dot{fill:var(--surface);stroke:var(--accent);stroke-width:2.2}
+.pw .hline{margin:6px 0 0}
+.pwl .k3::before{width:10px;height:10px;border-radius:3px;background:#9b8cf0;opacity:.5}

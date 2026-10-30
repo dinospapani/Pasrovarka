@@ -1,6 +1,6 @@
 /* BiteCast 4 · service worker (μόνο για τον φάκελο v4/).
    Δικά μας αρχεία: πρώτα δίκτυο, αλλιώς αποθηκευμένο αντίγραφο. Γραμματοσειρές: αποθηκευμένο αντίγραφο πρώτα. */
-const V = 'bitecast4-002';
+const V = 'bitecast4-003';
 const SHELL = ['./', 'index.html', 'app.css', 'forecast.css', 'core.js', 'ui.js', 'shell.js', 'forecast-view.js', 'forecast-more.js', 'advise.js', 'manifest.webmanifest',
   '../units.js', '../knowledge.js', '../forecast.js', '../personal.js', '../icon-192.png'];
 self.addEventListener('install', e => {
