@@ -27,7 +27,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install
-        run: pip install openpyxl
+        run: pip install openpyxl curl_cffi
 
       - name: Build dams_levels.json
         run: |
