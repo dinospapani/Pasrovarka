@@ -57,7 +57,7 @@ svg{display:block}
 
 /* ---------- επιλογή όψης ---------- */
 .seg{display:flex;padding:4px;gap:4px;border-radius:14px;background:var(--surface-2);margin:0 0 16px}
-.seg button{flex:1;min-height:38px;border:0;border-radius:10px;background:transparent;color:var(--ink-2);font-weight:600;font-size:15px}
+.seg button{flex:1;min-width:0;min-height:38px;padding:0 4px;border:0;border-radius:10px;background:transparent;color:var(--ink-2);font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .seg button[aria-pressed=true]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 
 /* ---------- κάρτες και ομάδες ---------- */

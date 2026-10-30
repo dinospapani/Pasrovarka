@@ -1976,7 +1976,7 @@ box.insertBefore(tools,bar.nextSibling);
 
 /* v31z415: συντομεύσεις από το εικονίδιο της εφαρμογής (παρατεταμένο πάτημα): ?a=bite | trip | fc */
 (function(){
-  var a=''; try{ a=new URLSearchParams(location.search).get('a')||''; }catch(e){}
+  var a='', qs=null; try{ qs=new URLSearchParams(location.search); a=qs.get('a')||''; }catch(e){}
   if(!a) return;
   try{ history.replaceState(null,'',location.pathname+location.hash); }catch(e){}
   var n=0, iv=setInterval(function(){ n++;
@@ -1988,7 +1988,8 @@ box.insertBefore(tools,bar.nextSibling);
       else if(a==='trip'){ var t=document.getElementById('tripBtn'); if(t&&!document.body.classList.contains('ontrip')) t.click(); }
       else if(a==='bite'){ var b=document.getElementById('fab'); if(b) b.click(); }
       else if(a==='log'){ var lg=document.querySelector('nav.tabs [data-tab=log]'); if(lg) lg.click(); }
-      else if(a==='map'){ var mp=document.querySelector('nav.tabs [data-tab=map]'); if(mp) mp.click(); }
+      else if(a==='map'){ var mp=document.querySelector('nav.tabs [data-tab=map]'); if(mp) mp.click(); if(qs&&qs.get('lat')) setTimeout(function(){ try{ var M=window.PsaroCore.map(); if(M) M.flyTo([+qs.get('lat'),+qs.get('lon')],14); }catch(e){} },600); }
+      else if(a==='alerts'){ if(window.PsaroProfGo) window.PsaroProfGo('alerts'); }
       else if(a==='prof'){ var np=document.getElementById('navProf')||document.getElementById('profBtn'); if(np) np.click(); }
     },700);
   },300);
