@@ -1202,6 +1202,7 @@ box.insertBefore(tools,bar.nextSibling);
     el.querySelector('small').textContent=why;
   }
   function today(){
+    if(window.ndFC2) return;
     var tab=$('tab-today'); if(!tab||tab.hidden) return;
     bestToday();
     var hr=document.querySelector('#tab-today > .ndhr'), tp=$('tdPress'); if(hr&&tp&&tp.parentNode===hr.parentNode&&(tp.compareDocumentPosition(hr)&Node.DOCUMENT_POSITION_FOLLOWING)) tp.parentNode.insertBefore(hr,tp);
@@ -1222,6 +1223,7 @@ box.insertBefore(tools,bar.nextSibling);
     ['bestCard','recoCard'].forEach(function(id){ var c=$(id); if(!c) return; var empty=!c.querySelector('button:not(.ndfoldb),li,.chip,.row')&&/Όταν καταγράψεις|Μετά από|When you|After \d|Once you/.test(c.textContent); c.classList.toggle('ndgone',empty); });
   }
   function fcTab(){
+    if(window.ndFC2) return;
     var tab=$('tab-fc'); if(!tab||tab.hidden) return;
     var pr=$('fcPress'); if(pr) pr.classList.add('ndgone');   /* το ίδιο γράφημα υπάρχει στο «Σήμερα» */
     /* μία επιλογή τοποθεσίας: στο «Σήμερα». Εδώ μένει μόνο το όνομα και ένα κουμπί αλλαγής. */
@@ -1727,6 +1729,7 @@ box.insertBefore(tools,bar.nextSibling);
   var open=false, last='';
   function cur(w){ var c=w.querySelector('.chip[aria-pressed=true]'); return c?(c.textContent||'').trim():T('Η θέση μου','My location'); }
   function tick(){
+    if(window.ndFC2) return;
     var w=document.getElementById('tdLoc'); if(!w||!w.offsetParent&&!w.classList.contains('ndlocc')) return;
     var b=document.getElementById('ndLocBtn');
     if(!b){ b=document.createElement('button'); b.type='button'; b.id='ndLocBtn'; b.className='ndlocb';
