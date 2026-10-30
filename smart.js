@@ -177,6 +177,53 @@ function lastYear(){
 }
 C.Store.on('bites',lastYear); lastYear();
 
+/* ---------- v31z394: ειδοποίηση 7 μέρες πριν την επέτειο ψαρέματος ----------
+   Η σελίδα φτιάχνει τη λίστα (επόμενες 60 μέρες) και τη γράφει στη μνήμη του service worker (psaro-cfg/__anniv).
+   Ο service worker στέλνει την ειδοποίηση όταν ανοίγει η εφαρμογή ή στον περιοδικό έλεγχο (και με κλειστή εφαρμογή). */
+var AN_DAYS=7;
+function annivOn(){ return C.lsGet('psaro-anniv',true)!==false; }
+function annivList(){
+  var td=C.nicosiaToday(), y0=+td.slice(0,4), t0=Date.UTC(y0,+td.slice(5,7)-1,+td.slice(8,10)), G={};
+  (C.Store.get('bites')||[]).forEach(function(b){
+    if(!b||!b.date) return; var y=+b.date.slice(0,4), mo=+b.date.slice(5,7), d=+b.date.slice(8,10); if(!y||y>y0) return;
+    var a=Date.UTC(y0,mo-1,d); if(a<t0) a=Date.UTC(y0+1,mo-1,d); if(new Date(a).getUTCFullYear()<=y) return; var dd=Math.round((a-t0)/86400000); if(dd>60) return;
+    var k=b.date.slice(0,10), g=G[k]||(G[k]={date:k,ann:new Date(a).toISOString().slice(0,10),n:0,kg:0,sp:{},pl:{}});
+    g.n++; g.kg+=+b.kg||0; if(b.species) g.sp[b.species]=(g.sp[b.species]||0)+1; var pn=b.place||''; if(pn) g.pl[pn]=(g.pl[pn]||0)+1;
+  });
+  return Object.keys(G).sort().map(function(k){
+    var g=G[k], ag=+g.ann.slice(0,4)-+k.slice(0,4);
+    var sp=Object.keys(g.sp).sort(function(a,b){ return g.sp[b]-g.sp[a]; }).slice(0,3).map(function(x){ return x+(g.sp[x]>1?' ×'+g.sp[x]:''); }).join(', ');
+    var pl=Object.keys(g.pl).sort(function(a,b){ return g.pl[b]-g.pl[a]; })[0]||'';
+    var dm=(+k.slice(8,10))+'/'+(+k.slice(5,7))+'/'+k.slice(0,4);
+    var due=new Date(Date.parse(g.ann+'T00:00:00Z')-AN_DAYS*86400000).toISOString().slice(0,10);
+    var title=ag===1?T('πέρσι τέτοια μέρα','a year ago that day'):T('πριν από '+ag+' χρόνια','that day '+ag+' years ago');
+    var body=T('Στις ','On ')+dm+T(' έπιασες ',' you caught ')+g.n+(g.n===1?T(' ψάρι',' fish'):T(' ψάρια',' fish'))+(g.kg?' ('+(Math.round(g.kg*10)/10)+' kg)':'')+(sp?': '+sp:'')+(pl?T(' στο ',' at ')+pl:'')+'.';
+    return {id:'anniv-'+k+'-'+g.ann.slice(0,4),due:due,ann:g.ann,title:title,body:body};
+  });
+}
+async function annivSync(){
+  try{
+    if(!('caches' in window)) return;
+    var c=await caches.open('psaro-cfg'), u=new URL('__anniv',(navigator.serviceWorker&&navigator.serviceWorker.controller?location.href:location.href)).href;
+    var reg=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration(); if(reg) u=new URL('__anniv',reg.scope).href;
+    await c.put(u,new Response(JSON.stringify({on:annivOn(),lang:EN?'en':'el',items:annivOn()?annivList():[]})));
+    if(annivOn()&&reg&&reg.active&&('Notification' in window)&&Notification.permission==='granted') reg.active.postMessage({annivCheck:1});
+  }catch(e){}
+}
+C.Store.on('bites',function(){ clearTimeout(annivSync.t); annivSync.t=setTimeout(annivSync,1500); });
+setTimeout(annivSync,4000); if(window.ndEvery) window.ndEvery(annivSync,6*3600000);
+(function(){ /* διακόπτης στις ρυθμίσεις ειδοποιήσεων της Πρόγνωσης */
+  var t=$('ntTurn'), row=t&&t.closest('label.chk'); if(!row||$('ntAnniv')) return;
+  var w=el('label','chk'); w.style.border='0'; var cb=el('input'); cb.type='checkbox'; cb.id='ntAnniv'; cb.checked=annivOn();
+  var lb=el('label','',T('Ειδοποίησέ με 7 μέρες πριν από μέρες που είχα πιάσει ψάρια σε προηγούμενες χρονιές','Notify me 7 days before dates when I caught fish in past years')); lb.htmlFor='ntAnniv';
+  w.append(cb,lb); row.parentNode.insertBefore(w,row.nextSibling);
+  cb.addEventListener('change',async function(){
+    if(cb.checked&&('Notification' in window)&&Notification.permission!=='granted'){ var p=await Notification.requestPermission(); if(p!=='granted'){ cb.checked=false; return; } }
+    C.lsSet('psaro-anniv',cb.checked); annivSync();
+  });
+})();
+window.PsaroAnniv={list:annivList,sync:annivSync};
+
 /* ---------- λίστα ελέγχου ---------- */
 var clOv=el('div','cdov'); clOv.hidden=true; clOv.style.zIndex=4750; document.body.appendChild(clOv);
 function clCount(){ var n=0; S.cl.items.forEach(function(i){ if(S.cl.done[i]) n++; }); return n; }

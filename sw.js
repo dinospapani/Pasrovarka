@@ -1,7 +1,7 @@
 // Network first for the app's own files so updates arrive at once; cache is the offline fallback.
 // Weather APIs and fonts are cross-origin and always go straight to the network.
 importScripts('forecast.js');
-const V = 'psarovarka-v31z393';
+const V = 'psarovarka-v31z394';
 const CFG = 'psaro-cfg';
 const SHELL = ['./', 'apple-touch-icon.png', 'push-config.js', 'index.html','startpick.js','divelog.js','ruler.js','windwatch.js','windmap.js','windlocal.js','seastate.js','tripform.js','plotterscan.js','boat.js','cx_index.json','inbox.js', 'style.css', 'app.js', 'species.js', 'cy100.js','cy100-en.js','i18n.js','cloud.js','extras.js','ext.js','track.js','mapwx.js','tripui.js','dialog.js','units.js','version.js','range.js','gearstats.js', 'coords.js','techs.js','tackle.js','knots.js','orient.js','todayloc.js','tackle-lib.js','tackle-guide.js','gear.js','hist.js','bitewx.js','profile-view.js','navigator.js','navigator-mpa.json','bathy-lines.js','direct.js','sea.js','cards.js','tools.js','ports.js','route.js','redesign.js','redesign.css','fc2.js','fc2.css','dams.js','dams_levels.json','smart.js','insights.js','speciespick.js','regions.js','community.js','forecast-tab.js','coastgrid.js','exposure.js','fish-photos.js', 'rules.js', 'zones.js', 'forecast.js', 'personal.js', 'mine-tab.js','knowledge.js','advisor.js', 'diag.js', 'leaflet.js', 'leaflet.css', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 const cfgUrl = () => new URL('__cfg', self.registration.scope).href;
@@ -60,7 +60,29 @@ async function runCheck() {
     }
   } catch (e) {}
 }
-self.addEventListener('periodicsync', e => { if (e.tag === 'psaro-forecast') e.waitUntil(runCheck()); });
+/* v31z394: ειδοποίηση 7 μέρες πριν την επέτειο ψαρέματος (λίστα από τη σελίδα, __anniv) */
+async function annivCheck() {
+  try {
+    const c = await caches.open(CFG), r = await c.match(new URL('__anniv', self.registration.scope).href);
+    if (!r) return; const a = await r.json(); if (!a || !a.on || !Array.isArray(a.items)) return;
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Nicosia' });
+    const su = new URL('__annivSeen', self.registration.scope).href, sr = await c.match(su);
+    let seen = {}; try { seen = sr ? await sr.json() : {}; } catch (x) { seen = {}; }
+    let ch = false; const en = a.lang === 'en', G = {};
+    for (const it of a.items) { if (!it || seen[it.id] || it.due > today || it.ann < today) continue; (G[it.ann] = G[it.ann] || []).push(it); }
+    for (const ann of Object.keys(G).sort()) {
+      const its = G[ann].sort((x, y) => (y.id > x.id ? 1 : -1)), n = Math.round((Date.parse(ann) - Date.parse(today)) / 86400000);
+      const when = n <= 0 ? (en ? 'Today' : 'Σήμερα') : n === 1 ? (en ? 'Tomorrow' : 'Αύριο') : (en ? 'In ' + n + ' days' : 'Σε ' + n + ' μέρες');
+      const title = when + ': ' + its.map(i => i.title).join(en ? ' and ' : ' και ');
+      const body = its.map(i => i.body).join(' ');
+      its.forEach(i => { seen[i.id] = today; }); ch = true;
+      try { await showMsg({ id: 'anniv-' + ann, title, body, full: body, kind: 'info', tag: 'anniv-' + ann }, 'local'); } catch (x) {}
+    }
+    if (ch) { Object.keys(seen).forEach(k => { if (Date.parse(seen[k]) < Date.now() - 400 * 86400000) delete seen[k]; }); await c.put(su, new Response(JSON.stringify(seen))); }
+  } catch (e) {}
+}
+self.addEventListener('message', e => { if (e.data && e.data.annivCheck) e.waitUntil(annivCheck()); });
+self.addEventListener('periodicsync', e => { if (e.tag === 'psaro-forecast') e.waitUntil(Promise.all([runCheck(), annivCheck()])); });
 self.addEventListener('push', e => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (err) { try { d = { body: e.data.text() }; } catch (e2) {} }
