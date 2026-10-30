@@ -116,8 +116,9 @@ function fetchKm(cl,dir){
    Ύψος = ύψος ανοιχτά × √(μέση ενέργεια που περνά). Ενδεικτικό, όχι φασματικό μοντέλο (SWAN κ.λπ.). */
 function swellExpo(cl,dir,depth,per){
   var L0=1.56*Math.pow(per>0?per:7,2), shallow=isFinite(depth)&&depth<L0/2;
-  var span=shallow?75:45, pw=shallow?2:4, sw=0, se=0;
-  for(var d=-span;d<=span;d+=15){ var c=Math.cos(d*Math.PI/180); if(c<=0) continue; var w=Math.pow(c,pw), o=swellOpen(fetchKm(cl,dir+d)); sw+=w; se+=w*o*o; }
+  /* v31z387: πιο φαρδιά βεντάλια (±60°, ρηχά ±80°): σε κόλπους πίσω από ακρωτήρια έδειχνε λιγότερο κύμα απ' όσο βλέπει κανείς */
+  var span=shallow?80:60, pw=shallow?1:2, sw=0, se=0;
+  for(var d=-span;d<=span;d+=10){ var c=Math.cos(d*Math.PI/180); if(c<=0) continue; var w=Math.pow(c,pw), o=swellOpen(fetchKm(cl,dir+d)); sw+=w; se+=w*o*o; }
   return sw?Math.sqrt(se/sw):swellOpen(fetchKm(cl,dir));
 }
 /* ενεργό fetch για κύμα ανέμου (μέθοδος SPM: μέσος όρος ±45° με βάρος cos²), ώστε στενά ανοίγματα να μη μετρούν σαν ανοιχτή θάλασσα */
