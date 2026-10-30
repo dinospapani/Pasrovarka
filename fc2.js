@@ -150,7 +150,7 @@ function hero(){
 function legend(){ var l=root.querySelector('.fc2-legend'); l.innerHTML=''; [['best',T('καλύτερες ώρες','best hours')],['moon',T('σελήνη','moon')],['bad',T('δύσκολες','poor')]].forEach(function(x){ var s=E('span'); s.append(E('i',x[0]),document.createTextNode(x[1])); l.appendChild(s); }); }
 function hours(){
   var box=root.querySelector('.fc2-bars'), det=root.querySelector('.fc2-hdet'), d=fc&&fc.days&&fc.days[0];
-  if(!d){ box.innerHTML='<p class="ds-empty">'+T('Φόρτωση πρόγνωσης…','Loading forecast…')+'</p>'; det.textContent=''; return; }
+  if(!d){ box.innerHTML='<div class="ndsk ndskbars" role="status" aria-label="'+T('Φόρτωση πρόγνωσης','Loading forecast')+'">'+new Array(25).join('<i></i>')+'</div>'; det.textContent=''; return; }
   var now=fc.nowLocal?+fc.nowLocal.slice(11,13):new Date().getHours(); if(selH==null) selH=now;
   var bw=bestWin(), per=solToday(), d0=new Date(); d0.setHours(0,0,0,0);
   var sig=d.date+'|'+selH+'|'+(bw&&bw.h)+'|'+d.hours.map(function(x){ return x.score; }).join(',');

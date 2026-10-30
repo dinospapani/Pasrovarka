@@ -1454,3 +1454,25 @@ body.ndphon #pSettings .btn{border-radius:12px;min-height:42px}
 .ndverr .btn{flex:none}
 body.ndphon #pSettings #appVer,body.ndphon #pSettings #ndChkUpd,body.ndphon #pSettings .row:has(>#acLogout){display:none!important}
 .ndverr small.ndvmsg{color:var(--text,inherit);font-weight:600}
+/* v31z415: τα μηνύματα φαίνονται πάνω από το Προφίλ και τα παράθυρα */
+.toast{z-index:100002!important}
+/* v31z415: μεγάλος τίτλος σελίδας στην κορυφή */
+header.top .brand.ndbig{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif!important;text-transform:none!important;letter-spacing:-.02em!important;font-weight:800!important;font-size:30px!important}
+header.top .brand.ndbig img{width:30px;height:30px;border-radius:8px!important;margin-right:10px!important}
+body.ontrip header.top .brand .ndbt{display:none}
+body.ndlogt #tab-log>div:first-child>h2:only-child{display:none}
+/* v31z415: σκελετοί φόρτωσης αντί για «Φόρτωση…» */
+@keyframes ndshim{0%{background-position:-200px 0}100%{background-position:calc(200px + 100%) 0}}
+.ndsk i,.ndskchart{display:block;border-radius:6px;background:linear-gradient(90deg,color-mix(in srgb,var(--muted) 14%,transparent) 0,color-mix(in srgb,var(--muted) 26%,transparent) 50%,color-mix(in srgb,var(--muted) 14%,transparent) 100%);background-size:200px 100%;background-repeat:no-repeat;background-color:color-mix(in srgb,var(--muted) 14%,transparent);animation:ndshim 1.3s linear infinite}
+.ndskbars{display:flex;align-items:flex-end;gap:3px;height:64px;padding:4px 0}
+.ndskbars i{flex:1;height:60%}
+.ndskbars i:nth-child(3n){height:85%}.ndskbars i:nth-child(4n+1){height:40%}.ndskbars i:nth-child(5n+2){height:72%}
+.ndskchart{height:150px;margin:8px 0;border-radius:12px}
+@media (prefers-reduced-motion:reduce){.ndsk i,.ndskchart{animation:none}}
+/* v31z415: «Χωρίς σύνδεση» */
+#ndOff{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 66px);z-index:4600;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:#3d2a07;color:#ffe2a8;font:600 13.5px/1.35 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:520px;margin:0 auto}
+#ndOff[hidden]{display:none}
+#ndOff i{flex:none;width:9px;height:9px;border-radius:50%;background:#f0a020}
+#ndOff span{flex:1}
+#ndOff button{flex:none;border:0;background:transparent;color:inherit;font-size:16px;min-width:32px;min-height:32px;cursor:pointer}
+#ndOff.ok{background:#0d3b2a;color:#c9f5dc}#ndOff.ok i{background:#2fbf71}

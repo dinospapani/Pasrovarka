@@ -89,6 +89,11 @@ function render(){
   else sum.append(el('p','note btok',T('✓ Καμία λήξη τις επόμενες εβδομάδες.','✓ Nothing expiring in the coming weeks.')));
   host.append(sum);
 
+  /* v31z415: λιμάνι, καύσιμο, αυτόματη έναρξη/λήξη και πλοήγηση (πριν ήταν στις Ειδοποιήσεις) */
+  if(window.PsaroSmart&&window.PsaroSmart.openPanel){ var SS=window.PsaroSmart.state()||{}, cp=card(T('Λιμάνι, καύσιμο και πλοήγηση','Port, fuel and navigation'));
+    var pr=el('div','btrow'); pr.append(el('span','note',SS.home?((SS.home.name||T('Λιμάνι ορισμένο','Port set'))+(SS.tank?' · '+T('δεξαμενή ','tank ')+SS.tank+' L':'')):T('Όρισε λιμάνι, καύσιμο, αυτόματη έναρξη/λήξη εξόδου και διαδρομή γύρω από στεριά.','Set your port, fuel, automatic trip start/end and route around land.')),
+      btn(T('Ρυθμίσεις','Settings'),'acc',function(){ window.PsaroSmart.openPanel(); })); cp.append(pr); }
+
   /* σκάφος */
   var c1=card(T('Σκάφος','Boat')), g1=grid(c1);
   [['name',T('Όνομα','Name'),'text'],['model',T('Κατασκευαστής / μοντέλο','Builder / model'),'text'],['len',T('Μήκος (m)','Length (m)'),'number'],['hull',T('Υλικό γάστρας','Hull material'),'text'],['reg',T('Αριθμός νηολογίου','Registration no.'),'text'],['port',T('Λιμάνι νηολόγησης','Port of registry'),'text'],['mmsi','MMSI','text'],['call',T('Διακριτικό κλήσης','Call sign'),'text']].forEach(function(f){

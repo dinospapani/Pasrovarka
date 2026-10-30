@@ -217,7 +217,7 @@ function sw(on,fn){ var b=document.createElement('button'); b.type='button'; b.c
 
 /* v31z351: τα εργαλεία μοιράζονται εκεί που ανήκουν. «sea» = Ενέργειες (άγκυρα, οθόνη, MOB), «map» = Στρώματα (χάρτης εκτός σύνδεσης),
    «set»/«data» = κάρτες στις Ρυθμίσεις του Προφίλ. Τα «Ψάρια/Σημεία στον χάρτη» είναι μόνο στα Στρώματα (όχι διπλά). */
-var MODES={sea:['anchor','wake','mob'],map:['offline'],set:['wxal','voice','port'],data:['wxold','wxfill','insights']};
+var MODES={sea:['anchor','wake','mob'],map:['offline'],set:['wxal','voice'],data:['wxold','wxfill','insights']};
 var MTITLE={sea:T('Άγκυρα και MOB','Anchor and MOB'),map:T('Χάρτης εκτός σύνδεσης','Offline map')};
 var cardSet=null, cardData=null;
 function mkCard(id,title,note){
@@ -228,7 +228,7 @@ function mkCard(id,title,note){
 }
 function setCardsLive(){
   var ps=$('pSettings'); if(!ps) return false;
-  if(!cardSet){ cardSet=mkCard('seaSetCard',T('Ειδοποιήσεις, φωνή και σκάφος','Alerts, voice and boat')); cardData=mkCard('seaDataCard',T('Δεδομένα ψαριών','Catch data'),T('Συμπληρώνει καιρό, πίεση και άνεμο σε ψάρια που καταγράφηκαν χωρίς αυτά.','Fills in weather, pressure and wind for catches logged without them.')); }
+  if(!cardSet){ cardSet=mkCard('seaSetCard',T('Καιρός και φωνή','Weather and voice')); cardData=mkCard('seaDataCard',T('Δεδομένα ψαριών','Catch data'),T('Συμπληρώνει καιρό, πίεση και άνεμο σε ψάρια που καταγράφηκαν χωρίς αυτά.','Fills in weather, pressure and wind for catches logged without them.')); }
   if(!cardSet.isConnected) ps.appendChild(cardSet); if(!cardData.isConnected) ps.appendChild(cardData);
   return !!(ps.getClientRects().length);
 }

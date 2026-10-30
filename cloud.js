@@ -123,6 +123,7 @@ function render(){
   if($('pAvatar')) $('pAvatar').textContent=ch;
   if($('pNameShow')) $('pNameShow').textContent=nm||em;
   if($('pName')&&document.activeElement!==$('pName')) $('pName').value=nm;
+  if($('pName')) $('pName').placeholder=window.LANG==='en'?'Your name':'Το όνομά σου';
   if(sess&&$('acStatus')&&!$('acStatus').textContent){ var l=ls('psaro-last'); if(l) $('acStatus').textContent='Τελευταίος συγχρονισμός '+new Date(l).toLocaleString(window.LANG==='en'?'en-GB':'el-GR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
 }
 function localCount(){ return Store.raw('spots').length+Store.raw('trips').length+Store.raw('bites').length; }

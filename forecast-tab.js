@@ -246,7 +246,7 @@ function pressCard(p,o){
   var rk=prKey(), TT=(window.PF&&window.PF.moonAlt)?T('Πίεση, άνεμος και σελήνη','Pressure, wind and moon'):T('Πίεση και άνεμος','Pressure and wind');
   function rangeBar(){ var bar=h('div',{class:'prange',role:'group','aria-label':T('Εύρος','Range')}); Object.keys(PRANGE).forEach(function(k){ var b=h('button',{type:'button','aria-pressed':String(k===rk),text:T(PRANGE[k].lbl[0],PRANGE[k].lbl[1])}); b.addEventListener('click',function(){ lsSet('psaro-pwrange',k); pressCard(p,o); }); bar.append(b); }); return bar; }
   function head(){ var hd=h('div',{class:'prhead'}); hd.append(h('h3',{text:TT}),rangeBar()); return hd; }
-  box.append(head(),h('p',{class:'note',text:T('Φόρτωση…','Loading…')}));
+  var sk=h('div',{class:'ndsk ndskchart',role:'status','aria-label':T('Φόρτωση','Loading')}); box.append(head(),sk);
   pressSeries(p,o.td?'psaro-fcpress2t':null).then(function(v){
     var pts=v.pts, n=v.now; if(!pts.length||n<3){ throw new Error('nodata'); }
     var hasW=pts.some(function(q){ return q.w!=null; });

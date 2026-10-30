@@ -586,7 +586,7 @@ function render(){
   if(S.home) r2.append(btn(T('Καθαρισμός','Clear'),'',function(){ S.home=null; save(); autoStop(); render(); rt(); })); body.append(r2);
   row(T('Γραμμή επιστροφής στον χάρτη','Return strip on map'),T('Η γραμμή «🏠 απόσταση · ώρα · ⛽» πάνω αριστερά κατά την έξοδο. Κράτα την πατημένη για να κρυφτεί. Οι ειδοποιήσεις μένουν ενεργές.','The “🏠 distance · time · ⛽” strip during a trip. Long-press it to hide. Alerts stay on.'),sw(S.chip!==false,function(){ S.chip=(S.chip===false); save(); render(); rt(); }));
   sec(T('Σκάφος','Boat'));
-  row(T('Σκάφος, κινητήρας, καύσιμο, λήξεις','Boat, engine, fuel, expiry dates'),T('Όλα τα στοιχεία της βάρκας είναι πλέον στο Προφίλ › Βάρκα.','All boat details are now in Profile › Boat.'),btn(T('Άνοιγμα','Open'),'acc',function(){ P.hidden=true; if(window.PsaroBoat) window.PsaroBoat.open(); }));
+  /* v31z415: χωρίς γραμμή «Σκάφος…»: ο πίνακας ανοίγει πλέον μέσα από το Προφίλ › Σκάφος */
   row(T('Δαχτυλίδι αυτονομίας','Range ring'),T('Στον χάρτη, γύρω από το λιμάνι, κατά την έξοδο.','On the map around the port during a trip.'),sw(S.ring,function(){ S.ring=!S.ring; save(); render(); rt(); }));
   sec(T('Αυτόματα','Automatic'));
   row(T('Προτάσεις έναρξης και λήξης','Start and end suggestions'),T('Ρωτά όταν φεύγεις από το λιμάνι ή γυρίζεις. Χρησιμοποιεί GPS όσο η εφαρμογή είναι ανοιχτή.','Asks when you leave or return to the port. Uses GPS while the app is open.'),sw(S.auto,function(){ S.auto=!S.auto; save(); if(S.auto) autoStart(); else autoStop(); render(); }));

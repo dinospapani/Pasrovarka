@@ -83,7 +83,7 @@ function build(){
   }
   new MutationObserver(function(){ adoptExtras(); }).observe(form,{childList:true});
   ['input','change'].forEach(function(ev){ $('sfPort').addEventListener(ev,syncMore); sil.addEventListener(ev,syncMore); });
-  setInterval(function(){ if(!$('tripSheet').hidden) syncMore(); },1500);
+  (window.ndEvery||setInterval)(function(){ if(!$('tripSheet').hidden) syncMore(); },1500);
 
   /* «Έναρξη» */
   go.classList.add('tfgo'); go.textContent=T('▶ Έναρξη εξόδου','▶ Start trip');

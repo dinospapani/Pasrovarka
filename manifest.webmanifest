@@ -1,7 +1,7 @@
 {
   "name": "BiteCast",
   "short_name": "BiteCast",
-  "description": "Ψάρεμα από βάρκα: καιρός, σημεία, ημερολόγιο και στατιστικά.",
+  "description": "Ψάρεμα: πρόγνωση, σημεία, ημερολόγιο ψαριών και εξόδων.",
   "lang": "el",
   "start_url": "./",
   "scope": "./",
@@ -10,8 +10,61 @@
   "background_color": "#08171f",
   "theme_color": "#0c2b3a",
   "icons": [
-    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
-    {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Νέο ψάρι",
+      "short_name": "Νέο ψάρι",
+      "url": "./?a=bite",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Έναρξη εξόδου",
+      "short_name": "Έξοδος",
+      "url": "./?a=trip",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Πρόγνωση",
+      "short_name": "Πρόγνωση",
+      "url": "./?a=fc",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
   ]
 }

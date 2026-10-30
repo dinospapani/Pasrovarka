@@ -498,8 +498,8 @@ function initMap(){
   spotsG=L.layerGroup().addTo(map); bitesG=L.layerGroup();
   const bitesVis=()=>{ if(!map||!bitesG) return; const on=!!reviewSet||!!focusId||lsGet('psaro-showbites',true)!==false; /* v31z351: ο διακόπτης «Ψάρια» ισχύει και κατά την έξοδο */ bitesVisRef=bitesVis; window.PsaroCore.bitesVis=bitesVis; if(on&&!map.hasLayer(bitesG)) bitesG.addTo(map); if(!on&&map.hasLayer(bitesG)){ map.closePopup(); map.removeLayer(bitesG); } };
   const spotsVis=()=>{ if(!map||!spotsG) return; const on=lsGet('psaro-showspots',true)!==false||!!pick||!!focusId; window.PsaroCore.spotsVis=spotsVis; if(on&&!map.hasLayer(spotsG)) spotsG.addTo(map); if(!on&&map.hasLayer(spotsG)){ map.closePopup(); map.removeLayer(spotsG); } };
-  setTimeout(spotsVis,100); setInterval(spotsVis,2000);
-  window.addEventListener('psaro-sess',bitesVis); setTimeout(bitesVis,300); setTimeout(bitesVis,1500); setInterval(bitesVis,3000);
+  setTimeout(spotsVis,100); setInterval(function(){ if(!document.hidden) spotsVis(); },2000);
+  window.addEventListener('psaro-sess',bitesVis); setTimeout(bitesVis,300); setTimeout(bitesVis,1500); setInterval(function(){ if(!document.hidden) bitesVis(); },3000);
   map.on('moveend',()=>{const p=map.getCenter(); lsSet('psaro-view',{lat:+p.lat.toFixed(4),lon:+p.lng.toFixed(4),z:map.getZoom()});});
   let tapM=null, tapPop=null;
   map.on('click',e=>{
