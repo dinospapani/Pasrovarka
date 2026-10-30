@@ -74,7 +74,9 @@ function wire(id,passive){
   inp.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); add(); } else if(e.key==='Escape'){ e.stopPropagation(); close(true); } });
 }
 wire('bTech',false); wire('tTech',true);
-function rebuildAll(){ [['bTech',false],['tTech',true]].forEach(function(p){ var s=document.getElementById(p[0]); if(!s) return; var c=s.value; build(s,p[1]); var d=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value'); if(c&&known(c)){ if(!Array.prototype.some.call(s.options,function(o){ return o.value===c; })) s.insertBefore(opt(c),s.querySelector('option[value="Άλλο"]')); d.set.call(s,c); } else s.selectedIndex=0; }); }
+function rebuildAll(){ [['bTech',false],['tTech',true]].forEach(function(p){ var s=document.getElementById(p[0]); if(!s) return; var c=s.value; build(s,p[1]); var d=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value');
+  /* v31z407: μετά την αλλαγή τύπου ψαρέματος κρατιέται η τεχνική μόνο αν ανήκει στον νέο τύπο (όχι «Βυθού» στο ψαροντούφεκο) */
+  if(c&&Array.prototype.some.call(s.options,function(o){ return o.value===c&&c!=='Άλλο'; })) d.set.call(s,c); else s.selectedIndex=0; }); }
 window.addEventListener('psaro-fprof',rebuildAll);
 window.PsaroTechs={custom:load,rebuild:rebuildAll};
 })();

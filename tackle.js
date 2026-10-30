@@ -385,26 +385,29 @@ function form(it){
 }
 var picked=[], pw={}, ph={}, ps={}, TERM={hook:1,lure:1,other:1}, askedD=false;
 function union(){ var u=picked.slice(); Object.keys(ph).forEach(function(l){ if(picked.indexOf(l)>=0&&ph[l]&&u.indexOf(ph[l])<0) u.push(ph[l]); }); return u; }
-function lastSel(){ var bs=(S.get('bites')||[]).filter(function(b){ return b.tk&&b.tk.length; }); if(!bs.length) return {ids:[],w:{},h:{},s:{}}; bs.sort(function(a,b){ return (b._u||0)-(a._u||0); }); var ex={}; load().forEach(function(x){ ex[x.id]=1; }); var b0=bs[0], w={}, h={}, s={}; Object.keys(b0.tkw||{}).forEach(function(k){ if(ex[k]) w[k]=b0.tkw[k]; }); Object.keys(b0.tkh||{}).forEach(function(k){ if(ex[k]&&ex[b0.tkh[k]]) h[k]=b0.tkh[k]; }); Object.keys(b0.tks||{}).forEach(function(k){ if(ex[k]) s[k]=b0.tks[k]; }); return {ids:b0.tk.filter(function(i){ return ex[i]; }),w:w,h:h,s:s}; }
+/* v31z407: οικογένεια ψαρέματος: ψαροντούφεκο / λίμνη / θάλασσα με καλάμι. Στην επεξεργασία μετράει ο τύπος του ψαριού. */
+function famOf(p){ return p==='spear'?'spear':p==='lake'?'lake':'sea'; }
+function curProf(){ var r=window.PsaroEditRec; return r?(r.prof||'boat'):tprof(); }
+function lastSel(){ var fm=famOf(tprof()), bs=(S.get('bites')||[]).filter(function(b){ return b.tk&&b.tk.length&&famOf(b.prof||'boat')===fm; }); if(!bs.length) return {ids:[],w:{},h:{},s:{}}; bs.sort(function(a,b){ return (b._u||0)-(a._u||0); }); var ex={}; load().forEach(function(x){ ex[x.id]=1; }); var b0=bs[0], w={}, h={}, s={}; Object.keys(b0.tkw||{}).forEach(function(k){ if(ex[k]) w[k]=b0.tkw[k]; }); Object.keys(b0.tkh||{}).forEach(function(k){ if(ex[k]&&ex[b0.tkh[k]]) h[k]=b0.tkh[k]; }); Object.keys(b0.tks||{}).forEach(function(k){ if(ex[k]) s[k]=b0.tks[k]; }); return {ids:b0.tk.filter(function(i){ return ex[i]; }),w:w,h:h,s:s}; }
 function memHook(lureId){ var bs=(S.get('bites')||[]).filter(function(b){ return b.tkh&&b.tkh[lureId]; }); if(!bs.length) return null; bs.sort(function(a,b){ return (b._u||0)-(a._u||0); }); var hid=bs[0].tkh[lureId]; if(!load().some(function(x){ return x.id===hid; })) return null; return {h:hid,s:(bs[0].tks||{})[hid]}; }
 function mount(div,ids,w,h,s){
-  if(!div) return; askedD=false; var L=null; if(ids==='last'){ L=lastSel(); picked=L.ids; pw=L.w; ph=L.h; ps=L.s; } else { picked=(ids||[]).slice(); pw=Object.assign({},w||{}); ph=Object.assign({},h||{}); ps=Object.assign({},s||{}); }
+  if(!div) return; askedD=false; var L=null; if(ids==='last'){ L=lastSel(); picked=L.ids; pw=L.w; ph=L.h; ps=L.s; var sp0=tprof()==='spear', fx0={}; load().forEach(function(x){ fx0[x.id]=x; }); picked=picked.filter(function(i){ var x=fx0[i]; if(!x) return false; if(x.type==='set'||x.type==='other') return !sp0; return (SPEARTY.indexOf(x.type)>=0)===sp0; }); } else { picked=(ids||[]).slice(); pw=Object.assign({},w||{}); ph=Object.assign({},h||{}); ps=Object.assign({},s||{}); }
   /* τα αγκίστρια που ανήκουν σε τεχνητό δεν μένουν και ως ξεχωριστή επιλογή */
   var hv={}; Object.keys(ph).forEach(function(l){ hv[ph[l]]=1; }); picked=picked.filter(function(i){ return !hv[i]; });
   var tdiv=document.getElementById('bTerm'), wdiv=document.getElementById('bTkW'), sg=document.getElementById('bTkSug'), wrap=document.getElementById('bTackleWrap');
   div.replaceChildren(); if(tdiv) tdiv.replaceChildren(); if(wdiv) wdiv.replaceChildren();
   /* v31z374: στη φόρμα ψαριού φαίνεται μόνο ο εξοπλισμός του τύπου ψαρέματος (ψαροντούφεκο ή καλάμι)· ό,τι είναι ήδη επιλεγμένο μένει */
-  var full=load(), fx={}, spf=tprof()==='spear'; full.forEach(function(x){ fx[x.id]=x; });
+  var full=load(), fx={}, spf=curProf()==='spear'; full.forEach(function(x){ fx[x.id]=x; });
   function fam(t){ return t==='other'?null:SPEARTY.indexOf(t)>=0; }
   var all=full.filter(function(x){ if(picked.indexOf(x.id)>=0) return true;
     if(x.type==='set'){ return (x.members||[]).some(function(i){ var m=fx[i]; return m&&fam(m.type)===spf; }); }
     var f=fam(x.type); if(!(f===null||f===spf)) return false;
     /* v31z404: λίμνη → όχι «μόνο θάλασσα»· θάλασσα → όχι «μόνο γλυκό νερό» */
-    var tp=tprof(); if(tp==='lake'&&x.water==='sea') return false; if((tp==='boat'||tp==='shore')&&x.water==='fresh') return false; return true; });
+    var tp=curProf(); if(tp==='lake'&&x.water==='sea') return false; if((tp==='boat'||tp==='shore')&&x.water==='fresh') return false; return true; });
   var order=TYPES.map(function(t){ return t[0]; }), ex={}; all.forEach(function(x){ ex[x.id]=x; });
   var emp=document.getElementById('bTkEmpty'); if(!emp&&wrap){ emp=el('div','note'); emp.id='bTkEmpty'; wrap.append(emp); }
   if(emp){ emp.replaceChildren(); emp.hidden=!!all.length; if(!all.length){ emp.append(document.createTextNode(T('Δεν έχεις εξοπλισμό ακόμα. ','No tackle yet. '))); var gb=el('button','btn ghost sm',T('Πρόσθεσε στο Προφίλ → Εξοπλισμός','Add in Profile → Tackle')); gb.type='button'; gb.addEventListener('click',function(){ var pb=document.getElementById('profBtn'); if(pb) pb.click(); setTimeout(function(){ if(window.PsaroProfView) PsaroProfView.set('tackle'); },80); }); emp.append(gb); } }
-  if(wrap){ var sp=wrap.querySelectorAll(':scope>span'); if(sp[0]) sp[0].textContent=spf?T('Εξοπλισμός ψαροντουφέκου','Spearfishing gear'):tprof()==='lake'?T('Καλάμι / σετ (γλυκό νερό)','Rod / setup (fresh water)'):T('Καλάμι / σετ','Rod / setup'); if(sp[1]) sp[1].textContent=T('Τερματικό','Terminal tackle'); Array.prototype.forEach.call(sp,function(s2){ s2.hidden=!all.length; }); }
+  if(wrap){ var sp=wrap.querySelectorAll(':scope>span'); if(sp[0]) sp[0].textContent=spf?T('Εξοπλισμός ψαροντουφέκου','Spearfishing gear'):curProf()==='lake'?T('Καλάμι / σετ (γλυκό νερό)','Rod / setup (fresh water)'):T('Καλάμι / σετ','Rod / setup'); if(sp[1]) sp[1].textContent=T('Τερματικό','Terminal tackle'); Array.prototype.forEach.call(sp,function(s2){ s2.hidden=!all.length; }); }
   var rank=function(x){ return x.type==='set'?-1:order.indexOf(x.type); };
   all.sort(function(a,b){ return rank(a)-rank(b)||(a.name||'').localeCompare(b.name||''); });
   var inSet={}; all.forEach(function(x){ if(x.type==='set') (x.members||[]).forEach(function(i){ inSet[i]=1; }); });
