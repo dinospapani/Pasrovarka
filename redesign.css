@@ -1383,3 +1383,6 @@ body.fp-lake #logSeg,body.fp-shore #logSeg,body.fp-spear #logSeg{grid-template-c
 .hotday.good .hdm{color:#1f8a4c}.hotday.good{background:rgba(31,138,76,.08);border-radius:8px;padding:6px}
 .hotday.unsafe .hds{color:#c8332b;font-size:11px}
 .hotday.hothead{padding:2px 0}.hotday.hothead span{font-size:10.5px;font-weight:600;opacity:.6;text-transform:uppercase}
+
+/* v31z411: ένδειξη «χρειάζεται προσοχή» στις γραμμές του Profile */
+.ndphr b .ndphw{display:inline-block;width:8px;height:8px;margin-left:8px;border-radius:50%;background:#e0a01a;vertical-align:middle}

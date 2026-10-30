@@ -1259,30 +1259,43 @@ box.insertBefore(tools,bar.nextSibling);
       if(k==='stats'){ var tr=(C.Store.get('trips')||[]).length, f=0; (C.Store.act?C.Store.act():(C.Store.get('bites')||[])).forEach(function(b){ f+=C.bc?C.bc(b):1; }); return tr+' '+T('έξοδοι','trips')+' · '+f+' '+T('ψάρια','fish'); }
       if(k==='alerts'){ var n=J('psaro-notify',{}), a=[]; if(n.on) a.push(T('Καλές μέρες ≥','Good days ≥')+(n.threshold||75)); if(n.pressure) a.push(T('πίεση','pressure')); if(n.turn) a.push(T('καμπή πίεσης','pressure turn')); var w=J('psaro-wwatch',null); if(w&&w.on) a.push(T('άνεμος','wind')); if(a.length){ var s0=a.join(' · '); return s0.charAt(0).toUpperCase()+s0.slice(1); } return T('Κλειστές','Off'); }
       if(k==='fprof'){ var nm=window.PsaroFProf?window.PsaroFProf.name():''; return nm+(ls('psaro-askfp')==='0'?'':T(' · ρωτά στο άνοιγμα',' · asks on open')); }
+      if(k==='tackle'){ var tk=(C.Store.raw&&C.Store.raw('tackle'))||[]; return tk.length?tk.length+' '+T('κομμάτια','items')+' · '+T('καλάμια, μηχανισμοί, σετ, λίστα αγορών','rods, reels, sets, shopping list'):T('Πρόσθεσε καλάμια, μηχανισμούς, τεχνητά','Add rods, reels, lures'); }
+      if(k==='units'){ var U2=window.PsaroUnits; if(U2&&U2.label) return ['wind','temp','press','wave','dist'].map(function(x){ return U2.label(x); }).join(' · '); }
+      if(k==='safety'){ var sd=J('psaro-safe',{}), gp=ls('psaro-gps'); return (sd.phone||sd.email||sd.tgLinked)?T('Επαφή: ','Contact: ')+(sd.name||sd.phone||sd.email||'Telegram'):T('Δεν έχεις ορίσει επαφή ασφαλείας','No safety contact set'); }
+      if(k==='ai'){ return ls('psaro-akey')&&ls('psaro-akey')!=='""'?T('Ενεργό: αναγνώριση από φωτογραφία','On: identify from a photo'):T('Ανενεργό · χρειάζεται κλειδί API','Off · needs an API key'); }
+      if(k==='account'){ var se=J('psaro-sess',null), lt=+ls('psaro-last')||0; return se&&se.email?se.email+(lt?' · '+T('συγχρ. ','synced ')+new Date(lt).toLocaleTimeString(EN?'en-GB':'el-GR',{hour:'2-digit',minute:'2-digit'}):''):T('Όνομα, γλώσσα, συγχρονισμός, κωδικός','Name, language, sync, password'); }
       if(k==='friends'){ var fr=J('psaro-fr',{}), l=(fr&&fr.list)||[]; return l.length?l.map(function(f){ return f.name; }).slice(0,3).join(', ')+(l.length>3?' +'+(l.length-3):''):T('Κοινή χρήση ψαριών και σημείων με φίλους','Share fish and spots with friends'); }
       if(k==='backup'){ var lb=+ls('psaro-lastbackup')||0; return lb?T('Τελευταίο: ','Last: ')+new Date(lb).toLocaleDateString(EN?'en-GB':'el-GR'):T('Δεν έχεις κάνει ακόμα αντίγραφο','No backup yet'); }
     }catch(e){}
     return '';
   }
+  /* v31z411: οργάνωση Profile ανά χρήση· κάθε γραμμή δείχνει την κατάστασή της (τι λείπει φαίνεται με ●) */
   var GROUPS=[
     [T('ΤΑ ΔΙΚΑ ΜΟΥ','MY STUFF'),[
       ['stats',T('Στατιστικά','Stats'),null,'stats'],
-      ['tackle',T('Εξοπλισμός','Tackle'),T('Καλάμια, μηχανισμοί, σετ, λίστα αγορών','Rods, reels, sets, shopping list'),'tackle'],
+      ['tackle',T('Εξοπλισμός','Tackle'),null,'tackle'],
       ['boat',T('Σκάφος','Boat'),T('Μηχανή, συντήρηση, λήξεις','Engine, maintenance, expiries'),'boat'],
-      ['guide',T('Οδηγός','Guide'),T('Είδη, τεχνικές, κόμποι, νομοθεσία','Species, techniques, knots, rules'),'guide']]],
-    [T('ΡΥΘΜΙΣΕΙΣ','SETTINGS'),[
-      ['alerts',T('Ειδοποιήσεις','Alerts'),null,'set','ntCard,seaSetCard'],
-      ['safety',T('Ασφάλεια','Safety'),T('Επαφή ασφαλείας, ώρα επιστροφής, GPS διαδρομή','Safety contact, return time, GPS track'),'set','pContacts,pGpsCard'],
+      ['friends',T('Φίλοι','Friends'),null,'set','frCard']]],
+    [T('ΨΑΡΕΜΑ','FISHING'),[
       ['fprof',T('Τύπος ψαρέματος και φωνή','Fishing type and voice'),null,'set','ndFProf'],
-      ['units',T('Μονάδες','Units'),T('Άνεμος, θερμοκρασία, πίεση, απόσταση, συντεταγμένες','Wind, temperature, pressure, distance, coordinates'),'set','unitsCard']]],
-    [T('ΔΕΔΟΜΕΝΑ ΚΑΙ ΛΟΓΑΡΙΑΣΜΟΣ','DATA AND ACCOUNT'),[
+      ['alerts',T('Ειδοποιήσεις','Alerts'),null,'set','ntCard,seaSetCard'],
+      ['guide',T('Οδηγός','Guide'),T('Είδη, τεχνικές, κόμποι, νομοθεσία','Species, techniques, knots, rules'),'guide'],
+      ['units',T('Μονάδες','Units'),null,'set','unitsCard']]],
+    [T('ΑΣΦΑΛΕΙΑ','SAFETY'),[
+      ['safety',T('Επαφή ασφαλείας και διαδρομή','Safety contact and track'),null,'set','pContacts,pGpsCard']]],
+    [T('ΔΕΔΟΜΕΝΑ','DATA'),[
       ['backup',T('Αντίγραφο και εξαγωγή','Backup and export'),null,'set','ndExport'],
-      ['data',T('Έλεγχος και συμπλήρωση δεδομένων','Check and fill in data'),T('Διπλά, καιρός σε παλιά ψάρια','Duplicates, weather on old catches'),'set','dgCard,seaDataCard'],
-      ['friends',T('Φίλοι','Friends'),null,'set','frCard'],
-      ['account',T('Λογαριασμός και γλώσσα','Account and language'),T('Όνομα, γλώσσα, συγχρονισμός, κωδικός','Name, language, sync, password'),'set','pAccCard,pSyncCard,pPassCard,ndDelAcc'],
-      ['ai',T('Αναγνώριση ψαριού με AI','AI fish identification'),T('Κλειδί API για αναγνώριση από φωτογραφία','API key for photo recognition'),'set','pAICard'],
-      ['about',T('Σχετικά','About'),T('Απόρρητο, ασφάλεια, έκδοση, οδηγός','Privacy, safety, version, tour'),'set','appVer,ndChkUpd,ndAbout,ndTour']]]
+      ['data',T('Έλεγχος και συμπλήρωση','Check and fill in'),T('Διπλά, καιρός σε παλιά ψάρια','Duplicates, weather on old catches'),'set','dgCard,seaDataCard'],
+      ['ai',T('Αναγνώριση ψαριού με AI','AI fish identification'),null,'set','pAICard']]],
+    [T('ΛΟΓΑΡΙΑΣΜΟΣ','ACCOUNT'),[
+      ['account',T('Λογαριασμός και γλώσσα','Account and language'),null,'set','pAccCard,pSyncCard,pPassCard,ndDelAcc'],
+      ['about',T('Σχετικά','About'),T('Απόρρητο, έκδοση, οδηγός καλωσορίσματος','Privacy, version, welcome tour'),'set','appVer,ndChkUpd,ndAbout,ndTour']]]
   ];
+  /* γραμμές που χρειάζονται προσοχή: ● */
+  function warnOf(k){ try{
+    if(k==='safety'){ var d=J('psaro-safe',{}); return !(d.phone||d.email||d.tgLinked); }
+    if(k==='backup'){ var lb=+ls('psaro-lastbackup')||0; return !lb||Date.now()-lb>30*86400000; }
+  }catch(e){} return false; }
   function build(){
     var pb=document.querySelector('#profile .pbox'), pm=$('pMain'); if(!pb||!pm) return false; if(home) return true;
     home=document.createElement('div'); home.id='pHome'; home.className='ndphome'; pm.parentNode.insertBefore(home,pm);
@@ -1305,6 +1318,7 @@ box.insertBefore(tools,bar.nextSibling);
         var b=document.createElement('button'); b.type='button'; b.className='ndphr'; b.dataset.k=r[0];
         b.innerHTML='<span><b></b><small></small></span><i aria-hidden="true">›</i>';
         b.querySelector('b').textContent=r[1]; b.querySelector('small').textContent=r[2]||sub(r[0]);
+        if(warnOf(r[0])){ var wd=document.createElement('i'); wd.className='ndphw'; wd.setAttribute('aria-label',T('Χρειάζεται προσοχή','Needs attention')); b.querySelector('b').appendChild(wd); }
         if(r[0]==='boat'){ var bb=document.querySelector('#pSeg [data-p=boat]'); if(bb&&bb.dataset.badge){ var d=document.createElement('em'); d.textContent=bb.dataset.badge; b.querySelector('b').appendChild(d); } }
         b.addEventListener('click',function(){ go(r[0]); });
         box.appendChild(b);
@@ -1349,6 +1363,9 @@ box.insertBefore(tools,bar.nextSibling);
   var n=0, iv=setInterval(function(){ n++; var pbtn=$('profBtn');
     if(pbtn&&build()){ clearInterval(iv);
       pbtn.addEventListener('click',function(){ setTimeout(showHome,0); });
+      /* v31z411: πάτημα στο όνομα/εικόνα πάνω → Λογαριασμός */
+      try{ var ph=document.querySelector('#profile .phead'); if(ph&&!ph.dataset.ndgo){ ph.dataset.ndgo='1'; ph.style.cursor='pointer';
+        ph.addEventListener('click',function(e){ if(e.target.closest('button')) return; if(inHome) go('account'); }); } }catch(e){}
       /* v31z403: αν το Profile ανοίξει από αλλού (π.χ. μετά από ενημέρωση ή επαναφόρτωση), δείχνει τη λίστα και όχι την παλιά όψη με καρτέλες */
       try{ var prf=$('profile'); if(prf){ var chk=function(){ if(!prf.hidden&&!document.body.classList.contains('ndphon')) setTimeout(function(){ if(!prf.hidden&&!document.body.classList.contains('ndphon')) showHome(); },60); };
         new MutationObserver(chk).observe(prf,{attributes:true,attributeFilter:['hidden']}); chk(); } }catch(e){}
