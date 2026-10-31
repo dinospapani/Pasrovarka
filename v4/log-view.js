@@ -18,11 +18,11 @@ function draw(){
   if(!root) return;
   var page=h('div',{class:'page'});
   page.append(h('div',{class:'top'},h('h1',{class:'lt',text:T('Ημερολόγιο','Logbook')}),syncBtn()));
-  page.append(B.seg([['fish',T('Ψάρια','Catches')],['trips',T('Έξοδοι','Trips')],['stats',T('Στατιστικά','Stats')]],st.tab,function(v){ st.tab=v; ls.set('psaro-v4-logtab',v); draw(); },T('Όψη ημερολογίου','Logbook view')));
+  page.append(B.seg([['fish',T('Ψάρια','Catches')],['trips',T('Έξοδοι','Trips')],['gear',T('Εργαλεία','Gear')],['stats',T('Στατιστικά','Stats')]],st.tab,function(v){ st.tab=v; ls.set('psaro-v4-logtab',v); draw(); },T('Όψη ημερολογίου','Logbook view')));
   var chips=h('div',{class:'chips',role:'group','aria-label':T('Διάστημα','Period')});
   RANGES.forEach(function(r){ chips.append(h('button',{type:'button',class:'chip','aria-pressed':String(st.range===r[0]),text:r[1],onclick:function(){ st.range=r[0]; ls.set('psaro-v4-logrange',r[0]); draw(); }})); });
   page.append(chips);
-  if(st.tab==='fish') fish(page); else if(st.tab==='trips') trips(page); else stats(page);
+  if(st.tab==='fish') fish(page); else if(st.tab==='trips') trips(page); else if(st.tab==='gear'&&B.gearLog) B.gearLog(page,inRange); else stats(page);
   root.replaceChildren(page);
 }
 function syncBtn(){
@@ -117,5 +117,5 @@ function stats(page){
 
 B.biteDetail=detail;
 B.view('log',{title:T('Ημερολόγιο','Logbook'),mount:function(el){ root=el; draw(); },unmount:function(){ root=null; },resume:function(){ draw(); }});
-B.on('store',function(k){ if(root&&/^psaro-(bites|trips|spots|sess)$/.test(k)) draw(); });
+B.on('store',function(k){ if(root&&/^psaro-(bites|trips|spots|sess|gear)$/.test(k)) draw(); });
 })();

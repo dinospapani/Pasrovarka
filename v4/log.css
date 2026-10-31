@@ -69,3 +69,7 @@
 .tkchips{display:flex;gap:6px;flex-wrap:wrap}
 .tkchips .chip small{color:inherit;opacity:.7;font-weight:500}
 .fishrow.miss .tx b{color:var(--ink-2);font-style:italic}
+.warnbox{margin:0;padding:10px 12px;border-radius:12px;background:var(--fair-bg);color:var(--ink);font-size:13.5px;line-height:1.4}
+.gearnote{margin:0;padding:8px 12px;border-radius:10px;background:var(--surface-2);font-weight:650;font-size:14.5px}
+.gact{margin:0}.gact b{font-size:16px}
+.mapbar .gearbtn svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}

@@ -32,7 +32,7 @@ function tackleFor(prof){ var sp=prof==='spear', ty=sp?SPEARTY:ANGTY;
 function lastTk(prof){ var fm=famOf(prof), bs=st().raw('bites').filter(function(b){ return b.tk&&b.tk.length&&famOf(b.prof||'boat')===fm; }).sort(function(a,b){ return (b._u||0)-(a._u||0); }); return bs[0]?bs[0].tk.slice():[]; }
 
 B.biteForm=function(edit,opt){
-  var S=st(), all=S.bites(), e=edit||null, photos=[], phDirty=false, prof=e&&e.prof||B.prof();
+  var S=st(), all=S.bites(), e=edit||null, photos=[], phDirty=false, prof=e&&e.prof||B.prof(), gearIt=opt&&opt.gear||(e&&e.gear&&B.gearOf?B.gearOf(e.gear):null);
   var miss=h('input',{type:'checkbox',checked:!!(e?e.miss:opt&&opt.miss)});
   /* εξοπλισμός */
   var tkItems=tackleFor(prof), tkSel=e?(e.tk||[]).slice():lastTk(prof), tkBox=h('div',{class:'tkchips'});
@@ -74,6 +74,7 @@ B.biteForm=function(edit,opt){
   var form=h('form',{class:'bform',novalidate:true},
     datalist('bfSp',uniq(all.map(function(b){ return b.species; }).concat((window.SPKB||[]).map(function(k){ return EN&&k.en?k.en:k.n; })))),
     datalist('bfBait',uniq(all.map(function(b){ return b.bait; }))),datalist('bfTech',uniq(all.map(function(b){ return b.tech; })).concat(EN?['Bottom fishing','Spinning','Trolling','Live bait','Jigging']:['Βυθού','Spinning','Τρόλινγκ','Ζωντανό δόλωμα','Jigging'])),
+    gearIt?h('p',{class:'gearnote',text:T('Εργαλείο: ','Gear: ')+(gearIt.name||'')}):null,
     h('label',{class:'tg'},miss,h('span',{text:T('Χάθηκε: τσίμπησε αλλά δεν το έβγαλα','Lost: it bit but I did not land it')})),
     field(T('Είδος','Species'),sp,T('Για χαμένο ψάρι είναι προαιρετικό.','Optional for a lost fish.')),
     h('label',{class:'tg'},many,h('span',{text:T('Πολλά ψάρια μαζί (μία εγγραφή)','Several fish together (one entry)')})),cntRow,
@@ -108,6 +109,8 @@ B.biteForm=function(edit,opt){
       depth:num(dep),kg:num(kg),len:num(len),notes:notes.value.trim(),place:place,lat:lat,lon:lon,src:e?(e.src||'app'):'v4'});
     if(many.checked) rec.cnt=Math.floor(+cnt.value); else delete rec.cnt;
     if(miss.checked){ rec.miss=true; if(!e) rec.src='miss'; } else delete rec.miss;
+    if(!e&&opt&&opt.gear){ rec.gear=opt.gear.id; rec.gearName=opt.gear.name||''; if(!rec.tech) rec.tech={ll:T('Παραγάδι','Longline'),net:T('Δίχτυ','Net'),trap:T('Ζεμπίλι / παγίδα','Trap / pot')}[opt.gear.type]||''; }
+    else if(!e&&B.gearTag) B.gearTag(rec);
     var ex={}; tkItems.forEach(function(x){ ex[x.id]=1; }); var keepOther=(e&&e.tk||[]).filter(function(id){ return !ex[id]; });
     var tk=keepOther.concat(tkSel.filter(function(id){ return ex[id]; })); if(tk.length) rec.tk=tk; else { delete rec.tk; delete rec.tkw; delete rec.tkh; delete rec.tks; }
     if(rel.checked) rec.rel=true; else delete rec.rel;

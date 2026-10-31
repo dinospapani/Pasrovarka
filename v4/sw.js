@@ -1,7 +1,7 @@
 /* BiteCast 4 · service worker (μόνο για τον φάκελο v4/).
    Δικά μας αρχεία: πρώτα δίκτυο, αλλιώς αποθηκευμένο αντίγραφο. Γραμματοσειρές: αποθηκευμένο αντίγραφο πρώτα. */
-const V = 'bitecast4-008';
-const SHELL = ['./', 'index.html', 'app.css', 'forecast.css', 'core.js', 'ui.js', 'shell.js', 'forecast-view.js', 'forecast-more.js', 'advise.js', 'store.js', 'bite-form.js', 'log-view.js', 'profile-view.js', 'log.css', 'map.css', 'map-view.js', 'tackle-view.js', '../leaflet.js', '../leaflet.css', '../version.js', '../hist.js', 'manifest.webmanifest',
+const V = 'bitecast4-009';
+const SHELL = ['./', 'index.html', 'app.css', 'forecast.css', 'core.js', 'ui.js', 'shell.js', 'forecast-view.js', 'forecast-more.js', 'advise.js', 'store.js', 'bite-form.js', 'log-view.js', 'profile-view.js', 'log.css', 'map.css', 'map-view.js', 'tackle-view.js', 'gear-view.js', '../leaflet.js', '../leaflet.css', '../version.js', '../hist.js', 'manifest.webmanifest',
   '../units.js', '../knowledge.js', '../forecast.js', '../personal.js', '../icon-192.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(V).then(c => Promise.all(SHELL.map(u => c.add(u).catch(() => {})))).then(() => self.skipWaiting()));
