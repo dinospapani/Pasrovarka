@@ -10,6 +10,7 @@ function draw(){
   page.append(h('div',{class:'top'},h('h1',{class:'lt',text:T('Προφίλ','Profile')})));
   page.append(s?accountCard(s):signInCard());
   page.append(prefs());
+  if(B.safetyCard) page.append(B.safetyCard());
   page.append(mine());
   page.append(backupCard());
   page.append(more());
@@ -74,7 +75,7 @@ function backupCard(){
 }
 /* ---------- τα υπόλοιπα (ακόμα στην κλασική) ---------- */
 function more(){
-  var items=[['alerts',T('Ειδοποιήσεις','Alerts'),'bell'],['safety',T('Επαφή ασφαλείας και διαδρομή','Safety contact and track'),'pin']];
+  var items=[['alerts',T('Ειδοποιήσεις πρόγνωσης','Forecast alerts'),'bell']];
   var l=h('div',{class:'list'});
   items.forEach(function(it){ l.append(h('a',{class:'li',href:B.classic('?a=p&k='+it[0])},h('span',{class:'ic'},B.icon(it[2])),h('span',{class:'tx'},h('b',{text:it[1]}),h('small',{text:T('Στην κλασική έκδοση, με τα ίδια δεδομένα','In the classic version, same data')})),B.icon('chev'))); });
   return h('div',null,h('h3',{class:'listh',text:T('Ακόμα στην κλασική έκδοση','Still in the classic version')}),l);

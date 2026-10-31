@@ -84,5 +84,5 @@ var PROF={boat:T('Βάρκα','Boat'),shore:T('Στεριά','Shore'),lake:T('Λ
 function prof(){ var p=ls.raw('psaro-fprof'); return PROF[p]?p:'boat'; }
 
 window.BC={LANG:LANG,EN:EN,T:T,ls:ls,records:records,KINDS:KINDS,on:on,emit:emit,h:h,s:s,pad:pad,hm:hm,dayName:dayName,dateShort:dateShort,DAYS3:DAYS3,num:num,lastPos:lastPos,locate:locate,prof:prof,PROF:PROF,
-  classic:function(q){ return '../'+(q||''); }};
+  classic:function(q){ return '../classic.html'+(q||''); }};
 })();

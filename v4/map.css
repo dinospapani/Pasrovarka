@@ -27,3 +27,20 @@ body.mapon .app{padding:0;max-width:none}
 .mk.wind i{font:900 20px/1 var(--font);font-style:normal;color:#fff;text-shadow:0 0 3px #000,0 0 6px #000;display:block}
 .mk.wind b{font:800 11px var(--font);color:#fff;background:rgba(10,38,51,.75);padding:1px 5px;border-radius:6px}
 .mk.wind.fair b{background:var(--fair);color:#1a1200}.mk.wind.poor b{background:var(--poor)}
+/* έξοδος */
+.tripbar{position:fixed;left:12px;right:12px;bottom:calc(var(--nav-h) + var(--safe-b) + 16px);z-index:45;max-width:536px;margin:0 auto;min-height:44px;padding:0 16px;border:0;border-radius:14px;background:var(--good);color:#fff;font:700 14.5px var(--font);box-shadow:0 8px 22px rgba(0,0,0,.3);text-align:left}
+.tripbar[hidden]{display:none}
+.tripbar.late{background:var(--poor);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.75}}
+body.ontrip .app{padding-bottom:calc(var(--nav-h) + var(--safe-b) + 84px)}
+body.ontrip .tripbtn{display:none}
+.seabar{position:fixed;left:12px;top:calc(var(--safe-t) + 12px);z-index:20;display:flex;flex-direction:column;gap:10px}
+.mobbtn{display:none;width:58px;height:58px;border-radius:50%;border:3px solid #fff;background:#ff3b30;color:#fff;font:900 15px var(--font);box-shadow:0 6px 16px rgba(0,0,0,.4)}
+body.maptrip .mobbtn{display:block}
+.ancbtn{font-size:20px;width:46px;height:46px}
+.mk.mob b{display:block;padding:3px 7px;border-radius:8px;background:#ff3b30;color:#fff;font:900 12px var(--font);border:2px solid #fff;transform:translate(-50%,-50%)}
+.ancalarm{position:fixed;left:12px;right:12px;top:calc(var(--safe-t) + 12px);z-index:200;max-width:540px;margin:0 auto;padding:14px;border-radius:16px;background:#c62828;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.ancalarm[hidden]{display:none}
+.ancalarm b{display:block;font-size:20px}.ancalarm span{display:block;margin:4px 0 10px}
+.btn.sos{background:#c62828;color:#fff;font-size:18px;font-weight:800;min-height:54px}
+.tripcard.late{background:var(--poor-bg)}

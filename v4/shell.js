@@ -13,7 +13,10 @@ function nav(){
   return h('nav',{class:'nav','aria-label':T('Κύρια πλοήγηση','Main navigation')},bar);
 }
 function route(){
-  var name=(location.hash||'').slice(1)||'forecast'; if(!VIEWS[name]) name='forecast';
+  var name=(location.hash||'').slice(1)||'forecast';
+  /* συντομεύσεις: #new = νέο ψάρι, #trip = έναρξη εξόδου */
+  if(name==='new'||name==='trip'){ var act=name; history.replaceState(null,'',location.pathname+(act==='new'?'#log':'#map')); name=act==='new'?'log':'map'; setTimeout(function(){ if(act==='new'&&B.biteForm) B.biteForm(); else if(B.tripStart) B.tripStart(); },500); }
+  if(!VIEWS[name]) name='forecast';
   [].forEach.call(document.querySelectorAll('.nav a[data-v]'),function(a){ if(a.dataset.v===name) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); });
   if(cur===name) return;
   if(cur&&VIEWS[cur].unmount) VIEWS[cur].unmount();
