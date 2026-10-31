@@ -101,7 +101,66 @@ B.gearLayers=function(L,onlyIds){
 };
 
 /* ---------- Ημερολόγιο › Εργαλεία ---------- */
+/* ---------- στατιστικά εργαλείων (όπως η κλασική gearstats.js): απόδοση ανά ώρες μέσα, σελήνη στη ρίψη, καιρός όσο ήταν μέσα, μήνας ---------- */
+var WXK='psaro-gearwx', GSK='psaro-gearstat-type', HOUR=3600000, gsBusy=false, gsHost=null, gsRange=null;
+var MOON8=EN?['New moon','Waxing crescent','First quarter','Waxing gibbous','Full moon','Waning gibbous','Last quarter','Waning crescent']:['Νέα σελήνη','Αύξων μηνίσκος','Πρώτο τέταρτο','Αύξουσα κυρτή','Πανσέληνος','Φθίνουσα κυρτή','Τελευταίο τέταρτο','Φθίνων μηνίσκος'];
+var MON12=EN?['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']:['Ιαν','Φεβ','Μαρ','Απρ','Μάι','Ιουν','Ιουλ','Αυγ','Σεπ','Οκτ','Νοε','Δεκ'];
+function ldate(ms){ var d=new Date(ms); return d.getFullYear()+'-'+B.pad(d.getMonth()+1)+'-'+B.pad(d.getDate()); }
+function gsItems(){
+  var out=[], seen={};
+  function add(g,f){ if(!g||!g.id||seen[g.id]) return; var s=g.set||{}, hh=g.haul||{}, t0=s.ta, t1=hh.tb||hh.ta; if(!t0||!t1||s.unknown||t1<=t0||t1-t0>96*HOUR) return;
+    var pos=(s.pts&&s.pts[0])||s.a||s.b||(hh.pts&&hh.pts[0])||hh.a||hh.b||null;
+    seen[g.id]=1; out.push({id:g.id,type:g.type,name:g.name,t0:t0,t1:t1,hrs:(t1-t0)/HOUR,n:f.n,kg:f.kg,pos:pos}); }
+  G().items.forEach(function(g){ if(g.state==='done') add(g,fishOf(g)); });
+  B.store.raw('trips').forEach(function(t){ if(t.deleted) return; (t.gear||[]).forEach(function(g){ add(g,{n:+g.n||0,kg:+g.kg||0}); }); });
+  return out;
+}
+function moonIdx(ms){ try{ return Math.round(PF.moonPhase(ms).f*8)%8; }catch(e){ return null; } }
+function gsGroup(list,keyFn,order){ var m={}; list.forEach(function(g){ var k=keyFn(g); if(k==null) return; var o=m[k]||(m[k]={k:k,sets:0,n:0,kg:0,h:0}); o.sets++; o.n+=g.n; o.kg+=g.kg; o.h+=g.hrs; }); return order.filter(function(k){ return m[k]; }).map(function(k){ return m[k]; }); }
+function rate12(o){ return o.h>0?o.n/o.h*12:0; }
+function gsSection(box,title,rows,lab){ if(!rows.length) return; var mx=Math.max.apply(null,rows.map(rate12))||1, c=h('section',{class:'card'},h('h2',{text:title}));
+  rows.forEach(function(o){ var r=rate12(o); c.append(h('div',{class:'bar'},h('span',{class:'bl',text:lab(o.k)}),h('span',{class:'bt'},h('i',{style:{width:Math.max(3,Math.round(r/mx*100))+'%'}})),h('span',{class:'bv',text:B.num(r,1)})),h('small',{class:'gsub',text:o.sets+(o.sets===1?T(' ριξιά · ',' set · '):T(' ριξιές · ',' sets · '))+o.n+(o.n===1?T(' ψάρι',' catch'):T(' ψάρια',' catches'))})); });
+  box.append(c); }
+function gsFillWx(list){
+  var w=ls.get(WXK,{})||{}, todo=list.filter(function(g){ var c=w[g.id]; return g.pos&&(!c||(c.x===0&&Date.now()-(c.at||0)>6*HOUR)); });
+  if(!todo.length||gsBusy||!window.PsaroHist||!PsaroHist.range||navigator.onLine===false) return;
+  gsBusy=true; var i=0;
+  (function next(){ if(i>=todo.length||i>=12){ gsBusy=false; gsPaint(); return; } var g=todo[i++];
+    PsaroHist.range(g.pos[0],g.pos[1],g.t0,g.t1).then(function(r){ var ww=ls.get(WXK,{})||{}; ww[g.id]=r?{x:1,w:r.w,wm:r.wm,v:r.v,p:r.p,pd:r.pd}:{x:0,at:Date.now()}; ls.set(WXK,ww);
+      var n=gsHost&&gsHost.querySelector('.gsnote'); if(n) n.textContent=T('Φέρνω καιρό… ','Fetching weather… ')+i+'/'+Math.min(todo.length,12); }).catch(function(){}).then(function(){ setTimeout(next,250); }); })();
+}
+function gsPaint(first){
+  if(!gsHost||(!first&&!gsHost.isConnected)) return; var host=gsHost; host.replaceChildren();
+  var sel=ls.get(GSK,'all'), wx=ls.get(WXK,{})||{};
+  var all=gsItems().filter(function(g){ return !gsRange||gsRange(ldate(g.t0)); });
+  host.append(B.seg([['all',T('Όλα','All')],['net',T('Δίχτυ','Net')],['ll',T('Παραγάδι','Longline')],['trap',T('Κλούβες','Pots')]],sel,function(v){ ls.set(GSK,v); gsPaint(); },T('Τύπος εργαλείου','Gear type')));
+  var list=all.filter(function(g){ return sel==='all'||g.type===sel; });
+  if(!list.length){ host.append(h('div',{class:'card empty'},h('h3',{text:T('Δεν υπάρχουν ακόμα στοιχεία','No data yet')}),h('p',{text:T('Δεν υπάρχουν ακόμα ολοκληρωμένες ριξιές με ώρα ρίψης και ανεβάσματος σε αυτό το διάστημα.','No completed sets with set and haul times in this period yet.')}))); return; }
+  var sets=list.length, n=0, kg=0, hr=0; list.forEach(function(g){ n+=g.n; kg+=g.kg; hr+=g.hrs; });
+  host.append(h('div',{class:'kpis k6'},[[String(sets),T('ριξιές','sets')],[String(n),T('ψάρια','catches')],[B.num(kg,1),T('κιλά','kilos')],[B.num(hr,1)+' h',T('ώρες μέσα','hours in water')],[B.num(hr/sets,1)+' h',T('μέσος χρόνος','average soak')],[hr>0?B.num(n/hr*12,1):'–',T('ψάρια ανά 12 ώρες','catches per 12 h')]].map(function(k){ return h('div',{class:'kpi'},h('b',{text:k[0]}),h('span',{text:k[1]})); })));
+  if(sets<10) host.append(h('p',{class:'foot',text:T('Λίγες ριξιές (','Few sets (')+sets+T('). Δες τα ως ένδειξη και όχι ως κανόνα.','). Treat this as a hint, not a rule.')}));
+  host.append(h('p',{class:'foot',text:T('Οι μπάρες δείχνουν ψάρια ανά 12 ώρες μέσα στο νερό. Ο χρόνος μετριέται από την ώρα ρίψης μέχρι την ώρα που τα έβγαλες από το νερό.','Bars show catches per 12 hours in the water. Time runs from the set until the gear came out of the water.')}));
+  gsSection(host,T('Ώρες μέσα στη θάλασσα','Time in the water'),gsGroup(list,function(g){ return g.hrs<6?'a':g.hrs<12?'b':'c'; },['a','b','c']),function(k){ return k==='a'?T('Κάτω από 6 ώρες','Under 6 h'):k==='b'?T('6–12 ώρες','6–12 h'):T('Πάνω από 12 ώρες','Over 12 h'); });
+  gsSection(host,T('Σελήνη (στη ρίψη)','Moon (at set)'),gsGroup(list,function(g){ return moonIdx(g.t0); },[0,1,2,3,4,5,6,7]),function(k){ return MOON8[k]; });
+  var wl=list.filter(function(g){ return wx[g.id]&&wx[g.id].x===1; });
+  if(wl.length){ var ws=function(title,fn,lab){ gsSection(host,title,gsGroup(wl,function(g){ return fn(wx[g.id]); },['a','b','c']),function(k){ return lab[k]; }); };
+    ws(T('Άνεμος όσο ήταν μέσα','Wind while in the water'),function(c){ return c.w==null?null:c.w<=6?'a':c.w<=16?'b':'c'; },{a:T('Ήρεμος (έως 2 Bft)','Calm (to 2 Bft)'),b:T('Μέτριος (3–4 Bft)','Moderate (3–4 Bft)'),c:T('Δυνατός (5+ Bft)','Strong (5+ Bft)')});
+    ws(T('Κύμα (μέγιστο)','Waves (max)'),function(c){ return c.v==null?null:c.v<0.5?'a':c.v<=1?'b':'c'; },{a:T('Κάτω από 0,5 m','Under 0.5 m'),b:T('0,5–1 m','0.5–1 m'),c:T('Πάνω από 1 m','Over 1 m')});
+    ws(T('Πίεση όσο ήταν μέσα','Pressure while in the water'),function(c){ return c.pd==null?null:c.pd<=-2?'a':c.pd>=2?'c':'b'; },{a:T('Πέφτει','Falling'),b:T('Σταθερή','Steady'),c:T('Ανεβαίνει','Rising')}); }
+  gsSection(host,T('Μήνας','Month'),gsGroup(list,function(g){ return new Date(g.t0).getMonth(); },[0,1,2,3,4,5,6,7,8,9,10,11]),function(k){ return MON12[k]; });
+  var pend=list.filter(function(g){ return g.pos&&!wx[g.id]; }).length, failed=list.filter(function(g){ return wx[g.id]&&wx[g.id].x===0; }).length;
+  host.append(h('p',{class:'foot gsnote',text:wl.length?T('Ο καιρός είναι εκτίμηση μοντέλου (Open-Meteo) και αφορά ','Weather is a model estimate (Open-Meteo) for ')+wl.length+T(' από ',' of ')+list.length+T(' ριξιές.',' sets.'):(pend?T('Φέρνω τον καιρό…','Fetching weather…'):(failed?T('Δεν βρέθηκε καιρός (χρειάζεται internet).','Weather not found (needs internet).'):''))}));
+  gsFillWx(list);
+}
+B.gearStats=function(page,inRange){ gsHost=h('div',{class:'gstats'}); gsRange=inRange; page.append(gsHost); gsPaint(true); };
+
 B.gearLog=function(page,inRange){
+  var gv=ls.get('psaro-v4-gearview','list');
+  page.append(h('div',{style:{margin:'0 0 12px'}},B.seg([['list',T('Λίστα','List')],['stats',T('Στατιστικά','Statistics')]],gv,function(v){ ls.set('psaro-v4-gearview',v); B.emit('store',KEY); },T('Προβολή','View'))));
+  if(gv==='stats'){ B.gearStats(page,inRange); return; }
+  gearList(page,inRange);
+};
+function gearList(page,inRange){
   var g=G(), tOf=function(i){ return (i.set&&i.set.ta)||(i.haul&&i.haul.ta)||0; }, sH=function(i){ return soak(i)/3600000; };
   var items=g.items.filter(function(i){ var t=tOf(i); if(!t) return true; var d=new Date(t); return inRange(d.getFullYear()+'-'+B.pad(d.getMonth()+1)+'-'+B.pad(d.getDate())); }).sort(function(p,q){
     if(sortK==='old') return tOf(p)-tOf(q);
@@ -118,7 +177,7 @@ B.gearLog=function(page,inRange){
     l.append(h('button',{class:'li triprow',type:'button',onclick:function(){ detail(it.id); }},h('span',{class:'tc'+(f.n?'':' z'),style:{background:(TYPES[it.type]||TYPES.net).c+'33',color:(TYPES[it.type]||TYPES.net).c},text:String(f.n)}),
       h('span',{class:'tx'},h('b',{text:nm(it)}),h('small',{text:[t?day(t):'',state(it),sk?T('μέσα ','soaked ')+dur(sk):'',f.kg?B.num(f.kg,1)+' kg':''].filter(Boolean).join(' · ')})),B.icon('chev'))); });
   page.append(l);
-};
+}
 function detail(id){
   var it=B.gearOf(id); if(!it) return; var s=it.set||{}, hh=it.haul, f=fishOf(it), sk=soak(it), body=h('div',{class:'det'}), sh;
   var rows=[[T('Τύπος','Type'),tn(it.type)],[T('Κατάσταση','Status'),state(it)],[T('Ρίψη','Set'),s.ta?day(s.ta)+' '+clock(s.ta)+(s.tb?' → '+clock(s.tb):'')+(km(s.pts)?' · '+km(s.pts):''):T('Δεν καταγράφηκε','Not recorded')]];

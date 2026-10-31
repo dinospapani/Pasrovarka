@@ -46,3 +46,28 @@ body.maptrip .mobbtn{display:block}
 .tripcard.late{background:var(--poor-bg)}
 .micmap{display:none;width:52px;height:52px;margin-left:3px}
 body.maptrip .micmap{display:inline-grid}
+/* μονάδες καιρού της κλασικής (άνεμος, κατάσταση θάλασσας, σταθμοί, γραμμές βάθους) */
+:root{--navh:calc(var(--nav-h) + 8px);--card:var(--surface)}
+.mapbtns{display:flex;flex-direction:column;gap:10px}
+.mapbtns .mbtn{display:inline-grid;place-items:center;width:46px;height:46px;border-radius:50%;border:0;background:var(--surface);color:var(--ink);box-shadow:var(--shadow);padding:0}
+.mapbtns .mbtn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mapbtns .mbtn[aria-pressed=true]{background:var(--accent);color:#fff}
+#bWindSt{display:none!important}
+body:not(.mapon) #ndMapDock,body:not(.mapon) #dlChips{display:none!important}
+#ndMapDock{z-index:40!important;background:var(--surface)!important;color:var(--ink)!important;border-color:var(--line)!important;max-width:540px;margin:0 auto}
+#ndMapDock .btn{min-height:40px;padding:0 12px;font-size:14px;border-radius:12px}
+#ndMapDock .btn.ghost{background:var(--surface-2);color:var(--ink);box-shadow:none}
+#ndMapDock .note{color:var(--ink-2);margin:4px 0 0;line-height:1.4}
+#ndMapDock label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--ink-2)}
+#ndMapDock select{min-height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:0 8px;font-size:14px}
+#ndMapDock input[type=range]{accent-color:var(--accent)}
+body.mapon:has(#ndMapDock:not([hidden])) .tripbtn{bottom:calc(var(--nav-h) + var(--safe-b) + 40px + var(--ndwh,0px))}
+#dlChips{position:absolute;left:12px;top:calc(var(--safe-t) + 74px);z-index:800;display:flex;flex-wrap:wrap;gap:6px;align-items:center;max-width:calc(100% - 90px);pointer-events:none}
+#dlChips[hidden]{display:none}
+#dlChips>*{pointer-events:auto}
+#dlChips button{font:650 12.5px/1 var(--font);padding:8px 11px;border-radius:99px;border:0;background:rgba(10,38,51,.82);color:#fff}
+#dlChips button[aria-pressed=true]{background:var(--accent)}
+#dlChips .dlst{font:600 11.5px/1.2 var(--font);color:#fff;background:rgba(10,38,51,.7);padding:5px 9px;border-radius:10px}
+#dlChips .dlst:empty{display:none}
+body.maptrip #dlChips{top:calc(var(--safe-t) + 200px)}
+.tgsub{display:block;font-size:12.5px;font-weight:500;color:var(--ink-2);margin-top:2px}

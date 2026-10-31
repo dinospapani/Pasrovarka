@@ -87,3 +87,9 @@
 .mrow .del{border:0;background:none;color:var(--ink-3);width:34px;height:34px;display:grid;place-items:center}
 .mrow .del svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 .kpis .kpi b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpis.k6{grid-template-columns:1fr 1fr 1fr}
+.kpis.k6 .kpi{padding:12px}
+.kpis.k6 .kpi b{font-size:22px}
+.kpis.k6 .kpi span{font-size:12.5px}
+.gstats>.seg{margin-bottom:12px}
+.gsub{display:block;color:var(--ink-2);font-size:12.5px;margin:-4px 0 4px}
