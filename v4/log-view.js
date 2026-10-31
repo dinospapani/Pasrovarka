@@ -115,6 +115,7 @@ function stats(page){
   if(rel) page.append(h('p',{class:'foot',text:T('Αφέθηκαν ελεύθερα: ','Released: ')+rel+T('. Τα κιλά δεν τα μετράνε.','. They are not counted in the kilos.')}));
 }
 
+B.biteDetail=detail;
 B.view('log',{title:T('Ημερολόγιο','Logbook'),mount:function(el){ root=el; draw(); },unmount:function(){ root=null; },resume:function(){ draw(); }});
 B.on('store',function(k){ if(root&&/^psaro-(bites|trips|spots|sess)$/.test(k)) draw(); });
 })();

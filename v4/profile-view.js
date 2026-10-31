@@ -10,6 +10,8 @@ function draw(){
   page.append(h('div',{class:'top'},h('h1',{class:'lt',text:T('Προφίλ','Profile')})));
   page.append(s?accountCard(s):signInCard());
   page.append(prefs());
+  page.append(mine());
+  page.append(backupCard());
   page.append(more());
   page.append(h('p',{class:'foot'},'BiteCast 4 ('+T('δοκιμαστικό','beta')+') · '+(window.PSARO_VERSION||'')+'. ',h('a',{href:B.classic(),text:T('Άνοιγμα της κλασικής έκδοσης','Open the classic version')}),'.'));
   root.replaceChildren(page);
@@ -51,9 +53,25 @@ function prefs(){
     Object.keys(L).forEach(function(k){ c.append(h('h3',{class:'h3',text:L[k]}),B.seg(U.options[k].map(function(o){ return [o[0],o[1]]; }),U.cfg[k],function(v){ U.set(k,v); B.emit('store','psaro-units'); },L[k])); }); }
   return c;
 }
+/* ---------- τα δικά μου ---------- */
+function mine(){
+  var n=B.store.raw('tackle').filter(function(x){ return !x.deleted; }).length, l=h('div',{class:'list'});
+  l.append(h('a',{class:'li',href:'#tackle'},h('span',{class:'ic'},B.icon('fish')),h('span',{class:'tx'},h('b',{text:T('Εξοπλισμός','Tackle')}),h('small',{text:n?n+' '+T('κομμάτια','items'):T('Πρόσθεσε καλάμια, μουλινέ, τεχνητά','Add rods, reels, lures')})),B.icon('chev')));
+  return h('div',null,h('h3',{class:'listh',text:T('Τα δικά μου','My stuff')}),l);
+}
+function backupCard(){
+  var lb=ls.get('psaro-lastbackup',0), c=h('section',{class:'card'},h('h2',{text:T('Αντίγραφο ασφαλείας','Backup')}),
+    h('p',{class:'sub',style:{margin:'-4px 0 12px'},text:T('Όλα τα δεδομένα σου με τις φωτογραφίες σε ένα αρχείο, για επαναφορά σε άλλο κινητό. ','All your data and photos in one file, to restore on another phone. ')+(lb?T('Τελευταίο: ','Last: ')+new Date(lb).toLocaleDateString(EN?'en-GB':'el-GR'):T('Δεν έχεις κάνει ακόμα.','You have not made one yet.'))}));
+  var file=h('input',{type:'file',accept:'application/json,.json',class:'vh'});
+  var ex=h('button',{class:'btn pri',type:'button',text:T('Δημιουργία αντιγράφου','Create backup'),onclick:function(){ ex.disabled=true; B.backup.exportAll().then(function(){ ex.disabled=false; B.toast(T('Το αντίγραφο κατέβηκε.','Backup downloaded.')); draw(); }).catch(function(){ ex.disabled=false; B.toast(T('Το αντίγραφο απέτυχε.','Backup failed.')); }); }});
+  var im=h('button',{class:'btn',type:'button',text:T('Επαναφορά από αρχείο','Restore from file'),onclick:function(){ file.click(); }});
+  file.addEventListener('change',function(){ var f=file.files&&file.files[0]; file.value=''; if(!f) return; B.backup.importFile(f).then(function(n){ B.toast(T('Επαναφέρθηκαν ','Restored ')+n+T(' εγγραφές.',' records.')); }).catch(function(){ B.toast(T('Το αρχείο δεν διαβάστηκε.','The file could not be read.')); }); });
+  c.append(h('div',{class:'acts'},ex,im),file);
+  return c;
+}
 /* ---------- τα υπόλοιπα (ακόμα στην κλασική) ---------- */
 function more(){
-  var items=[['tackle',T('Εξοπλισμός','Tackle'),'fish'],['boat',T('Σκάφος','Boat'),'wave'],['friends',T('Φίλοι','Friends'),'user'],['alerts',T('Ειδοποιήσεις','Alerts'),'bell'],['safety',T('Επαφή ασφαλείας','Safety contact'),'pin'],['backup',T('Αντίγραφο και εξαγωγή','Backup and export'),'log']];
+  var items=[['boat',T('Σκάφος','Boat'),'wave'],['friends',T('Φίλοι','Friends'),'user'],['alerts',T('Ειδοποιήσεις','Alerts'),'bell'],['safety',T('Επαφή ασφαλείας και διαδρομή','Safety contact and track'),'pin']];
   var l=h('div',{class:'list'});
   items.forEach(function(it){ l.append(h('a',{class:'li',href:B.classic('?a=p&k='+it[0])},h('span',{class:'ic'},B.icon(it[2])),h('span',{class:'tx'},h('b',{text:it[1]}),h('small',{text:T('Στην κλασική έκδοση, με τα ίδια δεδομένα','In the classic version, same data')})),B.icon('chev'))); });
   return h('div',null,h('h3',{class:'listh',text:T('Ακόμα στην κλασική έκδοση','Still in the classic version')}),l);

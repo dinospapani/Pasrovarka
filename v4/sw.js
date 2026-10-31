@@ -1,7 +1,7 @@
 /* BiteCast 4 · service worker (μόνο για τον φάκελο v4/).
    Δικά μας αρχεία: πρώτα δίκτυο, αλλιώς αποθηκευμένο αντίγραφο. Γραμματοσειρές: αποθηκευμένο αντίγραφο πρώτα. */
-const V = 'bitecast4-006';
-const SHELL = ['./', 'index.html', 'app.css', 'forecast.css', 'core.js', 'ui.js', 'shell.js', 'forecast-view.js', 'forecast-more.js', 'advise.js', 'store.js', 'bite-form.js', 'log-view.js', 'profile-view.js', 'log.css', '../version.js', '../hist.js', 'manifest.webmanifest',
+const V = 'bitecast4-008';
+const SHELL = ['./', 'index.html', 'app.css', 'forecast.css', 'core.js', 'ui.js', 'shell.js', 'forecast-view.js', 'forecast-more.js', 'advise.js', 'store.js', 'bite-form.js', 'log-view.js', 'profile-view.js', 'log.css', 'map.css', 'map-view.js', 'tackle-view.js', '../leaflet.js', '../leaflet.css', '../version.js', '../hist.js', 'manifest.webmanifest',
   '../units.js', '../knowledge.js', '../forecast.js', '../personal.js', '../icon-192.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(V).then(c => Promise.all(SHELL.map(u => c.add(u).catch(() => {})))).then(() => self.skipWaiting()));
@@ -14,6 +14,11 @@ self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (/^fonts\.(googleapis|gstatic)\.com$/.test(u.hostname)) {
     e.respondWith(caches.open(V).then(c => c.match(e.request).then(r => r || fetch(e.request).then(n => { if (n.ok || n.type === 'opaque') c.put(e.request, n.clone()); return n; }))));
+    return;
+  }
+  /* πλακίδια χάρτη: πρώτα όσα κατέβασες για χρήση χωρίς σήμα (κοινή αποθήκη με την κλασική) */
+  if (/(^|\.)(arcgisonline\.com|tile\.openstreetmap\.org|openseamap\.org)$/.test(u.hostname)) {
+    e.respondWith(caches.open('psaro-tiles').then(c => c.match(e.request.url, { ignoreVary: true })).then(r => r || fetch(e.request)));
     return;
   }
   if (u.origin !== location.origin) return;

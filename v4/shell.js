@@ -5,14 +5,6 @@ var B=window.BC, h=B.h, T=B.T;
 var VIEWS={}, cur=null, main=null;
 B.view=function(name,def){ VIEWS[name]=def; };
 
-/* σελίδες που δεν έχουν ξαναχτιστεί ακόμα: ανοίγουν στην κλασική έκδοση */
-var SOON={
-  map:{title:T('Χάρτης','Map'),q:'?a=map',p:T('Ο χάρτης, η έναρξη εξόδου και τα εργαλεία ασφαλείας ξαναχτίζονται. Μέχρι τότε δουλεύουν κανονικά στην κλασική έκδοση, με τα ίδια δεδομένα.','The map, trips and safety tools are being rebuilt. Until then they work as usual in the classic version, with the same data.')}
-};
-Object.keys(SOON).forEach(function(k){ var o=SOON[k];
-  B.view(k,{mount:function(el){ el.replaceChildren(h('div',{class:'page'},h('div',{class:'top'},h('h1',{class:'lt',text:o.title})),
-    h('div',{class:'soon'},h('h2',{text:T('Σύντομα εδώ','Coming here soon')}),h('p',{text:o.p}),h('a',{class:'btn pri full',href:B.classic(o.q),text:T('Άνοιγμα στην κλασική έκδοση','Open in the classic version')})))); }}); });
-
 var TABS=[['forecast',T('Πρόγνωση','Forecast'),'forecast'],['map',T('Χάρτης','Map'),'map'],null,['log',T('Ημερολόγιο','Logbook'),'log'],['profile',T('Προφίλ','Profile'),'user']];
 function nav(){
   var bar=h('div'); TABS.forEach(function(t){

@@ -1,0 +1,21 @@
+/* BiteCast 4 · Χάρτης */
+body.mapon .app{padding:0;max-width:none}
+.mapbox{position:fixed;inset:0;z-index:1;background:#0b2230}
+.mapbar{position:fixed;right:12px;top:calc(var(--safe-t) + 12px);z-index:20;display:flex;flex-direction:column;gap:10px}
+.mapbar .iconbtn{width:46px;height:46px}
+.cross{position:fixed;left:50%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;z-index:10;pointer-events:none;opacity:.5}
+.cross::before,.cross::after{content:"";position:absolute;background:#fff;box-shadow:0 0 2px #000}
+.cross::before{left:10px;top:0;width:2px;height:22px}.cross::after{top:10px;left:0;height:2px;width:22px}
+.tripbtn{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + var(--safe-b) + 22px);z-index:20;display:inline-flex;align-items:center;min-height:48px;padding:0 22px;border-radius:99px;background:var(--surface);color:var(--ink);font-weight:700;text-decoration:none;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.tripbtn.on{background:var(--good);color:#fff}
+.leaflet-container{font-family:var(--font)}
+.leaflet-control-attribution{font-size:10px;margin-bottom:calc(var(--nav-h) + var(--safe-b) + 14px)!important}
+.mk{background:none;border:0}
+.mk.spot{display:flex;align-items:center;gap:4px;transform:translate(-9px,-9px);white-space:nowrap}
+.mk.spot i{width:18px;height:18px;border-radius:50%;background:var(--accent);border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.mk.spot b{font:700 12px var(--font);color:#fff;text-shadow:0 1px 3px #000,0 0 2px #000}
+.mk.fish{width:14px;height:14px;border-radius:50%;background:#2fb6e8;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.5);transform:translate(-7px,-7px)}
+.mk.fish.many{width:24px;height:24px;transform:translate(-12px,-12px);display:grid;place-items:center}
+.mk.fish.many b{font:800 11px var(--font);color:#fff}
+.mk.me i{display:block;width:18px;height:18px;border-radius:50%;background:#1e88ff;border:3px solid #fff;box-shadow:0 0 0 6px rgba(30,136,255,.25);transform:translate(-9px,-9px)}
+.meacc{fill:#1e88ff;fill-opacity:.08;stroke:#1e88ff;stroke-opacity:.3;stroke-width:1}
