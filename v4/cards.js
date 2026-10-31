@@ -250,7 +250,7 @@ function voiceFill(fill){ listen(function(alts){ var r=best(alts); if(!r||r.sc==
 function voiceLog(){
   var t0=Date.now();
   listen(function(alts){
-    if(alts.some(function(a){ return LOST.test(a); })){ B.biteForm(null,{miss:true,voice:{t0:t0},auto:true}); return; }
+    if(alts.some(function(a){ return LOST.test(a); })){ if(B.quickRec) B.quickRec(true); return; }
     var r=best(alts); if(!r||!r.species){ B.ask(T('Άκουσα: «','Heard: “')+alts[0]+T('». Δεν αναγνώρισα το είδος. Να ξαναπείς;','”. I did not recognise the species. Try again?'),T('Ξανά','Again')).then(function(y){ if(y) voiceLog(); }); return; }
     r.t0=t0; var msg=[SN(r.species.disp),r.kg!=null?r.kg+' kg':null,r.len!=null?r.len+' cm':null].filter(Boolean).join(' · ');
     B.ask(msg+'\n'+T('Άκουσα: «','Heard: “')+alts[0]+T('»','”')+'\n\n'+T('Να καταγραφεί ως ψάρι;','Log as a catch?'),T('Καταγραφή','Log')).then(function(y){ if(y) B.biteForm(null,{voice:r,auto:true}); });

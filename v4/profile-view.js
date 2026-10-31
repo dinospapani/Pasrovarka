@@ -13,6 +13,7 @@ function draw(){
   if(B.safetyCard) page.append(B.safetyCard());
   page.append(mine());
   page.append(backupCard());
+  var dm=dataCard(); if(dm) page.append(dm);
   page.append(more());
   page.append(h('p',{class:'foot'},'BiteCast 4 ('+T('δοκιμαστικό','beta')+') · '+(window.PSARO_VERSION||'')+'. ',h('a',{href:B.classic(),text:T('Άνοιγμα της κλασικής έκδοσης','Open the classic version')}),'.'));
   root.replaceChildren(page);
@@ -60,9 +61,14 @@ function mine(){
   var bt=ls.get('psaro-boat',null), bn=bt&&bt.boat&&bt.boat.name;
   l.append(h('a',{class:'li',href:'#boat'},h('span',{class:'ic'},B.icon('wave')),h('span',{class:'tx'},h('b',{text:T('Σκάφος','Boat')}),h('small',{text:bn||T('Κινητήρας, συντήρηση, λήξεις','Engine, maintenance, expiries')})),B.icon('chev')));
   l.append(h('a',{class:'li',href:'#friends'},h('span',{class:'ic'},B.icon('user')),h('span',{class:'tx'},h('b',{text:T('Φίλοι','Friends')}),h('small',{text:T('Κοινά ψάρια και σημεία με φίλους','Share catches and spots with friends')})),B.icon('chev')));
+  l.append(h('a',{class:'li',href:'#guide'},h('span',{class:'ic'},B.icon('fish')),h('span',{class:'tx'},h('b',{text:T('Οδηγός','Guide')}),h('small',{text:T('Είδη, ελάχιστα μεγέθη, νόμοι, κόμποι, λίστα ασφαλείας','Species, minimum sizes, laws, knots, safety checklist')})),B.icon('chev')));
   l.append(h('a',{class:'li',href:'#tackle'},h('span',{class:'ic'},B.icon('fish')),h('span',{class:'tx'},h('b',{text:T('Εξοπλισμός','Tackle')}),h('small',{text:n?n+' '+T('κομμάτια','items'):T('Πρόσθεσε καλάμια, μουλινέ, τεχνητά','Add rods, reels, lures')})),B.icon('chev')));
   return h('div',null,h('h3',{class:'listh',text:T('Τα δικά μου','My stuff')}),l);
 }
+/* συμπλήρωση δεδομένων παλιών ψαριών (ίδιες λειτουργίες με την κλασική: ιστορικός καιρός, πίεση και άνεμος ±30′) */
+function dataCard(){ var rows=(window.PsaroSeaRows||[]).map(function(f){ try{ return f(); }catch(e){ return null; } }).filter(Boolean); if(!rows.length) return null;
+  var c=h('section',{class:'card seafill'},h('h2',{text:T('Συμπλήρωση δεδομένων','Fill in missing data')}),h('p',{class:'sub',style:{margin:'-4px 0 6px'},text:T('Για ψάρια με θέση που καταγράφηκαν χωρίς καιρό. Εκτίμηση μοντέλου (Open-Meteo), όχι μέτρηση.','For catches with a position that were logged without weather. A model estimate (Open-Meteo), not a measurement.')}));
+  rows.forEach(function(r){ c.append(r); }); return c; }
 function backupCard(){
   var lb=ls.get('psaro-lastbackup',0), c=h('section',{class:'card'},h('h2',{text:T('Αντίγραφο ασφαλείας','Backup')}),
     h('p',{class:'sub',style:{margin:'-4px 0 12px'},text:T('Όλα τα δεδομένα σου με τις φωτογραφίες σε ένα αρχείο, για επαναφορά σε άλλο κινητό. ','All your data and photos in one file, to restore on another phone. ')+(lb?T('Τελευταίο: ','Last: ')+new Date(lb).toLocaleDateString(EN?'en-GB':'el-GR'):T('Δεν έχεις κάνει ακόμα.','You have not made one yet.'))}));

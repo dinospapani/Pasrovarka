@@ -85,7 +85,9 @@ function start(){
     busy=false;
   }).observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:ATTRS});
 }
-if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start); else start();
+/* v31z504: η νέα έκδοση (BiteCast 4) γράφει ήδη τα δικά της κείμενα στα αγγλικά· μεταφράζει μόνο το τμήμα που της ζητηθεί (π.χ. τον Οδηγό). */
+window.PsaroTrWatch=function(el){ if(!el) return; doNode(el); new MutationObserver(function(ms){ if(busy) return; busy=true; ms.forEach(function(m){ if(m.type==='childList') m.addedNodes.forEach(doNode); else doNode(m.target); }); busy=false; }).observe(el,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:ATTRS}); };
+if(!window.PSARO_NO_DOMTR){ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start); else start(); }
 })();
 window.setLang=function(l){
   try{ localStorage.setItem('psaro-lang',l); }catch(e){}

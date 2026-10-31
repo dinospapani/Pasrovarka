@@ -93,3 +93,9 @@
 .kpis.k6 .kpi span{font-size:12.5px}
 .gstats>.seg{margin-bottom:12px}
 .gsub{display:block;color:var(--ink-2);font-size:12.5px;margin:-4px 0 4px}
+.bwxcard .bwx{margin-top:0}
+.bwxcard .bwx details>summary{font-size:14.5px;font-weight:600;color:var(--ink);padding:6px 0}
+.bwxcard .bwl{font-size:14px;margin:3px 0;color:var(--ink)}
+.bwxcard .bwn{font-size:12.5px;color:var(--ink-2);margin-top:6px;line-height:1.4}
+.lawnote{margin:-6px 0 0;font-size:13.5px;color:var(--ink-2);line-height:1.4}
+.lawnote.warn{color:var(--poor);font-weight:700}

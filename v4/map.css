@@ -71,3 +71,37 @@ body.mapon:has(#ndMapDock:not([hidden])) .tripbtn{bottom:calc(var(--nav-h) + var
 #dlChips .dlst:empty{display:none}
 body.maptrip #dlChips{top:calc(var(--safe-t) + 200px)}
 .tgsub{display:block;font-size:12.5px;font-weight:500;color:var(--ink-2);margin-top:2px}
+#bPorts{display:none!important}
+#ndRuler{z-index:40!important;background:var(--surface)!important;color:var(--ink)!important;border-color:var(--line)!important;max-width:540px;margin:0 auto}
+#ndRuler .btn{min-height:42px;padding:0 12px;font-size:14px;border-radius:12px}
+#ndRuler .btn.ghost{background:var(--surface-2);color:var(--ink);box-shadow:none}
+/* λιμάνια */
+.leaflet-popup-content .pop b{display:block;font-size:15px;margin-bottom:3px}
+.pop .pk{color:#4B6570;font-size:13px}
+.pop .pbtns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.pop .pb{min-height:36px;padding:0 12px;border-radius:10px;border:0;background:#E4572E;color:#fff;font:650 13px var(--font)}
+.pop .pb.g{background:#E9F0EF;color:#0A2633}
+.pop .pb.pgo{background:#0A2633}
+.leaflet-tooltip.lbl{background:var(--surface);color:var(--ink);border:1px solid var(--line);font-weight:600}
+/* πήγαινε εκεί */
+.dtbar{position:fixed;left:12px;right:70px;top:calc(var(--safe-t) + 12px);z-index:21;display:flex;align-items:center;gap:10px;padding:10px 10px 10px 12px;border-radius:16px;background:rgba(10,38,51,.92);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.3);max-width:440px}
+.dtbar[hidden]{display:none}
+.dtbar .dtic svg{width:22px;height:22px;fill:#E4572E}
+.dtbar .dtmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.dtbar .dtname{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dtbar .dtinfo{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums;opacity:.92}
+.dtbar .dtx{flex:none;width:36px;height:36px;border-radius:50%;border:0;background:rgba(255,255,255,.16);color:#fff;font-size:16px}
+body.hasdt .seabar{top:calc(var(--safe-t) + 84px)}
+body.maptrip.hasdt .dtbar{top:calc(var(--safe-t) + 70px)}
+.mk.dtgt i{display:block;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:#E4572E;border:4px solid #fff;box-shadow:0 0 0 3px rgba(228,87,46,.35),0 2px 6px rgba(0,0,0,.4)}
+/* κουμπιά ψαριού κατά την έξοδο */
+.fishbtns{display:none;position:fixed;right:12px;bottom:calc(var(--nav-h) + var(--safe-b) + 76px);z-index:22;flex-direction:column;gap:12px}
+body.maptrip .fishbtns{display:flex}
+.fb{position:relative;width:64px;height:64px;border-radius:50%;border:3px solid #fff;display:grid;place-items:center;box-shadow:0 6px 16px rgba(0,0,0,.35);touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.fb svg{width:36px;height:27px}
+.fb.fbc{background:#1f9d6b;color:#fff}
+.fb.fbm{background:#d64532;color:#fff}
+.fb b{position:absolute;top:-6px;right:-6px;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:#fff;color:#0A2633;font:800 13px/24px var(--font);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+body.mapon:has(#ndMapDock:not([hidden])) .fishbtns{bottom:calc(var(--nav-h) + var(--safe-b) + 40px + var(--ndwh,0px))}
+.dlpb{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin:6px 0}
+.dlpb i{display:block;height:100%;background:var(--accent)}

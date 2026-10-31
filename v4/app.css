@@ -157,3 +157,42 @@ svg{display:block}
 .micbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%}
 .micbtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 .micmap svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.seafill .sprow{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.seafill .sptx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.seafill .sptx b{font-size:15px}
+.seafill .sptx span{font-size:13.5px;color:var(--ink-2);line-height:1.4}
+.seafill .spb{flex:none;min-height:42px;padding:0 14px;border-radius:12px;border:0;background:var(--accent);color:#fff;font:650 14px var(--font)}
+.seafill .spb:disabled{opacity:.6}
+/* Οδηγός (κοινό περιεχόμενο με την κλασική) */
+.guide .gseg{display:flex;overflow-x:auto;scrollbar-width:none;margin:4px 0 14px}
+.guide .gseg::-webkit-scrollbar{display:none}
+.guide .gseg button{flex:none;padding:0 14px}
+.guide .list{display:flex;flex-direction:column;gap:10px}
+.guide .card{margin:0}
+.guide .card h3{margin:0 0 8px;font-size:17px}
+.guide .card p{margin:0 0 8px;line-height:1.5}
+.guide .note{color:var(--ink-2);font-size:13.5px;line-height:1.45}
+.guide .muted{color:var(--ink-2)}
+.guide .search-in{width:100%;min-height:48px;padding:0 16px;border-radius:14px;border:1px solid var(--line);background:var(--surface);font-size:16px;color:var(--ink)}
+.guide details.sp{background:var(--surface);border-radius:14px;box-shadow:var(--shadow)}
+.guide details.sp summary{cursor:pointer;padding:13px 14px;list-style:none;display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-weight:600}
+.guide details.sp summary::-webkit-details-marker{display:none}
+.guide details.sp .lat{font-size:12.5px;color:var(--ink-2);font-style:italic;font-weight:500;text-align:right}
+.guide details.sp .body{padding:0 14px 14px;font-size:14.5px;line-height:1.5}
+.guide details.sp .tag{margin-left:8px;font-size:12px}
+.guide .dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0}
+.guide .dl dt{color:var(--ink-2)} .guide .dl dd{margin:0}
+.guide .spimg{display:block;max-width:100%;max-height:220px;margin:0 auto 10px;border-radius:10px}
+.guide .spregs{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:8px;scrollbar-width:none;padding:2px 0}
+.guide .spregs::-webkit-scrollbar{display:none}
+.guide .spregs .chip{flex:none;white-space:nowrap}
+.guide ul.law{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14.5px;line-height:1.5}
+.guide .law a,.guide .note a{color:var(--accent);font-weight:600}
+.guide .chk{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.guide .chk:last-child{border-bottom:0}
+.guide .chk input{margin-top:3px;accent-color:var(--accent);width:20px;height:20px;flex:none}
+.guide .btn.acc{background:var(--accent);color:#fff}
+.guide .btn.ghost{background:var(--surface-2);color:var(--ink);box-shadow:none}
+.guide .row{display:flex;gap:8px;flex-wrap:wrap}
+.guide .empty{padding:16px;color:var(--ink-2);text-align:center}
+.guide .kn .btn{min-height:40px;padding:0 14px}
