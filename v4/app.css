@@ -149,3 +149,7 @@ svg{display:block}
 @media (min-width:600px){.app{padding-left:20px;padding-right:20px}}
 .rows.one{grid-template-columns:1fr}.rows.one .row:nth-last-child(2){border-bottom:1px solid var(--line)}
 .seg button:first-child:nth-last-child(4),.seg button:first-child:nth-last-child(4)~button{font-size:13.5px;padding:0 2px}
+.card.dim{opacity:.55;pointer-events:none}
+.nrow{padding:10px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
+.nrow:first-child{border-top:0}
+.nrow p{margin:2px 0 0;font-size:14.5px;color:var(--ink-2);white-space:pre-line}

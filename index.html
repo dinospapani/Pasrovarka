@@ -17,7 +17,8 @@
   var M={bite:'#new',trip:'#trip',fc:'#forecast',log:'#log',map:'#map',prof:'#profile'};
   if(a&&!M[a]){ location.replace('classic.html'+location.search); return; }
   /* σύνδεσμοι από email (επιβεβαίωση, νέος κωδικός) και ιστορικό ειδοποιήσεων: τα χειρίζεται η κλασική */
-  if(/access_token|type=recovery|error_description|^#inbox/.test(location.hash)){ location.replace('classic.html'+location.search+location.hash); return; }
+  if(/access_token|type=recovery|error_description/.test(location.hash)){ location.replace('classic.html'+location.search+location.hash); return; }
+  if(/^#inbox/.test(location.hash)){ location.replace('v4/#alerts'); return; }
   try{ if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){}); }catch(e){}
   location.replace('v4/'+(M[a]||location.hash||''));
 })();

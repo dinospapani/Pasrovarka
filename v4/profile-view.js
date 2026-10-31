@@ -73,12 +73,11 @@ function backupCard(){
   c.append(h('div',{class:'acts'},ex,im),file);
   return c;
 }
-/* ---------- τα υπόλοιπα (ακόμα στην κλασική) ---------- */
+/* ---------- ειδοποιήσεις ---------- */
 function more(){
-  var items=[['alerts',T('Ειδοποιήσεις πρόγνωσης','Forecast alerts'),'bell']];
-  var l=h('div',{class:'list'});
-  items.forEach(function(it){ l.append(h('a',{class:'li',href:B.classic('?a=p&k='+it[0])},h('span',{class:'ic'},B.icon(it[2])),h('span',{class:'tx'},h('b',{text:it[1]}),h('small',{text:T('Στην κλασική έκδοση, με τα ίδια δεδομένα','In the classic version, same data')})),B.icon('chev'))); });
-  return h('div',null,h('h3',{class:'listh',text:T('Ακόμα στην κλασική έκδοση','Still in the classic version')}),l);
+  var n=Object.assign({on:false},ls.get('psaro-notify',{})), l=h('div',{class:'list'});
+  l.append(h('a',{class:'li',href:'#alerts'},h('span',{class:'ic'},B.icon('bell')),h('span',{class:'tx'},h('b',{text:T('Ειδοποιήσεις πρόγνωσης','Forecast alerts')}),h('small',{text:n.on?T('Ενεργές','On'):T('Ανενεργές','Off')})),B.icon('chev')));
+  return h('div',null,h('h3',{class:'listh',text:T('Ειδοποιήσεις','Notifications')}),l);
 }
 
 B.view('profile',{title:T('Προφίλ','Profile'),mount:function(el){ root=el; draw(); },unmount:function(){ root=null; },resume:function(){ draw(); }});

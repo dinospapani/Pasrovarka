@@ -140,7 +140,7 @@ function draw(){
   if(st.view==='day'){ var bk=h('button',{class:'iconbtn',type:'button','aria-label':T('Πίσω στις 7 ημέρες','Back to 7 days'),html:B.iconSvg('back'),onclick:function(){ st.view='week'; st.day=null; st.hour=null; draw(); }}); top.append(h('div',{style:{display:'flex',alignItems:'center',gap:'12px',minWidth:0}},bk,h('h1',{class:'lt',text:title}))); }
   else top.append(h('h1',{class:'lt',text:title}));
   var rf=h('button',{class:'iconbtn'+(st.loading&&fc?' spin':''),type:'button','aria-label':T('Ανανέωση πρόγνωσης','Refresh forecast'),html:B.iconSvg('refresh'),onclick:function(){ if(p.gps) B.locate(6000).then(function(){ load(true); }); else load(true); }});
-  var bell=h('a',{class:'iconbtn',href:B.classic('?a=alerts'),'aria-label':T('Ειδοποιήσεις (κλασική έκδοση)','Alerts (classic version)'),html:B.iconSvg('bell')});
+  var bell=h('a',{class:'iconbtn',href:'#alerts','aria-label':T('Ειδοποιήσεις','Alerts'),html:B.iconSvg('bell')});
   top.append(h('div',{style:{display:'flex',gap:'8px'}},bell,rf)); page.append(top);
   var pl=h('button',{class:'place',type:'button','aria-label':T('Αλλαγή τοποθεσίας','Change location'),onclick:placeSheet},B.icon(p.gps?'gps':'pin'),h('b',{text:p.name}),h('i',{text:'▾'}));
   page.append(pl);
