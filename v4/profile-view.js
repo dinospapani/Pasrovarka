@@ -56,6 +56,9 @@ function prefs(){
 /* ---------- τα δικά μου ---------- */
 function mine(){
   var n=B.store.raw('tackle').filter(function(x){ return !x.deleted; }).length, l=h('div',{class:'list'});
+  var bt=ls.get('psaro-boat',null), bn=bt&&bt.boat&&bt.boat.name;
+  l.append(h('a',{class:'li',href:'#boat'},h('span',{class:'ic'},B.icon('wave')),h('span',{class:'tx'},h('b',{text:T('Σκάφος','Boat')}),h('small',{text:bn||T('Κινητήρας, συντήρηση, λήξεις','Engine, maintenance, expiries')})),B.icon('chev')));
+  l.append(h('a',{class:'li',href:'#friends'},h('span',{class:'ic'},B.icon('user')),h('span',{class:'tx'},h('b',{text:T('Φίλοι','Friends')}),h('small',{text:T('Κοινά ψάρια και σημεία με φίλους','Share catches and spots with friends')})),B.icon('chev')));
   l.append(h('a',{class:'li',href:'#tackle'},h('span',{class:'ic'},B.icon('fish')),h('span',{class:'tx'},h('b',{text:T('Εξοπλισμός','Tackle')}),h('small',{text:n?n+' '+T('κομμάτια','items'):T('Πρόσθεσε καλάμια, μουλινέ, τεχνητά','Add rods, reels, lures')})),B.icon('chev')));
   return h('div',null,h('h3',{class:'listh',text:T('Τα δικά μου','My stuff')}),l);
 }
@@ -71,7 +74,7 @@ function backupCard(){
 }
 /* ---------- τα υπόλοιπα (ακόμα στην κλασική) ---------- */
 function more(){
-  var items=[['boat',T('Σκάφος','Boat'),'wave'],['friends',T('Φίλοι','Friends'),'user'],['alerts',T('Ειδοποιήσεις','Alerts'),'bell'],['safety',T('Επαφή ασφαλείας και διαδρομή','Safety contact and track'),'pin']];
+  var items=[['alerts',T('Ειδοποιήσεις','Alerts'),'bell'],['safety',T('Επαφή ασφαλείας και διαδρομή','Safety contact and track'),'pin']];
   var l=h('div',{class:'list'});
   items.forEach(function(it){ l.append(h('a',{class:'li',href:B.classic('?a=p&k='+it[0])},h('span',{class:'ic'},B.icon(it[2])),h('span',{class:'tx'},h('b',{text:it[1]}),h('small',{text:T('Στην κλασική έκδοση, με τα ίδια δεδομένα','In the classic version, same data')})),B.icon('chev'))); });
   return h('div',null,h('h3',{class:'listh',text:T('Ακόμα στην κλασική έκδοση','Still in the classic version')}),l);

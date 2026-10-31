@@ -5,7 +5,20 @@
 var B=window.BC, h=B.h, T=B.T, EN=B.EN, ls=B.ls;
 var root=null, map=null, layers={}, base=null, sea=null, me=null, meAcc=null, watch=null, gSpots=null, gFish=null;
 var TILES={sat:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',osm:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',sea:'https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png'};
-var cfg=Object.assign({base:'sat',sea:true,spots:true,fish:true},ls.get('psaro-v4-map',{}));
+var cfg=Object.assign({base:'sat',sea:true,spots:true,fish:true,zones:true,depth:false,mpa:false,dams:B.prof()==='lake',wind:false},ls.get('psaro-v4-map',{}));
+var DAMS=[
+['Κούρης','Kouris',34.7278,32.9178,'check',110],['Ασπρόκρεμμος','Asprokremmos',34.7259,32.5543,'check',53],['Εύρετου','Evretou',34.9757,32.4727,'check',70],
+['Κανναβιού','Kannaviou',34.9277,32.5878,'check',75],['Καλαβασός','Kalavasos',34.803972,33.260517,'check',60],['Λεύκαρα','Lefkara',34.8944,33.2956,'check',71],
+['Διπόταμος','Dipotamos',34.851618,33.359274,'check',60],['Γερμασόγεια','Germasogeia',34.7439,33.0843,'check',49],['Άχνα','Achna',35.055321,33.814307,'seasonal',16],
+['Κούκλια','Kouklia',35.1207,33.7606,'check',6],['Αρμίνου','Arminou',34.8752,32.7371,'check',45],['Πολεμίδια','Polemidia',34.7187,32.9888,'cr',45],
+['Ταμασός','Tamasos',35.0167,33.2479,'check',34],['Μαυροκόλυμπος','Mavrokolympos',34.8565,32.4058,'closed',45],['Αργάκα','Argaka',35.0486,32.5022,'closed',41],
+['Πώμος','Pomos',35.1449,32.5762,'check',38],['Αγία Μαρίνα','Agia Marina',35.1170,32.5410,'check',33],['Βυζακιά','Vyzakia',35.0615,33.0272,'check',37],
+['Ξυλιάτος','Xyliatos',35.0089,33.0372,'closed',42],['Καλοπαναγιώτης','Kalopanagiotis',35.0061,32.8254,'closed',40],['Λύμπια','Lympia',34.97518,33.41907,'closed',12],['Κλήρου-Μαλούντα','Klirou-Malounta',35.0318,33.1727,'check',38],
+['Σολέα','Solea',35.06836,32.90120,'check',0]
+];
+var DST={closed:[T('Κλειστό για ψάρεμα','Closed to fishing'),'poor'],seasonal:[T('Κλειστό 1 Ιαν – 30 Ιουν, μετά μόνο ελευθέρωση.','Closed 1 Jan – 30 Jun, then catch and release only.'),'fair'],cr:[T('Μόνο ελευθέρωση των ψαριών.','Catch and release only.'),'fair'],check:[T('Η άδεια ισχύει μόνο αν το φράγμα έχει δηλωθεί ανοιχτό. Επιβεβαίωσε.','Valid only if the reservoir is declared open. Please confirm.'),'fair']};
+var ov={}, LV=null;
+function nrm(x){ return String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-zα-ω]/g,''); }
 function saveCfg(){ ls.set('psaro-v4-map',cfg); }
 function S(){ return B.store; }
 var SPT=EN?['Rocks / reef','Sand','Wreck','Ledge / drop-off','Current / open water','Harbour / pier','Other']:['Βράχια / ύφαλος','Άμμος','Ναυάγιο','Ταμπλά / κατωφλι','Ρεύμα / ανοιχτά','Λιμάνι / μώλος','Άλλο'];
@@ -14,7 +27,8 @@ var SPT=EN?['Rocks / reef','Sand','Wreck','Ledge / drop-off','Current / open wat
 var lp=null;
 function leaflet(){ if(window.L) return Promise.resolve(window.L); if(lp) return lp;
   lp=new Promise(function(res,rej){ var c=document.createElement('link'); c.rel='stylesheet'; c.href='../leaflet.css'; document.head.appendChild(c);
-    var s=document.createElement('script'); s.src='../leaflet.js'; s.onload=function(){ res(window.L); }; s.onerror=rej; document.head.appendChild(s); }); return lp; }
+    var s=document.createElement('script'); s.src='../leaflet.js'; s.onload=function(){ res(window.L); }; s.onerror=rej; document.head.appendChild(s);
+    if(!window.ZONES){ var z=document.createElement('script'); z.src='../zones.js'; z.onload=function(){ if(map) drawOverlays(); }; document.head.appendChild(z); } }); return lp; }
 
 function icon(cls,html){ return L.divIcon({className:'mk '+cls,html:html||'',iconSize:null}); }
 function drawBase(){ if(base) map.removeLayer(base); base=L.tileLayer(TILES[cfg.base],{maxZoom:19,maxNativeZoom:cfg.base==='sat'?18:19,attribution:cfg.base==='sat'?'Esri':'© OpenStreetMap'}).addTo(map); base.bringToBack();
@@ -37,6 +51,38 @@ function drawGear(){ if(!map||!B.gearLayers) return; if(gGear) map.removeLayer(g
   gGear=L.layerGroup(B.gearLayers(L,show?[show]:null)).addTo(map);
   if(show){ ls.set('psaro-v4-gearshow',null); var g=B.gearOf(show), pts=[]; if(g){ [g.set&&g.set.pts,g.haul&&g.haul.pts].forEach(function(a){ if(a) pts=pts.concat(a); }); } if(pts.length) map.fitBounds(L.latLngBounds(pts),{padding:[60,60],maxZoom:16}); } }
 function esc(s){ return String(s).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+/* ---------- επιπλέον στρώματα ---------- */
+function drawOverlays(){
+  if(!map) return;
+  Object.keys(ov).forEach(function(k){ if(ov[k]){ map.removeLayer(ov[k]); ov[k]=null; } });
+  var WM='https://ows.emodnet-bathymetry.eu/wms';
+  if(cfg.depth){ ov.depth=L.layerGroup([L.tileLayer.wms(WM,{layers:'emodnet:mean_multicolour',format:'image/png',transparent:true,opacity:.55,version:'1.3.0',attribution:'EMODnet Bathymetry'}),L.tileLayer.wms(WM,{layers:'emodnet:contours',format:'image/png',transparent:true,version:'1.3.0'})]).addTo(map); }
+  if(cfg.mpa){ ov.mpa=L.tileLayer.wms('https://ows.emodnet-humanactivities.eu/wms',{layers:'nationallydesignatedareas',format:'image/png',transparent:true,opacity:.6,version:'1.3.0',attribution:'EMODnet Human Activities'}).addTo(map); }
+  if(cfg.zones&&window.ZONES){ ov.zones=L.layerGroup(); window.ZONES.forEach(function(z){ L.polygon(z.p,{color:'#ff3b30',weight:2,fillColor:'#ff3b30',fillOpacity:.18}).on('click',function(){ B.sheet({title:z.n,body:h('div',null,h('p',{class:'p',text:z.d||''}),h('p',{class:'foot',text:T('Περιοχή όπου απαγορεύεται η αλιεία. Πηγή: Τμήμα Αλιείας. Επιβεβαίωνε πάντα την ισχύουσα νομοθεσία.','Area where fishing is prohibited. Source: Department of Fisheries. Always check the current regulations.')}))}); }).addTo(ov.zones); }); ov.zones.addTo(map); }
+  if(cfg.dams){ ov.dams=L.layerGroup().addTo(map); var put=function(){ if(!ov.dams) return; ov.dams.clearLayers(); DAMS.forEach(function(d){ var lv=null; if(LV&&LV.dams) for(var n in LV.dams){ if(nrm(n)===nrm(d[0])) lv=LV.dams[n]; }
+      L.marker([d[2],d[3]],{icon:icon('dam '+(DST[d[4]]||DST.check)[1],'<b>'+(lv?Math.round(lv.pct)+'%':'')+'</b><i>'+esc(EN?d[1]:d[0])+'</i>')}).on('click',function(){ damSheet(d,lv); }).addTo(ov.dams); }); };
+    put(); if(!LV) fetch('../dams_levels.json').then(function(r){ return r.json(); }).then(function(j){ LV=j; put(); }).catch(function(){}); }
+  if(cfg.wind) wind();
+}
+function damSheet(d,lv){
+  var st=DST[d[4]]||DST.check, rows=[];
+  if(lv){ rows.push([T('Πληρότητα','Fullness'),Math.round(lv.pct)+'%'],[T('Νερό','Water'),B.num(lv.stor,2)+' / '+B.num(lv.cap,2)+T(' εκ. m³',' million m³')]); if(lv.lyPct!=null) rows.push([T('Πέρσι, ίδια μέρα','Same day last year'),Math.round(lv.lyPct)+'%']); }
+  B.sheet({title:EN?d[1]:d[0],body:h('div',null,h('p',{class:'tag '+st[1],text:st[0]}),rows.length?h('div',{class:'card',style:{marginTop:'12px'}},h('div',{class:'rows one'},rows.map(function(r){ return h('div',{class:'row'},h('span',{text:r[0]}),h('b',{text:r[1]})); }))):null,
+    h('div',{class:'acts'},h('button',{class:'btn pri',type:'button',text:T('Πρόγνωση εδώ','Forecast here'),onclick:function(){ fcHere(EN?d[1]:d[0],d[2],d[3]); }})),
+    h('p',{class:'foot',text:(LV&&LV.date?T('Στάθμη: ','Level: ')+LV.date+T(', Τμήμα Αναπτύξεως Υδάτων. ',', Water Development Department. '):'')+T('Η κατάσταση ανοιχτό/κλειστό αλλάζει· επιβεβαίωσε στο Τμήμα Αλιείας.','Open/closed status changes; confirm with the Department of Fisheries.')}))});
+}
+/* άνεμος τώρα σε πλέγμα 5×5 της περιοχής που βλέπεις (Open-Meteo) */
+var wT=0;
+function wind(){
+  clearTimeout(wT); wT=setTimeout(function(){ if(!map||!cfg.wind) return; var b=map.getBounds(), la=[], lo=[];
+    for(var i=0;i<5;i++) for(var j=0;j<5;j++){ la.push((b.getSouth()+(b.getNorth()-b.getSouth())*(i+0.5)/5).toFixed(3)); lo.push((b.getWest()+(b.getEast()-b.getWest())*(j+0.5)/5).toFixed(3)); }
+    fetch('https://api.open-meteo.com/v1/forecast?latitude='+la.join(',')+'&longitude='+lo.join(',')+'&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kn').then(function(r){ return r.json(); }).then(function(j){
+      if(!map||!cfg.wind) return; var a=Array.isArray(j)?j:[j]; if(ov.wind) map.removeLayer(ov.wind); ov.wind=L.layerGroup().addTo(map);
+      a.forEach(function(p){ var c=p.current||{}; if(c.wind_speed_10m==null) return; var kn=c.wind_speed_10m, cls=kn>20?'poor':kn>14?'fair':'good';
+        L.marker([p.latitude,p.longitude],{interactive:false,icon:icon('wind '+cls,'<i style="transform:rotate('+((c.wind_direction_10m+180)%360)+'deg)">↑</i><b>'+(window.PsaroUnits?window.PsaroUnits.wind(kn):Math.round(kn)+' kn')+'</b>')}).addTo(ov.wind); });
+    }).catch(function(){}); },400);
+}
 
 /* η θέση μου */
 function locate(fly){
@@ -87,15 +133,15 @@ function spotForm(sp,ll){
 function layersSheet(){
   var body=h('div',{class:'bform'});
   body.append(h('div',{class:'fld'},h('span',{text:T('Χάρτης','Map')}),B.seg([['sat',T('Δορυφόρος','Satellite')],['osm',T('Δρόμοι','Streets')]],cfg.base,function(v){ cfg.base=v; saveCfg(); drawBase(); })));
-  [['sea',T('Ναυτικά σήματα (OpenSeaMap)','Sea marks (OpenSeaMap)')],['spots',T('Τα σημεία μου','My spots')],['fish',T('Τα ψάρια μου','My catches')]].forEach(function(o){
-    body.append(h('label',{class:'tg'},h('input',{type:'checkbox',checked:!!cfg[o[0]],onchange:function(ev){ cfg[o[0]]=ev.target.checked; saveCfg(); if(o[0]==='sea') drawBase(); else drawData(); }}),h('span',{text:o[1]}))); });
-  body.append(h('p',{class:'foot',text:T('Νέο σημείο: πάτα παρατεταμένα στον χάρτη. Ο άνεμος, τα βάθη, οι ζώνες προστασίας και τα φράγματα είναι ακόμα στην κλασική έκδοση.','New spot: long-press on the map. Wind, depths, protected zones and reservoirs are still in the classic version.')}));
+  [['sea',T('Ναυτικά σήματα (OpenSeaMap)','Sea marks (OpenSeaMap)')],['spots',T('Τα σημεία μου','My spots')],['fish',T('Τα ψάρια μου','My catches')],['wind',T('Άνεμος τώρα','Wind now')],['depth',T('Βάθη (EMODnet)','Depths (EMODnet)')],['zones',T('Απαγόρευση αλιείας','No-fishing areas')],['mpa',T('Προστατευόμενες περιοχές','Protected areas')],['dams',T('Φράγματα και πληρότητα','Reservoirs and levels')]].forEach(function(o){
+    body.append(h('label',{class:'tg'},h('input',{type:'checkbox',checked:!!cfg[o[0]],onchange:function(ev){ cfg[o[0]]=ev.target.checked; saveCfg(); if(o[0]==='sea') drawBase(); else if(o[0]==='spots'||o[0]==='fish') drawData(); else drawOverlays(); }}),h('span',{text:o[1]}))); });
+  body.append(h('p',{class:'foot',text:T('Νέο σημείο: πάτα παρατεταμένα στον χάρτη. Τα βάθη είναι ενδεικτικά (EMODnet), όχι ναυτικός χάρτης. Ο κινούμενος άνεμος 48 ωρών είναι στην κλασική έκδοση.','New spot: long-press on the map. Depths are indicative (EMODnet), not a nautical chart. The animated 48-hour wind is in the classic version.')}));
   B.sheet({title:T('Στρώματα','Layers'),body:body});
 }
 
 /* ---------- σελίδα ---------- */
 function mount(el){
-  root=el; document.body.classList.add('mapon');
+  root=el; document.body.classList.add('mapon'); cfg=Object.assign({base:'sat',sea:true,spots:true,fish:true,zones:true,depth:false,mpa:false,dams:B.prof()==='lake',wind:false},ls.get('psaro-v4-map',{}));
   var box=h('div',{class:'mapbox',id:'v4map'});
   var bar=h('div',{class:'mapbar'},
     h('button',{class:'iconbtn',type:'button','aria-label':T('Στρώματα','Layers'),html:B.iconSvg('map'),onclick:layersSheet}),
@@ -110,13 +156,13 @@ function mount(el){
     if(!root) return;
     var p=B.lastPos(), v=ls.get('psaro-v4-mapview',null);
     map=L.map(box,{zoomControl:false,attributionControl:true,tap:true}).setView(v?[v.lat,v.lon]:(p?[p.lat,p.lon]:[35.0,33.2]),v?v.z:(p?12:9));
-    drawBase(); drawData(); locate(false);
-    map.on('moveend',function(){ var c=map.getCenter(); ls.set('psaro-v4-mapview',{lat:+c.lat.toFixed(5),lon:+c.lng.toFixed(5),z:map.getZoom()}); });
+    drawBase(); drawData(); drawOverlays(); locate(false);
+    map.on('moveend',function(){ if(cfg.wind) wind(); var c=map.getCenter(); ls.set('psaro-v4-mapview',{lat:+c.lat.toFixed(5),lon:+c.lng.toFixed(5),z:map.getZoom()}); });
     map.on('contextmenu',function(e){ spotForm(null,e.latlng); });
     setTimeout(function(){ map.invalidateSize(); },60);
   }).catch(function(){ box.replaceChildren(h('div',{class:'card empty',style:{margin:'80px 16px'}},h('h3',{text:T('Ο χάρτης δεν φορτώθηκε','The map did not load')}),h('p',{text:T('Έλεγξε τη σύνδεση.','Check your connection.')}))); });
 }
-function unmount(){ document.body.classList.remove('mapon'); if(watch!=null){ try{ navigator.geolocation.clearWatch(watch); }catch(e){} watch=null; } if(map){ map.remove(); map=null; } me=meAcc=base=sea=gSpots=gFish=gGear=null; root=null; }
+function unmount(){ document.body.classList.remove('mapon'); if(watch!=null){ try{ navigator.geolocation.clearWatch(watch); }catch(e){} watch=null; } if(map){ map.remove(); map=null; } me=meAcc=base=sea=gSpots=gFish=gGear=null; ov={}; root=null; }
 B.view('map',{title:T('Χάρτης','Map'),mount:mount,unmount:unmount,resume:function(){ if(map){ map.invalidateSize(); drawData(); } }});
 B.on('store',function(k){ if(map&&/^psaro-(bites|spots|gear)$/.test(k)) drawData(); });
 B.on('gear-pos',function(){ if(map) drawGear(); });

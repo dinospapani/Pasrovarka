@@ -73,3 +73,17 @@
 .gearnote{margin:0;padding:8px 12px;border-radius:10px;background:var(--surface-2);font-weight:650;font-size:14.5px}
 .gact{margin:0}.gact b{font-size:16px}
 .mapbar .gearbtn svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.logadd{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 10px}
+.logadd input{min-height:46px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:16px;min-width:0}
+.logadd input[type=text]{grid-column:1/-1}
+.logadd .btn{grid-column:1/-1}
+.expr{padding:12px 0;border-bottom:1px solid var(--line)}
+.expr:last-of-type{border-bottom:0}
+.exph{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 8px;flex-wrap:wrap}
+.exph b{font-size:15.5px}
+.frcode{font-size:34px;font-weight:800;letter-spacing:.08em;text-align:center;margin:14px 0 6px}
+.card.fr .idr{display:flex;align-items:center;gap:12px;margin:0 0 8px}
+.card.fr .idr .tx{display:flex;flex-direction:column}
+.mrow .del{border:0;background:none;color:var(--ink-3);width:34px;height:34px;display:grid;place-items:center}
+.mrow .del svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.kpis .kpi b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
