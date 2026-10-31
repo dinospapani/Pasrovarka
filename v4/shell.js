@@ -16,9 +16,11 @@ function route(){
   var name=(location.hash||'').slice(1)||'forecast';
   /* συντομεύσεις: #new = νέο ψάρι, #trip = έναρξη εξόδου */
   if(name==='new'||name==='trip'){ var act=name; history.replaceState(null,'',location.pathname+(act==='new'?'#log':'#map')); name=act==='new'?'log':'map'; setTimeout(function(){ if(act==='new'&&B.biteForm) B.biteForm(); else if(B.tripStart) B.tripStart(); },500); }
+  if(/^share=/.test(name)) name='map';
   if(!VIEWS[name]) name='forecast';
   [].forEach.call(document.querySelectorAll('.nav a[data-v]'),function(a){ if(a.dataset.v===name) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); });
   if(cur===name) return;
+  if(B.closeSheet) B.closeSheet();
   if(cur&&VIEWS[cur].unmount) VIEWS[cur].unmount();
   cur=name; main.replaceChildren(); window.scrollTo(0,0);
   VIEWS[name].mount(main);

@@ -153,3 +153,7 @@ svg{display:block}
 .nrow{padding:10px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
 .nrow:first-child{border-top:0}
 .nrow p{margin:2px 0 0;font-size:14.5px;color:var(--ink-2);white-space:pre-line}
+.cdimg{display:block;width:100%;height:auto;border-radius:16px;box-shadow:var(--shadow);margin-bottom:12px}
+.micbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%}
+.micbtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.micmap svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}

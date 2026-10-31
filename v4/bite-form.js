@@ -52,10 +52,10 @@ B.biteForm=function(edit,opt){
   where.append(h('option',{value:'none',text:T('Χωρίς θέση','No position')}));
   S.raw('spots').filter(function(x){ return typeof x.lat==='number'; }).forEach(function(x){ where.append(h('option',{value:'s:'+x.id,text:'★ '+(x.name||T('Σημείο','Spot'))})); });
   if(e) where.value=typeof e.lat==='number'?'keep':'none';
-  function locNow(){ whereNote.textContent=T('Βρίσκω τη θέση σου…','Finding your position…'); B.locate(8000).then(function(p){ pos=p; if(!p){ whereNote.textContent=T('Δεν βρέθηκε θέση. Διάλεξε σημείο ή «Χωρίς θέση».','No position found. Pick a spot or “No position”.'); return; }
+  function locNow(){ whereNote.textContent=T('Βρίσκω τη θέση σου…','Finding your position…'); return B.locate(8000).then(function(p){ pos=p; if(!p){ whereNote.textContent=T('Δεν βρέθηκε θέση. Διάλεξε σημείο ή «Χωρίς θέση».','No position found. Pick a spot or “No position”.'); return; }
     var ns=nearSpot(p.lat,p.lon); whereNote.textContent=ns?T('Κοντά στο σημείο σου «','Near your spot “')+ns.name+T('». Θα αποθηκευτεί εκεί.','”. It will be saved there.'):p.lat.toFixed(5)+', '+p.lon.toFixed(5); }); }
   where.addEventListener('change',function(){ if(where.value==='gps') locNow(); else whereNote.textContent=''; });
-  if(!e) locNow();
+  var locP=!e?locNow():Promise.resolve();
   /* φωτογραφίες */
   var phBox=h('div',{class:'phs'}), file=h('input',{type:'file',accept:'image/*',multiple:true,class:'vh'});
   var addPh=h('button',{type:'button',class:'phadd','aria-label':T('Προσθήκη φωτογραφίας','Add photo'),html:B.iconSvg('plus'),onclick:function(){ file.click(); }});
@@ -74,6 +74,7 @@ B.biteForm=function(edit,opt){
   var form=h('form',{class:'bform',novalidate:true},
     datalist('bfSp',uniq(all.map(function(b){ return b.species; }).concat((window.SPKB||[]).map(function(k){ return EN&&k.en?k.en:k.n; })))),
     datalist('bfBait',uniq(all.map(function(b){ return b.bait; }))),datalist('bfTech',uniq(all.map(function(b){ return b.tech; })).concat(EN?['Bottom fishing','Spinning','Trolling','Live bait','Jigging']:['Βυθού','Spinning','Τρόλινγκ','Ζωντανό δόλωμα','Jigging'])),
+    !e&&B.voice&&B.voice.ok?h('button',{class:'btn micbtn',type:'button',html:B.voice.MIC+'<span>'+T('Πες το','Say it')+'</span>',onclick:function(){ B.voice.fill(applyVoice); }}):null,
     gearIt?h('p',{class:'gearnote',text:T('Εργαλείο: ','Gear: ')+(gearIt.name||'')}):null,
     h('label',{class:'tg'},miss,h('span',{text:T('Χάθηκε: τσίμπησε αλλά δεν το έβγαλα','Lost: it bit but I did not land it')})),
     field(T('Είδος','Species'),sp,T('Για χαμένο ψάρι είναι προαιρετικό.','Optional for a lost fish.')),
@@ -142,6 +143,10 @@ B.biteForm=function(edit,opt){
       B.toast(e?T('Οι αλλαγές αποθηκεύτηκαν.','Changes saved.'):rec.miss?T('Το χαμένο τσίμπημα καταγράφηκε.','Lost bite logged.'):T('Το ψάρι αποθηκεύτηκε.','Catch saved.'));
       if(B.cloud&&B.cloud.session()) B.cloud.sync(false); });
   }
-  var sh=B.sheet({title:e?T('Επεξεργασία ψαριού','Edit catch'):T('Νέο ψάρι','New catch'),body:form,focus:e?null:'input[list=bfSp]'});
+  /* φωνή: συμπληρώνει είδος, κιλά, εκατοστά και την ώρα που πάτησες το μικρόφωνο */
+  function applyVoice(r){ if(r.species) sp.value=r.species.disp; if(r.kg!=null) kg.value=r.kg; if(r.len!=null) len.value=r.len;
+    if(r.t0&&Date.now()-r.t0<30*60000){ var d=new Date(r.t0); when.value=d.getFullYear()+'-'+B.pad(d.getMonth()+1)+'-'+B.pad(d.getDate())+'T'+B.pad(d.getHours())+':'+B.pad(d.getMinutes()); } }
+  var sh=B.sheet({title:e?T('Επεξεργασία ψαριού','Edit catch'):T('Νέο ψάρι','New catch'),body:form,focus:e||(opt&&opt.auto)?null:'input[list=bfSp]'});
+  if(!e&&opt&&opt.voice){ applyVoice(opt.voice); if(opt.auto) locP.then(function(){ submit(); }); }
 };
 })();

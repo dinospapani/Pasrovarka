@@ -87,5 +87,5 @@ function ask(q,okText,danger){ return new Promise(function(res){ var done=false;
   ok.addEventListener('click',function(){ done=true; sh.close(); res(true); }); no.addEventListener('click',function(){ sh.close(); });
 }); }
 
-Object.assign(B,{icon:icon,iconSvg:iconSvg,toast:toast,sheet:sheet,seg:seg,longPress:longPress,ask:ask});
+Object.assign(B,{icon:icon,iconSvg:iconSvg,toast:toast,sheet:sheet,closeSheet:function(){ if(openSheet) openSheet.close(true); },seg:seg,longPress:longPress,ask:ask});
 })();

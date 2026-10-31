@@ -44,3 +44,5 @@ body.maptrip .mobbtn{display:block}
 .ancalarm b{display:block;font-size:20px}.ancalarm span{display:block;margin:4px 0 10px}
 .btn.sos{background:#c62828;color:#fff;font-size:18px;font-weight:800;min-height:54px}
 .tripcard.late{background:var(--poor-bg)}
+.micmap{display:none;width:52px;height:52px;margin-left:3px}
+body.maptrip .micmap{display:inline-grid}
