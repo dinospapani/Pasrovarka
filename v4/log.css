@@ -1,0 +1,71 @@
+/* BiteCast 4 · Ημερολόγιο, φόρμα ψαριού, Προφίλ */
+.nav button.fab{border:0;padding:0;cursor:pointer}
+
+/* φόρμες */
+.bform{display:flex;flex-direction:column;gap:12px;padding-top:2px}
+.fld{display:flex;flex-direction:column;gap:6px;min-width:0}
+.fld>span{font-size:14px;font-weight:620;color:var(--ink-2)}
+.fld>small,.fld .wn{color:var(--ink-2);font-size:13px}
+.fld input,.fld textarea,.inrow input,.bform input[type=text],.bform input[type=email],.bform input[type=password]{width:100%;min-height:48px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:16px}
+.fld textarea{padding:12px 14px;min-height:72px;resize:vertical;font-family:inherit}
+.fld input:focus,.fld textarea:focus,.select:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.inl{display:block}
+.tg{display:flex;align-items:center;gap:12px;min-height:44px;font-size:15.5px;font-weight:550;cursor:pointer}
+.tg input{appearance:none;-webkit-appearance:none;flex:none;width:46px;height:28px;border-radius:99px;background:var(--line);position:relative;transition:background .15s;cursor:pointer;margin:0}
+.tg input::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .15s}
+.tg input:checked{background:var(--good)}
+.tg input:checked::after{transform:translateX(18px)}
+.err{margin:0;color:var(--poor);font-weight:600;font-size:14.5px;min-height:0}
+.err:empty{display:none}
+.btn.del{color:var(--poor)}
+.btn.out{color:var(--poor);margin-top:8px}
+.phs{display:flex;gap:8px;flex-wrap:wrap}
+.ph{position:relative;width:76px;height:76px;border-radius:12px;overflow:hidden;background:var(--surface-2)}
+.ph img{width:100%;height:100%;object-fit:cover}
+.phx{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:12px}
+.phadd{width:76px;height:76px;border-radius:12px;border:1.5px dashed var(--line);background:transparent;color:var(--ink-2);display:grid;place-items:center}
+.phadd svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+
+/* λίστες ημερολογίου */
+.sum{margin:12px 4px 8px;color:var(--ink-2);font-size:14px;font-weight:600}
+.fishrow{gap:12px}
+.th{flex:none;width:48px;height:48px;border-radius:12px;overflow:hidden;background:var(--surface-2);display:grid;place-items:center;color:var(--ink-3)}
+.th img{width:100%;height:100%;object-fit:cover}
+.th svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.li .when{flex:none;color:var(--ink-2);font-size:12.5px;text-align:right;max-width:34%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.relb{flex:none;color:var(--good);font-weight:800}
+.tc{flex:none;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--good-bg);color:var(--good);font-weight:780;font-size:18px}
+.tc.z{background:var(--surface-2);color:var(--ink-3)}
+.li>svg{width:18px;height:18px;flex:none;fill:none;stroke:var(--ink-3);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.det .gal{display:flex;gap:8px;overflow-x:auto;margin:0 0 12px;scroll-snap-type:x mandatory}
+.det .gal img{flex:none;width:86%;max-height:300px;object-fit:cover;border-radius:16px;scroll-snap-align:center}
+.det .gal img:only-child{width:100%}
+.acts{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 4px}
+.acts .btn{flex:1}
+
+/* στατιστικά */
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px}
+.kpi{background:var(--surface);border-radius:var(--r-md);box-shadow:var(--shadow);padding:14px 16px}
+.kpi b{display:block;font-size:28px;font-weight:780;letter-spacing:-.02em;line-height:1.1}
+.kpi span{color:var(--ink-2);font-size:13.5px}
+
+/* Προφίλ */
+.acc .idr{display:flex;align-items:center;gap:14px;margin:0 0 14px}
+.av{flex:none;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);font-weight:780;font-size:22px}
+.acc .idr .tx{display:flex;flex-direction:column;min-width:0}
+.acc .idr b{font-size:18px;font-weight:700}
+.acc .idr small{color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inrow{display:flex;gap:8px;margin:0 0 12px}
+.inrow input{flex:1;min-width:0}
+.syncmsg{margin:0 0 10px}
+.syncmsg.bad{color:var(--poor)}
+.acc h2{margin:0}
+.card .seg{margin:0 0 4px}
+.card .h3:first-of-type{margin-top:4px}
+.nav .fab svg{fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
+.card .seg button{font-size:13.5px}
+.tkchips{display:flex;gap:6px;flex-wrap:wrap}
+.tkchips .chip small{color:inherit;opacity:.7;font-weight:500}
+.fishrow.miss .tx b{color:var(--ink-2);font-style:italic}

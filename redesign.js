@@ -1990,6 +1990,7 @@ box.insertBefore(tools,bar.nextSibling);
       else if(a==='log'){ var lg=document.querySelector('nav.tabs [data-tab=log]'); if(lg) lg.click(); }
       else if(a==='map'){ var mp=document.querySelector('nav.tabs [data-tab=map]'); if(mp) mp.click(); if(qs&&qs.get('lat')) setTimeout(function(){ try{ var M=window.PsaroCore.map(); if(M) M.flyTo([+qs.get('lat'),+qs.get('lon')],14); }catch(e){} },600); }
       else if(a==='alerts'){ if(window.PsaroProfGo) window.PsaroProfGo('alerts'); }
+      else if(a==='p'&&qs&&qs.get('k')){ if(window.PsaroProfGo) window.PsaroProfGo(qs.get('k')); }
       else if(a==='prof'){ var np=document.getElementById('navProf')||document.getElementById('profBtn'); if(np) np.click(); }
     },700);
   },300);

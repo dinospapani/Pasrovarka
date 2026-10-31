@@ -1,0 +1,65 @@
+/* BiteCast 4 · Προφίλ: λογαριασμός, συγχρονισμός, τύπος ψαρέματος, γλώσσα, μονάδες */
+(function(){
+'use strict';
+var B=window.BC, h=B.h, T=B.T, EN=B.EN, ls=B.ls, U=window.PsaroUnits, root=null;
+function C(){ return B.cloud; }
+
+function draw(){
+  if(!root) return;
+  var s=C().session(), page=h('div',{class:'page'});
+  page.append(h('div',{class:'top'},h('h1',{class:'lt',text:T('Προφίλ','Profile')})));
+  page.append(s?accountCard(s):signInCard());
+  page.append(prefs());
+  page.append(more());
+  page.append(h('p',{class:'foot'},'BiteCast 4 ('+T('δοκιμαστικό','beta')+') · '+(window.PSARO_VERSION||'')+'. ',h('a',{href:B.classic(),text:T('Άνοιγμα της κλασικής έκδοσης','Open the classic version')}),'.'));
+  root.replaceChildren(page);
+}
+
+/* ---------- λογαριασμός ---------- */
+function accountCard(s){
+  var c=h('section',{class:'card acc'}), st=C().state();
+  var nm=(s.name||'').trim(), ch=(nm||s.email||'?').charAt(0).toUpperCase();
+  c.append(h('div',{class:'idr'},h('span',{class:'av',text:ch}),h('div',{class:'tx'},h('b',{text:nm||T('Χωρίς όνομα','No name')}),h('small',{text:s.email||''}))));
+  var ni=h('input',{type:'text',maxlength:'40',value:nm,placeholder:T('Το όνομά σου','Your name'),autocomplete:'name','aria-label':T('Όνομα','Name')});
+  c.append(h('div',{class:'inrow'},ni,h('button',{class:'btn',type:'button',text:T('Αποθήκευση','Save'),onclick:function(){ C().setName(ni.value.trim()).then(function(){ B.toast(T('Το όνομα αποθηκεύτηκε.','Name saved.')); draw(); }).catch(function(e){ B.toast(C().errText(e)); }); }})));
+  var sm=h('p',{class:'sub syncmsg'+(st.err?' bad':''),text:st.msg||(st.t?T('Τελευταίος συγχρονισμός: ','Last sync: ')+new Date(st.t).toLocaleString(EN?'en-GB':'el-GR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'')});
+  var sb=h('button',{class:'btn full',type:'button',html:B.iconSvg('refresh')+'<span>'+T('Συγχρονισμός τώρα','Sync now')+'</span>',onclick:function(){ sb.disabled=true; C().sync(true).then(function(){ sb.disabled=false; draw(); }); }});
+  c.append(sm,sb);
+  c.append(h('button',{class:'btn full out',type:'button',text:T('Αποσύνδεση','Sign out'),onclick:function(){ B.ask(T('Αποσύνδεση από τον λογαριασμό; Τα δεδομένα σου μένουν στο κινητό και στον λογαριασμό.','Sign out? Your data stays on this phone and in your account.'),T('Αποσύνδεση','Sign out'),true).then(function(y){ if(y) C().signOut().then(function(){ B.toast(T('Αποσυνδέθηκες.','Signed out.')); draw(); }); }); }}));
+  return c;
+}
+function signInCard(){
+  var c=h('section',{class:'card acc'}), mode='in';
+  var em=h('input',{type:'email',autocomplete:'email',inputmode:'email',placeholder:'email','aria-label':'Email'}), pw=h('input',{type:'password',autocomplete:'current-password',placeholder:T('Κωδικός','Password'),'aria-label':T('Κωδικός','Password')});
+  var msg=h('p',{class:'err',role:'alert'}), go=h('button',{class:'btn pri full',type:'submit'}), sw=h('button',{class:'link',type:'button'});
+  var ttl=h('h2'), sub=h('p',{class:'sub',text:T('Με λογαριασμό τα ψάρια, οι έξοδοι και οι φωτογραφίες σου κρατιούνται και σε άλλο κινητό.','With an account your catches, trips and photos are kept on any phone.')});
+  function paint(){ ttl.textContent=mode==='in'?T('Σύνδεση','Sign in'):T('Νέος λογαριασμός','New account'); go.textContent=mode==='in'?T('Σύνδεση','Sign in'):T('Δημιουργία λογαριασμού','Create account'); sw.textContent=mode==='in'?T('Δεν έχεις λογαριασμό; Δημιούργησε έναν','No account? Create one'):T('Έχεις ήδη λογαριασμό; Σύνδεση','Already have an account? Sign in'); pw.autocomplete=mode==='in'?'current-password':'new-password'; }
+  sw.addEventListener('click',function(){ mode=mode==='in'?'up':'in'; msg.textContent=''; paint(); });
+  var f=h('form',{class:'bform',novalidate:true},ttl,sub,h('label',{class:'fld'},h('span',{text:'Email'}),em),h('label',{class:'fld'},h('span',{text:T('Κωδικός','Password')}),pw),msg,go,sw);
+  f.addEventListener('submit',function(e){ e.preventDefault(); msg.textContent=''; var a=em.value.trim(), b=pw.value; if(!a||!b){ msg.textContent=T('Συμπλήρωσε email και κωδικό.','Fill in email and password.'); return; }
+    go.disabled=true; (mode==='in'?C().signIn(a,b):C().signUp(a,b)).then(function(r){ go.disabled=false; if(r==='confirm'){ msg.style.color='var(--good)'; msg.textContent=T('Σου στείλαμε email επιβεβαίωσης. Πάτα τον σύνδεσμο και μετά συνδέσου.','We sent you a confirmation email. Tap the link, then sign in.'); return; } B.toast(T('Συνδέθηκες.','Signed in.')); draw(); })
+      .catch(function(err){ go.disabled=false; msg.textContent=C().errText(err); }); });
+  paint(); c.append(f); return c;
+}
+
+/* ---------- προτιμήσεις ---------- */
+function prefs(){
+  var c=h('section',{class:'card'},h('h2',{text:T('Ρυθμίσεις','Settings')}));
+  c.append(h('h3',{class:'h3',text:T('Τύπος ψαρέματος','Fishing type')}),B.seg(Object.keys(B.PROF).map(function(k){ return [k,B.PROF[k]]; }),B.prof(),function(v){ try{ localStorage.setItem('psaro-fprof',v); }catch(e){} B.emit('store','psaro-fprof'); B.toast(T('Ο βαθμός και οι προτάσεις προσαρμόστηκαν.','The score and suggestions were adjusted.')); },T('Τύπος ψαρέματος','Fishing type')));
+  c.append(h('h3',{class:'h3',text:T('Γλώσσα','Language')}),B.seg([['el','Ελληνικά'],['en','English']],B.LANG,function(v){ try{ localStorage.setItem('psaro-lang',v); }catch(e){} location.reload(); },T('Γλώσσα','Language')));
+  if(U&&U.options){ var L={wind:T('Άνεμος','Wind'),temp:T('Θερμοκρασία','Temperature'),press:T('Πίεση','Pressure'),wave:T('Κύμα','Waves'),dist:T('Απόσταση','Distance')};
+    Object.keys(L).forEach(function(k){ c.append(h('h3',{class:'h3',text:L[k]}),B.seg(U.options[k].map(function(o){ return [o[0],o[1]]; }),U.cfg[k],function(v){ U.set(k,v); B.emit('store','psaro-units'); },L[k])); }); }
+  return c;
+}
+/* ---------- τα υπόλοιπα (ακόμα στην κλασική) ---------- */
+function more(){
+  var items=[['tackle',T('Εξοπλισμός','Tackle'),'fish'],['boat',T('Σκάφος','Boat'),'wave'],['friends',T('Φίλοι','Friends'),'user'],['alerts',T('Ειδοποιήσεις','Alerts'),'bell'],['safety',T('Επαφή ασφαλείας','Safety contact'),'pin'],['backup',T('Αντίγραφο και εξαγωγή','Backup and export'),'log']];
+  var l=h('div',{class:'list'});
+  items.forEach(function(it){ l.append(h('a',{class:'li',href:B.classic('?a=p&k='+it[0])},h('span',{class:'ic'},B.icon(it[2])),h('span',{class:'tx'},h('b',{text:it[1]}),h('small',{text:T('Στην κλασική έκδοση, με τα ίδια δεδομένα','In the classic version, same data')})),B.icon('chev'))); });
+  return h('div',null,h('h3',{class:'listh',text:T('Ακόμα στην κλασική έκδοση','Still in the classic version')}),l);
+}
+
+B.view('profile',{title:T('Προφίλ','Profile'),mount:function(el){ root=el; draw(); },unmount:function(){ root=null; },resume:function(){ draw(); }});
+B.on('sync',function(){ if(root){ var m=root.querySelector('.syncmsg'); if(m){ var st=C().state(); m.textContent=st.msg; m.classList.toggle('bad',!!st.err); } } });
+B.on('store',function(k){ if(root&&k==='psaro-sess') draw(); });
+})();
